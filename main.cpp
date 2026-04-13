@@ -9,6 +9,9 @@
 #include<cstdint>
 #include<string>
 #include<format>
+#include<filesystem>  // ファイルやディレクトリに関する操作を行うライブラリ
+#include<fstream>     // ファイルに書いたり読んだりするライブラリ
+#include<chrono>      // 時間を扱うライブラリ
 
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -55,6 +58,13 @@ std::wstring ConvertString(const std::string& str) {
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
+	// ログのディレクトリを用意
+	std::filesystem::create_directory("logs");
+
+	// 現在時刻を取得(UTC時刻)
+	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+	// ログファイルの名前にコンマ何秒はいらないので、削って秒にする
+
 	WNDCLASS wc{};
 	// ウィンドウプロシージャ
 	wc.lpfnWndProc = WindowProc;
@@ -106,7 +116,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// wstringバージョン
 	std::wstring wstringValue = { std::to_wstring(500) };
 	Log(ConvertString(std::format(L"WSTRING{}\n", wstringValue)));
-	
+
 	MSG msg{};
 	// ウィンドウの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT) {
