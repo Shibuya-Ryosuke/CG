@@ -7,6 +7,8 @@
 #pragma warning(pop)
 
 #include<cstdint>
+#include<string>
+#include<format>
 
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -22,6 +24,33 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	// 標準のメッセージ処理を行う
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 
+}
+
+// 出力ウィンドウに文字を出す
+void Log(const std::string& message) {
+	OutputDebugStringA(message.c_str());
+}
+
+// std::wstringからstd::stringへ変換
+std::string ConvertString(const std::wstring& str) {
+	if (str.empty()) return std::string();
+	// 変換後のサイズを計算
+	int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), NULL, 0, NULL, NULL);
+	// 確保したサイズでstringを作成
+	std::string result(static_cast<size_t>(sizeNeeded), 0);
+	// 変換
+	WideCharToMultiByte(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), &result[0], sizeNeeded, NULL, NULL);
+
+	return result;
+}
+
+// std::stringからstd::wstringへ変換
+std::wstring ConvertString(const std::string& str) {
+	if (str.empty()) return std::wstring();
+	int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), NULL, 0);
+	std::wstring result(static_cast<size_t>(sizeNeeded), 0);
+	MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), &result[0], sizeNeeded);
+	return result;
 }
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -67,9 +96,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// ウィンドウを表示する
 	ShowWindow(hwnd, SW_SHOW);
 
-	// 出力ウィンドウへの文字出力
-	OutputDebugStringA("Hello,DirectX!\n");
+	// 文字列を格納
+	std::string str1{ "HAPPY" };
+	// 整数を文字列にする
+	std::string str2{ std::to_string(100) };
+	// 出力ウィンドウに表示
+	Log(std::format("string1:{}, string2:{}\n", str1, str2));
 
+	// wstringバージョン
+	std::wstring wstringValue = { std::to_wstring(500) };
+	Log(ConvertString(std::format(L"WSTRING{}\n", wstringValue)));
+	
 	MSG msg{};
 	// ウィンドウの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT) {
@@ -79,6 +116,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			DispatchMessage(&msg);
 		} else {
 			// ゲームの処理
+
 		}
 	}
 	return 0;
