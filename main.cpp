@@ -29,8 +29,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 
 }
 
-// 出力ウィンドウに文字を出す
-void Log(const std::string& message) {
+// 出力ウィンドウに文字を出す(ログファイルへも書きだす)
+void Log(std::ofstream& os, const std::string& message) {
+	os << message << std::endl;
 	OutputDebugStringA(message.c_str());
 }
 
@@ -64,6 +65,16 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// 現在時刻を取得(UTC時刻)
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 	// ログファイルの名前にコンマ何秒はいらないので、削って秒にする
+	std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>
+		nowSeconds = std::chrono::time_point_cast<std::chrono::seconds>(now);
+	// 日本時間(PCの設定時間)に変換
+	std::chrono::zoned_time localTime{ std::chrono::current_zone(), nowSeconds };
+	// formatを使って年月日_時分秒の文字列に変換
+	std::string dateString = std::format("{:%Y%m%d_%H%M%S}", localTime);
+	// 時刻を使ってファイル名を決定
+	std::string logFilePath = std::string("logs/") + dateString + ".log";
+	// ファイルを作って書き込み準備
+	std::ofstream logStream(logFilePath);
 
 	WNDCLASS wc{};
 	// ウィンドウプロシージャ
@@ -111,11 +122,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// 整数を文字列にする
 	std::string str2{ std::to_string(100) };
 	// 出力ウィンドウに表示
-	Log(std::format("string1:{}, string2:{}\n", str1, str2));
+	Log(logStream,std::format("string1:{}, string2:{}\n", str1, str2));
 
 	// wstringバージョン
 	std::wstring wstringValue = { std::to_wstring(500) };
-	Log(ConvertString(std::format(L"WSTRING{}\n", wstringValue)));
+	Log(logStream,ConvertString(std::format(L"WSTRING{}\n", wstringValue)));
 
 	MSG msg{};
 	// ウィンドウの×ボタンが押されるまでループ
