@@ -1,17 +1,28 @@
 #pragma warning(push)
-// 自コード以外の警告を無視
-#pragma warning(disable:4668)
-#pragma warning(disable:4865)
-#pragma warning(disable:5039)
+// --- 全般的に無視したい警告 ---
+#pragma warning(disable:4668) // 未定義のマクロ
+#pragma warning(disable:4865) // 呼び出し規約
+#pragma warning(disable:5039) // 例外関連の警告
+#pragma warning(disable:4514) // 未参照関数の削除
+#pragma warning(disable:4820) // パディング
+
 #include <Windows.h>
+#include <cstdint>
+#include <string>
+#include <format>
+#include <filesystem>  // ファイルやディレクトリに関する操作を行うライブラリ
+#include <fstream>     // ファイルに書いたり読んだりするライブラリ
+#include <chrono>      // 時間を扱うライブラリ
+#include <cassert>
+#include <d3d12.h>
+#include <dxgi1_6.h>
+
 #pragma warning(pop)
 
-#include<cstdint>
-#include<string>
-#include<format>
-#include<filesystem>  // ファイルやディレクトリに関する操作を行うライブラリ
-#include<fstream>     // ファイルに書いたり読んだりするライブラリ
-#include<chrono>      // 時間を扱うライブラリ
+// libのリンク
+#pragma comment(lib, "d3d12.lib")
+#pragma comment(lib, "dxgi.lib")
+
 
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -56,6 +67,8 @@ std::wstring ConvertString(const std::string& str) {
 	MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), &result[0], sizeNeeded);
 	return result;
 }
+
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
@@ -117,16 +130,70 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// ウィンドウを表示する
 	ShowWindow(hwnd, SW_SHOW);
 
+
+	// DXGIファクトリーの生成
+	IDXGIFactory7* dxgiFactory = nullptr;
+	// HRESULTはWindows系のエラーコードであり、
+	// 関数が成功したかどうかをSUCCEEDEDマクロで判定できる
+	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+	// 初期化の根本的な部分でエラーが出た場合はプログラムが間違っているか、どうにもできない場合が多いのでassertにしておく
+	assert(SUCCEEDED(hr));
+
+
+	// 使用するアダプタ用の変数。最初にnullptrを入れておく
+	IDXGIAdapter4* useAdapter = nullptr;
+	// 良い順にアダプタを組み込む
+	for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&useAdapter)) !=
+		DXGI_ERROR_NOT_FOUND; ++i) {
+		// アダプターの情報を取得する
+		DXGI_ADAPTER_DESC3 adapterDesc{};
+		hr = useAdapter->GetDesc3(&adapterDesc);
+		assert(SUCCEEDED(hr)); // 取得できないのは一大事
+		// ソフトウェアアダプタでなければ採用！
+		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
+			// 採用したアダプタの情報をログに出力。wstringのほうなので注意
+			Log(logStream,ConvertString(std::format(L"Use Adapter:{}\n", adapterDesc.Description)));
+			break;
+		}
+		useAdapter = nullptr; // ソフトウェアアダプタの場合は見なかったことにする
+	}
+	// 適切なアダプタが見つからなかったので起動できない
+	assert(useAdapter != nullptr);
+
+
+	// D3D12Deviceの生成
+	ID3D12Device* device = nullptr;
+	// 機能レベルとログ出力用の文字列
+	D3D_FEATURE_LEVEL featureLevels[] = {
+		D3D_FEATURE_LEVEL_12_2, D3D_FEATURE_LEVEL_12_1,D3D_FEATURE_LEVEL_12_0
+	};
+	const char* featureLevelStrings[] = { "12.2","12.1","12.0" };
+	// 高い順に生成できるか試していく
+	for (size_t i = 0; i < _countof(featureLevels); ++i) {
+		// 採用したアダプターでデバイス生成
+		hr = D3D12CreateDevice(useAdapter, featureLevels[i], IID_PPV_ARGS(&device));
+		// 指定した機能レベルでデバイスが生成できたか確認
+		if (SUCCEEDED(hr)) {
+			// 生成できたのでログ出力を行ってループを抜ける
+			Log(logStream, std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
+			break;
+		}
+	}
+	// デバイスの生成が上手くいかなかったので起動できない
+	assert(device != nullptr);
+	// デバイスの生成が成功
+	Log(logStream, "Complete create D3D12Device!!!\n");
+
 	// 文字列を格納
-	std::string str1{ "HAPPY" };
+	std::string str1{ "\nHELLO!!!\nWELCOME TO THE CG" };
 	// 整数を文字列にする
-	std::string str2{ std::to_string(100) };
+	std::string str2{ std::to_string(2) };
 	// 出力ウィンドウに表示
-	Log(logStream,std::format("string1:{}, string2:{}\n", str1, str2));
+	Log(logStream,std::format("{}, {}\n", str1, str2));
 
 	// wstringバージョン
 	std::wstring wstringValue = { std::to_wstring(500) };
-	Log(logStream,ConvertString(std::format(L"WSTRING{}\n", wstringValue)));
+	Log(logStream,ConvertString(std::format(L"WSTRING CHECK : {}\n", wstringValue)));
 
 	MSG msg{};
 	// ウィンドウの×ボタンが押されるまでループ
