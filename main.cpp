@@ -1,10 +1,11 @@
 #pragma warning(push)
 // --- 全般的に無視したい警告 ---
+#pragma warning(disable:4514) // 未参照関数の削除
 #pragma warning(disable:4668) // 未定義のマクロ
+#pragma warning(disable:4710) // インライン化不可
+#pragma warning(disable:4820) // パディング
 #pragma warning(disable:4865) // 呼び出し規約
 #pragma warning(disable:5039) // 例外関連の警告
-#pragma warning(disable:4514) // 未参照関数の削除
-#pragma warning(disable:4820) // パディング
 
 #include <Windows.h>
 #include <cstdint>
@@ -16,14 +17,20 @@
 #include <cassert>
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <strsafe.h>
+#include <dbghelp.h>
 
 #pragma warning(pop)
 
 // libのリンク
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "Dbghelp.lib")
 
 
+// ======================================================================================
+// ------------------------------------- [ 関 数 ] --------------------------------------
+// ======================================================================================
 // ウィンドウプロシージャ
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	// メッセージに応じてゲーム固有の処理を行う
@@ -68,10 +75,37 @@ std::wstring ConvertString(const std::string& str) {
 	return result;
 }
 
+// MiniDumpを出力
+static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) noexcept {
+	// 時刻を取得して、時刻を名前に居れたファイルを作成。Dumpsディレクトリ以下に出力
+	SYSTEMTIME time;
+	GetLocalTime(&time);
+	wchar_t filePath[MAX_PATH] = { 0 };
+	CreateDirectory(L"./Dumps", nullptr);
+	StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d-%02d%02d.dmp", time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute);
+	HANDLE dumpFileHandle = CreateFile(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+	// processId(このexeのId)とクラッシュ(例外)の発生したthreadIdを取得
+	DWORD processId = GetCurrentProcessId();
+	DWORD threadId = GetCurrentThreadId();
+	// 設定情報を入力
+	MINIDUMP_EXCEPTION_INFORMATION minidumpInformation{ 0 };
+	minidumpInformation.ThreadId = threadId;
+	minidumpInformation.ExceptionPointers = exception;
+	minidumpInformation.ClientPointers = TRUE;
+	// Dumpを出力。MiniDumpNormalは最低限の情報を出力するフラグ
+	MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle, MiniDumpNormal, &minidumpInformation, nullptr, nullptr);
+	// 他に関連付けられているSSH例外ハンドラがあれば実行。通常はプロセスを終了する
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+
+// =======================================================================================================
 
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
+	// 誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
+	SetUnhandledExceptionFilter(ExportDump);
+
 	// ログのディレクトリを用意
 	std::filesystem::create_directory("logs");
 
