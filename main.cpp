@@ -1,5 +1,5 @@
 #pragma warning(push)
-// --- 全般的に無視したい警告 ---
+// --- 外部ヘッダー由来の警告を無視する ---
 #pragma warning(disable:4514) // 未参照関数の削除
 #pragma warning(disable:4668) // 未定義のマクロ
 #pragma warning(disable:4710) // インライン化不可
@@ -20,6 +20,7 @@
 #include <strsafe.h>
 #include <dbghelp.h>
 #include <dxgidebug.h>
+#include <dxcapi.h>
 
 #pragma warning(pop)
 
@@ -28,8 +29,10 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "dxcompiler.lib")
 
-
+// ログファイルをあらかじめ作っておく
+std::ofstream logStream;
 // ======================================================================================
 // ------------------------------------- [ 関 数 ] --------------------------------------
 // ======================================================================================
@@ -50,8 +53,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 }
 
 // 出力ウィンドウに文字を出す(ログファイルへも書きだす)
-void Log(std::ofstream& os, const std::string& message) {
-	os << message << std::endl;
+void Log(const std::string& message) {
+	logStream << message << std::endl;
 	OutputDebugStringA(message.c_str());
 }
 
@@ -100,7 +103,78 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) noexcept {
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
+// コンパイルシェーダー
+IDxcBlob* CompileShader(
+	// CompilerするShaderファイルへのパス
+	const std::wstring& filePath,
+	// Compilerに使用するProfile
+	const wchar_t* profile,
+	// 初期化で生成したものを3つ
+	IDxcUtils* dxcUtils,
+	IDxcCompiler3* dxcCompiler,
+	IDxcIncludeHandler* includeHandler
+) {
+	// 1.hlslファイルを読み込む
+	// これからシェーダーをコンパイルする旨をログに出す
+	Log(ConvertString(std::format(L"Begin CompileShader, Path:{}, profile:{}\n", filePath, profile)));
+	// hlslファイルを読み込む
+	IDxcBlobEncoding* shaderSource = nullptr;
+	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+	// 読めなかったら止める
+	assert(SUCCEEDED(hr));
+	// 読み込んだファイルの内容を設定する
+	DxcBuffer shaderSourceBuffer;
+	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
+	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
+	shaderSourceBuffer.Encoding = DXC_CP_UTF8;  // UTF8のコードであることを通知
+
+	// 2.Compileする
+	LPCWSTR arguments[] = {
+		filePath.c_str(),  // コンパイル対象のhlslファイル名
+		L"-E", L"main",  // エントリーポイントの指定。基本的にmain以外にはしない
+		L"-T", profile,  // ShaderProfileの設定
+		L"-Zi", L"-Qembed_debug",  // デバッグ用の情報を埋め込む
+		L"-Od",   // 最適化を外しておく
+		L"-Zpr",  // メモリレイアウトは行優先
+	};
+	// 実際にShaderをコンパイルする
+	IDxcResult* shaderResult = nullptr;
+	hr = dxcCompiler->Compile(
+		&shaderSourceBuffer,  // 読み込んだファイル
+		arguments,            // コンパイルオプション
+		_countof(arguments),  // コンパイルオプションの数
+		includeHandler,       // includeが含まれた諸々
+		IID_PPV_ARGS(&shaderResult)  // コンパイル結果
+	);
+	// コンパイルエラーではなくdxcが起動できないなど致命的な状況
+	assert(SUCCEEDED(hr));
+
+	// 3.警告・エラーが出てないか確認する
+	// 警告・エラーが出てたらログに出して止める
+	IDxcBlobUtf8* shaderError = nullptr;
+	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
+	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
+		Log(shaderError->GetStringPointer());
+		// 警告・エラーダメゼッタイ
+		assert(false);
+	}
+
+	// 4.Compile結果を受け取って返す
+	// コンパイル結果から実行用のバイナリ部分を取得
+	IDxcBlob* shaderBlob = nullptr;
+	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
+	assert(SUCCEEDED(hr));
+	// 成功したログを出す
+	Log(ConvertString(std::format(L"Compile Succeeded, path:{}, profile{}\n", filePath, profile)));
+	// もう使わないリソースを解放
+	shaderSource->Release();
+	shaderResult->Release();
+	// 実行用のバイナリを返却
+	return shaderBlob;
+}
+
 // =======================================================================================================
+
 
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -122,8 +196,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	std::string dateString = std::format("{:%Y%m%d_%H%M%S}", localTime);
 	// 時刻を使ってファイル名を決定
 	std::string logFilePath = std::string("logs/") + dateString + ".log";
-	// ファイルを作って書き込み準備
-	std::ofstream logStream(logFilePath);
+	// あらかじめ作っておいたログファイルにパスを教えて準備完了
+	logStream.open(logFilePath);
 
 	WNDCLASS wc{};
 	// ウィンドウプロシージャ
@@ -199,7 +273,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		// ソフトウェアアダプタでなければ採用！
 		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
 			// 採用したアダプタの情報をログに出力。wstringのほうなので注意
-			Log(logStream,ConvertString(std::format(L"Use Adapter:{}\n", adapterDesc.Description)));
+			Log(ConvertString(std::format(L"Use Adapter:{}\n", adapterDesc.Description)));
 			break;
 		}
 		useAdapter = nullptr; // ソフトウェアアダプタの場合は見なかったことにする
@@ -222,14 +296,36 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		// 指定した機能レベルでデバイスが生成できたか確認
 		if (SUCCEEDED(hr)) {
 			// 生成できたのでログ出力を行ってループを抜ける
-			Log(logStream, std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
+			Log(std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
 			break;
 		}
 	}
 	// デバイスの生成が上手くいかなかったので起動できない
 	assert(device != nullptr);
 	// 初期化完了のログを出力
-	Log(logStream, "Complete create D3D12Device!!!\n");
+	Log("Complete create D3D12Device!!!\n");
+
+
+	// RootSignature作成
+	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
+	descriptionRootSignature.Flags =
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	// シリアライズしてバイナリにする
+	ID3DBlob* signatureBlob = nullptr;
+	ID3DBlob* errorBlob = nullptr;
+	hr = D3D12SerializeRootSignature(&descriptionRootSignature,
+		D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
+	if (FAILED(hr)) {
+		Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
+		assert(false);
+	}
+	// バイナリをもとに生成
+	ID3D12RootSignature* rootSignature = nullptr;
+	hr = device->CreateRootSignature(0,
+		signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
+	assert(SUCCEEDED(hr));
+
+	ここからInputLayout;
 
 #ifdef _DEBUG
 	ID3D12InfoQueue* infoQueue = nullptr;
@@ -381,6 +477,19 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	assert(fenceEvent != nullptr);
 
 
+	// dxcCompilerを初期化
+	IDxcUtils* dxcUtils = nullptr;
+	IDxcCompiler3* dxcCompiler = nullptr;
+	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
+	assert(SUCCEEDED(hr));
+	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
+	assert(SUCCEEDED(hr));
+
+	// 現時点でincludeはしないが、includeに対応するための設定を行っておく
+	IDxcIncludeHandler* includeHandler = nullptr;
+	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
+	assert(SUCCEEDED(hr));
+
 	// GPUにコマンドリストの実行を行わせる
 	ID3D12CommandList* commandLists[] = { commandList };
 	commandQueue->ExecuteCommandLists(1, commandLists);
@@ -412,11 +521,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// 整数を文字列にする
 	std::string str2{ std::to_string(2) };
 	// 出力ウィンドウに表示
-	Log(logStream,std::format("{}, {}\n", str1, str2));
+	Log(std::format("{}, {}\n", str1, str2));
 
 	// wstringバージョン
 	std::wstring wstringValue = { std::to_wstring(500) };
-	Log(logStream,ConvertString(std::format(L"WSTRING CHECK : {}\n", wstringValue)));
+	Log(ConvertString(std::format(L"WSTRING CHECK : {}\n", wstringValue)));
 
 
 
