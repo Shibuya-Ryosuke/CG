@@ -4,3 +4,8 @@ dxgi
 hlsl
 Descs
 hlsl
+hlsl
+dxgi
+Descs
+wparam
+lparam
