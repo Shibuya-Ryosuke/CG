@@ -20,6 +20,11 @@ struct Transform {
 	Vector3 translate;
 };
 
+struct VertexData {
+	Vector4 position;
+	Vector2 texcoord;
+};
+
 // 加算
 Vector3 Add(const Vector3& v1, const Vector3& v2);
 // 減算
