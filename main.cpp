@@ -24,7 +24,7 @@
 #endif
 
 // 自作ヘッダー
-#include"Math.h"
+#include "Original/Math/Math.h"
 
 // libのリンク
 #pragma comment(lib, "d3d12.lib")
@@ -37,7 +37,10 @@
 // ログファイルをあらかじめ作っておく
 std::ofstream logStream;
 
-
+struct MeshMaterial {
+	ID3D12Resource* resource;
+	Vector4* data;
+};
 // ======================================================================================
 // ------------------------------------- [ 関 数 ] --------------------------------------
 // ======================================================================================
@@ -693,6 +696,21 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	D3D12_BLEND_DESC blendDesc{};
 	// 全ての色要素を書き込む
 	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	// ブレンドを有効にする。これで透明度をいじったら反映されるようになる
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+
+	// --- ここからが半透明合成（アルファブレンディング）の数式設定 ---
+	// ソースの色の混ぜ合わせ方（自分の色 * 自分のアルファ）
+	blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	// 背景の色の混ぜ合わせ方（背景の色 * (1 - 自分のアルファ)）
+	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	// 足し算で合成する
+	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+
+	// アルファ値自体の合成方法（通常はそのまま残す設定にする）
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 
 	// RasterizerStateの設定
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
@@ -702,11 +720,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
 	// Shaderをコンパイルする
-	IDxcBlob* vertexShaderBlob = CompileShader(L"Object3D.VS.hlsl",
+	IDxcBlob* vertexShaderBlob = CompileShader(L"Original/HLSL/Object3D.VS.hlsl",
 		L"vs_6_0", dxcUtils, dxcCompiler, includeHandler);
 	assert(vertexShaderBlob != nullptr);
 
-	IDxcBlob* pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl",
+	IDxcBlob* pixelShaderBlob = CompileShader(L"Original/HLSL/Object3D.PS.hlsl",
 		L"ps_6_0", dxcUtils, dxcCompiler, includeHandler);
 	assert(pixelShaderBlob != nullptr);
 
@@ -747,16 +765,19 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
+	// 球
+	uint32_t kSubdivision = 16;  // 分割数
+	uint32_t numSphereVertices = CalculateSphereVertices(kSubdivision);
 
 	// VertexResourceを作成
-	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * 6);
+	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * numSphereVertices);
 
 	// 頂点バッファビューを作成する
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 	// リソースの先頭のアドレスから使う
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
 	// 使用するリソースのサイズは頂点6つ分のサイズ
-	vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
+	vertexBufferView.SizeInBytes = sizeof(VertexData) * numSphereVertices;
 	// 1頂点あたりのサイズ
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
 
@@ -764,36 +785,43 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	VertexData* vertexData = nullptr;
 	// 書き込むためのアドレスを取得
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	// 左下
-	vertexData[0].position = { -0.5f,-0.5f,0.0f,1.0f };
-	vertexData[0].texcoord = { 0.0f,1.0f };
-	// 上
-	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
-	vertexData[1].texcoord = { 0.5f,0.0f };
-	// 右下
-	vertexData[2].position = { 0.5f,-0.5f,0.0f,1.0f };
-	vertexData[2].texcoord = { 1.0f,1.0f };
+	// 球生成
+	CreateSphere(kSubdivision, vertexData);
 
-	// 左下2
-	vertexData[3].position = { -0.5f,-0.5f,0.5f,1.0f };
-	vertexData[3].texcoord = { 0.0f,1.0f };
-	// 上2
-	vertexData[4].position = { 0.0f,0.0f,0.0f,1.0f };
-	vertexData[4].texcoord = { 0.5f,0.0f };
-	// 右下2
-	vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };
-	vertexData[5].texcoord = { 1.0f,1.0f };
+	// 三角形は今はやらない
+	//// 左下
+	//vertexData[0].position = { -0.5f,-0.5f,0.0f,1.0f };
+	//vertexData[0].texcoord = { 0.0f,1.0f };
+	//// 上
+	//vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
+	//vertexData[1].texcoord = { 0.5f,0.0f };
+	//// 右下
+	//vertexData[2].position = { 0.5f,-0.5f,0.0f,1.0f };
+	//vertexData[2].texcoord = { 1.0f,1.0f };
+
+	//// 左下2
+	//vertexData[3].position = { -0.5f,-0.5f,0.5f,1.0f };
+	//vertexData[3].texcoord = { 0.0f,1.0f };
+	//// 上2
+	//vertexData[4].position = { 0.0f,0.0f,0.0f,1.0f };
+	//vertexData[4].texcoord = { 0.5f,0.0f };
+	//// 右下2
+	//vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };
+	//vertexData[5].texcoord = { 1.0f,1.0f };
 
 
 	// MaterialResourceを作成
-	// マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
-	ID3D12Resource* materialResource = CreateBufferResource(device, sizeof(Vector4));
-	// マテリアルデータに書き込む
-	Vector4* materialData = nullptr;
-	// 書き込むためのアドレスを取得
-	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-	// 白を書きこんでみる
-	*materialData = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	// --- 球用のマテリアル ---
+	ID3D12Resource* materialResourceSphere = CreateBufferResource(device, sizeof(Vector4));
+	Vector4* sphereMaterialData = nullptr;
+	materialResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&sphereMaterialData));
+	*sphereMaterialData = Vector4(1.0f, 0.0f, 0.0f, 1.0f); // 球は赤！
+
+	// --- スプライト用のマテリアル ---
+	ID3D12Resource* materialResourceSprite = CreateBufferResource(device, sizeof(Vector4));
+	Vector4* spriteMaterialData = nullptr;
+	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&spriteMaterialData));
+	*spriteMaterialData = Vector4(0.0f, 1.0f, 0.0f, 1.0f); // スプライトは緑！
 
 
 	// WVP用のリソースを作成
@@ -810,7 +838,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	// DSV用のヒープでディスクリプタの数は1。DSVはShader内で触るっ物ではないので、ShaderVisibleはfalse
 	ID3D12DescriptorHeap* dsvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
-	//DSVの設定
+	// DSVの設定
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;  // Format。基本的にはResourceに合わせる
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;  // 2dTexture
@@ -909,7 +937,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	float farClip = 100.0f;
 
 	// カメラトランスフォーム
-	Transform cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
+	Transform cameraTransform{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,-10.0f} };
 
 	// ImGuiの初期化
     #ifdef USE_IMGUI
@@ -982,15 +1010,21 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			// 開発用UIの処理
 			ImGui::Begin("Debug"); // ウィンドウの開始
 
-			// マテリアルの色を操作
-			ImGui::ColorEdit4("Material Color", reinterpret_cast<float*>(materialData));
-			// 2dUVCheckerの座標いじり
+			// 球のマテリアルの色を操作
+			ImGui::ColorEdit4("Sphere Material Color", reinterpret_cast<float*>(sphereMaterialData));
+			// スプライトのマテリアルの色を操作
+			ImGui::ColorEdit4("Sprite Material Color", reinterpret_cast<float*>(spriteMaterialData));
+			ImGui::Spacing();
+			// 2dUVCheckerの座標操作
 			ImGui::SliderFloat2("Sprite Position", &transformSprite.translate.x, 0.0f, 1280.0f);
-			
+			ImGui::Spacing();
+			// カメラ行列(translateとrotateのみ)を操作
+			ImGui::DragFloat3("Camera Position", &cameraTransform.translate.x, 0.1f);
+			ImGui::DragFloat3("Camera Rotation", &cameraTransform.rotate.x, 0.01f);
 			ImGui::End(); // ウィンドウの終了
             #endif
 
-			// 三角形の回転
+			// 回転
 			transform.rotate.y += 0.03f;
 			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 
@@ -1045,20 +1079,24 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			// 形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけばよい
 			commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-			// マテリアルCBufferの場所を設定
-			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+			// 球マテリアルCBufferの場所を設定
+			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSphere->GetGPUVirtualAddress());
 			// wvp用のCBufferの場所を設定
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 
 			// SRVのDescriptorTableの先頭を設定。2はrootParameter[2]
 			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
 
-			// 三角形描画(3D)
-			commandList->DrawInstanced(6, 1, 0, 0);
+			//// 三角形描画(3D)
+			//commandList->DrawInstanced(6, 1, 0, 0);
+			/// 球描画
+			commandList->DrawInstanced(numSphereVertices, 1, 0, 0);
 
 
 			// Spriteの描画。変更が必要なものだけ変更する
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
+			// スプライトマテリアルCBufferの場所を設定
+			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 			// TransformationMatrixCBufferの場所を設定
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 			
@@ -1125,7 +1163,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	depthStencilResource->Release();
 	intermediateResource->Release();
 	wvpResource->Release();
-	materialResource->Release();
+	materialResourceSprite->Release();
+	materialResourceSphere->Release();
 	vertexResource->Release();
 	graphicsPipelineState->Release();
 	signatureBlob->Release();
