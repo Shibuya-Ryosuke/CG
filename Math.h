@@ -767,4 +767,28 @@ inline Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspect, float nearCl
 	return result;
 }
 
+// 平行投影行列
+inline Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip) {
+	Matrix4x4 result{};
+
+	// [0][0]: X軸のスケール (幅を -1 ～ 1 に収める)
+	result.m[0][0] = 2.0f / (right - left);
+	// [1][1]: Y軸のスケール (高さを -1 ～ 1 に収める)
+	result.m[1][1] = 2.0f / (top - bottom);
+	// [2][2]: Z軸のスケール (奥行きを 0 ～ 1 に収める)
+	result.m[2][2] = 1.0f / (farClip - nearClip);
+
+	// [3][0]: X軸の平行移動 (中心を合わせる)
+	result.m[3][0] = (left + right) / (left - right);
+	// [3][1]: Y軸の平行移動
+	result.m[3][1] = (top + bottom) / (bottom - top);
+	// [3][2]: Z軸の平行移動
+	result.m[3][2] = nearClip / (nearClip - farClip);
+
+	// [3][3]: 同次座標の重み
+	result.m[3][3] = 1.0f;
+
+	return result;
+}
+
 //=================================================================================================
