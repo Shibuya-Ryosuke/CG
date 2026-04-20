@@ -3,6 +3,10 @@
 #include <numbers>
 #include <vector>
 
+struct Material {
+	Vector4 color;
+	int32_t enableLighting;
+};
 struct Sphere {
 	Vector3 center;
 	float radius;
@@ -10,6 +14,7 @@ struct Sphere {
 struct VertexData {
 	Vector4 position;
 	Vector2 texcoord;
+	Vector3 normal;
 };
 
 
@@ -47,6 +52,9 @@ inline void CreateSphere(uint32_t kSubDivision, VertexData* vertexData) {
 			vertexData[start].position.z = cosf(lat) * sinf(lon);
 			vertexData[start].position.w = 1.0f;
 			vertexData[start].texcoord = CalculateSphereUV(latIndex, lonIndex, kSubDivision);
+			vertexData[start].normal.x = vertexData[start].position.x;
+			vertexData[start].normal.y = vertexData[start].position.y;
+			vertexData[start].normal.z = vertexData[start].position.z;
 
 			// 1枚目の三角形：基準点 b (nextLat, lon)
 			vertexData[start + 1].position.x = cosf(nextLat) * cosf(lon);
@@ -54,6 +62,9 @@ inline void CreateSphere(uint32_t kSubDivision, VertexData* vertexData) {
 			vertexData[start + 1].position.z = cosf(nextLat) * sinf(lon);
 			vertexData[start + 1].position.w = 1.0f;
 			vertexData[start + 1].texcoord = CalculateSphereUV(latIndex + 1, lonIndex, kSubDivision);
+			vertexData[start + 1].normal.x = vertexData[start + 1].position.x;
+			vertexData[start + 1].normal.y = vertexData[start + 1].position.y;
+			vertexData[start + 1].normal.z = vertexData[start + 1].position.z;
 
 			// 1枚目の三角形：基準点 c (lat, nextLon)
 			vertexData[start + 2].position.x = cosf(lat) * cosf(nextLon);
@@ -61,6 +72,9 @@ inline void CreateSphere(uint32_t kSubDivision, VertexData* vertexData) {
 			vertexData[start + 2].position.z = cosf(lat) * sinf(nextLon);
 			vertexData[start + 2].position.w = 1.0f;
 			vertexData[start + 2].texcoord = CalculateSphereUV(latIndex, lonIndex + 1, kSubDivision);
+			vertexData[start + 2].normal.x = vertexData[start + 2].position.x;
+			vertexData[start + 2].normal.y = vertexData[start + 2].position.y;
+			vertexData[start + 2].normal.z = vertexData[start + 2].position.z;
 
 
 			// 2枚目の三角形：基準点 b (三角形1枚目と同じ)
@@ -72,6 +86,9 @@ inline void CreateSphere(uint32_t kSubDivision, VertexData* vertexData) {
 			vertexData[start + 4].position.z = cosf(nextLat) * sinf(nextLon);
 			vertexData[start + 4].position.w = 1.0f;
 			vertexData[start + 4].texcoord = CalculateSphereUV(latIndex + 1, lonIndex + 1, kSubDivision);
+			vertexData[start + 4].normal.x = vertexData[start + 4].position.x;
+			vertexData[start + 4].normal.y = vertexData[start + 4].position.y;
+			vertexData[start + 4].normal.z = vertexData[start + 4].position.z;
 
 			// 2枚目の三角形：基準点 c (三角形1枚目と同じ)
 			vertexData[start + 5] = vertexData[start + 2];

@@ -67,6 +67,7 @@
     <ClInclude Include="externals\imgui\imstb_rectpack.h" />
     <ClInclude Include="externals\imgui\imstb_textedit.h" />
     <ClInclude Include="externals\imgui\imstb_truetype.h" />
+    <ClInclude Include="Original\Light\Light.h" />
     <ClInclude Include="Original\Math\Math.h" />
     <ClInclude Include="Original\Math\Matrix.h" />
     <ClInclude Include="Original\Math\Geometry.h" />
