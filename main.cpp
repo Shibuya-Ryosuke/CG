@@ -865,14 +865,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	Material* sphereMaterialData = nullptr;
 	materialResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&sphereMaterialData));
 	sphereMaterialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	sphereMaterialData->enableLighting = true;
+	sphereMaterialData->enableLighting = true;  // ライティングの適用
+	sphereMaterialData->reflectionMode = ReflectionMode::LAMBERT;  // 反射モードの適用
 
 	// --- スプライト用のマテリアル ---
 	ID3D12Resource* materialResourceSprite = CreateBufferResource(device, sizeof(Material));
 	Material* spriteMaterialData = nullptr;
 	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&spriteMaterialData));
-	spriteMaterialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	spriteMaterialData->enableLighting = false;  // ライティングの適用
+	spriteMaterialData->color = { 1.0f, 1.0f, 1.0f, 0.0f };
 
 	// 平行光源用リソース
 	ID3D12Resource* directionalLightResource = CreateBufferResource(device, sizeof(DirectionalLight));
@@ -1153,8 +1153,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 			// 球のテクスチャを操作
 			ImGui::Text("Draw Texture Select");
-			ImGui::RadioButton("uvChecker", reinterpret_cast<int*>(&drawTextureIndex), 0);
-			ImGui::RadioButton("monsterBall", reinterpret_cast<int*>(&drawTextureIndex), 1);
+			ImGui::RadioButton("uvChecker", reinterpret_cast<int*>(&drawTextureIndex), static_cast<uint32_t>(DrawTextureIndex::UV_CHECKER));
+			ImGui::RadioButton("monsterBall", reinterpret_cast<int*>(&drawTextureIndex), static_cast<uint32_t>(DrawTextureIndex::MONSTER_BALL));
+			ImGui::NewLine();
+
+			// 球の反射モードを操作
+			ImGui::Text("Sphere Lambert Mode");
+			ImGui::RadioButton("Lambert", reinterpret_cast<int*>(&sphereMaterialData->reflectionMode), static_cast<int>(ReflectionMode::LAMBERT));
+			ImGui::RadioButton("Half Lambert", reinterpret_cast<int*>(&sphereMaterialData->reflectionMode), static_cast<int>(ReflectionMode::HALF_LAMBERT));
 			ImGui::NewLine();
 
 			// 2dUVCheckerの座標操作

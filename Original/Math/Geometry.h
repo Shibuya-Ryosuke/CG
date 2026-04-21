@@ -3,9 +3,14 @@
 #include <numbers>
 #include <vector>
 
+enum class ReflectionMode : int32_t {
+	LAMBERT,
+	HALF_LAMBERT
+};
 struct Material {
 	Vector4 color;
-	int32_t enableLighting;
+	int32_t enableLighting = false;
+	ReflectionMode reflectionMode = ReflectionMode::LAMBERT;
 };
 struct Sphere {
 	Vector3 center;
