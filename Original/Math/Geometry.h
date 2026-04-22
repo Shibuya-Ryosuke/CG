@@ -27,80 +27,76 @@ struct VertexData {
 // function
 //=================================================================================================
 
+/// <summary>
 /// 指定したインデックスからUV座標を計算する
+/// </summary>
+/// <param name="latIndex">緯度インデックス</param>
+/// <param name="lonIndex">経度インデックス</param>
+/// <param name="kSubdivision">分割数</param>
+/// <returns>UV座標</returns>
 inline Vector2 CalculateSphereUV(uint32_t latIndex, uint32_t lonIndex, uint32_t kSubdivision) {
 	float u = float(lonIndex) / float(kSubdivision);
 	float v = 1.0f - float(latIndex) / float(kSubdivision);
 	return { u, v };
 }
-/// 球の頂点数を計算し、頂点位置にデータを入力
-inline void CreateSphere(uint32_t kSubDivision, VertexData* vertexData) {
-	// 経度分割1つ分の角度。φ。
-	const float kLonEvery = std::numbers::pi_v<float> * 2.0f / float(kSubDivision);
-	// 緯度分割1つ分の角度。θ。
-	const float kLatEvery = std::numbers::pi_v<float> / float(kSubDivision);
-	// 緯度の方向に分割
-	for (uint32_t latIndex = 0; latIndex < kSubDivision; ++latIndex) {
-		float lat = -std::numbers::pi_v<float> / 2.0f + kLatEvery * float(latIndex);  // θ
-		// 経度の方向に分割しながら線を描く
-		for (uint32_t lonIndex = 0;lonIndex < kSubDivision; ++lonIndex) {
-			uint32_t start = (latIndex * kSubDivision + lonIndex) * 6;
-			float lon = (float)lonIndex * kLonEvery;  // φ
+/// <summary>
+/// 球の頂点データとインデックスデータを生成
+/// </summary>
+/// <param name="kSubDivision">分割数</param>
+/// <param name="vertexData">頂点データ</param>
+/// <param name="indices">インデックス</param>
+inline void CreateSphere(uint32_t kSubDivision, VertexData* vertexData, uint32_t* indices) {
+    // 頂点座標の計算 (グリッドの交点を1回ずつ計算)
+    for (uint32_t latIndex = 0; latIndex <= kSubDivision; ++latIndex) {
+        float lat = -std::numbers::pi_v<float> / 2.0f + (std::numbers::pi_v<float> / static_cast<float>(kSubDivision)) * static_cast<float>(latIndex);
+        for (uint32_t lonIndex = 0; lonIndex <= kSubDivision; ++lonIndex) {
+            float lon = (std::numbers::pi_v<float> *2.0f / static_cast<float>(kSubDivision)) * static_cast<float>(lonIndex);
+            uint32_t vIndex = latIndex * (kSubDivision + 1) + lonIndex;
 
-			// 次のステップの角度（b, c, d地点用）
-			float nextLat = lat + kLatEvery;
-			float nextLon = lon + kLonEvery;
+            vertexData[vIndex].position.x = cosf(lat) * cosf(lon);
+            vertexData[vIndex].position.y = sinf(lat);
+            vertexData[vIndex].position.z = cosf(lat) * sinf(lon);
+            vertexData[vIndex].position.w = 1.0f;
 
-			// 頂点にデータを入力する。基準点 a
-			vertexData[start].position.x = cosf(lat) * cosf(lon);
-			vertexData[start].position.y = sinf(lat);
-			vertexData[start].position.z = cosf(lat) * sinf(lon);
-			vertexData[start].position.w = 1.0f;
-			vertexData[start].texcoord = CalculateSphereUV(latIndex, lonIndex, kSubDivision);
-			vertexData[start].normal.x = vertexData[start].position.x;
-			vertexData[start].normal.y = vertexData[start].position.y;
-			vertexData[start].normal.z = vertexData[start].position.z;
+            vertexData[vIndex].normal = { vertexData[vIndex].position.x, vertexData[vIndex].position.y, vertexData[vIndex].position.z };
+            vertexData[vIndex].texcoord = CalculateSphereUV(latIndex, lonIndex, kSubDivision);
+        }
+    }
 
-			// 1枚目の三角形：基準点 b (nextLat, lon)
-			vertexData[start + 1].position.x = cosf(nextLat) * cosf(lon);
-			vertexData[start + 1].position.y = sinf(nextLat);
-			vertexData[start + 1].position.z = cosf(nextLat) * sinf(lon);
-			vertexData[start + 1].position.w = 1.0f;
-			vertexData[start + 1].texcoord = CalculateSphereUV(latIndex + 1, lonIndex, kSubDivision);
-			vertexData[start + 1].normal.x = vertexData[start + 1].position.x;
-			vertexData[start + 1].normal.y = vertexData[start + 1].position.y;
-			vertexData[start + 1].normal.z = vertexData[start + 1].position.z;
+    // インデックスの計算 (どの頂点番号を繋いで三角形にするか)
+    for (uint32_t latIndex = 0; latIndex < kSubDivision; ++latIndex) {
+        for (uint32_t lonIndex = 0; lonIndex < kSubDivision; ++lonIndex) {
+            // 四角形1つにつき三角形が2つ必要なのでインデックスは6個
+            uint32_t iIndex = (latIndex * kSubDivision + lonIndex) * 6;
 
-			// 1枚目の三角形：基準点 c (lat, nextLon)
-			vertexData[start + 2].position.x = cosf(lat) * cosf(nextLon);
-			vertexData[start + 2].position.y = sinf(lat);
-			vertexData[start + 2].position.z = cosf(lat) * sinf(nextLon);
-			vertexData[start + 2].position.w = 1.0f;
-			vertexData[start + 2].texcoord = CalculateSphereUV(latIndex, lonIndex + 1, kSubDivision);
-			vertexData[start + 2].normal.x = vertexData[start + 2].position.x;
-			vertexData[start + 2].normal.y = vertexData[start + 2].position.y;
-			vertexData[start + 2].normal.z = vertexData[start + 2].position.z;
+            // 頂点配列上の今の位置(左上)を特定
+            uint32_t startV = latIndex * (kSubDivision + 1) + lonIndex;
 
+            // 頂点番号を指定して三角形を作る
+            // 左上(startV), 左下(+kSubDivision+1), 右上(+1), 右下(+kSubDivision+2)
+            indices[iIndex + 0] = startV;
+            indices[iIndex + 1] = startV + (kSubDivision + 1);
+            indices[iIndex + 2] = startV + 1;
 
-			// 2枚目の三角形：基準点 b (三角形1枚目と同じ)
-			vertexData[start + 3] = vertexData[start + 1];
-
-			// 2枚目の三角形：基準点 d (nextLat, nextLon)
-			vertexData[start + 4].position.x = cosf(nextLat) * cosf(nextLon);
-			vertexData[start + 4].position.y = sinf(nextLat);
-			vertexData[start + 4].position.z = cosf(nextLat) * sinf(nextLon);
-			vertexData[start + 4].position.w = 1.0f;
-			vertexData[start + 4].texcoord = CalculateSphereUV(latIndex + 1, lonIndex + 1, kSubDivision);
-			vertexData[start + 4].normal.x = vertexData[start + 4].position.x;
-			vertexData[start + 4].normal.y = vertexData[start + 4].position.y;
-			vertexData[start + 4].normal.z = vertexData[start + 4].position.z;
-
-			// 2枚目の三角形：基準点 c (三角形1枚目と同じ)
-			vertexData[start + 5] = vertexData[start + 2];
-		}
-	}
-};
-/// 頂点数を計算
+            indices[iIndex + 3] = startV + 1;
+            indices[iIndex + 4] = startV + (kSubDivision + 1);
+            indices[iIndex + 5] = startV + (kSubDivision + 1) + 1;
+        }
+    }
+}
+/// <summary>
+/// 頂点数を計算(重複無し)
+/// </summary>
+/// <param name="kSubdivision">分割数</param>
+/// <returns>頂点数</returns>
 inline uint32_t CalculateSphereVertices(uint32_t kSubdivision) {
+    return (kSubdivision + 1) * (kSubdivision + 1);
+}
+/// <summary>
+/// インデックス数を計算
+/// </summary>
+/// <param name="kSubdivision">分割数</param>
+/// <returns>インデックス数</returns>
+inline uint32_t CalculateSphereIndices(uint32_t kSubdivision) {
 	return kSubdivision * kSubdivision * 6;  // 面で描くため、頂点数は三角形abcと三角形cdbで系6つ
 };

@@ -3,7 +3,7 @@
 struct Material
 {
     float4 color;
-    int enableLghiting;
+    int enableLighting;
     int reflectionMode;
 };
 struct DirectionalLight
@@ -15,7 +15,7 @@ struct DirectionalLight
 
 ConstantBuffer<Material> gMaterial : register(b0);
 Texture2D<float4> gTexture : register(t0);
-SamplerState gSumpler : register(s0);
+SamplerState gSampler : register(s0);
 
 ConstantBuffer<DirectionalLight> gDirectionLight : register(b1);
 
@@ -27,9 +27,9 @@ struct PixelShaderOutput
 PixelShaderOutput main(VertexShaderOutput input) 
 {
     PixelShaderOutput output;
-    float4 textureColor = gTexture.Sample(gSumpler, input.texcoord);
+    float4 textureColor = gTexture.Sample(gSampler, input.texcoord);
     
-    if (gMaterial.enableLghiting != 0)
+    if (gMaterial.enableLighting != 0)
     {
         float cos = 0.0f;
         switch (gMaterial.reflectionMode)
