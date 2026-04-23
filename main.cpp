@@ -829,7 +829,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ID3D12Resource* materialResourceSprite = CreateBufferResource(device, sizeof(Material));
 	Material* spriteMaterialData = nullptr;
 	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&spriteMaterialData));
-	spriteMaterialData->color = { 1.0f, 1.0f, 1.0f, 0.0f };
+	spriteMaterialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	// 平行光源用リソース
 	ID3D12Resource* directionalLightResource = CreateBufferResource(device, sizeof(DirectionalLight));
