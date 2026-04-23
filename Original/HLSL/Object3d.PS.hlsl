@@ -42,7 +42,7 @@ PixelShaderOutput main(VertexShaderOutput input)
             case 1:
              // Half Lambert
              float NdotL = dot(normalize(input.normal), -gDirectionLight.direction);
-             cos = pow(NdotL * 0.5f + 0.5f, 2.0f);
+                cos = NdotL * 0.5f + 0.5f;
              break;
         }
         
