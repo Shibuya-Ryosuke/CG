@@ -9,7 +9,7 @@ enum class ReflectionMode : int32_t {
 };
 struct Material {
 	Vector4 color;
-	int32_t enableLighting = false;
+	int32_t enableLighting = 0;  // false
 	ReflectionMode reflectionMode = ReflectionMode::LAMBERT;
 };
 struct Sphere {

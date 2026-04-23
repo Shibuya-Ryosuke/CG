@@ -822,7 +822,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	Material* sphereMaterialData = nullptr;
 	materialResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&sphereMaterialData));
 	sphereMaterialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	sphereMaterialData->enableLighting = true;  // ライティングの適用
+	sphereMaterialData->enableLighting = 1;  // ライティングの適用(1:true)
 	sphereMaterialData->reflectionMode = ReflectionMode::LAMBERT;  // 反射モードの適用
 
 	// --- スプライト用のマテリアル ---
