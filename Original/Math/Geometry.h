@@ -11,6 +11,8 @@ struct Material {
 	Vector4 color;
 	int32_t enableLighting = 0;  // false
 	ReflectionMode reflectionMode = ReflectionMode::LAMBERT;
+    float padding[2];
+    Matrix4x4 uvTransform;
 };
 struct Sphere {
 	Vector3 center;

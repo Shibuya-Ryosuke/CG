@@ -819,17 +819,19 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// MaterialResourceを作成
 	// --- 球用のマテリアル ---
 	ID3D12Resource* materialResourceSphere = CreateBufferResource(device, sizeof(Material));
-	Material* sphereMaterialData = nullptr;
-	materialResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&sphereMaterialData));
-	sphereMaterialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	sphereMaterialData->enableLighting = 1;  // ライティングの適用(1:true)
-	sphereMaterialData->reflectionMode = ReflectionMode::LAMBERT;  // 反射モードの適用
+	Material* materialDataSphere = nullptr;
+	materialResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSphere));
+	materialDataSphere->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	materialDataSphere->enableLighting = 1;  // ライティングの適用(1:true)
+	materialDataSphere->reflectionMode = ReflectionMode::LAMBERT;  // 反射モードの適用
+	materialDataSphere->uvTransform = MakeIdentity4x4();  // 単位行列で初期化
 
 	// --- スプライト用のマテリアル ---
 	ID3D12Resource* materialResourceSprite = CreateBufferResource(device, sizeof(Material));
-	Material* spriteMaterialData = nullptr;
-	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&spriteMaterialData));
-	spriteMaterialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	Material* materialDataSprite = nullptr;
+	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
+	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	materialDataSprite->uvTransform = MakeIdentity4x4();
 
 	// 平行光源用リソース
 	ID3D12Resource* directionalLightResource = CreateBufferResource(device, sizeof(DirectionalLight));
@@ -998,7 +1000,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	Transform transform{
 		{1.0f,1.0f,1.0f},
 		{0.0f,0.0f,0.0f},
-		{0.0f,0.0f,0.0f}
+		{0.0f,0.0f,0.0f},
+	};
+	Transform uvTransformSprite{
+		{1.0f,1.0f,1.0f},
+		{0.0f,0.0f,0.0f},
+		{0.0f,0.0f,0.0f},
 	};
 
 	// 画角 (垂直方向 45度をラジアンに変換)
@@ -1139,9 +1146,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			ImGui::NewLine();
 
 			// 球のマテリアルの色を操作
-			ImGui::ColorEdit4("Sphere Material Color", reinterpret_cast<float*>(&sphereMaterialData->color));
+			ImGui::ColorEdit4("Sphere Material Color", reinterpret_cast<float*>(&materialDataSphere->color));
 			// スプライトのマテリアルの色を操作
-			ImGui::ColorEdit4("Sprite Material Color", reinterpret_cast<float*>(&spriteMaterialData->color));
+			ImGui::ColorEdit4("Sprite Material Color", reinterpret_cast<float*>(&materialDataSprite->color));
 			ImGui::NewLine();
 
 			// 球のテクスチャを操作
@@ -1151,13 +1158,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			ImGui::NewLine();
 
 			// 球の反射モードを操作
-			ImGui::Text("Sphere Lambert Mode");
-			ImGui::RadioButton("Lambert", reinterpret_cast<int*>(&sphereMaterialData->reflectionMode), static_cast<int>(ReflectionMode::LAMBERT));
-			ImGui::RadioButton("Half Lambert", reinterpret_cast<int*>(&sphereMaterialData->reflectionMode), static_cast<int>(ReflectionMode::HALF_LAMBERT));
+			ImGui::Text("Sphere Reflect Mode");
+			ImGui::RadioButton("Lambert", reinterpret_cast<int*>(&materialDataSphere->reflectionMode), static_cast<int>(ReflectionMode::LAMBERT));
+			ImGui::RadioButton("Half Lambert", reinterpret_cast<int*>(&materialDataSphere->reflectionMode), static_cast<int>(ReflectionMode::HALF_LAMBERT));
 			ImGui::NewLine();
 
 			// 2dUVCheckerの座標操作
 			ImGui::SliderFloat2("Sprite Position", &transformSprite.translate.x, 0.0f, 1280.0f);
+			ImGui::NewLine();
+
+			// uvTransformを操作
+			ImGui::Text("uvTransform");
+			ImGui::DragFloat2("translate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat2("scale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::SliderAngle("rotate", &uvTransformSprite.rotate.z);
 			ImGui::NewLine();
 
 			// カメラ行列(translateとrotateのみ)を操作
@@ -1171,6 +1185,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			// 毎フレーム平行光源の向きを正規化(ImGuiで変えられるようにしているため)
 			directionalLightData->direction = Normalize(directionalLightData->direction);
 
+			// uvTransformの生成
+			Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
+			uvTransformMatrix = uvTransformMatrix * MakeRotateZMatrix(uvTransformSprite.rotate.z);
+			uvTransformMatrix = uvTransformMatrix * MakeTranslateMatrix(uvTransformSprite.translate);
+			materialDataSprite->uvTransform = uvTransformMatrix;
 
 			// 回転
 			transform.rotate.y += 0.03f;
