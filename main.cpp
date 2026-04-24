@@ -26,6 +26,7 @@
 // 自作ヘッダー
 #include "Original/Math/Math.h"
 #include "Original/Light/Light.h"
+#include "Original/Loader/ModelLoader.h"
 
 // libのリンク
 #pragma comment(lib, "d3d12.lib")
@@ -817,7 +818,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
 	// MaterialResourceを作成
-	// --- 球用のマテリアル ---
+	// --- マテリアル ---
 	ID3D12Resource* materialResourceSphere = CreateBufferResource(device, sizeof(Material));
 	Material* materialDataSphere = nullptr;
 	materialResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSphere));
@@ -830,7 +831,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ID3D12Resource* materialResourceSprite = CreateBufferResource(device, sizeof(Material));
 	Material* materialDataSprite = nullptr;
 	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
-	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 0.0f };
 	materialDataSprite->uvTransform = MakeIdentity4x4();
 
 	// 平行光源用リソース
@@ -917,45 +918,50 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
 
-	// 球
-	uint32_t kSubdivision = 16;  // 分割数
-	uint32_t numSphereVertices = CalculateSphereVertices(kSubdivision);
-	uint32_t numSphereIndices = CalculateSphereIndices(kSubdivision);
-	// VertexResourceを作成
-	ID3D12Resource* vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * numSphereVertices);
+	
+
+	// ModelDataを使う
+	// モデル読み込み
+	ModelLoader::ModelData modelData = ModelLoader::LoadObjFile("resources", "axis.obj");
+
+	// VertexResourceを作成CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
+	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
 
 	// 頂点バッファビューを作成する
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 	// リソースの先頭のアドレスから使う
-	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
-	// 使用するリソースのサイズは頂点6つ分のサイズ
-	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * numSphereVertices;
+	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	// 使用するリソースのサイズは頂点のサイズ
+	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
 	// 1頂点あたりのサイズ
-	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
+	vertexBufferView.StrideInBytes = sizeof(VertexData);
 
 	// 頂点リソースにデータを書き込む
-	VertexData* vertexDataSphere = nullptr;
+	VertexData* vertexData = nullptr;
 	// 書き込むためのアドレスを取得
-	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
+	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	// 頂点データをリソースにコピー
+	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());
 
-	// Sphere用のIndexResourceを作成
-	ID3D12Resource* indexResourceSphere = CreateBufferResource(device, sizeof(uint32_t) * numSphereIndices);
 
-	// View
-	D3D12_INDEX_BUFFER_VIEW indexBufferViewSphere{};
-	// リソースの先頭アドレスから使う
-	indexBufferViewSphere.BufferLocation = indexResourceSphere->GetGPUVirtualAddress();
-	// 使用するリソースのサイズはインデックス分のサイズ
-	indexBufferViewSphere.SizeInBytes = sizeof(uint32_t) * numSphereIndices;
-	// インデックスはuint32_tとする
-	indexBufferViewSphere.Format = DXGI_FORMAT_R32_UINT;
+	//// Sphere用のIndexResourceを作成
+	//ID3D12Resource* indexResource = CreateBufferResource(device, sizeof(uint32_t) * numSphereIndices);
 
-	// インデックスリソースにデータを書き込む
-	uint32_t* indexDataSphere = nullptr;
-	indexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&indexDataSphere));
+	//// View
+	//D3D12_INDEX_BUFFER_VIEW indexBufferView{};
+	//// リソースの先頭アドレスから使う
+	//indexBufferView.BufferLocation = indexResource->GetGPUVirtualAddress();
+	//// 使用するリソースのサイズはインデックス分のサイズ
+	//indexBufferView.SizeInBytes = sizeof(uint32_t) * numSphereIndices;
+	//// インデックスはuint32_tとする
+	//indexBufferView.Format = DXGI_FORMAT_R32_UINT;
 
-	// 球生成
-	CreateSphere(kSubdivision, vertexDataSphere, indexDataSphere);
+	//// インデックスリソースにデータを書き込む
+	//uint32_t* indexData = nullptr;
+	//indexResource->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
+
+	//// 球生成
+	//CreateSphere(kSubdivision, vertexData, indexData);
 
 
 	// Sprite用のIndexResourceを作成
@@ -1040,8 +1046,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	// 使いたいテクスチャのファイルパスリスト
 	std::vector<std::string> texturePaths = {
-		"resources/uvChecker.png",
-		"resources/monsterBall.png"
+		modelData.material.textureFilePath,
 	};
 	// テクスチャデータ保持する配列
 	std::vector<TextureData> textures;
@@ -1145,25 +1150,26 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			ImGui::SliderFloat("intensity", &directionalLightData->intensity, 0.0f, 3.0f);
 			ImGui::NewLine();
 
-			// 球のマテリアルの色を操作
+			// モデルのマテリアルの色を操作
 			ImGui::ColorEdit4("Sphere Material Color", reinterpret_cast<float*>(&materialDataSphere->color));
 			// スプライトのマテリアルの色を操作
 			ImGui::ColorEdit4("Sprite Material Color", reinterpret_cast<float*>(&materialDataSprite->color));
 			ImGui::NewLine();
 
-			// 球のテクスチャを操作
-			ImGui::Text("Draw Texture Select");
-			ImGui::RadioButton("uvChecker", reinterpret_cast<int*>(&drawTextureIndex), static_cast<uint32_t>(DrawTextureIndex::UV_CHECKER));
-			ImGui::RadioButton("monsterBall", reinterpret_cast<int*>(&drawTextureIndex), static_cast<uint32_t>(DrawTextureIndex::MONSTER_BALL));
-			ImGui::NewLine();
-
-			// 球の反射モードを操作
+			// モデルの反射モードを操作
 			ImGui::Text("Sphere Reflect Mode");
 			ImGui::RadioButton("Lambert", reinterpret_cast<int*>(&materialDataSphere->reflectionMode), static_cast<int>(ReflectionMode::LAMBERT));
 			ImGui::RadioButton("Half Lambert", reinterpret_cast<int*>(&materialDataSphere->reflectionMode), static_cast<int>(ReflectionMode::HALF_LAMBERT));
 			ImGui::NewLine();
 
-			// 2dUVCheckerの座標操作
+			// モデルの座標操作
+			ImGui::Text("Model Transform");
+			ImGui::DragFloat3("Model Position", &transform.translate.x, 0.1f);
+			ImGui::DragFloat3("Model Rotate", &transform.rotate.x, 0.01f);
+			ImGui::DragFloat3("Model Scale", &transform.scale.x, 0.1f);
+			ImGui::NewLine();
+
+			// スプライトの座標操作
 			ImGui::SliderFloat2("Sprite Position", &transformSprite.translate.x, 0.0f, 1280.0f);
 			ImGui::NewLine();
 
@@ -1191,8 +1197,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			uvTransformMatrix = uvTransformMatrix * MakeTranslateMatrix(uvTransformSprite.translate);
 			materialDataSprite->uvTransform = uvTransformMatrix;
 
-			// 回転
-			transform.rotate.y += 0.03f;
+			// 行列更新
 			Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 
 			Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
@@ -1246,8 +1251,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			// RootSignatureを設定。PSOに設定しているけど別途設定が必要
 			commandList->SetGraphicsRootSignature(rootSignature);
 			commandList->SetPipelineState(graphicsPipelineState);  // PSOを設定
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);  // VBVを設定
-			commandList->IASetIndexBuffer(&indexBufferViewSphere);  // IBVを設定
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferView);  // VBVを設定
+			//commandList->IASetIndexBuffer(&indexBufferView);  // IBVを設定
 			// 形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけばよい
 			commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -1262,7 +1267,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			commandList->SetGraphicsRootDescriptorTable(2, textures[static_cast<uint32_t>(drawTextureIndex)].srvHandleGPU);
 
 			/// 球描画
-			commandList->DrawIndexedInstanced(numSphereIndices, 1, 0, 0, 0);
+			commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
 
 			// Spriteの描画。変更が必要なものだけ変更する
@@ -1346,7 +1351,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	transformationMatrixResource->Release();
 	materialResourceSprite->Release();
 	materialResourceSphere->Release();
-	vertexResourceSphere->Release();
+	vertexResource->Release();
 	graphicsPipelineState->Release();
 	signatureBlob->Release();
 	if (errorBlob) {

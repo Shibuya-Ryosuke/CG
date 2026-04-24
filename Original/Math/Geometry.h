@@ -1,5 +1,6 @@
 #pragma once
 #include "Vector.h"
+#include "Matrix.h"
 #include <numbers>
 #include <vector>
 

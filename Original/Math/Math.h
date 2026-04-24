@@ -125,10 +125,10 @@ inline Matrix3x3 MakeViewportMatrix(float left, float top, float width, float he
 /// アフィン変換行列を高速に生成
 inline Matrix3x3 MakeAffineMatrix(Vector2 Scale, float Rotate, Vector2 Translate) {
 	Matrix3x3 result{};
-	result.m[0][0] = Scale.x * cosf(Rotate);
-	result.m[0][1] = Scale.x * sinf(Rotate);
-	result.m[1][0] = Scale.y * -sinf(Rotate);
-	result.m[1][1] = Scale.y * cosf(Rotate);
+	result.m[0][0] = Scale.x * std::cos(Rotate);
+	result.m[0][1] = Scale.x * std::sin(Rotate);
+	result.m[1][0] = Scale.y * -std::sin(Rotate);
+	result.m[1][1] = Scale.y * std::cos(Rotate);
 	result.m[2][0] = Translate.x;
 	result.m[2][1] = Translate.y;
 	result.m[2][2] = 1.0f;
@@ -290,10 +290,10 @@ inline Vector3 TransformVector3(const Vector3& vector, const Matrix4x4& matrix) 
 	}
 	return result;
 }
-/// X軸周りの回転行列
+/// X軸回転行列
 inline Matrix4x4 MakeRotateXMatrix(float radian) {
-	float c = cosf(radian);
-	float s = sinf(radian);
+	float c = std::cos(radian);
+	float s = std::sin(radian);
 	return {
 		{
 			{1.0f, 0.0f, 0.0f, 0.0f},
@@ -303,10 +303,10 @@ inline Matrix4x4 MakeRotateXMatrix(float radian) {
 		}
 	};
 }
-/// Y軸周りの回転行列
+/// Y軸回転行列
 inline Matrix4x4 MakeRotateYMatrix(float radian) {
-	float c = cosf(radian);
-	float s = sinf(radian);
+	float c = std::cos(radian);
+	float s = std::sin(radian);
 	return {
 		{
 			{ c,    0.0f, -s,   0.0f },
@@ -316,10 +316,10 @@ inline Matrix4x4 MakeRotateYMatrix(float radian) {
 		}
 	};
 }
-/// Z軸周りの回転行列
+/// Z軸回転行列
 inline Matrix4x4 MakeRotateZMatrix(float radian) {
-	float c = cosf(radian);
-	float s = sinf(radian);
+	float c = std::cos(radian);
+	float s = std::sin(radian);
 	return {
 		{
 			{ c,    s,    0.0f, 0.0f },

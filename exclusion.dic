@@ -11,3 +11,5 @@ wparam
 lparam
 texcoord
 subresources
+normals
+texcoords
