@@ -18,6 +18,7 @@
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
+#include <propvarutil.h>
 #include "externals/DirectXTex/DirectXTex.h"
 #include "externals/DirectXTex/d3dx12.h"
 
@@ -41,9 +42,11 @@
 #pragma comment(lib, "dxcompiler.lib")
 #pragma comment(lib, "DirectXTex.lib")
 #pragma comment(lib, "xaudio2.lib")
-#pragma comment(lib, "Mfplat.lib")
-#pragma comment(lib, "Mfreadwrite.lib")
+#pragma comment(lib, "mf.lib")
+#pragma comment(lib, "mfplat.lib")
+#pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "Ole32.lib")
+#pragma comment(lib, "mfuuid.lib")
 
 // ログファイルをあらかじめ作っておく
 std::ofstream logStream;
@@ -427,64 +430,80 @@ D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<
 	return handleGPU;
 }
 
-SoundData SoundLoadWave(const char* filename) {
-	// ファイル入力ストリームのインスタンス
-	std::ifstream file;
-	// .wavファイルをバイナリモードで開く
-	file.open(filename, std::ios_base::binary);
-	// ファイルオープン失敗を検出する
-	assert(file.is_open());
+// 音声ファイルをロード
+// .wav .mp3 .aac .m4a .wma に対応
+SoundData SoundLoad(const char* filename) {
+	HRESULT hr = S_OK;
 
-	// RIFFヘッダーの読み込み
-	RiffHeader riff;
-	file.read((char*)&riff, sizeof(riff));
-	// ファイルがRIFFかチェック
-	if (strncmp(riff.chunk.id, "RIFF", 4) != 0) {
-		assert(0);
+	// char*からwchar_t*へ変換
+	// 必要なバッファサイズを取得
+	int32_t size = MultiByteToWideChar(CP_ACP, 0, filename, -1, nullptr, 0);
+	// 変換
+	std::wstring wstr(static_cast<size_t>(size), L'\0');
+	MultiByteToWideChar(CP_ACP, 0, filename, -1, &wstr[0], size);
+
+	// SourceReaderの作成
+	Microsoft::WRL::ComPtr<IMFSourceReader> pReader;
+	hr = MFCreateSourceReaderFromURL(wstr.c_str(), nullptr, &pReader);
+	assert(SUCCEEDED(hr));
+
+	// 出力形式の設定
+	Microsoft::WRL::ComPtr<IMFMediaType> pPartialType;
+	MFCreateMediaType(&pPartialType);
+	pPartialType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);  // 音声であることを指定
+	pPartialType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);  // PCM形式(非圧縮)を指定
+	pReader->SetCurrentMediaType(static_cast<DWORD>(MF_SOURCE_READER_FIRST_AUDIO_STREAM), nullptr, pPartialType.Get());
+
+	// 最終的なフォーマット情報を取得
+	Microsoft::WRL::ComPtr<IMFMediaType> pUncompressedAudioType;
+	pReader->GetCurrentMediaType(static_cast<DWORD>(MF_SOURCE_READER_FIRST_AUDIO_STREAM), &pUncompressedAudioType);
+
+	WAVEFORMATEX* pWfex = nullptr;
+	uint32_t cbFormat = 0;
+	// MFから構造体を取り出す
+	hr = MFCreateWaveFormatExFromMFMediaType(pUncompressedAudioType.Get(), &pWfex, &cbFormat);
+	assert(SUCCEEDED(hr));
+
+	// データの読み込みループ
+	std::vector<BYTE> audioData;
+	while (true) {
+		DWORD dwFlags = 0;
+		Microsoft::WRL::ComPtr<IMFSample> pSample;
+		pReader->ReadSample(static_cast<DWORD>(MF_SOURCE_READER_FIRST_AUDIO_STREAM), 0, nullptr, &dwFlags, nullptr, &pSample);
+		
+		if (dwFlags & MF_SOURCE_READERF_ENDOFSTREAM) break;  // ファイルの終わり
+
+		if (pSample) {
+			Microsoft::WRL::ComPtr<IMFMediaBuffer> pBuffer;
+			// サンプルからバッファを取り出す
+			pSample->ConvertToContiguousBuffer(&pBuffer);
+
+			BYTE* pRawData = nullptr;
+			DWORD currentLength = 0;
+
+			// バッファをロックし、生データのポインタを取得
+			pBuffer->Lock(&pRawData, nullptr, &currentLength);
+
+			// audioDataベクトルに読み込んだサイズ分を一気にコピーして展開
+			if (currentLength > 0) {
+				// pRawData から pRawData + currentLength までの範囲を末尾に追加
+				audioData.insert(audioData.end(), pRawData, pRawData + currentLength);
+			}
+
+			// ロックを解除
+			pBuffer->Unlock();
+		}
 	}
-	// タイプがWAVEがチェック
-	if (strncmp(riff.type, "WAVE", 4) != 0) {
-		assert(0);
-	}
 
-	// Formatチャンクの読み込み
-	FormatChunk format = {};
-	// チャンクヘッダーの確認
-	file.read((char*)&format, sizeof(ChunkHeader));
-	if (strncmp(format.chunk.id, "fmt", 4) != 0) {
-		assert(0);
-	}
-	// チャンク本体の読み込み
-	assert(format.chunk.size <= static_cast<unsigned>(sizeof(format.fmt)));
-	file.read((char*)&format.fmt, format.chunk.size);
-
-	// Dataチャンクの読み込み
-	ChunkHeader data;
-	file.read((char*)&data, sizeof(data));
-	// JUNKチャンクを検出した場合
-	if (strncmp(data.id, "JUNK", 4) == 0) {
-		// 読み取り位置をJUNKチャンクの終わりまで進める
-		file.seekg(data.size, std::ios_base::cur);
-		// 再読み込み
-		file.read((char*)&data, sizeof(data));
-	}
-
-	if (strncmp(data.id, "data", 4) != 0) {
-		assert(0);
-	}
-
-	// Dataチャンクのデータ部(波形データ)の読み込み
-	char* pBuffer = new char[static_cast<size_t>(data.size)];
-	file.read(pBuffer, data.size);
-
-	// Waveファイルを閉じる
-	file.close();
-
-	// returnするための音声データ
+	// 結果を返す
 	SoundData soundData = {};
-	soundData.wfex = format.fmt;
-	soundData.pBuffer = reinterpret_cast<BYTE*>(pBuffer);
-	soundData.bufferSize = static_cast<unsigned>(data.size);
+	soundData.wfex = *pWfex;
+	soundData.bufferSize = (unsigned int)audioData.size();
+	soundData.pBuffer = new BYTE[audioData.size()];
+	memcpy(soundData.pBuffer, audioData.data(), audioData.size());
+
+	// 解放
+	CoTaskMemFree(pWfex);
 
 	return soundData;
 }
@@ -556,6 +575,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	std::string logFilePath = std::string("logs/") + dateString + ".log";
 	// あらかじめ作っておいたログファイルにパスを教えて準備完了
 	logStream.open(logFilePath);
+
 
 	// Microsoft Media Foundation(MF)の初期化
 	MFStartup(MF_VERSION);
@@ -1254,7 +1274,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
 	// 音声読み込み
-	SoundData soundData1 = SoundLoadWave("resources/Alarm01.wav");
+	SoundData soundData1 = SoundLoad("resources/Alarm01.wav");
 	// 音声再生
 	SoundPlayWave(xAudio2.Get(), soundData1);
 
@@ -1463,15 +1483,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		}
 	}
 
-	// XAudio2解放
-	xAudio2.Reset();
-	// 音声データ解放
-	SoundUnload(&soundData1);
-
-	// COM終了
-	CoUninitialize();
-
-	// ImGuiの終了処理。初期化と逆に行う
+	// ImGuiの終了処理
     #ifdef USE_IMGUI
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -1482,9 +1494,26 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	CloseHandle(fenceEvent);
 	CloseWindow(hwnd);
 
+	// マスターボイス終了
+	if (masterVoice) {
+		masterVoice->DestroyVoice();
+		masterVoice = nullptr;
+	}
+
+	// XAudio2解放
+	xAudio2.Reset();
+
+	// 音声データ解放
+	SoundUnload(&soundData1);
+
 	// MF終了
 	MFShutdown();
-	
+
+	// COM終了
+	CoUninitialize();
+
+	// ログ終了
+	logStream.close();
 
 	return 0;
 }
