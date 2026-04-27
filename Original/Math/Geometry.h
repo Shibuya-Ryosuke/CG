@@ -1,8 +1,8 @@
 #pragma once
 #include "Vector.h"
 #include "Matrix.h"
-#include <numbers>
 #include <vector>
+#include <numbers>
 
 enum class ReflectionMode : int32_t {
 	LAMBERT,
