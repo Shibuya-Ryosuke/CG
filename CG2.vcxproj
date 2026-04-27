@@ -47,6 +47,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Original\Audio\Audio.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
