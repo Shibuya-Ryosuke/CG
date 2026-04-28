@@ -48,6 +48,7 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Original\Audio\Audio.cpp" />
+    <ClCompile Include="Original\Base\Logger.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -70,6 +71,8 @@
     <ClInclude Include="externals\imgui\imstb_textedit.h" />
     <ClInclude Include="externals\imgui\imstb_truetype.h" />
     <ClInclude Include="Original\Audio\Audio.h" />
+    <ClInclude Include="Original\Base\Logger.h" />
+    <ClInclude Include="Original\Base\WinApp.h" />
     <ClInclude Include="Original\Light\Light.h" />
     <ClInclude Include="Original\Loader\ModelLoader.h" />
     <ClInclude Include="Original\Math\Math.h" />

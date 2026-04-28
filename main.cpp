@@ -44,6 +44,8 @@
 #pragma comment(lib, "Ole32.lib")
 #pragma comment(lib, "mfuuid.lib")
 
+
+using namespace Engine;
 // ログファイルをあらかじめ作っておく
 std::ofstream logStream;
 
