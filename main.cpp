@@ -15,13 +15,13 @@
 #include <dxgidebug.h>
 #include <dxcapi.h>
 
-#include "externals/DirectXTex/DirectXTex.h"
-#include "externals/DirectXTex/d3dx12.h"
+#include "Original/Externals/DirectXTex/DirectXTex.h"
+#include "Original/Externals/DirectXTex/d3dx12.h"
 
 #ifdef USE_IMGUI
-#include "externals/imgui/imgui.h"
-#include "externals/imgui/imgui_impl_dx12.h"
-#include "externals/imgui/imgui_impl_win32.h"
+#include "Original/Externals/imgui/imgui.h"
+#include "Original/Externals/imgui/imgui_impl_dx12.h"
+#include "Original/Externals/imgui/imgui_impl_win32.h"
 #endif
 
 // 自作ヘッダー

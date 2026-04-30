@@ -32,14 +32,14 @@ namespace Engine {
 		/// </summary>
 		/// <param name="str">変換したいwstring型</param>
 		/// <returns>string型</returns>
-		std::string ConvertString(const std::wstring& str);
+		static std::string ConvertString(const std::wstring& str);
 
 		/// <summary>
 		/// std::stringからstd::wstringへ変換
 		/// </summary>
 		/// <param name="str">変換したいstring型</param>
 		/// <returns>wstring型</returns>
-		std::wstring ConvertString(const std::string& str);
+		static std::wstring ConvertString(const std::string& str);
 
 		/// <summary>
 		/// MiniDumpを出力
