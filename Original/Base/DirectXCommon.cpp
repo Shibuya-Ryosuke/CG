@@ -168,6 +168,8 @@ namespace Engine{
 			device_->CreateRenderTargetView(swapChainResources_[i].Get(), &rtvDesc, rtvHandles[i]);
 		}
 
+		// 深度バッファの生成
+		CreateDepthStencilView();
 
 
 		// 初期値0でFenceを作る
@@ -209,7 +211,7 @@ namespace Engine{
 		fence_.Reset();
 
 		// 深度バッファ
-		dsvHeap_.Reset();
+		dsvDescriptorHeap_.Reset();
 		depthStencilResource_.Reset();
 
 		// レンダーターゲット / スワップチェーン
@@ -229,7 +231,7 @@ namespace Engine{
 		device_.Reset();
 	}
 
-	void DirectXCommon::PreRender() {
+	void DirectXCommon::PreDraw() {
 		// これから書き込むバックバッファのインデックスを取得
 		uint32_t backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
 
@@ -248,7 +250,7 @@ namespace Engine{
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = GetCPUDescriptorHandle(rtvHeap_, descriptorSizeRTV, backBufferIndex);
 
 		// DSVのハンドル取得
-		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap_->GetCPUDescriptorHandleForHeapStart();
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 
 		// コマンドリストにセット
 		commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
@@ -279,7 +281,7 @@ namespace Engine{
 	}
 
 
-	void DirectXCommon::PostRender() {
+	void DirectXCommon::PostDraw() {
 		// 現在のバックバッファのインデックスを取得
 		uint32_t backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
 

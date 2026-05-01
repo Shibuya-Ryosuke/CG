@@ -16,6 +16,8 @@ namespace Engine {
         /// </summary>
         void Initialize();
 
+        void BeginDraw();
+
         /// <summary>
         /// 終了処理
         /// </summary>

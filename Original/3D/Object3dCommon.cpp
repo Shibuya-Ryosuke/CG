@@ -13,7 +13,14 @@ namespace Engine {
 	void Object3dCommon::Initialize() {
 		dxCommon_ = DirectXCommon::GetInstance();
 		CreateRootSignature();
+		CreatePipelineState();
+	}
 
+	void Object3dCommon::BeginDraw() {
+		auto commandList = dxCommon_->GetCommandList();
+		commandList->SetGraphicsRootSignature(rootSignature_.Get());
+		commandList->SetPipelineState(graphicsPipelineState_.Get());
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
 	void Object3dCommon::Finalize() {

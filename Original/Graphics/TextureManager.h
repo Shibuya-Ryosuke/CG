@@ -41,6 +41,20 @@ namespace Engine {
 			return textures_[handle].resource.Get();
 		}
 
+		D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) {
+			assert(index < kMaxTextures); // 最大数を超えていないかチェック
+
+			// 1. ヒープの先頭住所を取得
+			D3D12_GPU_DESCRIPTOR_HANDLE handleGPU = descriptorHeap_->GetGPUDescriptorHandleForHeapStart();
+
+			// 2. インデックス分だけ後ろにずらす
+			// (1つあたりのサイズ * 何番目か)
+			handleGPU.ptr += static_cast<unsigned long long>(descriptorSize_) * index;
+
+			return handleGPU;
+		}
+
+
 	private:
 		TextureManager() = default;
 		~TextureManager() = default;
@@ -58,6 +72,9 @@ namespace Engine {
 		std::unordered_map<std::string, uint32_t> filePathMap_; // 重複読み込み防止
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources_;  // 中間リソースを一時的に貯めておく
 
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_; // SRV用の棚
+		uint32_t descriptorSize_ = 0;                                 // 1マス分のサイズ
+		const size_t kMaxTextures = 128;                             // 最大数（任意）
 
 		// Textureデータ読み込み
 		DirectX::ScratchImage LoadTexture(const std::string& filePath);

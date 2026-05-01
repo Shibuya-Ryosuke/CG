@@ -12,12 +12,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Original\2D\Sprite.cpp" />
+    <ClCompile Include="Original\2D\SpriteCommon.cpp" />
+    <ClCompile Include="Original\3D\Object3d.cpp" />
     <ClCompile Include="Original\3D\Object3dCommon.cpp" />
     <ClCompile Include="Original\Audio\Audio.cpp" />
     <ClCompile Include="Original\Base\DirectXCommon.cpp" />
     <ClCompile Include="Original\Base\Logger.cpp" />
     <ClCompile Include="Original\Base\ShaderCompiler.cpp" />
     <ClCompile Include="Original\Base\WinApp.cpp" />
+    <ClCompile Include="Original\Camera\Camera.cpp" />
     <ClCompile Include="Original\Externals\imgui\imgui.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -41,6 +45,7 @@
     </ClCompile>
     <ClCompile Include="Original\Graphics\TextureManager.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
+    <ClCompile Include="Original\OriginalEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Original\HLSL\Object3d.PS.hlsl">
@@ -53,6 +58,8 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Original\2D\Sprite.h" />
+    <ClInclude Include="Original\2D\SpriteCommon.h" />
     <ClInclude Include="Original\3D\Object3d.h" />
     <ClInclude Include="Original\3D\Object3dCommon.h" />
     <ClInclude Include="Original\Audio\Audio.h" />
@@ -60,6 +67,7 @@
     <ClInclude Include="Original\Base\Logger.h" />
     <ClInclude Include="Original\Base\ShaderCompiler.h" />
     <ClInclude Include="Original\Base\WinApp.h" />
+    <ClInclude Include="Original\Camera\Camera.h" />
     <ClInclude Include="Original\Externals\imgui\imconfig.h" />
     <ClInclude Include="Original\Externals\imgui\imgui.h" />
     <ClInclude Include="Original\Externals\imgui\imgui_impl_dx12.h" />
@@ -76,6 +84,7 @@
     <ClInclude Include="Original\Math\Geometry.h" />
     <ClInclude Include="Original\Math\Transform.h" />
     <ClInclude Include="Original\Math\Vector.h" />
+    <ClInclude Include="Original\OriginalEngine.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Original\HLSL\Object3d.hlsli">

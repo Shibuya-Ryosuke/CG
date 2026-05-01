@@ -26,12 +26,12 @@ namespace Engine {
 		/// <summary>
 		/// フレーム開始
 		/// </summary>
-		void PreRender();
+		void PreDraw();
 
 		/// <summary>
 		/// フレーム終了
 		/// </summary>
-		void PostRender();
+		void PostDraw();
 
 		// ディスクリプタヒープの生成
 		static Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(
@@ -50,6 +50,8 @@ namespace Engine {
 		D3D12_CPU_DESCRIPTOR_HANDLE GetDSVHandle() const {
 			return dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 		}
+		int32_t GetBackBufferWidth() { return backBufferWidth_; };
+		int32_t GetBackBufferHeight() { return backBufferHeight_; };
 
 
 	private:
@@ -72,7 +74,6 @@ namespace Engine {
 
 		// 深度バッファ
 		Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource_;
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvHeap_;
 
 		// フェンス、イベント
 		Microsoft::WRL::ComPtr<ID3D12Fence> fence_;

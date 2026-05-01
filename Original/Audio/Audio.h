@@ -44,6 +44,7 @@ namespace Engine {
 		/// <param name="loop">ループの有無(デフォルトはfalse)</param>
 		static void PlayAudio(uint32_t handle, float volume, bool loop = false);
 
+		static Audio* GetInstance();
 	private:
 		Audio() = default;
 		~Audio() = default;
@@ -52,7 +53,6 @@ namespace Engine {
 		Audio& operator=(const Audio&) = delete;
 
 		static Audio* instance;
-		static Audio* GetInstance();
 
 		Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
 		IXAudio2MasteringVoice* masterVoice = nullptr;
