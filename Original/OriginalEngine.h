@@ -1,13 +1,17 @@
 #pragma once
 #include "Base/WinApp.h"
 #include "Base/DirectXCommon.h"
+#include "Base/Logger.h"
 #include "Graphics/TextureManager.h"
+#include "Loader/ModelLoader.h"
 #include "Base/ShaderCompiler.h"
 #include "3D/Object3dCommon.h"
 #include "3D/Object3d.h"
 #include "2D/SpriteCommon.h"
 #include "2D/Sprite.h"
 #include "Audio/Audio.h"
+#include "Math/Math.h"
+#include "Camera/Camera.h"
 #include <memory>
 
 namespace Engine {

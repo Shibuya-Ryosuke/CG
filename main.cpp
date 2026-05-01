@@ -1128,10 +1128,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	assert(SUCCEEDED(hr));
 
 
-	// 音声読み込み
-	uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
-	// 一回だけ再生
-	Audio::PlayAudio(alarm, 1.0f);
+	
 
 	MSG msg{};
 	// ウィンドウの×ボタンが押されるまでループ
