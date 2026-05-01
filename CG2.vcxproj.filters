@@ -60,6 +60,9 @@
     <ClCompile Include="Original\Base\ShaderCompiler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Original\Graphics\TextureManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Original\HLSL\Object3d.PS.hlsl" />
@@ -125,6 +128,9 @@
     </ClInclude>
     <ClInclude Include="Original\Externals\imgui\imstb_truetype.h">
       <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Graphics\TextureManager.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

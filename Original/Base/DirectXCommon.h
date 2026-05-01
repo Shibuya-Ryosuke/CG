@@ -42,6 +42,8 @@ namespace Engine {
 			const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
 
+		static Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device> device, size_t sizeInBytes);
+
 		// ゲッター
 		ID3D12Device* GetDevice() const { return device_.Get(); };
 		ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); };
