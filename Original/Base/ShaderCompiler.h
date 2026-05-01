@@ -6,6 +6,8 @@
 namespace Engine {
     class ShaderCompiler {
     public:
+        static ShaderCompiler* GetInstance();
+
         void Initialize();
         Microsoft::WRL::ComPtr<IDxcBlob> Compile(const std::wstring& filePath, const wchar_t* profile);
 

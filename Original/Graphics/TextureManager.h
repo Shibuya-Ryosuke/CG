@@ -10,6 +10,7 @@
 
 namespace Engine {
 	class TextureManager {
+	public:
 		// インスタンス取得
 		static TextureManager* GetInstance();
 

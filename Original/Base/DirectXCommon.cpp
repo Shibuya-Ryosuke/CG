@@ -382,5 +382,52 @@ namespace Engine{
 		return resource;
 	}
 
+	void DirectXCommon::CreateDepthStencilView() {
+		// 生成するResourceの設定
+		D3D12_RESOURCE_DESC resourceDesc{};
+		resourceDesc.Width = backBufferWidth_;  // Textureの幅
+		resourceDesc.Height = backBufferHeight_;  // Textureの高さ
+		resourceDesc.MipLevels = 1;  // mipmapの数
+		resourceDesc.DepthOrArraySize = 1;  // 奥行き or 配列Textureの数
+		resourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;  // DepthStencilとして利用可能なフォーマット
+		resourceDesc.SampleDesc.Count = 1;  // サンプリングのカウント。1固定
+		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;  // Textureの次元数。2次元
+		resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;  // DepthStencilとして使う通知
+
+		// 利用するHeapの設定
+		D3D12_HEAP_PROPERTIES heapProperties{};
+		heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;  // VRAM上に作る
+
+		// 深度値のクリア設定
+		D3D12_CLEAR_VALUE depthClearValue{};
+		depthClearValue.DepthStencil.Depth = 1.0f;  // 1.0f(最大値)でクリア
+		depthClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;  // フォーマット。Resourceと合わせる
+
+		// Resourceの生成
+		HRESULT hr = device_->CreateCommittedResource(
+			&heapProperties,  // Heapの設定
+			D3D12_HEAP_FLAG_NONE,  // Heapの特殊な設定。特になし
+			&resourceDesc,  // Resourceの設定
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,  // 深度阿多を書き込む状態にしておく
+			&depthClearValue,  // Clear最適値
+			IID_PPV_ARGS(&depthStencilResource_)  // 作成するResourceポインタへのポインタ
+		);
+		assert(SUCCEEDED(hr));
+
+		// DSV用ディスクリプタヒープの作成
+		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
+		dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		dsvHeapDesc.NumDescriptors = 1;
+		hr = device_->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvDescriptorHeap_));
+		assert(SUCCEEDED(hr));
+
+		// DSVの設定
+		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+		dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;  // Format。基本的にはResourceに合わせる
+		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;  // 2dTexture
+		// DSVHeapの先頭にDSVを作る
+		device_->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+	}
+
 
 }

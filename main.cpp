@@ -947,7 +947,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	// ModelDataを使う
 	// モデル読み込み
-	ModelLoader::ModelData modelData = ModelLoader::LoadObjFile("resources", "axis.obj");
+	ModelLoader::ModelData modelData = ModelLoader::LoadObjFile("resources/axis.obj");
 
 	// VertexResourceを作成CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());

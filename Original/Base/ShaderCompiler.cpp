@@ -10,6 +10,11 @@
 
 
 namespace Engine {
+    ShaderCompiler* ShaderCompiler::GetInstance() {
+        static ShaderCompiler instance;
+        return &instance;
+    }
+
     void ShaderCompiler::Initialize() {
         // DXCの初期化
         HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils_));

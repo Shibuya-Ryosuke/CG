@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Original\3D\Object3dCommon.cpp" />
     <ClCompile Include="Original\Audio\Audio.cpp" />
     <ClCompile Include="Original\Base\DirectXCommon.cpp" />
     <ClCompile Include="Original\Base\Logger.cpp" />
@@ -52,6 +53,8 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Original\3D\Object3d.h" />
+    <ClInclude Include="Original\3D\Object3dCommon.h" />
     <ClInclude Include="Original\Audio\Audio.h" />
     <ClInclude Include="Original\Base\DirectXCommon.h" />
     <ClInclude Include="Original\Base\Logger.h" />

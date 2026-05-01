@@ -2,13 +2,22 @@
 #include <fstream>
 #include <sstream>
 #include <cassert>
+#include <dxgidebug.h>
 
 namespace Engine {
-	ModelLoader::MaterialData ModelLoader::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
+	ModelLoader::MaterialData ModelLoader::LoadMaterialTemplateFile(const std::string& filePath) {
+		OutputDebugStringA((filePath + "\n").c_str());
 		MaterialData materialData;  // 構築するMaterialData
 		std::string line;  // ファイルから読んだ1行を格納するもの
-		std::ifstream file(directoryPath + "/" + filename);  // ファイルを開く
+		std::ifstream file(filePath);  // ファイルを開く
 		assert(file.is_open());  // とりあえず開けなかったら止める
+
+		// filePath からディレクトリパスを抽出
+		std::string directoryPath = "";
+		size_t pos = filePath.find_last_of('/');
+		if (pos != std::string::npos) {
+			directoryPath = filePath.substr(0, pos + 1); // "/" を含めて切り出す
+		}
 
 		while (std::getline(file, line)) {
 			std::string identifier;
@@ -20,21 +29,22 @@ namespace Engine {
 				std::string textureFilename;
 				s >> textureFilename;
 				// 連続してファイルパスにする
-				materialData.textureFilePath = directoryPath + "/" + textureFilename;
+				materialData.textureFilePath = directoryPath + textureFilename;
 			}
 		}
 
 		return materialData;
 	}
 
-	ModelLoader::ModelData ModelLoader::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
+	ModelLoader::ModelData ModelLoader::LoadObjFile(const std::string& filePath) {
+		OutputDebugStringA((filePath + "\n").c_str());
 		ModelData modelData;  // 構築するModelData
 		std::vector<Vector4> positions;  // 位置
 		std::vector<Vector3> normals;  // 法線
 		std::vector<Vector2> texcoords;  // テクスチャ座標
 		std::string line;  // ファイルから読んだ1行を格納するもの
 
-		std::ifstream file(directoryPath + "/" + filename);  // ファイルを開く
+		std::ifstream file(filePath);  // ファイルを開く
 		assert(file.is_open());  // とりあえず開けなかったら止める
 
 		while (std::getline(file, line)) {
@@ -84,11 +94,21 @@ namespace Engine {
 				modelData.vertices.push_back(triangle[1]);
 				modelData.vertices.push_back(triangle[0]);
 			} else if (identifier == "mtllib") {
-				// materialTemplateLibraryファイルの名前を取得する
 				std::string materialFilename;
 				s >> materialFilename;
-				// 基本的にobjファイルと同一階層にmtlは存在させるので、ディレクトリ名とファイル名を渡す
-				modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
+
+				// 1. objファイルのパスからディレクトリ部分を抽出
+				std::string directoryPath = "";
+				size_t pos = filePath.find_last_of('/');
+				if (pos != std::string::npos) {
+					directoryPath = filePath.substr(0, pos + 1);
+				}
+
+				// 2. ディレクトリパスと mtlファイル名を結合してフルパスを作る
+				std::string mtlFilePath = directoryPath + materialFilename;
+
+				// 3. フルパスを渡してロードする
+				modelData.material = LoadMaterialTemplateFile(mtlFilePath);
 			}
 		}
 		return modelData;

@@ -47,6 +47,9 @@ namespace Engine {
 		// ゲッター
 		ID3D12Device* GetDevice() const { return device_.Get(); };
 		ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); };
+		D3D12_CPU_DESCRIPTOR_HANDLE GetDSVHandle() const {
+			return dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+		}
 
 
 	private:
@@ -79,5 +82,11 @@ namespace Engine {
 		// 画面サイズ保持
 		int32_t backBufferWidth_ = 0;
 		int32_t backBufferHeight_ = 0;
+
+		// DSV用ディスクリプタヒープ
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap_;
+
+		// DSV作成用の内部関数
+		void CreateDepthStencilView();
 	};
 }
