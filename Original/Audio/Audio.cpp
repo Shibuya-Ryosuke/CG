@@ -1,4 +1,9 @@
 #include "Audio.h"
+#include <mfapi.h>
+#include <mfidl.h>  // これがないとエラーになる
+#include <mfreadwrite.h>
+#include <string>
+
 #include <cassert>
 
 namespace Engine {

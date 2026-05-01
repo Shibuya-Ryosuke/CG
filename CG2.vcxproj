@@ -15,6 +15,7 @@
     <ClCompile Include="Original\Audio\Audio.cpp" />
     <ClCompile Include="Original\Base\DirectXCommon.cpp" />
     <ClCompile Include="Original\Base\Logger.cpp" />
+    <ClCompile Include="Original\Base\ShaderCompiler.cpp" />
     <ClCompile Include="Original\Base\WinApp.cpp" />
     <ClCompile Include="Original\Externals\imgui\imgui.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -131,8 +132,8 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191</DisableSpecificWarnings>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191;4774;5262;4061</DisableSpecificWarnings>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
     </ClCompile>

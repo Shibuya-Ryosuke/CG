@@ -4,6 +4,8 @@
 #include <wrl.h>
 #include <cstdint>
 
+class ShaderCompiler;
+
 namespace Engine {
 
 	class DirectXCommon {
@@ -15,6 +17,11 @@ namespace Engine {
 		/// DirectX初期化
 		/// </summary>
 		void Initialize(class WinApp* winApp, int32_t width, int32_t height);
+
+		/// <summary>
+		/// 解放
+		/// </summary>
+		void Finalize();
 
 		/// <summary>
 		/// フレーム開始

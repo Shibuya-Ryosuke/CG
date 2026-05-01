@@ -1,11 +1,7 @@
 #pragma once
 #include <xaudio2.h>
-#include <mfapi.h>
-#include <mfidl.h>
-#include <mfreadwrite.h>
 #include <wrl/client.h>
 #include <vector>
-#include <string>
 
 namespace Engine {
 	class Audio {

@@ -1,6 +1,7 @@
 #include "DirectXCommon.h"
 #include "WinApp.h"
 #include "Logger.h"
+#include "ShaderCompiler.h"
 #include <format>
 #include <cassert>
 
@@ -72,8 +73,6 @@ namespace Engine{
 		assert(device_ != nullptr);
 		// 初期化完了のログを出力
 		Logger::Log("DirectXCommon: Device created.\n");
-
-
 
         #ifdef _DEBUG
 		Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
@@ -180,6 +179,54 @@ namespace Engine{
 		// Fenceのsignalを待つためのイベントを作成する
 		fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
 		assert(fenceEvent_ != nullptr);
+	}
+
+	void DirectXCommon::Finalize() {
+		// 処理待ち
+		// Fenceの値を更新
+		fenceValue_++;
+		// GPUがここまでたどり着いたときに、Fenceの値を指定した値に代入するようにsignalを送る
+		commandQueue_->Signal(fence_.Get(), fenceValue_);
+		// Fenceの値が指定したSignal値にたどり着いているか確認する
+		// GetCompletedValueの初期値はFence作成時に渡した初期値
+		if (fence_->GetCompletedValue() < fenceValue_) {
+			// 指定したSignalにたどり着いていないので、たどり着くまで待つようにイベントを設定する
+			fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
+			// イベントを待つ
+			WaitForSingleObject(fenceEvent_, INFINITE);
+		}
+
+		// 解放
+		if (fenceEvent_ != nullptr) {
+			CloseHandle(fenceEvent_);
+			fenceEvent_ = nullptr;
+		}
+
+		// シェーダーコンパイラ
+	
+
+		// フェンス
+		fence_.Reset();
+
+		// 深度バッファ
+		dsvHeap_.Reset();
+		depthStencilResource_.Reset();
+
+		// レンダーターゲット / スワップチェーン
+		rtvHeap_.Reset();
+		for (int i = 0; i < 2; ++i) {
+			swapChainResources_[i].Reset();
+		}
+		swapChain_.Reset();
+
+		// コマンド周り
+		commandList_.Reset();
+		commandAllocator_.Reset();
+		commandQueue_.Reset();
+
+		// デバイス周り（これが最後に消える必要がある）
+		dxgiFactory_.Reset();
+		device_.Reset();
 	}
 
 	void DirectXCommon::PreRender() {
