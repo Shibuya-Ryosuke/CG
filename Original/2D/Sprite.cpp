@@ -4,10 +4,26 @@
 #include "../Graphics/TextureManager.h"
 
 namespace Engine {
-    void Sprite::Initialize(uint32_t textureHandle, Vector2 position, Vector2 size) {
+    Sprite::Sprite() {};
+    Sprite::~Sprite() {};
+
+    void Sprite::Initialize(uint32_t textureHandle, Vector2 position) {
         textureHandle_ = textureHandle;
         position_ = position;
-        size_ = size;
+        
+        // 1. TextureManagerのインスタンスを取得
+        TextureManager* textureManager = TextureManager::GetInstance();
+
+        // 2. ハンドル（index）を使ってリソースポインタを取得
+        // GetResource(textureHandle) は ID3D12Resource* を返してくれます
+        ID3D12Resource* resource = textureManager->GetResource(textureHandle);
+
+        // 3. リソースから Desc (詳細設定) を取得
+        D3D12_RESOURCE_DESC resDesc = resource->GetDesc();
+
+        // 4. 画像の元サイズをセット (WidthはUINT64なのでfloatにキャスト)
+        size_.x = static_cast<float>(resDesc.Width);
+        size_.y = static_cast<float>(resDesc.Height);
 
         CreateVertexResource();
         CreateIndexResource();
@@ -16,14 +32,15 @@ namespace Engine {
 
         // 初期データ書き込み
         // 頂点情報 (0:左下, 1:左上, 2:右下, 3:右上)
-        vertexData_[0].position = { 0.0f, size_.y, 0.0f, 1.0f }; vertexData_[0].texcoord = { 0.0f, 1.0f };
-        vertexData_[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };   vertexData_[1].texcoord = { 0.0f, 0.0f };
-        vertexData_[2].position = { size_.x, size_.y, 0.0f, 1.0f }; vertexData_[2].texcoord = { 1.0f, 1.0f };
-        vertexData_[3].position = { size_.x, 0.0f, 0.0f, 1.0f };   vertexData_[3].texcoord = { 1.0f, 0.0f };
+        vertexData_[0].position = { 0.0f, size_.y, 0.0f, 1.0f };
+        vertexData_[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };
+        vertexData_[2].position = { size_.x, size_.y, 0.0f, 1.0f };
+        vertexData_[3].position = { size_.x, 0.0f, 0.0f, 1.0f };
 
-        for (int i = 0; i < 4; i++) {
-            vertexData_[i].normal = { 0,0,-1 };
-        }
+        vertexData_[0].texcoord = { 0.0f, 1.0f };
+        vertexData_[1].texcoord = { 0.0f, 0.0f };
+        vertexData_[2].texcoord = { 1.0f, 1.0f };
+        vertexData_[3].texcoord = { 1.0f, 0.0f };
 
         // インデックス (main.cppの順序通り)
         indexData_[0] = 0; indexData_[1] = 1; indexData_[2] = 2;
@@ -58,8 +75,14 @@ namespace Engine {
         // 行列計算
         Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, rotation_ }, { position_.x, position_.y, 0.0f });
         Matrix4x4 viewMatrix = MakeIdentity4x4();
-        // 正投影行列 (DirectXCommonから画面サイズを取ってくる)[cite: 16]
+        // 正投影行列 (DirectXCommonから画面サイズを取ってくる)
         Matrix4x4 projectionMatrix = MakeOrthographicMatrix(0.0f, 0.0f, (float)DirectXCommon::GetInstance()->GetBackBufferWidth(), (float)DirectXCommon::GetInstance()->GetBackBufferHeight(), 0.0f, 100.0f);
+
+        Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite_.scale);
+        uvTransformMatrix = uvTransformMatrix * MakeRotateZMatrix(uvTransformSprite_.rotate.z);
+        uvTransformMatrix = uvTransformMatrix * MakeTranslateMatrix(uvTransformSprite_.translate);
+
+        materialData_->uvTransform = uvTransformMatrix; // Material構造体に uvTransform を追加しておく
 
         *wvpData_ = worldMatrix * viewMatrix * projectionMatrix;
     }
@@ -67,6 +90,7 @@ namespace Engine {
     void Sprite::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
         auto common = SpriteCommon::GetInstance();
+
 
         // 1. パイプラインとルートシグネチャをセット
         commandList->SetGraphicsRootSignature(common->GetRootSignature());
@@ -92,12 +116,12 @@ namespace Engine {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
         // 頂点4つ分のリソースを作成
-        vertexResource_ = DirectXCommon::CreateBufferResource(device, sizeof(VertexData) * 4);
+        vertexResource_ = DirectXCommon::CreateBufferResource(device, sizeof(SpriteVertexData) * 4);
 
         // VBViewの設定
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
-        vertexBufferView_.SizeInBytes = sizeof(VertexData) * 4;
-        vertexBufferView_.StrideInBytes = sizeof(VertexData);
+        vertexBufferView_.SizeInBytes = sizeof(SpriteVertexData) * 4;
+        vertexBufferView_.StrideInBytes = sizeof(SpriteVertexData);
 
         // 書き込むためのポインタを取得
         vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
@@ -119,13 +143,12 @@ namespace Engine {
     void Sprite::CreateMaterialResource() {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
-        materialResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Material));
+        materialResource_ = DirectXCommon::CreateBufferResource(device, sizeof(SpriteMaterial));
         materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
 
         // 初期値設定
         materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-        materialData_->enableLighting = 0; // スプライトは基本ライティング不要
-        materialData_->uvTransform = MakeIdentity4x4();
+        
     }
     void Sprite::CreateWVPResource() {
         auto device = DirectXCommon::GetInstance()->GetDevice();

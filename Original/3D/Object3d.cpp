@@ -50,6 +50,7 @@ namespace Engine {
         VertexData* vertexData = nullptr;
         vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
         std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
+        vertexCount_ = static_cast<uint32_t>(modelData.vertices.size());
 
         // 2. マテリアルバッファ作成
         materialResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Material));
@@ -64,6 +65,8 @@ namespace Engine {
         wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&wvpData_));
         wvpData_->WVP = MakeIdentity4x4();
         wvpData_->World = MakeIdentity4x4();
+
+        CreateDirectionalLight();
     }
 
     void Object3d::Update(const Camera& camera) {
@@ -77,7 +80,7 @@ namespace Engine {
         wvpData_->WVP = wvpMatrix;
     }
 
-    void Object3d::Draw(uint32_t textureHandle) {
+    void Object3d::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
         auto common = Object3dCommon::GetInstance();
 
@@ -85,11 +88,14 @@ namespace Engine {
         commandList->SetGraphicsRootSignature(common->GetRootSignature());
         commandList->SetPipelineState(common->GetPipelineState()); // 追加
 
+        ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
+        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
         // プリミティブトポロジをセット（三角形リスト）
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 重要：これがないと描画されません
 
         // 引数で受け取ったハンドルを使って記述子テーブルをセット
-        commandList->SetGraphicsRootDescriptorTable(3, TextureManager::GetInstance()->GetGPUHandle(textureHandle));
+        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
 
         commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
         commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
@@ -97,6 +103,14 @@ namespace Engine {
 
         // ライトの定数バッファをセット
         commandList->SetGraphicsRootConstantBufferView(3, lightResource_->GetGPUVirtualAddress());
-        commandList->DrawInstanced(static_cast<UINT>(vertexResource_->GetDesc().Width / sizeof(VertexData)), 1, 0, 0);
+       
+        commandList->DrawInstanced(vertexCount_, 1, 0, 0);
+    }
+
+    Object3d* Object3d::Create(const std::string& filePath) {
+        Object3d* instance = new Object3d();
+        instance->Initialize(); // 共通の初期化
+        instance->CreateModel(filePath); // モデル読み込みとリソース作成[cite: 17]
+        return instance;
     }
 }

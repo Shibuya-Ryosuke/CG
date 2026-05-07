@@ -12,7 +12,7 @@ struct Material {
 	Vector4 color;
 	int32_t enableLighting = 0;  // false
 	ReflectionMode reflectionMode = ReflectionMode::LAMBERT;
-    float padding[2];
+    float padding[2] = { 0 };
     Matrix4x4 uvTransform;
 };
 struct Sphere {
@@ -23,6 +23,15 @@ struct VertexData {
 	Vector4 position;
 	Vector2 texcoord;
 	Vector3 normal;
+};
+
+struct SpriteMaterial {
+    Vector4 color;
+    Matrix4x4 uvTransform;
+};
+struct SpriteVertexData {
+    Vector4 position;
+    Vector2 texcoord;
 };
 
 

@@ -85,6 +85,12 @@
   <ItemGroup>
     <FxCompile Include="Original\HLSL\Object3d.PS.hlsl" />
     <FxCompile Include="Original\HLSL\Object3d.VS.hlsl" />
+    <FxCompile Include="Original\HLSL\Sprite.VS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </FxCompile>
+    <FxCompile Include="Original\HLSL\Sprite.PS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">
@@ -171,6 +177,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Original\HLSL\Object3d.hlsli">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Original\HLSL\Sprite.hlsli">
       <Filter>リソース ファイル</Filter>
     </None>
   </ItemGroup>

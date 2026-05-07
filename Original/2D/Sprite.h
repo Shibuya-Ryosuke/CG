@@ -7,8 +7,10 @@
 namespace Engine {
     class Sprite {
     public:
-       
-        void Initialize(uint32_t textureHandle, Vector2 position, Vector2 size);
+        Sprite();
+        ~Sprite();
+
+        void Initialize(uint32_t textureHandle, Vector2 position);
         void Finalize();
         void Update();
         void Draw();
@@ -33,15 +35,17 @@ namespace Engine {
         Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_;
 
         // マッピング用ポインタ
-        VertexData* vertexData_ = nullptr;
+        SpriteVertexData* vertexData_ = nullptr;
         uint32_t* indexData_ = nullptr;
-        Material* materialData_ = nullptr;
+        SpriteMaterial* materialData_ = nullptr;
         Matrix4x4* wvpData_ = nullptr;
+
 
         // スプライトのステータス
         uint32_t textureHandle_ = 0;
         Vector2 position_ = { 0.0f, 0.0f };
         float rotation_ = 0.0f;
         Vector2 size_ = { 100.0f, 100.0f };
+        Transform uvTransformSprite_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     };
 }

@@ -14,36 +14,21 @@
 #include "Camera/Camera.h"
 #include <memory>
 
+#pragma comment(lib, "mfplat.lib")
+#pragma comment(lib, "mfreadwrite.lib")
+#pragma comment(lib, "mfuuid.lib")
+#pragma comment(lib, "d3d12.lib")
+#pragma comment(lib, "dxguid.lib")
+
 namespace Engine {
 
-    class Framework {
-    public:
-        // エンジンの初期化
-        void Initialize(const wchar_t* title, int32_t width, int32_t height);
+   
 
-        // エンジンの終了処理
-        void Finalize();
-
-        // メッセージループ（続行ならtrue）
-        bool ProcessMessage();
-
-        // 描画開始処理
-        void BeginFrame();
-
-        // 描画終了（コマンドリスト実行、フリップ）
-        void EndFrame();
-
-        // ゲッター
-        WinApp* GetWinApp() { return winApp_; }
-        DirectXCommon* GetDXCommon() { return dxCommon_; }
-
-    private:
-        WinApp* winApp_ = nullptr;
-        DirectXCommon* dxCommon_ = nullptr;
-        TextureManager* textureManager_ = nullptr;
-        Object3dCommon* object3dCommon_ = nullptr;
-        SpriteCommon* spriteCommon_ = nullptr;
-        Audio* audio_ = nullptr;
-    };
-
+    extern WinApp* winApp_;
+    extern DirectXCommon* dxCommon_;
+    extern ShaderCompiler* shaderCompiler_;
+    extern TextureManager* textureManager_;
+    extern Object3dCommon* object3dCommon_;
+    extern SpriteCommon* spriteCommon_;
+    extern Audio* audio_;
 }

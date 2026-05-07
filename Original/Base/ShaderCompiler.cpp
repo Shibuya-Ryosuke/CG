@@ -28,6 +28,14 @@ namespace Engine {
         assert(SUCCEEDED(hr));
     }
 
+    void ShaderCompiler::Finalize()
+    {
+        // 保持しているリソースをすべて解放する
+        includeHandler_.Reset();
+        dxcCompiler_.Reset();
+        dxcUtils_.Reset();
+    }
+
     Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(const std::wstring& filePath, const wchar_t* profile) {
 
         // 1.hlslファイルを読み込む

@@ -16,7 +16,7 @@ namespace Engine {
 		/// <summary>
 		/// DirectX初期化
 		/// </summary>
-		void Initialize(class WinApp* winApp, int32_t width, int32_t height);
+		void Initialize(class WinApp* winApp, int32_t width = 1280, int32_t height = 720);
 
 		/// <summary>
 		/// 解放
