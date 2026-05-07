@@ -49,7 +49,7 @@ namespace Engine {
 
         rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-        rootParameters[1].Descriptor.ShaderRegister = 0;
+        rootParameters[1].Descriptor.ShaderRegister = 1;
 
         rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
@@ -92,18 +92,14 @@ namespace Engine {
 
     void SpriteCommon::CreatePipelineState() {
         // 頂点レイアウトの設定
-        D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+        D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
         inputElementDescs[0].SemanticName = "POSITION";
         inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-        inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+        inputElementDescs[0].AlignedByteOffset = 0;
 
         inputElementDescs[1].SemanticName = "TEXCOORD";
         inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-        inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
-        inputElementDescs[2].SemanticName = "NORMAL";
-        inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-        inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+        inputElementDescs[1].AlignedByteOffset = 16;
 
         D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
         inputLayoutDesc.pInputElementDescs = inputElementDescs;

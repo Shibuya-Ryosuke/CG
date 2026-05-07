@@ -12,7 +12,9 @@ namespace Engine {
     public:
         void Initialize();
         void Update(const Camera& camera);
-        void Draw(uint32_t textureHandle);
+        void Draw();
+
+        static Object3d* Create(const std::string& filePath);
 
         void CreateModel(const std::string& filePath);
 
@@ -23,17 +25,19 @@ namespace Engine {
         void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
         void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
         void SetDirectionalLight(const DirectionalLight& light) { *lightData_ = light; };
-
+        void SetReflectionMode(const ReflectionMode reflectionMode) { materialData_->reflectionMode = reflectionMode; };
+        void SetTexture(uint32_t handle) { textureHandle_ = handle; }
 
     private:
         // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）
         void InternalInitialize(const ModelLoader::ModelData& modelData);
 
-        Transform transform_;
+        Transform transform_{};
 
         // 頂点バッファ
         Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
         D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+        uint32_t vertexCount_ = 0;
 
         // インデックスバッファ (Obj読み込みなら必須)
         Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_;
@@ -50,5 +54,7 @@ namespace Engine {
         // 座標変換行列（WVP）用
         Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_;
         TransformationMatrix* wvpData_ = nullptr;
+
+        uint32_t textureHandle_ = 0; // メンバ変数として保持
     };
 }

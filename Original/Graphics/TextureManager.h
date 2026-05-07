@@ -41,6 +41,10 @@ namespace Engine {
 			return textures_[handle].resource.Get();
 		}
 
+		ID3D12DescriptorHeap* GetDescriptorHeap() const {
+			return descriptorHeap_.Get();
+		}
+
 		D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) {
 			assert(index < kMaxTextures); // 最大数を超えていないかチェック
 
@@ -53,6 +57,7 @@ namespace Engine {
 
 			return handleGPU;
 		}
+
 
 
 	private:

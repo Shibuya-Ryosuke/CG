@@ -12,6 +12,19 @@ namespace Engine {
 
     void TextureManager::Initialize() {
         device_ = DirectXCommon::GetInstance()->GetDevice();
+
+        // 1. ヒープの設定
+        D3D12_DESCRIPTOR_HEAP_DESC srvDescriptorHeapDesc = {};
+        srvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV; // SRV用
+        srvDescriptorHeapDesc.NumDescriptors = static_cast<UINT>(kMaxTextures); // 最大数(128など)
+        srvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE; // シェーダーから見えるように
+
+        // 2. 設定を元にヒープを生成
+        HRESULT hr = device_->CreateDescriptorHeap(&srvDescriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap_));
+        assert(SUCCEEDED(hr));
+
+        // 3. 1マス分のサイズを取得しておく（GetGPUHandleで使用するため）
+        descriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     }
 
     void TextureManager::Finalize() {
@@ -29,25 +42,31 @@ namespace Engine {
     }
 
     uint32_t TextureManager::Load(const std::string& filePath) {
-        // 1. すでに読み込んでいたらそのハンドルを返す
-        if (filePathMap_.contains(filePath)) {
-            return filePathMap_[filePath];
-        }
+        if (filePathMap_.contains(filePath)) return filePathMap_[filePath];
 
-        // 2. 提示された関数群を使ってリソース作成
         DirectX::ScratchImage mipImages = LoadTexture(filePath);
         auto resource = CreateTextureResource(mipImages.GetMetadata());
-
-        // 3. 転送 (CommandListが必要)
-        // ここで返ってくる intermediateResource は、
-        // 「今流しているコマンド」が完了するまでクラス内で保持しておく必要がある
         auto intermediate = UploadTextureData(resource, mipImages, DirectXCommon::GetInstance()->GetCommandList());
         intermediateResources_.push_back(intermediate);
 
-        // 4. textures_ に追加して、その index を返す
         uint32_t handle = static_cast<uint32_t>(textures_.size());
         textures_.push_back({ resource });
         filePathMap_[filePath] = handle;
+
+        // --- ここを追加：SRVの作成 ---
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = resource->GetDesc().Format;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.Texture2D.MipLevels = resource->GetDesc().MipLevels;
+
+        // ヒープの該当する場所のハンドルを取得
+        D3D12_CPU_DESCRIPTOR_HANDLE lCpuHandle = descriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+        lCpuHandle.ptr += static_cast<unsigned long long>(descriptorSize_) * handle;
+
+        // SRVの生成
+        device_->CreateShaderResourceView(resource.Get(), &srvDesc, lCpuHandle);
+        // ----------------------------
 
         return handle;
     }
