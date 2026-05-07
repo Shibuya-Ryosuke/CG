@@ -12,6 +12,7 @@
 #include "Audio/Audio.h"
 #include "Math/Math.h"
 #include "Camera/Camera.h"
+#include "Input/Input.h"
 #include <memory>
 
 #pragma comment(lib, "mfplat.lib")
@@ -22,7 +23,10 @@
 
 namespace Engine {
 
-   
+    void Initialize();
+
+    void Finalize();
+    
 
     extern WinApp* winApp_;
     extern DirectXCommon* dxCommon_;
@@ -31,4 +35,9 @@ namespace Engine {
     extern Object3dCommon* object3dCommon_;
     extern SpriteCommon* spriteCommon_;
     extern Audio* audio_;
+
+    static WinApp* GetWinApp() { return winApp_; };
+    static DirectXCommon* GetDxCommon() { return dxCommon_; };
+    static Object3dCommon* GetObject3dCommon() { return object3dCommon_; };
+    static SpriteCommon* GetSpriteCommon() { return spriteCommon_; };
 }

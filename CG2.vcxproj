@@ -44,6 +44,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Original\Graphics\TextureManager.cpp" />
+    <ClCompile Include="Original\Input\Input.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
     <ClCompile Include="Original\OriginalEngine.cpp" />
   </ItemGroup>
@@ -89,6 +90,7 @@
     <ClInclude Include="Original\Externals\imgui\imstb_textedit.h" />
     <ClInclude Include="Original\Externals\imgui\imstb_truetype.h" />
     <ClInclude Include="Original\Graphics\TextureManager.h" />
+    <ClInclude Include="Original\Input\Input.h" />
     <ClInclude Include="Original\Light\Light.h" />
     <ClInclude Include="Original\Loader\ModelLoader.h" />
     <ClInclude Include="Original\Math\Math.h" />
