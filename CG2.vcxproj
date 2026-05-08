@@ -92,6 +92,7 @@
     <ClInclude Include="Original\Externals\imgui\imstb_textedit.h" />
     <ClInclude Include="Original\Externals\imgui\imstb_truetype.h" />
     <ClInclude Include="Original\Graphics\TextureManager.h" />
+    <ClInclude Include="Original\ImGui\ImGuiManager.h" />
     <ClInclude Include="Original\Input\Input.h" />
     <ClInclude Include="Original\Light\Light.h" />
     <ClInclude Include="Original\Loader\ModelLoader.h" />
