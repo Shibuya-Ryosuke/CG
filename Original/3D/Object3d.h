@@ -5,6 +5,7 @@
 #include "../Math/Math.h"
 #include "../Loader/ModelLoader.h"
 #include "../Camera/Camera.h"
+#include "../Camera/DebugCamera.h"
 #include "../Light/Light.h"
 
 namespace Engine {
@@ -12,6 +13,7 @@ namespace Engine {
     public:
         void Initialize();
         void Update(const Camera& camera);
+        void Update(const DebugCamera& debugCamera);
         void Draw();
 
         static Object3d* Create(const std::string& filePath);

@@ -6,6 +6,35 @@
 #include <cmath>
 #include <cassert>
 
+/// operator
+//=================================================================================================
+
+// ベクトルと行列の乗算 (Vector3 * Matrix4x4)
+inline Vector3 operator*(const Vector3& v, const Matrix4x4& m) {
+	Vector3 result;
+	// w成分（4次元目）を計算する
+	float w = v.x * m.m[0][3] + v.y * m.m[1][3] + v.z * m.m[2][3] + 1.0f * m.m[3][3];
+
+	// x, y, z の計算（基本は同じだが、最後に w で割る準備）
+	result.x = (v.x * m.m[0][0] + v.y * m.m[1][0] + v.z * m.m[2][0] + 1.0f * m.m[3][0]);
+	result.y = (v.x * m.m[0][1] + v.y * m.m[1][1] + v.z * m.m[2][1] + 1.0f * m.m[3][1]);
+	result.z = (v.x * m.m[0][2] + v.y * m.m[1][2] + v.z * m.m[2][2] + 1.0f * m.m[3][2]);
+
+	// w が 1.0 以外（透視投影など）なら、w で割って正規化する
+	if (w != 0.0f && w != 1.0f) {
+		result.x /= w;
+		result.y /= w;
+		result.z /= w;
+	}
+
+	return result;
+}
+
+//=================================================================================================
+
+
+
+
 
 /// function
 //=================================================================================================
@@ -329,6 +358,16 @@ inline Matrix4x4 MakeRotateZMatrix(float radian) {
 		}
 	};
 }
+inline Matrix4x4 MakeRotateMatrix(const Vector3& rotate) {
+	// 1. 各軸の回転行列を個別に作成
+	Matrix4x4 matRotX = MakeRotateXMatrix(rotate.x);
+	Matrix4x4 matRotY = MakeRotateYMatrix(rotate.y);
+	Matrix4x4 matRotZ = MakeRotateZMatrix(rotate.z);
+
+	// 2. それらを掛け合わせる
+	// 順番はエンジンの仕様によりますが、一般的には X -> Y -> Z の順
+	return matRotX * matRotY * matRotZ;
+}
 /// アフィン変換行列
 inline Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate) {
 	// 1. スケーリング行列を作る
@@ -338,8 +377,8 @@ inline Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, c
 	Matrix4x4 rotateXMatrix = MakeRotateXMatrix(rotate.x);
 	Matrix4x4 rotateYMatrix = MakeRotateYMatrix(rotate.y);
 	Matrix4x4 rotateZMatrix = MakeRotateZMatrix(rotate.z);
-	// 全ての回転を合成 (Z * X * Y など、エンジンの仕様に合わせます)
-	Matrix4x4 rotateMatrix = rotateZMatrix * rotateXMatrix * rotateYMatrix;
+	// 全ての回転を合成
+	Matrix4x4 rotateMatrix = rotateXMatrix * rotateYMatrix * rotateZMatrix;
 
 	// 3. 平行移動行列を作る
 	Matrix4x4 translateMatrix = MakeTranslateMatrix(translate);

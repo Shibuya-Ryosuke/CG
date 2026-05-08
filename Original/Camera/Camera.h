@@ -4,8 +4,13 @@
 namespace Engine {
     class Camera {
     public:
+        /// <summary>
+        /// 初期化込みコンストラクタ
+        /// </summary>
         Camera();
         ~Camera() = default;
+
+        void Initialize();
 
         void Update();
 

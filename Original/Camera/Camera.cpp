@@ -1,14 +1,27 @@
 #include "Camera.h"
 
 namespace Engine {
-    Camera::Camera()
-        : rotate_({ 0.0f, 0.0f, 0.0f })
-        , translate_({ 0.0f, 0.0f, -10.0f }) // 少し後ろに下げておく
-        , fovY_(0.45f) // 約25.7度
-        , aspectRatio_(1280.0f / 720.0f)
-        , nearZ_(0.1f)
-        , farZ_(100.0f)
-    {
+    Camera::Camera() {
+        // メンバ変数への代入
+        rotate_ = { 0.0f, 0.0f, 0.0f };
+        translate_ = { 0.0f, 0.0f, -10.0f };
+        fovY_ = 0.45f;
+        aspectRatio_ = 1280.0f / 720.0f;
+        nearZ_ = 0.1f;
+        farZ_ = 100.0f;
+
+        Update();
+    }
+
+    void Camera::Initialize() {
+        // メンバ変数への代入
+        rotate_ = { 0.0f, 0.0f, 0.0f };
+        translate_ = { 0.0f, 0.0f, -10.0f };
+        fovY_ = 0.45f;
+        aspectRatio_ = 1280.0f / 720.0f;
+        nearZ_ = 0.1f;
+        farZ_ = 100.0f;
+
         Update();
     }
 

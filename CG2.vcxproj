@@ -22,6 +22,7 @@
     <ClCompile Include="Original\Base\ShaderCompiler.cpp" />
     <ClCompile Include="Original\Base\WinApp.cpp" />
     <ClCompile Include="Original\Camera\Camera.cpp" />
+    <ClCompile Include="Original\Camera\DebugCamera.cpp" />
     <ClCompile Include="Original\Externals\imgui\imgui.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -81,6 +82,7 @@
     <ClInclude Include="Original\Base\ShaderCompiler.h" />
     <ClInclude Include="Original\Base\WinApp.h" />
     <ClInclude Include="Original\Camera\Camera.h" />
+    <ClInclude Include="Original\Camera\DebugCamera.h" />
     <ClInclude Include="Original\Externals\imgui\imconfig.h" />
     <ClInclude Include="Original\Externals\imgui\imgui.h" />
     <ClInclude Include="Original\Externals\imgui\imgui_impl_dx12.h" />

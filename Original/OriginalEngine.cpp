@@ -1,4 +1,6 @@
 #include "OriginalEngine.h"
+#include <dxgidebug.h>
+#pragma comment(lib, "dxguid.lib")
 
 namespace Engine {
     // ここで実際に定義（初期化）する。これが「1つだけ」存在する実体になる
@@ -57,6 +59,11 @@ namespace Engine {
 
         // 最後に WindowsAPI の登録を解除する
         winApp_->Finalize();
+
+        Microsoft::WRL::ComPtr<IDXGIDebug1> debug;
+        if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
+            debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+        }
 
     }
 }

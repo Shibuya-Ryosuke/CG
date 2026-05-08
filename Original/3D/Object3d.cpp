@@ -80,6 +80,17 @@ namespace Engine {
         wvpData_->WVP = wvpMatrix;
     }
 
+    void Object3d::Update(const DebugCamera& debugCamera) {
+        // ワールド行列の作成
+        Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+
+        // WVP行列の計算 (World * ViewProjection)
+        Matrix4x4 wvpMatrix = worldMatrix * debugCamera.GetViewProjectionMatrix();
+
+        wvpData_->World = worldMatrix;
+        wvpData_->WVP = wvpMatrix;
+    }
+
     void Object3d::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
         auto common = Object3dCommon::GetInstance();

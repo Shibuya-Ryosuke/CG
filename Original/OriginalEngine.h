@@ -12,6 +12,7 @@
 #include "Audio/Audio.h"
 #include "Math/Math.h"
 #include "Camera/Camera.h"
+#include "Camera/DebugCamera.h"
 #include "Input/Input.h"
 #include <memory>
 

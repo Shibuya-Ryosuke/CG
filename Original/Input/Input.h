@@ -33,6 +33,18 @@ namespace Engine {
             return GetInstance()->mouseState_.rgbButtons[buttonNumber] & 0x80;
         }
 
+        static long GetMouseRelX() {
+            return GetInstance()->mouseState_.lX;
+        }
+
+        static long GetMouseRelY() {
+            return GetInstance()->mouseState_.lY;
+        }
+
+        static long GetMouseWheel() {
+            return GetInstance()->mouseState_.lZ;
+        }
+
         // --- コントローラー (ボタン) ---
         static bool GetJoystickButton(WORD button) {
             if (!GetInstance()->isConnected_) return false;

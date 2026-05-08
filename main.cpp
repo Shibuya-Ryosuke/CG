@@ -4,7 +4,7 @@ using namespace Engine;
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
-    Initialize();
+    Engine::Initialize();
 
     // テクスチャ
     uint32_t textureHandle = textureManager_->Load("resources/uvChecker.png");
@@ -16,7 +16,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     // 画像
     Sprite* sprite = new Sprite();
-    sprite->Initialize(textureHandle, {100.0f,100.0f});
+    sprite->Initialize(textureHandle, {0.0f,0.0f});
 
     // 音
     uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
@@ -25,6 +25,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // カメラ
     Camera* camera = new Camera();
 
+    // デバッグカメラ
+    DebugCamera* debugCamera = new DebugCamera();
 
 
 
@@ -34,12 +36,23 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // 入力受付
         Input::Update();
 
-        if (Input::IsMousePush(0)) {
-            break;
+        // Aキーでカメラ切り替え
+        if (Input::TriggerKey(DIK_A)) {
+            debugCamera->ToggleIsAvailable();
         }
 
-        model->Update(*camera);
+        // カメラの種類によって更新変更
+        if (debugCamera->GetIsAvailable()) {
+            debugCamera->Update();
+            model->Update(*debugCamera);
+        } else {
+            camera->Update();
+            model->Update(*camera);
+        }
+
         sprite->Update();
+
+
 
         // --- 描画処理 (Draw) ---
         GetDxCommon()->PreDraw();
@@ -53,14 +66,30 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // [2D描画フェーズ]
         GetSpriteCommon()->BeginDraw();
 
-        sprite->Draw();
+        // デバッグカメラ時画像を描画しない
+        if (!debugCamera->GetIsAvailable()) {
+            sprite->Draw();
+        }
 
         // 画面表示（PostDraw、コマンドリスト実行、スワップチェーン入れ替え）
         GetDxCommon()->PostDraw();
     }
+    
+    // 生ポインタ解放
+    delete debugCamera;
+    debugCamera = nullptr;
+
+    delete camera;
+    camera = nullptr;
+
+    delete sprite;
+    sprite = nullptr;
+
+    delete model;
+    model = nullptr;
 
     // エンジン終了
-    Finalize();
+    Engine::Finalize();
 
     return 0;
 }
