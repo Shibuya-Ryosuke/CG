@@ -52,7 +52,8 @@ namespace Engine {
 		}
 		int32_t GetBackBufferWidth() { return backBufferWidth_; };
 		int32_t GetBackBufferHeight() { return backBufferHeight_; };
-
+		uint32_t GetBackBufferCount() const { return 2; }
+		DXGI_FORMAT GetBackBufferFormat() const { return DXGI_FORMAT_R8G8B8A8_UNORM; }
 
 	private:
 		DirectXCommon() = default;

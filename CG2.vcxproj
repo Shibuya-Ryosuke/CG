@@ -45,6 +45,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Original\Graphics\TextureManager.cpp" />
+    <ClCompile Include="Original\ImGui\ImGuiManager.cpp" />
     <ClCompile Include="Original\Input\Input.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
     <ClCompile Include="Original\OriginalEngine.cpp" />

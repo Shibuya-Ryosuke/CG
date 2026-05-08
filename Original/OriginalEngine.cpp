@@ -40,12 +40,22 @@ namespace Engine {
         // オーディオの初期化
         audio_ = Audio::GetInstance();
         audio_->Initialize();
+
+        // ImGui初期化
+        ImGuiManager::Initialize(
+            winApp_->GetHwnd(),
+            dxCommon_->GetDevice(),
+            static_cast<int>(dxCommon_->GetBackBufferCount()),
+            dxCommon_->GetBackBufferFormat()
+        );
     }
 
     void Finalize() {
         // 4. 終了処理
         // 各リソースの解放、WinAppのUnregisterClassなどが走る
         // 初期化と逆の順序で解放
+        ImGuiManager::Finalize();
+
         audio_->Finalize();
         Audio::DestroyInstance();
 

@@ -14,6 +14,7 @@
 #include "Camera/Camera.h"
 #include "Camera/DebugCamera.h"
 #include "Input/Input.h"
+#include "ImGui/ImGuiManager.h"
 #include <memory>
 
 #pragma comment(lib, "mfplat.lib")

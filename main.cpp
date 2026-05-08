@@ -1,4 +1,7 @@
 #include "./Original/OriginalEngine.h"
+#ifdef _DEBUG
+#include "Original/Externals/imgui/imgui.h"
+#endif
 
 using namespace Engine;
 
@@ -36,6 +39,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // 入力受付
         Input::Update();
 
+        ImGuiManager::Begin();
+
+#ifdef _DEBUG
+        ImGui::ShowDemoWindow();
+        
+#endif
+
         // Aキーでカメラ切り替え
         if (Input::TriggerKey(DIK_A)) {
             debugCamera->ToggleIsAvailable();
@@ -70,6 +80,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         if (!debugCamera->GetIsAvailable()) {
             sprite->Draw();
         }
+
+        ImGuiManager::End(GetDxCommon()->GetCommandList());
 
         // 画面表示（PostDraw、コマンドリスト実行、スワップチェーン入れ替え）
         GetDxCommon()->PostDraw();
