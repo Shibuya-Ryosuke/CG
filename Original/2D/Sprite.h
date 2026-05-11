@@ -15,9 +15,18 @@ namespace Engine {
         void Update();
         void Draw();
 
-        // Setter/Getter (必要に応じて追加)
+
+        // Getter
+        const Vector2& GetPosition() const { return position_; }
+        float GetRotate() const { return rotation_; }
+        const Vector2& GetSize() const { return size_; }
+        const Transform& GetUVTransform() const { return uvTransformSprite_; }
+
+        // Setter
         void SetPosition(const Vector2& pos) { position_ = pos; }
+        void SetRotate(float rotation) { rotation_ = rotation; }
         void SetSize(const Vector2& size) { size_ = size; }
+        void SetUVTransform(const Transform& uvTransform) { uvTransformSprite_ = uvTransform; }
 
     private:
         void CreateVertexResource();

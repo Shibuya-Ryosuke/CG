@@ -2,6 +2,7 @@
 #include "../Base/DirectXCommon.h"
 #include "../Base/Logger.h"
 #include "../Base/ShaderCompiler.h"
+#include "../Graphics/TextureManager.h"
 #include <cassert>
 
 namespace Engine {
@@ -21,6 +22,9 @@ namespace Engine {
         commandList->SetGraphicsRootSignature(rootSignature_.Get());
         commandList->SetPipelineState(graphicsPipelineState_.Get());
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
+        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
     }
 
     void SpriteCommon::Finalize() {

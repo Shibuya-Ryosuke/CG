@@ -22,12 +22,17 @@ namespace Engine {
 
         void CreateDirectionalLight();
 
-        // セッター
+        // Getter
+        const Vector3& GetScale() const { return transform_.scale; }
+        const Vector3& GetRotate() const { return transform_.rotate; }
+        const Vector3& GetTranslate() const { return transform_.translate; }
+
+        // Setter
         void SetScale(const Vector3& scale) { transform_.scale = scale; }
         void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
         void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
-        void SetDirectionalLight(const DirectionalLight& light) { *lightData_ = light; };
-        void SetReflectionMode(const ReflectionMode reflectionMode) { materialData_->reflectionMode = reflectionMode; };
+        void SetDirectionalLight(const DirectionalLight& light) { *lightData_ = light; }
+        void SetReflectionMode(const ReflectionMode reflectionMode) { materialData_->reflectionMode = reflectionMode; }
         void SetTexture(uint32_t handle) { textureHandle_ = handle; }
 
     private:

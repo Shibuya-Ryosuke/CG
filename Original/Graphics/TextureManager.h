@@ -36,7 +36,7 @@ namespace Engine {
 		void ClearIntermediateResources();
 
 		// ゲッター
-		ID3D12Resource* GetResource(uint32_t handle) {
+		ID3D12Resource* GetResource(uint32_t handle) const {
 			assert(handle < textures_.size());
 			return textures_[handle].resource.Get();
 		}
@@ -45,7 +45,7 @@ namespace Engine {
 			return descriptorHeap_.Get();
 		}
 
-		D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) {
+		D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) const {
 			assert(index < kMaxTextures); // 最大数を超えていないかチェック
 
 			// 1. ヒープの先頭住所を取得

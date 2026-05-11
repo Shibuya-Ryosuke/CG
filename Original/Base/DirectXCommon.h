@@ -45,15 +45,15 @@ namespace Engine {
 		static Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device> device, size_t sizeInBytes);
 
 		// ゲッター
-		ID3D12Device* GetDevice() const { return device_.Get(); };
-		ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); };
+		ID3D12Device* GetDevice() const { return device_.Get(); }
+		ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE GetDSVHandle() const {
 			return dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 		}
-		int32_t GetBackBufferWidth() { return backBufferWidth_; };
-		int32_t GetBackBufferHeight() { return backBufferHeight_; };
+		int32_t GetBackBufferWidth() const { return backBufferWidth_; }
+		int32_t GetBackBufferHeight() const { return backBufferHeight_; }
 		uint32_t GetBackBufferCount() const { return 2; }
-		DXGI_FORMAT GetBackBufferFormat() const { return DXGI_FORMAT_R8G8B8A8_UNORM; }
+		DXGI_FORMAT GetBackBufferFormat() const { return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; }
 
 	private:
 		DirectXCommon() = default;

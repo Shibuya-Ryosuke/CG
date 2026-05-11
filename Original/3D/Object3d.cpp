@@ -99,9 +99,7 @@ namespace Engine {
         commandList->SetGraphicsRootSignature(common->GetRootSignature());
         commandList->SetPipelineState(common->GetPipelineState()); // 追加
 
-        ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
-        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
+       
         // プリミティブトポロジをセット（三角形リスト）
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 重要：これがないと描画されません
 

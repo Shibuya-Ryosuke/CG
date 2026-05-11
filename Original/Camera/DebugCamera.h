@@ -14,7 +14,7 @@ namespace Engine {
 
 		void Update();
 
-		bool GetIsAvailable() { return isAvailable_; };
+		bool GetIsAvailable() const { return isAvailable_; };
 		const Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
 		const Matrix4x4& GetProjectionMatrix() const { return projectionMatrix_; }
 		const Matrix4x4& GetViewProjectionMatrix() const { return viewProjectionMatrix_; }
