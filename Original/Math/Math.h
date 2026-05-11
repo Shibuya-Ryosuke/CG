@@ -431,16 +431,18 @@ inline Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, floa
 }
 /// ビューポート変換行列
 inline Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth) {
-	Matrix4x4 mat{};
+	Matrix4x4 mat{}; // ゼロ初期化
 
+	// スケール成分 (対角成分)
 	mat.m[0][0] = width / 2.0f;
 	mat.m[1][1] = -height / 2.0f;
 	mat.m[2][2] = maxDepth - minDepth;
 	mat.m[3][3] = 1.0f;
 
-	mat.m[0][3] = left + width / 2.0f;
-	mat.m[1][3] = top + height / 2.0f;
-	mat.m[2][3] = minDepth;
+	// 平行移動成分 (4行目に配置)
+	mat.m[3][0] = left + width / 2.0f;
+	mat.m[3][1] = top + height / 2.0f;
+	mat.m[3][2] = minDepth;
 
 	return mat;
 }
