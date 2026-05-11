@@ -32,7 +32,7 @@ namespace Engine {
         void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
         void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
         void SetDirectionalLight(const DirectionalLight& light) { *lightData_ = light; }
-        void SetReflectionMode(const ReflectionMode reflectionMode) { materialData_->reflectionMode = reflectionMode; }
+        void SetReflectionMode(const ShadingMode reflectionMode) { materialData_->shadingMode = reflectionMode; }
         void SetTexture(uint32_t handle) { textureHandle_ = handle; }
 
     private:

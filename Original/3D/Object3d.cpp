@@ -57,7 +57,7 @@ namespace Engine {
         materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
         materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
         materialData_->enableLighting = 1;
-        materialData_->reflectionMode = ReflectionMode::LAMBERT;
+        materialData_->shadingMode = ShadingMode::LAMBERT;
         materialData_->uvTransform = MakeIdentity4x4();
 
         // 3. WVPバッファ作成

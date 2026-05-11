@@ -4,7 +4,7 @@ struct Material
 {
     float4 color;
     int enableLighting;
-    int reflectionMode;
+    int shadingMode;
     float2 padding;
     float4x4 uvTransform;
 };
@@ -35,7 +35,7 @@ PixelShaderOutput main(VertexShaderOutput input)
     if (gMaterial.enableLighting != 0)
     {
         float cos = 0.0f;
-        switch (gMaterial.reflectionMode)
+        switch (gMaterial.shadingMode)
         {
             case 0:
              // Lambert

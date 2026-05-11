@@ -15,7 +15,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // 3d
     Object3d* model = Object3d::Create("resources/axis.obj");
     model->SetTexture(textureHandle);
-    model->SetReflectionMode(ReflectionMode::HALF_LAMBERT);
+    model->SetReflectionMode(ShadingMode::HALF_LAMBERT);
 
     // 画像
     Sprite* sprite = new Sprite();

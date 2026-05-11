@@ -4,14 +4,14 @@
 #include <vector>
 #include <numbers>
 
-enum class ReflectionMode : int32_t {
+enum class ShadingMode : int32_t {
 	LAMBERT,
 	HALF_LAMBERT
 };
 struct Material {
 	Vector4 color;
 	int32_t enableLighting = 0;  // false
-	ReflectionMode reflectionMode = ReflectionMode::LAMBERT;
+	ShadingMode shadingMode = ShadingMode::LAMBERT;
     float padding[2] = { 0 };
     Matrix4x4 uvTransform;
 };
