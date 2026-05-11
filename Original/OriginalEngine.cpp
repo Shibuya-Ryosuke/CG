@@ -10,6 +10,7 @@ namespace Engine {
     TextureManager* textureManager_ = nullptr;
     Object3dCommon* object3dCommon_ = nullptr;
     SpriteCommon* spriteCommon_ = nullptr;
+    ReflectCommon* reflectCommon_ = nullptr;
     Audio* audio_ = nullptr;
 
     void Initialize() {
@@ -37,6 +38,9 @@ namespace Engine {
         spriteCommon_ = SpriteCommon::GetInstance();
         spriteCommon_->Initialize();
 
+        reflectCommon_ = ReflectCommon::GetInstance();
+        reflectCommon_->Initialize();
+
         // オーディオの初期化
         audio_ = Audio::GetInstance();
         audio_->Initialize();
@@ -59,6 +63,7 @@ namespace Engine {
         audio_->Finalize();
         Audio::DestroyInstance();
 
+        reflectCommon_->Finalize();
         spriteCommon_->Finalize();
         object3dCommon_->Finalize();
         textureManager_->Finalize();

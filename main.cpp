@@ -17,6 +17,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     model->SetTexture(textureHandle);
     model->SetReflectionMode(ShadingMode::HALF_LAMBERT);
 
+    ReflectObject* reflectModel = new ReflectObject();
+    reflectModel->Initialize("resources/mirror.obj");
+
     // 画像
     Sprite* sprite = new Sprite();
     sprite->Initialize(textureHandle, {0.0f,0.0f});

@@ -3,6 +3,7 @@
 #include <wrl.h>
 #include <cstdint>
 #include "../Base/DirectXCommon.h"
+#include "../Math/Math.h"
 
 namespace Engine {
 
@@ -28,6 +29,15 @@ namespace Engine {
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
         ID3D12PipelineState* GetPipelineState() const { return graphicsPipelineState_.Get(); }
         uint32_t GetSrvIndex() const { return srvIndex_; }
+
+        struct ReflectMaterial {
+            Vector4 color;
+            int32_t enableLighting;
+            int32_t shadingMode;
+            float reflectionWeight;
+            float shininess; // 16バイト境界を合わせるための調整にもなる
+            Matrix4x4 uvTransform;
+        };
 
     private:
         ReflectCommon() = default;

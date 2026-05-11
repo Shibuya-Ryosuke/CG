@@ -107,6 +107,12 @@ namespace Engine {
         commandList->DrawInstanced(vertexCount_, 1, 0, 0);
     }
 
+    void Object3d::DrawSimple() {
+        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
+        commandList->DrawInstanced(vertexCount_, 1, 0, 0);
+    }
+
     Object3d* Object3d::Create(const std::string& filePath) {
         Object3d* instance = new Object3d();
         instance->Initialize(); // 共通の初期化

@@ -15,6 +15,7 @@ namespace Engine {
         void Update(const Camera& camera);
         void Update(const DebugCamera& debugCamera);
         void Draw();
+        void DrawSimple();
 
         static Object3d* Create(const std::string& filePath);
 
@@ -26,6 +27,12 @@ namespace Engine {
         const Vector3& GetScale() const { return transform_.scale; }
         const Vector3& GetRotate() const { return transform_.rotate; }
         const Vector3& GetTranslate() const { return transform_.translate; }
+        // マテリアルリソースの取得
+        ID3D12Resource* GetMaterialResource() const { return materialResource_.Get();};
+        // WVPリソース（座標変換行列）の取得
+        ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
+        // ライトリソースの取得
+        ID3D12Resource* GetLightResource() const { return lightResource_.Get(); };
 
         // Setter
         void SetScale(const Vector3& scale) { transform_.scale = scale; }

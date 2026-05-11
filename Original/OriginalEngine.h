@@ -9,6 +9,8 @@
 #include "3D/Object3d.h"
 #include "2D/SpriteCommon.h"
 #include "2D/Sprite.h"
+#include "Reflect/ReflectCommon.h"
+#include "Reflect/ReflectObject.h"
 #include "Audio/Audio.h"
 #include "Math/Math.h"
 #include "Camera/Camera.h"
@@ -36,10 +38,12 @@ namespace Engine {
     extern TextureManager* textureManager_;
     extern Object3dCommon* object3dCommon_;
     extern SpriteCommon* spriteCommon_;
+    extern ReflectCommon* reflectCommon_;
     extern Audio* audio_;
 
     static WinApp* GetWinApp() { return winApp_; };
     static DirectXCommon* GetDxCommon() { return dxCommon_; };
     static Object3dCommon* GetObject3dCommon() { return object3dCommon_; };
     static SpriteCommon* GetSpriteCommon() { return spriteCommon_; };
+    static ReflectCommon* GetReflectCommon() { return reflectCommon_; };
 }

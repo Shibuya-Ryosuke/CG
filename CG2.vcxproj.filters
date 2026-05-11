@@ -212,6 +212,15 @@
     <None Include="Original\HLSL\Sprite.hlsli">
       <Filter>リソース ファイル</Filter>
     </None>
+    <None Include="Original\HLSL\Reflect\Reflect.hlsli">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Original\HLSL\Reflect\Reflect.PS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
+    <None Include="Original\HLSL\Reflect\Reflect.VS.hlsl">
+      <Filter>リソース ファイル</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Original\Externals\imgui\LICENSE.txt">
