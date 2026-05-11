@@ -406,7 +406,7 @@ inline Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspect, float nearCl
 
 	return result;
 }
-/// 平行投影行列
+/// 正射影行列
 inline Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip) {
 	Matrix4x4 result{};
 
@@ -429,5 +429,19 @@ inline Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, floa
 
 	return result;
 }
+/// ビューポート変換行列
+inline Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth) {
+	Matrix4x4 mat{};
 
+	mat.m[0][0] = width / 2.0f;
+	mat.m[1][1] = -height / 2.0f;
+	mat.m[2][2] = maxDepth - minDepth;
+	mat.m[3][3] = 1.0f;
+
+	mat.m[0][3] = left + width / 2.0f;
+	mat.m[1][3] = top + height / 2.0f;
+	mat.m[2][3] = minDepth;
+
+	return mat;
+}
 //=================================================================================================
