@@ -76,6 +76,32 @@ namespace Engine {
     }
 
 
+    uint32_t TextureManager::RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource) {
+        // 現在のテクスチャ配列の末尾をインデックスとする
+        uint32_t index = static_cast<uint32_t>(textures_.size());
+        assert(index < kMaxTextures);
+
+        Texture texture;
+        texture.resource = resource;
+        textures_.push_back(texture);
+
+        // シェーダーリソースビュー (SRV) の設定
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = resource->GetDesc().Format;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.Texture2D.MipLevels = 1;
+
+        // CPUハンドルを取得してSRVを作成
+        device_->CreateShaderResourceView(
+            resource.Get(),
+            &srvDesc,
+            GetCPUHandle(index)
+        );
+
+        return index;
+    }
+
     DirectX::ScratchImage TextureManager::LoadTexture(const std::string& filePath) {
         // テクスチャファイルを読んでプログラムで使えるようにする
         DirectX::ScratchImage image{};

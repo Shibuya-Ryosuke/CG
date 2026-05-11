@@ -45,6 +45,13 @@ namespace Engine {
 			return descriptorHeap_.Get();
 		}
 
+		D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index) const {
+			assert(index < kMaxTextures);
+			D3D12_CPU_DESCRIPTOR_HANDLE handleCPU = descriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+			handleCPU.ptr += static_cast<size_t>(descriptorSize_) * index;
+			return handleCPU;
+		}
+
 		D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) const {
 			assert(index < kMaxTextures); // 最大数を超えていないかチェック
 
@@ -58,7 +65,8 @@ namespace Engine {
 			return handleGPU;
 		}
 
-
+		// 外部で作ったリソースを登録してインデックスを返す
+		uint32_t RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
 
 	private:
 		TextureManager() = default;

@@ -93,15 +93,6 @@ namespace Engine {
 
     void Object3d::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        auto common = Object3dCommon::GetInstance();
-
-        // パイプラインとルートシグネチャをセット
-        commandList->SetGraphicsRootSignature(common->GetRootSignature());
-        commandList->SetPipelineState(common->GetPipelineState()); // 追加
-
-       
-        // プリミティブトポロジをセット（三角形リスト）
-        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 重要：これがないと描画されません
 
         // 引数で受け取ったハンドルを使って記述子テーブルをセット
         commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));

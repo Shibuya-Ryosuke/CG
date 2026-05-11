@@ -89,16 +89,7 @@ namespace Engine {
 
     void Sprite::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        auto common = SpriteCommon::GetInstance();
-
-
-        // 1. パイプラインとルートシグネチャをセット
-        commandList->SetGraphicsRootSignature(common->GetRootSignature());
-        commandList->SetPipelineState(common->GetPipelineState());
-
-        // 2. プリミティブトポロジをセット
-        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+        
         // 3. 各種バッファをセット
         commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
         commandList->IASetIndexBuffer(&indexBufferView_);

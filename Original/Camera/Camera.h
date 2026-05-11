@@ -23,6 +23,8 @@ namespace Engine {
         void SetFarZ(float farZ) { farZ_ = farZ; }
 
         // Getter
+        const Vector3& GetTranslate() const { return translate_; }
+        const Vector3& GetRotate() const { return rotate_; }
         const Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
         const Matrix4x4& GetProjectionMatrix() const { return projectionMatrix_; }
         const Matrix4x4& GetViewProjectionMatrix() const { return viewProjectionMatrix_; }
