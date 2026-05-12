@@ -3,8 +3,8 @@
 
 namespace Engine {
 	DebugCamera::DebugCamera() {
-		rotation_ = { 0,0,0 };
-		translation_ = { 0,0,-20 };
+		rotate_ = { 0,0,0 };
+		translate_ = { 0,0,-20 };
 
 		fovY_ = 0.45f;
 		aspectRatio_ = 1280.0f / 720.0f;
@@ -21,8 +21,8 @@ namespace Engine {
 	};
 
 	void DebugCamera::Initialize() {
-		rotation_ = { 0,0,0 };
-		translation_ = { 0,0,-20 };
+		rotate_ = { 0,0,0 };
+		translate_ = { 0,0,-20 };
 
 		fovY_ = 0.45f;
 		aspectRatio_ = 1280.0f / 720.0f;
@@ -60,23 +60,23 @@ namespace Engine {
 			float mouseY = static_cast<float>(Input::GetMouseRelY());
 
 			// 回転の更新
-			rotation_.y += mouseX * rotateSpeed_;
-			rotation_.x += mouseY * rotateSpeed_;
+			rotate_.y += mouseX * rotateSpeed_;
+			rotate_.x += mouseY * rotateSpeed_;
 		}
 
 
 		// 回転行列を作成
-		Matrix4x4 matRot = MakeRotateMatrix(rotation_);
+		Matrix4x4 matRot = MakeRotateMatrix(rotate_);
 
 		// 移動ベクトルをカメラの向きに合わせて変換
 		move = move * matRot;
 
 		// 実際の座標に加算
-		translation_ += move;
+		translate_ += move;
 
 
 		// カメラのワールド行列を作成
-		Matrix4x4 worldMatrix =  MakeTranslateMatrix(translation_) * matRot;
+		Matrix4x4 worldMatrix =  MakeTranslateMatrix(translate_) * matRot;
 
 		// ワールド行列の逆行列をビュー行列へ
 		viewMatrix_ = Inverse(worldMatrix);

@@ -14,6 +14,8 @@ namespace Engine {
 
 		void Update();
 
+		const Vector3& GetRotate() const { return rotate_; };
+		const Vector3& GetTranslate() const { return translate_; };
 		bool GetIsAvailable() const { return isAvailable_; };
 		const Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
 		const Matrix4x4& GetProjectionMatrix() const { return projectionMatrix_; }
@@ -22,8 +24,8 @@ namespace Engine {
 		void ToggleIsAvailable() { isAvailable_ = !isAvailable_; };
 
 	private:
-		Vector3 rotation_;
-		Vector3 translation_;
+		Vector3 rotate_;
+		Vector3 translate_;
 
 		Matrix4x4 viewMatrix_;
 		Matrix4x4 projectionMatrix_;

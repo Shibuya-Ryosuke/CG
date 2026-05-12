@@ -16,6 +16,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Object3d* model = Object3d::Create("resources/axis.obj");
     model->SetTexture(textureHandle);
     model->SetReflectionMode(ShadingMode::HALF_LAMBERT);
+    model->SetTranslate({ 5.0f,0.0f,0.0f });
 
     ReflectObject* reflectModel = new ReflectObject();
     reflectModel->Initialize("resources/mirror.obj");
@@ -25,8 +26,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     sprite->Initialize(textureHandle, {0.0f,0.0f});
 
     // 音
-    uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
-    Audio::PlayAudio(alarm, 1.0f);
+    //uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
+    //Audio::PlayAudio(alarm, 1.0f);
 
     // カメラ
     Camera* camera = new Camera();
@@ -57,32 +58,47 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // カメラの種類によって更新変更
         if (debugCamera->GetIsAvailable()) {
             debugCamera->Update();
+            reflectModel->Update(*debugCamera);
             model->Update(*debugCamera);
         } else {
             camera->Update();
+            reflectModel->Update(*camera);
             model->Update(*camera);
         }
 
         sprite->Update();
 
 
+        // 描画先を鏡テクスチャに切り替え
+        GetReflectCommon()->PreDraw();
+        // 鏡の中用の描画設定
+        GetObject3dCommon()->BeginDraw();
+        model->Update(reflectModel->GetReflectCamera());
+        model->Draw();
+        // 鏡終わり
+        GetReflectCommon()->PostDraw();
+
 
         // --- 描画処理 (Draw) ---
         GetDxCommon()->PreDraw();
-
         // [3D描画フェーズ]
         GetObject3dCommon()->BeginDraw();
-
+        if (debugCamera->GetIsAvailable()) {
+            model->Update(*debugCamera);
+        } else {
+            model->Update(*camera);
+        }
         model->Draw();
-       
+        reflectModel->Draw();
+
 
         // [2D描画フェーズ]
         GetSpriteCommon()->BeginDraw();
-
         // デバッグカメラ時画像を描画しない
         if (!debugCamera->GetIsAvailable()) {
             sprite->Draw();
         }
+
 
         ImGuiManager::End(GetDxCommon()->GetCommandList());
 

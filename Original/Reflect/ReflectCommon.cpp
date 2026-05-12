@@ -14,6 +14,8 @@ namespace Engine {
     void ReflectCommon::Initialize() {
         dxCommon_ = DirectXCommon::GetInstance();
         CreateReflectionResource();
+        CreateRootSignature();
+        CreatePipelineState();
     }
     
 
@@ -57,7 +59,7 @@ namespace Engine {
 
     D3D12_GPU_DESCRIPTOR_HANDLE ReflectCommon::GetReflectionTextureHandle() const {
         // 仮のハンドルを返す（後で実装）
-        return {};
+        return TextureManager::GetInstance()->GetGPUHandle(srvIndex_);
     }
 
     void ReflectCommon::CreateRootSignature() {

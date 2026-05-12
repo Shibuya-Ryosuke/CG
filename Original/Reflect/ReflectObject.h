@@ -27,10 +27,14 @@ namespace Engine {
         void Initialize(const std::string& modelPath);
 
         // 更新（メインカメラを元に、鏡用の反転カメラ行列を計算する）
-        void Update(const Camera& mainCamera);
+        void Update(const Camera& camera);
+        void Update(const DebugCamera& debugCamera);
 
         // 描画（メインシーンの描画中に呼び出す）
         void Draw();
+
+        // Getter
+        const Camera& GetReflectCamera() const { return reflectCamera_; }
 
         // --- セッター ---
         void SetTranslate(const Vector3& translate) { object_->SetTranslate(translate); }
@@ -43,6 +47,8 @@ namespace Engine {
         // 反射面を定義する（とりあえず Y=0 の平面とするための法線）
         Vector3 planeNormal_ = { 0.0f, 1.0f, 0.0f };
         float planeDistance_ = 0.0f; // 原点からの距離
+
+        Camera reflectCamera_;
     };
 
 }
