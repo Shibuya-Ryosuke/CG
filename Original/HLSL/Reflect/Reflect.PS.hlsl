@@ -23,8 +23,8 @@ struct DirectionalLight
 ConstantBuffer<ReflectMaterial> gMaterial : register(b0);
 ConstantBuffer<DirectionalLight> gDirectionLight : register(b1); // ※1
 
-Texture2D<float4> gTexture : register(t0);       // 元のテクスチャ
-Texture2D<float4> gReflectTexture : register(t1); // 鏡用テクスチャ
+
+Texture2D<float4> gReflectTexture : register(t0); // 鏡用テクスチャ
 SamplerState gSampler : register(s0);
 
 struct PixelShaderOutput 
@@ -38,7 +38,7 @@ PixelShaderOutput main(VertexShaderOutput input)
     
     // 1. UV変換とサンプリング
     float4 transformdUV = mul(float4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
-    float4 baseColor = gTexture.Sample(gSampler, transformdUV.xy);
+    float4 baseColor = gReflectTexture.Sample(gSampler, transformdUV.xy);
     
     // 2. スクリーン投影による反射テクスチャのサンプリング
     float2 projectedUV = input.screenPosition.xy / input.screenPosition.w;

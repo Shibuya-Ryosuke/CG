@@ -39,6 +39,12 @@ namespace Engine {
         float clearColor[] = { 0.1f, 0.25f, 0.5f, 1.0f };
         commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
         commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+        // ビューポートとシザー矩形を設定
+        D3D12_VIEWPORT viewport = { 0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f };
+        D3D12_RECT scissor = { 0, 0, 1280, 720 };
+        commandList->RSSetViewports(1, &viewport);
+        commandList->RSSetScissorRects(1, &scissor);
     }
 
     void ReflectCommon::PostDraw() {

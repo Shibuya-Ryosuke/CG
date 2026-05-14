@@ -20,11 +20,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     ReflectObject* reflectModel = new ReflectObject();
     reflectModel->Initialize("resources/mirror.obj");
-
-    // 画像
-    Sprite* sprite = new Sprite();
-    sprite->Initialize(textureHandle, {0.0f,0.0f});
-
     // 音
     //uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
     //Audio::PlayAudio(alarm, 1.0f);
@@ -35,7 +30,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // デバッグカメラ
     DebugCamera* debugCamera = new DebugCamera();
 
-
+    
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -45,10 +40,21 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         ImGuiManager::Begin();
 
+        Vector3 modelT = model->GetTranslate();
+        Vector3 modelR = model->GetRotate();
+        Vector3 modelS = model->GetScale();
+
 #ifdef _DEBUG
-        ImGui::ShowDemoWindow();
-        
+        ImGui::Text("Model : Axis");
+        ImGui::SliderFloat3("translate", &modelT.x, 0.0f, 10.0f);
+        ImGui::SliderFloat3("rotate", &modelR.x, 0.0f, 10.0f);
+        ImGui::SliderFloat3("scale", &modelS.x, 0.0f, 5.0f);
+        ImGui::NewLine();
 #endif
+
+        model->SetTranslate(modelT);
+        model->SetRotate(modelR);
+        model->SetScale(modelS);
 
         // Aキーでカメラ切り替え
         if (Input::TriggerKey(DIK_A)) {
@@ -65,8 +71,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             reflectModel->Update(*camera);
             model->Update(*camera);
         }
-
-        sprite->Update();
 
 
         // 描画先を鏡テクスチャに切り替え
@@ -94,10 +98,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [2D描画フェーズ]
         GetSpriteCommon()->BeginDraw();
-        // デバッグカメラ時画像を描画しない
-        if (!debugCamera->GetIsAvailable()) {
-            sprite->Draw();
-        }
 
 
         ImGuiManager::End(GetDxCommon()->GetCommandList());
@@ -112,9 +112,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     delete camera;
     camera = nullptr;
-
-    delete sprite;
-    sprite = nullptr;
 
     delete model;
     model = nullptr;

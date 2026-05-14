@@ -7,17 +7,14 @@ namespace Engine {
 
     void ReflectObject::Initialize(const std::string& modelPath) {
         // Blenderで作った「鏡の枠と面があるモデル」を読み込む
-        object_ = std::unique_ptr<Object3d>(Object3d::Create(modelPath));
-
-        // ReflectCommonで生成した鏡テクスチャのインデックスを取得
-        uint32_t reflectTextureIndex = ReflectCommon::GetInstance()->GetSrvIndex();
-
-        // モデルに鏡テクスチャを上書きする
-        // これにより、Blenderで設定していた元々のテクスチャではなく、描き込まれた反射絵が表示される
-        object_->SetTexture(reflectTextureIndex);
+        object_ = Object3d::Create(modelPath);
+        object_->SetTranslate({ -1.0f,-2.0f,0.0f });
     }
 
     void ReflectObject::Update(const Camera& camera) {
+        reflectCamera_.SetFovY(camera.GetFovY());
+        reflectCamera_.SetAspectRatio(1280.0f / 720.0f);
+
         // --- 鏡用（反転）カメラの計算 ---
         // Y=0 平面の場合、カメラの位置の Y を反転させる
         Vector3 reflectPos = camera.GetTranslate();
@@ -32,14 +29,26 @@ namespace Engine {
         reflectCamera_.SetRotate(reflectRot);
         reflectCamera_.Update();
 
-        // ※この reflectPos/reflectRot を使って鏡の中の世界を描画します。
-        // （シーン管理クラスなどで使えるようゲッターを作るか、ここで更新をかける）
-
         // 鏡（板ポリ）自体はメインカメラから見える位置に更新
         object_->Update(camera);
+
+        // 構造体にReflectVPを追加している前提
+        TransformationMatrixForReflect* wvpData = nullptr;
+        object_->GetWvpResource()->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
+
+        wvpData->World = object_->GetWorldMatrix();
+        // WVPはメインカメラから見た鏡の板の座標
+        wvpData->WVP = object_->GetWorldMatrix() * camera.GetViewProjectionMatrix();
+        // ReflectVPに鏡カメラの行列を入れる
+        wvpData->ReflectVP = reflectCamera_.GetViewProjectionMatrix();
+
+        object_->GetWvpResource()->Unmap(0, nullptr);
     }
 
     void ReflectObject::Update(const DebugCamera& debugCamera) {
+        reflectCamera_.SetFovY(debugCamera.GetFovY());
+        reflectCamera_.SetAspectRatio(1280.0f / 720.0f);
+
         Vector3 reflectPos = debugCamera.GetTranslate();
         reflectPos.y = -reflectPos.y + (2.0f * planeDistance_);
         
@@ -51,7 +60,20 @@ namespace Engine {
         reflectCamera_.SetRotate(reflectRot);
         reflectCamera_.Update();
 
+        
         object_->Update(debugCamera);
+
+        // 構造体にReflectVPを追加している前提
+        TransformationMatrixForReflect* wvpData = nullptr;
+        object_->GetWvpResource()->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
+
+        wvpData->World = object_->GetWorldMatrix();
+        // WVPはメインカメラから見た鏡の板の座標
+        wvpData->WVP = object_->GetWorldMatrix() * debugCamera.GetViewProjectionMatrix();
+        // ReflectVPに鏡カメラの行列を入れる
+        wvpData->ReflectVP = reflectCamera_.GetViewProjectionMatrix();
+
+        object_->GetWvpResource()->Unmap(0, nullptr);
     }
 
     void ReflectObject::Draw() {

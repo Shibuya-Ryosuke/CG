@@ -1,12 +1,13 @@
 #include "Reflect.hlsli"
 
-struct TransformationMatrix 
+struct TransformationMatrixForReflect 
 {
     float4x4 WVP;
     float4x4 World;
+    float4x4 ReflectVP;
 };
 
-ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
+ConstantBuffer<TransformationMatrixForReflect> gTransformationMatrix : register(b0);
 
 struct VertexShaderInput
 {

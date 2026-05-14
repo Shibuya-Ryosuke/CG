@@ -48,10 +48,10 @@ namespace Engine {
 		}
 
 		// 左クリック時移動操作可能
-		if (Input::IsMousePush(0)) {
-			move.x -= static_cast<float>(Input::GetMouseRelX() * moveSpeed_);
-			move.y += static_cast<float>(Input::GetMouseRelY() * moveSpeed_);
-		}
+		//if (Input::IsMousePush(0)) {
+		//	move.x -= static_cast<float>(Input::GetMouseRelX() * moveSpeed_);
+		//	move.y += static_cast<float>(Input::GetMouseRelY() * moveSpeed_);
+		//}
 
 		// 右クリック時回転操作可能
 		if (Input::IsMousePush(1)) {

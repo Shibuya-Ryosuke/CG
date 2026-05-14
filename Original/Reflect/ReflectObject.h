@@ -34,15 +34,20 @@ namespace Engine {
         void Draw();
 
         // Getter
-        const Camera& GetReflectCamera() const { return reflectCamera_; }
-
+        Camera& GetReflectCamera() { return reflectCamera_; }
+        const Object3d& GetObj() const { return *object_; };
         // --- セッター ---
         void SetTranslate(const Vector3& translate) { object_->SetTranslate(translate); }
         void SetRotate(const Vector3& rotate) { object_->SetRotate(rotate); }
         void SetScale(const Vector3& scale) { object_->SetScale(scale); }
 
     private:
-        std::unique_ptr<Object3d> object_; // 鏡の実体（板モデル）
+        struct TransformationMatrixForReflect {
+            Matrix4x4 WVP;
+            Matrix4x4 World;
+            Matrix4x4 ReflectVP;
+        };
+        Object3d* object_ = nullptr; // 鏡の実体（板モデル）
 
         // 反射面を定義する（とりあえず Y=0 の平面とするための法線）
         Vector3 planeNormal_ = { 0.0f, 1.0f, 0.0f };

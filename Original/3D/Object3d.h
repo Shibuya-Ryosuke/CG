@@ -33,6 +33,9 @@ namespace Engine {
         ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
         // ライトリソースの取得
         ID3D12Resource* GetLightResource() const { return lightResource_.Get(); };
+        Matrix4x4 GetWorldMatrix() const {
+            return MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+        }
 
         // Setter
         void SetScale(const Vector3& scale) { transform_.scale = scale; }
