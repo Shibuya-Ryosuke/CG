@@ -45,7 +45,15 @@ PixelShaderOutput main(VertexShaderOutput input)
     projectedUV.x = projectedUV.x * 0.5f + 0.5f;
     projectedUV.y = projectedUV.y * -0.5f + 0.5f; // DirectXは上が1, 下が-1
     
-    float4 reflectColor = gReflectTexture.Sample(gSampler, projectedUV);
+    // デフォルト（0〜1）以外の場所はリピートさせない。
+    float4 reflectColor = float4(0.1f, 0.25f, 0.5f, 1.0f); // 初期値を真っ黒（透明）に
+
+    if (projectedUV.x >= 0.0f && projectedUV.x <= 1.0f &&
+    projectedUV.y >= 0.0f && projectedUV.y <= 1.0f)
+    {
+    // 範囲内の時だけ、鏡テクスチャから色を持ってくる
+        reflectColor = gReflectTexture.Sample(gSampler, projectedUV);
+    }
 
     // 3. ライティング（Object3d.PS.hlsl の計算を移植）
     float4 litColor = baseColor * gMaterial.color;

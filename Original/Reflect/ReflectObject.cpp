@@ -16,12 +16,17 @@ namespace Engine {
         reflectCamera_.SetAspectRatio(1280.0f / 720.0f);
 
         // --- 鏡用（反転）カメラの計算 ---
-        // Y=0 平面の場合、カメラの位置の Y を反転させる
-        Vector3 reflectPos = camera.GetTranslate();
-        reflectPos.y = -reflectPos.y + (2.0f * planeDistance_);
+        float offset = planeDistance_;
 
-        // 回転も反転（ピッチとロールを反転させるのが基本）
+        // カメラの位置を反転
+        Vector3 reflectPos = camera.GetTranslate();
+        // 【修正】鏡の面を基準に完全に対称な位置へ移動
+        // 鏡の面がY=offsetなら、2.0f * offset - cameraPos.y で求められます
+        reflectPos.y = 2.0f * offset - reflectPos.y;
+
+        // 回転も板の法線（Y軸）に合わせて反転
         Vector3 reflectRot = camera.GetRotate();
+        // 【修正】ピッチ(X)とロール(Z)を反転することで、鏡の中を向くようにします
         reflectRot.x = -reflectRot.x;
         reflectRot.z = -reflectRot.z;
 
@@ -49,10 +54,17 @@ namespace Engine {
         reflectCamera_.SetFovY(debugCamera.GetFovY());
         reflectCamera_.SetAspectRatio(1280.0f / 720.0f);
 
+        float offset = planeDistance_;
+
+        // カメラの位置を反転
         Vector3 reflectPos = debugCamera.GetTranslate();
-        reflectPos.y = -reflectPos.y + (2.0f * planeDistance_);
-        
+        // 【修正】鏡の面を基準に完全に対称な位置へ移動
+        // 鏡の面がY=offsetなら、2.0f * offset - cameraPos.y で求められます
+        reflectPos.y = 2.0f * offset - reflectPos.y;
+
+        // 回転も板の法線（Y軸）に合わせて反転
         Vector3 reflectRot = debugCamera.GetRotate();
+        // 【修正】ピッチ(X)とロール(Z)を反転することで、鏡の中を向くようにします
         reflectRot.x = -reflectRot.x;
         reflectRot.z = -reflectRot.z;
 
