@@ -20,12 +20,13 @@ VertexShaderOutput main(VertexShaderInput input)
 {
     VertexShaderOutput output;
     output.position = mul(input.position, gTransformationMatrix.WVP);
-    output.worldPosition = mul(input.position, gTransformationMatrix.World).xyz;
+    float4 worldPos = mul(input.position, gTransformationMatrix.World);
+    output.worldPosition = worldPos.xyz;
     output.texcoord = input.texcoord;
     output.normal = normalize(mul(input.normal, (float3x3) gTransformationMatrix.World));
     
     // ピクセルシェーダーでの投影サンプリング用に保持
-    output.screenPosition = output.position; 
+    output.screenPosition = mul(worldPos, gTransformationMatrix.ReflectVP);
     
     return output;
 }
