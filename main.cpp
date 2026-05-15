@@ -16,7 +16,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Object3d* model = Object3d::Create("resources/axis.obj");
     model->SetTexture(textureHandle);
     model->SetReflectionMode(ShadingMode::HALF_LAMBERT);
-    model->SetTranslate({ 5.0f,0.0f,0.0f });
+    model->SetTranslate({ 5.0f,0.0f,-2.0f });
 
     ReflectObject* reflectModel = new ReflectObject();
     reflectModel->Initialize("resources/mirror.obj");
@@ -29,7 +29,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     // デバッグカメラ
     DebugCamera* debugCamera = new DebugCamera();
-
+    debugCamera->ToggleIsAvailable();
     
 
     // --- メインループ ---

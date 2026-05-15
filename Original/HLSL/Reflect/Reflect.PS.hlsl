@@ -46,7 +46,7 @@ PixelShaderOutput main(VertexShaderOutput input)
     projectedUV.y = projectedUV.y * -0.5f + 0.5f; // DirectXは上が1, 下が-1
     
     // デフォルト（0〜1）以外の場所はリピートさせない。
-    float4 reflectColor = float4(0.1f, 0.25f, 0.5f, 1.0f); // 初期値を真っ黒（透明）に
+    float4 reflectColor = float4(1.0f,1.0f,1.0f, 1.0f); // 初期値を真っ黒（透明）に
 
     if (projectedUV.x >= 0.0f && projectedUV.x <= 1.0f &&
     projectedUV.y >= 0.0f && projectedUV.y <= 1.0f)

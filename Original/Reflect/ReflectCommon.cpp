@@ -45,7 +45,7 @@ namespace Engine {
         D3D12_RECT scissor = { 0, 0, 1280, 720 };
         commandList->RSSetViewports(1, &viewport);
         commandList->RSSetScissorRects(1, &scissor);
-    }
+    };
 
     void ReflectCommon::PostDraw() {
         auto commandList = dxCommon_->GetCommandList();

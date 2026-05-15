@@ -9,11 +9,12 @@ namespace Engine {
         // Blenderで作った「鏡の枠と面があるモデル」を読み込む
         object_ = Object3d::Create(modelPath);
         object_->SetTranslate({ -1.0f,-2.0f,0.0f });
+        reflectCamera_.SetTranslate({ -1.0f,-2.0f,0.0f });
     }
 
     void ReflectObject::Update(const Camera& camera) {
         reflectCamera_.SetFovY(camera.GetFovY());
-        reflectCamera_.SetAspectRatio(1280.0f / 720.0f);
+        reflectCamera_.SetAspectRatio(-1280.0f / 720.0f);
 
         // --- 鏡用（反転）カメラの計算 ---
         float offset = planeDistance_;
@@ -52,7 +53,7 @@ namespace Engine {
 
     void ReflectObject::Update(const DebugCamera& debugCamera) {
         reflectCamera_.SetFovY(debugCamera.GetFovY());
-        reflectCamera_.SetAspectRatio(1280.0f / 720.0f);
+        reflectCamera_.SetAspectRatio(-1280.0f / 720.0f);
 
         float offset = planeDistance_;
 
@@ -62,14 +63,7 @@ namespace Engine {
         // 鏡の面がY=offsetなら、2.0f * offset - cameraPos.y で求められます
         reflectPos.y = 2.0f * offset - reflectPos.y;
 
-        // 回転も板の法線（Y軸）に合わせて反転
-        Vector3 reflectRot = debugCamera.GetRotate();
-        // 【修正】ピッチ(X)とロール(Z)を反転することで、鏡の中を向くようにします
-        reflectRot.x = -reflectRot.x;
-        reflectRot.z = -reflectRot.z;
-
         reflectCamera_.SetTranslate(reflectPos);
-        reflectCamera_.SetRotate(reflectRot);
         reflectCamera_.Update();
 
         
@@ -107,7 +101,7 @@ namespace Engine {
         matData->enableLighting = 1;
         matData->shadingMode = 0; // Lambert
         matData->reflectionWeight = 0.5f; // 反射の強さ（0.0〜1.0）
-        matData->shininess = 20.0f;
+        matData->shininess = 1.0f;
         matData->uvTransform = MakeIdentity4x4();
         object_->GetMaterialResource()->Unmap(0, nullptr);
 

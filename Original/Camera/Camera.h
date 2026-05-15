@@ -17,6 +17,7 @@ namespace Engine {
         // Setter
         void SetRotate(const Vector3& rotate) { rotate_ = rotate; }
         void SetTranslate(const Vector3& translate) { translate_ = translate; }
+        void SetTranslateY(const float translate) { translate_.y = translate; }
         void SetFovY(float fovY) { fovY_ = fovY; }
         void SetAspectRatio(float aspectRatio) { aspectRatio_ = aspectRatio; }
         void SetNearZ(float nearZ) { nearZ_ = nearZ; }
