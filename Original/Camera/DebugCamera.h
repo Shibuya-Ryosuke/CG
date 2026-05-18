@@ -24,13 +24,17 @@ namespace Engine {
 		void SetFarZ(float farZ) { farZ_ = farZ; }
 
 		// Getter
-		const Vector3& GetTranslate() const { return translate_; }
+		Vector3& GetTranslate(){ return translate_; }
 		const Vector3& GetRotate() const { return rotate_; }
 		float GetFovY() const { return fovY_; }
 		const Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
 		const Matrix4x4& GetProjectionMatrix() const { return projectionMatrix_; }
 		const Matrix4x4& GetViewProjectionMatrix() const { return viewProjectionMatrix_; }
 		bool GetIsAvailable() const { return isAvailable_; };
+		Vector3 GetWorldTranslate() const {
+			Matrix4x4 invView = Inverse(viewMatrix_);
+			return Vector3(invView.m[3][0], invView.m[3][1], invView.m[3][2]);
+		}
 
 		void ToggleIsAvailable() { isAvailable_ = !isAvailable_; };
 

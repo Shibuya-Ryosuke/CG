@@ -14,7 +14,15 @@ namespace Engine {
         void Initialize();
         void Update(const Camera& camera);
         void Update(const DebugCamera& debugCamera);
+        /// <summary>
+        /// 反射用の更新
+        /// </summary>
+        /// <param name="debugCamera">*デバッグカメラ</param>
+        /// <param name="reflectZ">ReflectModel型のオブジェクトからGetWorldMatrixで取得</param>
+        void ReflectUpdate(const DebugCamera& debugCamera, const Matrix4x4& reflectWorldMatrix);
+
         void Draw();
+        void ReflectDraw();
         void DrawSimple();
 
         static Object3d* Create(const std::string& filePath);
@@ -33,9 +41,7 @@ namespace Engine {
         ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
         // ライトリソースの取得
         ID3D12Resource* GetLightResource() const { return lightResource_.Get(); };
-        Matrix4x4 GetWorldMatrix() const {
-            return MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-        }
+        Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
 
         // Setter
         void SetScale(const Vector3& scale) { transform_.scale = scale; }
@@ -71,6 +77,8 @@ namespace Engine {
         // 座標変換行列（WVP）用
         Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_;
         TransformationMatrix* wvpData_ = nullptr;
+        Microsoft::WRL::ComPtr<ID3D12Resource> reflectWvpResource_;
+        TransformationMatrix* reflectWvpData_ = nullptr;
 
         uint32_t textureHandle_ = 0; // メンバ変数として保持
     };

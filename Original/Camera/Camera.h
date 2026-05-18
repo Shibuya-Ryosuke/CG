@@ -22,6 +22,12 @@ namespace Engine {
         void SetAspectRatio(float aspectRatio) { aspectRatio_ = aspectRatio; }
         void SetNearZ(float nearZ) { nearZ_ = nearZ; }
         void SetFarZ(float farZ) { farZ_ = farZ; }
+        void SetCustomMatrices(const Matrix4x4& view, const Matrix4x4& proj) {
+            viewMatrix_ = view;
+            projectionMatrix_ = proj;
+            viewProjectionMatrix_ = viewMatrix_ * projectionMatrix_;
+            isOverride_ = true; // 自動計算をスキップさせる
+        }
 
         // Getter
         const Vector3& GetTranslate() const { return translate_; }
@@ -42,5 +48,7 @@ namespace Engine {
         Matrix4x4 viewMatrix_;
         Matrix4x4 projectionMatrix_;
         Matrix4x4 viewProjectionMatrix_;
+
+        bool isOverride_ = false;
     };
 }

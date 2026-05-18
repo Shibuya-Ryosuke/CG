@@ -66,6 +66,12 @@ namespace Engine {
         wvpData_->WVP = MakeIdentity4x4();
         wvpData_->World = MakeIdentity4x4();
 
+        // 反射用
+        reflectWvpResource_ = DirectXCommon::CreateBufferResource(device, sizeof(TransformationMatrix));
+        reflectWvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&reflectWvpData_));
+        reflectWvpData_->WVP = MakeIdentity4x4();
+        reflectWvpData_->World = MakeIdentity4x4();
+
         CreateDirectionalLight();
     }
 
@@ -91,6 +97,28 @@ namespace Engine {
         wvpData_->WVP = wvpMatrix;
     }
 
+    void Object3d::ReflectUpdate(const DebugCamera& debugCamera, const Matrix4x4& reflectWorldMatrix) {
+        // 1. スケール、回転、移動の合成（鏡用に反転・ワープさせる計算）
+        Vector3 reflectScale = this->transform_.scale;
+        reflectScale.y *= -1.0f;
+        reflectScale.z *= -1.0f;
+        Matrix4x4 matScale = MakeScaleMatrix(reflectScale);
+        Matrix4x4 matRotate = MakeRotateMatrix(this->transform_.rotate);
+
+        Vector3 reflectPos = this->transform_.translate;
+        // ほんの少し上から見えるように
+        reflectPos.y = 0.2f * reflectWorldMatrix.m[3][1] - reflectPos.y;
+        // 奥行きの調整
+        reflectPos.z = -0.1f * reflectWorldMatrix.m[3][2] - reflectPos.z;
+        Matrix4x4 matTranslate = MakeTranslateMatrix(reflectPos);
+
+        Matrix4x4 mirrorWorld = matScale * matRotate * matTranslate;
+
+        // 2. ★独立した鏡用のバッファ（reflectWvpData_）に書き込む！
+        reflectWvpData_->World = mirrorWorld;
+        reflectWvpData_->WVP = mirrorWorld * debugCamera.GetViewProjectionMatrix();
+    }
+
     void Object3d::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
@@ -104,6 +132,23 @@ namespace Engine {
         // ライトの定数バッファをセット
         commandList->SetGraphicsRootConstantBufferView(3, lightResource_->GetGPUVirtualAddress());
        
+        commandList->DrawInstanced(vertexCount_, 1, 0, 0);
+    }
+
+    void Object3d::ReflectDraw() {
+        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+
+        // 引数で受け取ったハンドルを使って記述子テーブルをセット
+        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
+
+        commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
+        commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
+        // 反射用をセット
+        commandList->SetGraphicsRootConstantBufferView(1, reflectWvpResource_->GetGPUVirtualAddress());
+
+        // ライトの定数バッファをセット
+        commandList->SetGraphicsRootConstantBufferView(3, lightResource_->GetGPUVirtualAddress());
+
         commandList->DrawInstanced(vertexCount_, 1, 0, 0);
     }
 

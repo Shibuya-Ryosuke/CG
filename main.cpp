@@ -16,7 +16,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Object3d* model = Object3d::Create("resources/axis.obj");
     model->SetTexture(textureHandle);
     model->SetReflectionMode(ShadingMode::HALF_LAMBERT);
-    model->SetTranslate({ 5.0f,0.0f,-2.0f });
+    model->SetTranslate({ 0.0f,-2.0f,-2.0f });
 
     ReflectObject* reflectModel = new ReflectObject();
     reflectModel->Initialize("resources/mirror.obj");
@@ -48,8 +48,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         ImGui::Text("Model : Axis");
         ImGui::SliderFloat3("translate", &modelT.x, 0.0f, 10.0f);
         ImGui::SliderFloat3("rotate", &modelR.x, 0.0f, 10.0f);
-        ImGui::SliderFloat3("scale", &modelS.x, 0.0f, 5.0f);
+        ImGui::SliderFloat3("scale", &modelS.x, -1.0f, 1.0f);
         ImGui::NewLine();
+
+        ImGui::SliderFloat3("a", &debugCamera->GetTranslate().x, -20.0f, 20.0f);
+
 #endif
 
         model->SetTranslate(modelT);
@@ -77,16 +80,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         GetReflectCommon()->PreDraw();
         // 鏡の中用の描画設定
         GetObject3dCommon()->BeginDraw();
-        model->Update(reflectModel->GetReflectCamera());
-        model->Draw();
+        GetObject3dCommon()->SetCullMode(D3D12_CULL_MODE_FRONT);
+
+        model->ReflectUpdate(*debugCamera,reflectModel->GetWorldMatrix());
+        model->ReflectDraw();
         // 鏡終わり
         GetReflectCommon()->PostDraw();
 
 
         // --- 描画処理 (Draw) ---
         GetDxCommon()->PreDraw();
+
         // [3D描画フェーズ]
         GetObject3dCommon()->BeginDraw();
+        GetObject3dCommon()->SetCullMode(D3D12_CULL_MODE_BACK);
         if (debugCamera->GetIsAvailable()) {
             model->Update(*debugCamera);
         } else {
@@ -98,7 +105,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [2D描画フェーズ]
         GetSpriteCommon()->BeginDraw();
-
 
         ImGuiManager::End(GetDxCommon()->GetCommandList());
 

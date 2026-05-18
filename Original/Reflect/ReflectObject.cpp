@@ -8,8 +8,8 @@ namespace Engine {
     void ReflectObject::Initialize(const std::string& modelPath) {
         // Blenderで作った「鏡の枠と面があるモデル」を読み込む
         object_ = Object3d::Create(modelPath);
-        object_->SetTranslate({ -1.0f,-2.0f,0.0f });
-        reflectCamera_.SetTranslate({ -1.0f,-2.0f,0.0f });
+        GetObj().SetTranslate({ 0.0f,-3.0f,8.0f });
+        reflectCamera_.SetTranslate(GetObj().GetTranslate());
     }
 
     void ReflectObject::Update(const Camera& camera) {
@@ -53,20 +53,28 @@ namespace Engine {
 
     void ReflectObject::Update(const DebugCamera& debugCamera) {
         reflectCamera_.SetFovY(debugCamera.GetFovY());
-        reflectCamera_.SetAspectRatio(-1280.0f / 720.0f);
 
-        float offset = planeDistance_;
+        // 1. メインカメラの行列を取得
+        Matrix4x4 mainView = debugCamera.GetViewMatrix();
+        Matrix4x4 mainProj = debugCamera.GetProjectionMatrix();
 
-        // カメラの位置を反転
-        Vector3 reflectPos = debugCamera.GetTranslate();
-        // 【修正】鏡の面を基準に完全に対称な位置へ移動
-        // 鏡の面がY=offsetなら、2.0f * offset - cameraPos.y で求められます
-        reflectPos.y = 2.0f * offset - reflectPos.y;
+        // 2. 鏡（板ポリ）のワールド行列から位置を取得
+        Matrix4x4 mirrorWorld = object_->GetWorldMatrix();
 
-        reflectCamera_.SetTranslate(reflectPos);
+        // 鏡のワールド位置（4行目のXYZ。今回は特にZ座標 mirrorPos.z を使用します）
+        Vector3 mirrorPos = { mirrorWorld.m[3][0], mirrorWorld.m[3][1], mirrorWorld.m[3][2] };
+
+        // 3. 壁鏡専用に書き換えた関数を呼び出して反射行列を作る
+        Matrix4x4 matReflect = MakeReflectionMatrix(mirrorPos);
+
+        // 4. 反射ビュー行列を合成（メインカメラのViewに対して、鏡の反転・ワープを適用）
+        Matrix4x4 reflectView = mainView * matReflect;
+
+        // 5. 反射カメラに行列を強制上書きして更新
+        reflectCamera_.SetCustomMatrices(reflectView, mainProj);
         reflectCamera_.Update();
 
-        
+
         object_->Update(debugCamera);
 
         // 構造体にReflectVPを追加している前提

@@ -23,6 +23,9 @@ namespace Engine {
         /// </summary>
         void Finalize();
 
+        // setter
+        void SetCullMode(D3D12_CULL_MODE cullMode) { cullMode_ = cullMode; }
+
         // --- ゲッター ---
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
         ID3D12PipelineState* GetPipelineState() const { return graphicsPipelineState_.Get(); }
@@ -35,6 +38,8 @@ namespace Engine {
 
         // DirectXCommonのポインタ（初期化時にキャッシュする用）
         DirectXCommon* dxCommon_ = nullptr;
+
+        D3D12_CULL_MODE cullMode_ = D3D12_CULL_MODE_BACK;
 
         // ルートシグネチャ
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;

@@ -35,7 +35,8 @@ namespace Engine {
 
         // Getter
         Camera& GetReflectCamera() { return reflectCamera_; }
-        const Object3d& GetObj() const { return *object_; };
+        Matrix4x4& GetWorldMatrix() { return GetObj().GetWorldMatrix(); }
+        Object3d& GetObj() { return *object_; };
         // --- セッター ---
         void SetTranslate(const Vector3& translate) { object_->SetTranslate(translate); }
         void SetRotate(const Vector3& rotate) { object_->SetRotate(rotate); }
