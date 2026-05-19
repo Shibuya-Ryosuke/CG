@@ -52,40 +52,20 @@ namespace Engine {
     }
 
     void ReflectObject::Update(const DebugCamera& debugCamera) {
-        reflectCamera_.SetFovY(debugCamera.GetFovY());
-
-        // 1. メインカメラの行列を取得
-        Matrix4x4 mainView = debugCamera.GetViewMatrix();
-        Matrix4x4 mainProj = debugCamera.GetProjectionMatrix();
-
-        // 2. 鏡（板ポリ）のワールド行列から位置を取得
-        Matrix4x4 mirrorWorld = object_->GetWorldMatrix();
-
-        // 鏡のワールド位置（4行目のXYZ。今回は特にZ座標 mirrorPos.z を使用します）
-        Vector3 mirrorPos = { mirrorWorld.m[3][0], mirrorWorld.m[3][1], mirrorWorld.m[3][2] };
-
-        // 3. 壁鏡専用に書き換えた関数を呼び出して反射行列を作る
-        Matrix4x4 matReflect = MakeReflectionMatrix(mirrorPos);
-
-        // 4. 反射ビュー行列を合成（メインカメラのViewに対して、鏡の反転・ワープを適用）
-        Matrix4x4 reflectView = mainView * matReflect;
-
-        // 5. 反射カメラに行列を強制上書きして更新
-        reflectCamera_.SetCustomMatrices(reflectView, mainProj);
-        reflectCamera_.Update();
-
-
+        // 鏡の板ポリ自体の通常の更新
         object_->Update(debugCamera);
 
-        // 構造体にReflectVPを追加している前提
         TransformationMatrixForReflect* wvpData = nullptr;
         object_->GetWvpResource()->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
 
+        // 鏡の板ポリ自体のワールド行列
         wvpData->World = object_->GetWorldMatrix();
-        // WVPはメインカメラから見た鏡の板の座標
+        // メインカメラから見た鏡の板のWVP
         wvpData->WVP = object_->GetWorldMatrix() * debugCamera.GetViewProjectionMatrix();
-        // ReflectVPに鏡カメラの行列を入れる
-        wvpData->ReflectVP = reflectCamera_.GetViewProjectionMatrix();
+
+        // 【変更】カメラを反転させないため、通常のVPをそのまま渡す
+        //（オブジェクト側のReflectUpdateで反転されたWorldが渡ってくるため、カメラは通常のものでOK）
+        wvpData->ReflectVP = debugCamera.GetViewProjectionMatrix();
 
         object_->GetWvpResource()->Unmap(0, nullptr);
     }

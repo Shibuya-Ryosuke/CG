@@ -46,7 +46,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 #ifdef _DEBUG
         ImGui::Text("Model : Axis");
-        ImGui::SliderFloat3("translate", &modelT.x, 0.0f, 10.0f);
+        ImGui::SliderFloat3("translate", &modelT.x, -10.0f, 10.0f);
         ImGui::SliderFloat3("rotate", &modelR.x, 0.0f, 10.0f);
         ImGui::SliderFloat3("scale", &modelS.x, -1.0f, 1.0f);
         ImGui::NewLine();
@@ -93,7 +93,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [3D描画フェーズ]
         GetObject3dCommon()->BeginDraw();
-        GetObject3dCommon()->SetCullMode(D3D12_CULL_MODE_BACK);
+        GetObject3dCommon()->SetCullMode(D3D12_CULL_MODE_FRONT);
         if (debugCamera->GetIsAvailable()) {
             model->Update(*debugCamera);
         } else {

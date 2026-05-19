@@ -98,23 +98,24 @@ namespace Engine {
     }
 
     void Object3d::ReflectUpdate(const DebugCamera& debugCamera, const Matrix4x4& reflectWorldMatrix) {
-        // 1. スケール、回転、移動の合成（鏡用に反転・ワープさせる計算）
-        Vector3 reflectScale = this->transform_.scale;
-        reflectScale.y *= -1.0f;
-        reflectScale.z *= -1.0f;
-        Matrix4x4 matScale = MakeScaleMatrix(reflectScale);
-        Matrix4x4 matRotate = MakeRotateMatrix(this->transform_.rotate);
+        Matrix4x4 normalWorld = MakeScaleMatrix(transform_.scale) *
+            MakeRotateMatrix(transform_.rotate) *
+            MakeTranslateMatrix(transform_.translate);
 
-        Vector3 reflectPos = this->transform_.translate;
-        // ほんの少し上から見えるように
-        reflectPos.y = 0.2f * reflectWorldMatrix.m[3][1] - reflectPos.y;
-        // 奥行きの調整
-        reflectPos.z = -0.1f * reflectWorldMatrix.m[3][2] - reflectPos.z;
-        Matrix4x4 matTranslate = MakeTranslateMatrix(reflectPos);
+        // 2. 鏡（壁面）の現在のワールドZ座標を取得
+        float mirrorZ = reflectWorldMatrix.m[3][2];
 
-        Matrix4x4 mirrorWorld = matScale * matRotate * matTranslate;
+        // 3. 空間をZ軸方向に反転させる「壁用の反射行列」を作成
+        //（Z=mirrorZ の平面に対して反転させる行列）
+        Matrix4x4 reflectMatrix = MakeIdentity4x4();   // 単位行列で初期化
+        reflectMatrix.m[2][2] = -1.0f;          // Z方向の向きを反転
+        reflectMatrix.m[3][2] = 2.0f * mirrorZ; // 壁の位置に応じた奥行きのオフセット
 
-        // 2. ★独立した鏡用のバッファ（reflectWvpData_）に書き込む！
+        // 4. 合成：本来のワールド行列に反射行列を掛ける
+        // ※もし行列の合成順序が「親 * 子」の環境であれば、順序を逆にしてください
+        Matrix4x4 mirrorWorld = normalWorld * reflectMatrix;
+
+        // 5. 独立した鏡用のバッファに書き込む
         reflectWvpData_->World = mirrorWorld;
         reflectWvpData_->WVP = mirrorWorld * debugCamera.GetViewProjectionMatrix();
     }

@@ -453,7 +453,7 @@ inline Matrix4x4 MakeReflectionMatrix(const Vector3& mirrorPos)
 	Matrix4x4 m;
 
 	// 1行目：X軸（左右）。鏡写しにするためにマイナスにする
-	m.m[0][0] = -1.0f;
+	m.m[0][0] = 1.0f;
 	m.m[0][1] = 0.0f;
 	m.m[0][2] = 0.0f;
 	m.m[0][3] = 0.0f;
