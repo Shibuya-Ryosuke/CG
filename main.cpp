@@ -79,8 +79,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // 描画先を鏡テクスチャに切り替え
         GetReflectCommon()->PreDraw();
         // 鏡の中用の描画設定
-        GetObject3dCommon()->BeginDraw();
-        GetObject3dCommon()->SetCullMode(D3D12_CULL_MODE_FRONT);
+        GetObject3dCommon()->BeginDraw(Object3dCommon::DrawType::REFLECT);
 
         model->ReflectUpdate(*debugCamera,reflectModel->GetWorldMatrix());
         model->ReflectDraw();
@@ -93,13 +92,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [3D描画フェーズ]
         GetObject3dCommon()->BeginDraw();
-        GetObject3dCommon()->SetCullMode(D3D12_CULL_MODE_FRONT);
         if (debugCamera->GetIsAvailable()) {
             model->Update(*debugCamera);
         } else {
             model->Update(*camera);
         }
         model->Draw();
+
         reflectModel->Draw();
 
 

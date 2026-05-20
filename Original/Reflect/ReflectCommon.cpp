@@ -148,7 +148,7 @@ namespace Engine {
 
         // ラスタライザ設定
         psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-        psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+        psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 
         // 書き込むRTVの情報
         psoDesc.NumRenderTargets = 1;

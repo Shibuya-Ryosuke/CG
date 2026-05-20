@@ -6,6 +6,11 @@
 namespace Engine {
     class Object3dCommon {
     public:
+        enum DrawType {
+            REAL,
+            REFLECT
+        };
+
         /// <summary>
         /// シングルトンインスタンスの取得
         /// </summary>
@@ -16,19 +21,16 @@ namespace Engine {
         /// </summary>
         void Initialize();
 
-        void BeginDraw();
+        void BeginDraw(DrawType drawType = DrawType::REAL);
 
         /// <summary>
         /// 終了処理
         /// </summary>
         void Finalize();
 
-        // setter
-        void SetCullMode(D3D12_CULL_MODE cullMode) { cullMode_ = cullMode; }
-
         // --- ゲッター ---
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
-        ID3D12PipelineState* GetPipelineState() const { return graphicsPipelineState_.Get(); }
+        ID3D12PipelineState* GetPipelineState() const { return realPipelineState_.Get(); }
 
     private:
         Object3dCommon() = default;
@@ -39,16 +41,18 @@ namespace Engine {
         // DirectXCommonのポインタ（初期化時にキャッシュする用）
         DirectXCommon* dxCommon_ = nullptr;
 
-        D3D12_CULL_MODE cullMode_ = D3D12_CULL_MODE_BACK;
-
         // ルートシグネチャ
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
         // グラフィックスパイプライン
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> realPipelineState_;
+        // 反射用パイプライン
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> reflectPipelineState_;
 
         // ルートシグネチャー作成
         void CreateRootSignature();
         // パイプライン作成
-        void CreatePipelineState();
+        void CreateRealPipelineState();
+        // 反射用パイプライン生成
+        void CreateReflectPipelineState();
     };
 }
