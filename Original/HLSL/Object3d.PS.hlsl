@@ -28,7 +28,7 @@ struct PixelShaderOutput
 
 PixelShaderOutput main(VertexShaderOutput input) 
 {
-    clip(input.position.z);
+
     
     PixelShaderOutput output;
     float4 transformdUV = mul(float4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);

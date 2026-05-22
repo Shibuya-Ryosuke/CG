@@ -12,6 +12,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // テクスチャ
     uint32_t textureHandle = textureManager_->Load("resources/uvChecker.png");
     uint32_t a = textureManager_->Load("resources/brick.png");
+    uint32_t b = textureManager_->Load("resources/a.png");
+
     // 3d
     Object3d* model = Object3d::Create("resources/axis.obj");
     model->SetTexture(textureHandle);
@@ -34,6 +36,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     DebugCamera* debugCamera = new DebugCamera();
     debugCamera->ToggleIsAvailable();
     
+    Sprite* sprite = new Sprite;
+    sprite->Initialize(b, { 0.0f, 0.0f });
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -81,7 +85,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             reflectModel->Update(*camera);
             model->Update(*camera);
         }
-
+        sprite->Update();
 
         // 描画先を鏡テクスチャに切り替え
         GetReflectCommon()->PreDraw();
@@ -111,7 +115,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [2D描画フェーズ]
         GetSpriteCommon()->BeginDraw();
-
+        if (Input::PushKey(DIK_Z)) {
+            sprite->Draw();
+        }
         ImGuiManager::End(GetDxCommon()->GetCommandList());
         // 画面表示（PostDraw、コマンドリスト実行、スワップチェーン入れ替え）
         GetDxCommon()->PostDraw();

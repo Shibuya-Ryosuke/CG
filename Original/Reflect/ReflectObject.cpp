@@ -17,7 +17,7 @@ namespace Engine {
 
     void ReflectObject::Update(const Camera& camera) {
         reflectCamera_.SetFovY(camera.GetFovY());
-        reflectCamera_.SetAspectRatio(-1280.0f / 720.0f);
+        reflectCamera_.SetAspectRatio(1280.0f / 720.0f);
 
         // --- 鏡用（反転）カメラの計算 ---
         float offset = planeDistance_;

@@ -54,7 +54,7 @@ namespace Engine {
         uint32_t textureHandle_ = 0;
         Vector2 position_ = { 0.0f, 0.0f };
         float rotation_ = 0.0f;
-        Vector2 size_ = { 100.0f, 100.0f };
+        Vector2 size_ = { 1280.0f, 720.0f };
         Transform uvTransformSprite_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     };
 }

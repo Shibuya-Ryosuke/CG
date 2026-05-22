@@ -2,6 +2,7 @@
 #include "../Base/DirectXCommon.h"
 #include "SpriteCommon.h"
 #include "../Graphics/TextureManager.h"
+#include "../Reflect/ReflectCommon.h"
 
 namespace Engine {
     Sprite::Sprite() {};
@@ -97,7 +98,7 @@ namespace Engine {
         // RootParameter (0:Material, 1:WVP, 2:Texture)
         commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
         commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
+        commandList->SetGraphicsRootDescriptorTable(2, ReflectCommon::GetInstance()->GetReflectionTextureHandle());
 
         // 4. インデックスを使って描画 (6つのインデックスを使用)
         commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);

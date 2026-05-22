@@ -25,8 +25,18 @@ VertexShaderOutput main(VertexShaderInput input)
     output.texcoord = input.texcoord;
     output.normal = normalize(mul(input.normal, (float3x3) gTransformationMatrix.World));
     
-    // ピクセルシェーダーでの投影サンプリング用に保持
-    output.screenPosition = mul(worldPos, gTransformationMatrix.ReflectVP);
+    // 修正コード：ReflectVPを掛けたあと、その場で w で割り算（透視除算）まで終わらせる
+    float4 projPos = mul(worldPos, gTransformationMatrix.ReflectVP);
     
+    // w が 0 になるのを防ぐガード（一応）
+    if (projPos.w == 0.0f)
+    {
+        projPos.w = 0.0001f;
+    }
+    
+    // XYをWで割り、あらかじめ 0 〜 1 のUV空間に変換してしまう（ZとWも一応そのまま送る）
+    output.screenPosition.xy = projPos.xy / projPos.w;
+    output.screenPosition.z = projPos.z;
+    output.screenPosition.w = projPos.w;
     return output;
 }

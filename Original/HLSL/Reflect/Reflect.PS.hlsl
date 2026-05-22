@@ -41,17 +41,18 @@ PixelShaderOutput main(VertexShaderOutput input)
     float4 baseColor = gReflectTexture.Sample(gSampler, transformdUV.xy);
     
     // 2. スクリーン投影による反射テクスチャのサンプリング
-    float2 projectedUV = input.screenPosition.xy / input.screenPosition.w;
-    projectedUV.x = projectedUV.x * 0.5f + 0.5f;
-    projectedUV.y = projectedUV.y * -0.5f + 0.5f; // DirectXは上が1, 下が-1
-    
-    // デフォルト（0〜1）以外の場所はリピートさせない。
-    float4 reflectColor = float4(1.0f,1.0f,1.0f, 1.0f); // 初期値を真っ黒（透明）に
+    float4 reflectColor = float4(0.0f, 0.0f, 0.0f, 1.0f); // 初期値
 
-    if (projectedUV.x >= 0.0f && projectedUV.x <= 1.0f &&
-    projectedUV.y >= 0.0f && projectedUV.y <= 1.0f)
+    // ★変更：すでにwで割り算済みなので、そのままUV変換に移る
+    float2 projectedUV = input.screenPosition.xy;
+    projectedUV.x = projectedUV.x * 0.5f + 0.5f;
+    projectedUV.y = projectedUV.y * -0.5f + 0.5f;
+    
+    // 範囲チェック（頂点シェーダーから渡ってきた w の値もここでチェック）
+    if (projectedUV.x >= 0.001f && projectedUV.x <= 0.999f &&
+        projectedUV.y >= 0.001f && projectedUV.y <= 0.999f &&
+        input.screenPosition.w > 0.1f) // ニアクリップのチェック
     {
-    // 範囲内の時だけ、鏡テクスチャから色を持ってくる
         reflectColor = gReflectTexture.Sample(gSampler, projectedUV);
     }
 
