@@ -11,12 +11,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     // テクスチャ
     uint32_t textureHandle = textureManager_->Load("resources/uvChecker.png");
-
+    uint32_t a = textureManager_->Load("resources/brick.png");
     // 3d
     Object3d* model = Object3d::Create("resources/axis.obj");
     model->SetTexture(textureHandle);
-    model->SetReflectionMode(ShadingMode::HALF_LAMBERT);
     model->SetTranslate({ 0.0f,-2.0f,-2.0f });
+
+    Object3d* modelG = Object3d::Create("resources/mapping.obj");
+    modelG->SetTexture(a);
+    modelG->SetTranslate({ 0.0f,-3.5f,4.0f });
 
     ReflectObject* reflectModel = new ReflectObject();
     reflectModel->Initialize("resources/mirror.obj");
@@ -53,6 +56,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         ImGui::SliderFloat3("a", &debugCamera->GetTranslate().x, -20.0f, 20.0f);
 
+        ImGui::SliderFloat3("rotate", &debugCamera->GetRotate().x, 0.0f, 0.0f);
+
+       
 #endif
 
         model->SetTranslate(modelT);
@@ -69,6 +75,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             debugCamera->Update();
             reflectModel->Update(*debugCamera);
             model->Update(*debugCamera);
+            modelG->Update(*debugCamera);
         } else {
             camera->Update();
             reflectModel->Update(*camera);
@@ -83,8 +90,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         model->ReflectUpdate(*debugCamera,reflectModel->GetWorldMatrix());
         model->ReflectDraw();
-        // 鏡終わり
+
+        modelG->ReflectUpdate(*debugCamera, reflectModel->GetWorldMatrix());
+        modelG->ReflectDraw();
         GetReflectCommon()->PostDraw();
+        // 鏡終わり
 
 
         // --- 描画処理 (Draw) ---
@@ -92,11 +102,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [3D描画フェーズ]
         GetObject3dCommon()->BeginDraw();
-        if (debugCamera->GetIsAvailable()) {
-            model->Update(*debugCamera);
-        } else {
-            model->Update(*camera);
-        }
+    
+        modelG->Draw();
         model->Draw();
 
         reflectModel->Draw();
@@ -106,7 +113,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         GetSpriteCommon()->BeginDraw();
 
         ImGuiManager::End(GetDxCommon()->GetCommandList());
-
         // 画面表示（PostDraw、コマンドリスト実行、スワップチェーン入れ替え）
         GetDxCommon()->PostDraw();
     }

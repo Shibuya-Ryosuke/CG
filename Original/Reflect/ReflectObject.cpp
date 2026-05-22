@@ -2,6 +2,9 @@
 #include "ReflectCommon.h"
 #include "../Graphics/TextureManager.h"
 #include "../Math/Math.h"
+#include "../Input/Input.h"
+#include <sstream>
+#include <iomanip>
 
 namespace Engine {
 
@@ -66,6 +69,24 @@ namespace Engine {
         // 【変更】カメラを反転させないため、通常のVPをそのまま渡す
         //（オブジェクト側のReflectUpdateで反転されたWorldが渡ってくるため、カメラは通常のものでOK）
         wvpData->ReflectVP = debugCamera.GetViewProjectionMatrix();
+
+        if(Input::TriggerKey(DIK_C))
+        {
+            char buf[512];
+            OutputDebugStringA("\n--- [Debug ReflectVP] ---\n");
+
+            for (int i = 0; i < 4; ++i) {
+                // m[行][列] でアクセス
+                snprintf(buf, sizeof(buf), "| %7.4f\t, %7.4f\t, %7.4f\t, %7.4f |\n",
+                    wvpData->ReflectVP.m[i][0],
+                    wvpData->ReflectVP.m[i][1],
+                    wvpData->ReflectVP.m[i][2],
+                    wvpData->ReflectVP.m[i][3]);
+
+                OutputDebugStringA(buf);
+            }
+            OutputDebugStringA("-------------------------\n");
+        }
 
         object_->GetWvpResource()->Unmap(0, nullptr);
     }

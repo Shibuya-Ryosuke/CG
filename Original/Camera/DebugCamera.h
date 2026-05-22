@@ -25,7 +25,7 @@ namespace Engine {
 
 		// Getter
 		Vector3& GetTranslate(){ return translate_; }
-		const Vector3& GetRotate() const { return rotate_; }
+		Vector3& GetRotate() { return rotate_; }
 		float GetFovY() const { return fovY_; }
 		const Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
 		const Matrix4x4& GetProjectionMatrix() const { return projectionMatrix_; }

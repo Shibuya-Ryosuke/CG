@@ -36,6 +36,8 @@ namespace Engine {
         lightData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
         lightData_->direction = { 0.0f, -1.0f, 0.0f };
         lightData_->intensity = 1.0f;
+
+        materialData_->shadingMode = ShadingMode::HALF_LAMBERT;
     }
 
     void Object3d::InternalInitialize(const ModelLoader::ModelData& modelData) {
@@ -98,26 +100,37 @@ namespace Engine {
     }
 
     void Object3d::ReflectUpdate(const DebugCamera& debugCamera, const Matrix4x4& reflectWorldMatrix) {
-        Matrix4x4 normalWorld = MakeScaleMatrix(transform_.scale) *
-            MakeRotateMatrix(transform_.rotate) *
-            MakeTranslateMatrix(transform_.translate);
-
-        // 2. 鏡（壁面）の現在のワールドZ座標を取得
-        float mirrorZ = reflectWorldMatrix.m[3][2];
-
-        // 3. 空間をZ軸方向に反転させる「壁用の反射行列」を作成
-        //（Z=mirrorZ の平面に対して反転させる行列）
-        Matrix4x4 reflectMatrix = MakeIdentity4x4();   // 単位行列で初期化
-        reflectMatrix.m[2][2] = -1.0f;          // Z方向の向きを反転
-        reflectMatrix.m[3][2] = 2.0f * mirrorZ; // 壁の位置に応じた奥行きのオフセット
-
-        // 4. 合成：本来のワールド行列に反射行列を掛ける
-        // ※もし行列の合成順序が「親 * 子」の環境であれば、順序を逆にしてください
+        Matrix4x4 normalWorld = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+        Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(reflectWorldMatrix);
         Matrix4x4 mirrorWorld = normalWorld * reflectMatrix;
 
-        // 5. 独立した鏡用のバッファに書き込む
+        // --- 【修正】鏡の正面（Forward = Z軸）をワールド行列の2行目から正しく抽出 ---
+        Vector3 mirrorNormal = {
+            reflectWorldMatrix.m[2][0],
+            reflectWorldMatrix.m[2][1],
+            reflectWorldMatrix.m[2][2]
+        };
+        mirrorNormal = Normalize(mirrorNormal);
+
+        Vector3 mirrorPos = {
+            reflectWorldMatrix.m[3][0],
+            reflectWorldMatrix.m[3][1],
+            reflectWorldMatrix.m[3][2]
+        };
+
+        // 斜めクリップ済みの Projection 行列を取得
+        Matrix4x4 obliqueProj = CalculateObliqueMatrix(
+            debugCamera.GetProjectionMatrix(),
+            debugCamera.GetViewMatrix(),
+            mirrorNormal,
+            mirrorPos
+        );
+
+        // 反射パス専用の ViewProjection 行列を合成
+        Matrix4x4 reflectVP = debugCamera.GetViewMatrix() * obliqueProj;
+
         reflectWvpData_->World = mirrorWorld;
-        reflectWvpData_->WVP = mirrorWorld * debugCamera.GetViewProjectionMatrix();
+        reflectWvpData_->WVP = mirrorWorld * reflectVP;
     }
 
     void Object3d::Draw() {
