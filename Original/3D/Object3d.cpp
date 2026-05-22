@@ -7,6 +7,7 @@ namespace Engine {
 
     void Object3d::Initialize() {
         // デフォルト設定などが必要ならここに書く
+        // scale rotate translate
         transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     }
 

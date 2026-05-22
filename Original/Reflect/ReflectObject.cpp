@@ -11,7 +11,6 @@ namespace Engine {
     void ReflectObject::Initialize(const std::string& modelPath) {
         // Blenderで作った「鏡の枠と面があるモデル」を読み込む
         object_ = Object3d::Create(modelPath);
-        GetObj().SetTranslate({ 0.0f,-3.0f,8.0f });
         reflectCamera_.SetTranslate(GetObj().GetTranslate());
     }
 
@@ -106,11 +105,11 @@ namespace Engine {
         // Object3d::materialResource_ へのアクセス（必要に応じてゲッター作成かFriend設定）
         // ここでは object_ の既存リソースに Map して書き込みます
         object_->GetMaterialResource()->Map(0, nullptr, reinterpret_cast<void**>(&matData));
-        matData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+        matData->color = { 0.0f, 0.0f, 0.0f, 0.0f };
         matData->enableLighting = 1;
-        matData->shadingMode = 0; // Lambert
-        matData->reflectionWeight = 0.5f; // 反射の強さ（0.0〜1.0）
-        matData->shininess = 1.0f;
+        matData->shadingMode = 1; // Lambert
+        matData->reflectionWeight = 0.8f; // 反射の強さ（0.0〜1.0）
+        matData->shininess = 10.0f;
         matData->uvTransform = MakeIdentity4x4();
         object_->GetMaterialResource()->Unmap(0, nullptr);
 

@@ -25,9 +25,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     ReflectObject* reflectModel = new ReflectObject();
     reflectModel->Initialize("resources/mirror.obj");
-    // 音
-    //uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
-    //Audio::PlayAudio(alarm, 1.0f);
+    reflectModel->SetTranslate({ -2.0f,-3.0f,8.0f });
+
+    ReflectObject* r2 = new ReflectObject();
+    r2->Initialize("resources/mirror.obj");
+    r2->SetTranslate({ 8.0f,-3.0f,8.0f });
 
     // カメラ
     Camera* camera = new Camera();
@@ -35,9 +37,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // デバッグカメラ
     DebugCamera* debugCamera = new DebugCamera();
     debugCamera->ToggleIsAvailable();
-    
+
     Sprite* sprite = new Sprite;
     sprite->Initialize(b, { 0.0f, 0.0f });
+
+
+
+
+
+    // 音
+    //uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
+    //Audio::PlayAudio(alarm, 1.0f);
+
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -78,6 +89,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         if (debugCamera->GetIsAvailable()) {
             debugCamera->Update();
             reflectModel->Update(*debugCamera);
+            r2->Update(*debugCamera);
             model->Update(*debugCamera);
             modelG->Update(*debugCamera);
         } else {
@@ -111,6 +123,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         model->Draw();
 
         reflectModel->Draw();
+        r2->Draw();
 
 
         // [2D描画フェーズ]
