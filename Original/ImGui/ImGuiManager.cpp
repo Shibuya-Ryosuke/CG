@@ -37,13 +37,13 @@ namespace Engine {
         );
     }
 
-    void ImGuiManager::Begin() {
+    void ImGuiManager::NewFrame() {
         ImGui_ImplDX12_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
     }
 
-    void ImGuiManager::End(ID3D12GraphicsCommandList* commandList) {
+    void ImGuiManager::EndFrame(ID3D12GraphicsCommandList* commandList) {
         ImGuiManager* instance = GetInstance();
 
         ImGui::Render();

@@ -59,7 +59,7 @@ namespace Engine {
         void SetDirectionalLight(const DirectionalLight& light) { *lightData_ = light; }
         void SetLambertMode(const ShadingMode lambertMode) { materialData_->shadingMode = lambertMode; }
         void SetTexture(uint32_t handle) { textureHandle_ = handle; }
-
+        
     private:
         // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）
         void InternalInitialize(const ModelLoader::ModelData& modelData);

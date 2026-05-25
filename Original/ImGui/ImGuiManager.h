@@ -12,8 +12,8 @@ namespace Engine {
 #ifdef _DEBUG
         static void Initialize(HWND hwnd, ID3D12Device* device, int bufferCount, DXGI_FORMAT rtvFormat);
         static void Finalize();
-        static void Begin();
-        static void End(ID3D12GraphicsCommandList* commandList);
+        static void NewFrame();
+        static void EndFrame(ID3D12GraphicsCommandList* commandList);
 #else
         static void Initialize(HWND, ID3D12Device*, int, DXGI_FORMAT) {}
         static void Finalize() {}

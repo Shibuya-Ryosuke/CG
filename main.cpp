@@ -61,27 +61,56 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // 入力受付
         Input::Update();
 
-        ImGuiManager::Begin();
+        ImGuiManager::NewFrame();
 
         Vector3 modelT = model->GetTranslate();
         Vector3 modelR = model->GetRotate();
         Vector3 modelS = model->GetScale();
 
+        Vector3 lMirrorT = leftMirror->GetTranslate();
+        Vector3 lMirrorR = leftMirror->GetRotate();
+        Vector3 lMirrorS = leftMirror->GetScale();
+
+        Vector3 rMirrorT = rightMirror->GetTranslate();
+        Vector3 rMirrorR = rightMirror->GetRotate();
+        Vector3 rMirrorS = rightMirror->GetScale();
+
 #ifdef _DEBUG
-        ImGui::Text("Model : Axis");
+        ImGui::Begin("Axis");
         ImGui::DragFloat3("Axis : translate", &modelT.x, 0.01f, -10.0f, 10.0f);
         ImGui::DragFloat3("Axis : rotate", &modelR.x, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat3("Axis : scale", &modelS.x, 0.01f, -1.0f, 1.0f);
-        ImGui::NewLine();
+        ImGui::End();
 
+        ImGui::Begin("Mirror");
+        ImGui::DragFloat3("Left Mirror : translate", &lMirrorT.x, 0.01f, -10.0f, 10.0f);
+        ImGui::DragFloat3("Left Mirror : rotate", &lMirrorR.x, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat3("Left Mirror : scale", &lMirrorS.x, 0.01f, -1.0f, 1.0f);
+        ImGui::NewLine();
+        ImGui::DragFloat3("Right Mirror : translate", &rMirrorT.x, 0.01f, -10.0f, 10.0f);
+        ImGui::DragFloat3("Right Mirror : rotate", &rMirrorR.x, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat3("Right Mirror : scale", &rMirrorS.x, 0.01f, -1.0f, 1.0f);
+        ImGui::End();
+
+        ImGui::Begin("Camera");
         ImGui::Text("DebugCamera");
         ImGui::DragFloat3("DebugCamera : translate", &debugCamera->GetTranslate().x, 0.01f, -20.0f, 20.0f);
         ImGui::DragFloat3("DebugCamera : rotate", &debugCamera->GetRotate().x, 0.01f, 0.0f, 0.0f);
+        ImGui::End();
+
 #endif
 
         model->SetTranslate(modelT);
         model->SetRotate(modelR);
         model->SetScale(modelS);
+
+        leftMirror->SetTranslate(lMirrorT);
+        leftMirror->SetRotate(lMirrorR);
+        leftMirror->SetScale(lMirrorS);
+
+        rightMirror->SetTranslate(rMirrorT);
+        rightMirror->SetRotate(rMirrorR);
+        rightMirror->SetScale(rMirrorS);
 
         // Aキーでカメラ切り替え
         if (Input::TriggerKey(DIK_A)) {
@@ -134,7 +163,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         if (Input::PushKey(DIK_Z)) {
             sprite->Draw();
         }
-        ImGuiManager::End(GetDxCommon()->GetCommandList());
+
+        ImGuiManager::EndFrame(GetDxCommon()->GetCommandList());
         // 画面表示（PostDraw、コマンドリスト実行、スワップチェーン入れ替え）
         GetDxCommon()->PostDraw();
     }
