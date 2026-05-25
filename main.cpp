@@ -11,9 +11,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Engine::Initialize();
 
     // テクスチャ
-    uint32_t textureHandle = textureManager_->Load("resources/uvChecker.png");
-    uint32_t a = textureManager_->Load("resources/brick.png");
-    uint32_t b = textureManager_->Load("resources/a.png");
+    uint32_t textureHandle = GetTxManager()->Load("resources/uvChecker.png");
+    uint32_t a = GetTxManager()->Load("resources/brick.png");
+    uint32_t b = GetTxManager()->Load("resources/a.png");
 
     // 3d
     Object3d* model = Object3d::Create("resources/axis.obj");

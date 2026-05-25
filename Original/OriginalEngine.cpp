@@ -3,15 +3,18 @@
 #pragma comment(lib, "dxguid.lib")
 
 namespace Engine {
-    // ここで実際に定義（初期化）する。これが「1つだけ」存在する実体になる
-    WinApp* winApp_ = nullptr;
-    DirectXCommon* dxCommon_ = nullptr;
-    ShaderCompiler* shaderCompiler_ = nullptr;
-    TextureManager* textureManager_ = nullptr;
-    Object3dCommon* object3dCommon_ = nullptr;
-    SpriteCommon* spriteCommon_ = nullptr;
-    ReflectCommon* reflectCommon_ = nullptr;
-    Audio* audio_ = nullptr;
+
+    // 匿名名前空間：この cpp ファイルの中からしかアクセスできない領域
+    namespace {
+        WinApp* winApp_ = nullptr;
+        DirectXCommon* dxCommon_ = nullptr;
+        ShaderCompiler* shaderCompiler_ = nullptr;
+        TextureManager* textureManager_ = nullptr;
+        Object3dCommon* object3dCommon_ = nullptr;
+        SpriteCommon* spriteCommon_ = nullptr;
+        ReflectCommon* reflectCommon_ = nullptr;
+        Audio* audio_ = nullptr;
+    }
 
     void Initialize() {
         winApp_ = WinApp::GetInstance();
@@ -79,6 +82,14 @@ namespace Engine {
         if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
             debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
         }
-
     }
+
+    // --- ゲッターの実装 ---
+    // これらは Engine 名前空間の関数なので、上の匿名名前空間にある変数にアクセスできます。
+    WinApp* GetWinApp() { return winApp_; }
+    DirectXCommon* GetDxCommon() { return dxCommon_; }
+    TextureManager* GetTxManager() { return textureManager_; }
+    Object3dCommon* GetObject3dCommon() { return object3dCommon_; }
+    SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
+    ReflectCommon* GetReflectCommon() { return reflectCommon_; }
 }

@@ -28,22 +28,12 @@
 namespace Engine {
 
     void Initialize();
-
     void Finalize();
-    
 
-    extern WinApp* winApp_;
-    extern DirectXCommon* dxCommon_;
-    extern ShaderCompiler* shaderCompiler_;
-    extern TextureManager* textureManager_;
-    extern Object3dCommon* object3dCommon_;
-    extern SpriteCommon* spriteCommon_;
-    extern ReflectCommon* reflectCommon_;
-    extern Audio* audio_;
-
-    static WinApp* GetWinApp() { return winApp_; };
-    static DirectXCommon* GetDxCommon() { return dxCommon_; };
-    static Object3dCommon* GetObject3dCommon() { return object3dCommon_; };
-    static SpriteCommon* GetSpriteCommon() { return spriteCommon_; };
-    static ReflectCommon* GetReflectCommon() { return reflectCommon_; };
+    WinApp* GetWinApp();
+    DirectXCommon* GetDxCommon();
+    TextureManager* GetTxManager();
+    Object3dCommon* GetObject3dCommon();
+    SpriteCommon* GetSpriteCommon();
+    ReflectCommon* GetReflectCommon();
 }
