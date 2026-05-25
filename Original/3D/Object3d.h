@@ -14,6 +14,13 @@ namespace Engine {
         void Initialize();
         void Update(const Camera& camera);
         void Update(const DebugCamera& debugCamera);
+
+        /// <summary>
+        /// 反射用の更新
+        /// </summary>
+        /// <param name="camera"></param>
+        /// <param name="reflectWorldMatrix"></param>
+        void ReflectUpdate(const Camera& camera, const Matrix4x4& reflectWorldMatrix);
         /// <summary>
         /// 反射用の更新
         /// </summary>
@@ -42,6 +49,8 @@ namespace Engine {
         // ライトリソースの取得
         ID3D12Resource* GetLightResource() const { return lightResource_.Get(); };
         Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
+        // ReflectVP取得
+        const Matrix4x4& GetReflectVP() const { return reflectVP_; }
 
         // Setter
         void SetScale(const Vector3& scale) { transform_.scale = scale; }
@@ -81,5 +90,7 @@ namespace Engine {
         TransformationMatrix* reflectWvpData_ = nullptr;
 
         uint32_t textureHandle_ = 0; // メンバ変数として保持
+
+        Matrix4x4 reflectVP_{};
     };
 }

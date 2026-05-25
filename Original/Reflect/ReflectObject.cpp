@@ -15,40 +15,38 @@ namespace Engine {
     }
 
     void ReflectObject::Update(const Camera& camera) {
-        reflectCamera_.SetFovY(camera.GetFovY());
-        reflectCamera_.SetAspectRatio(1280.0f / 720.0f);
-
-        // --- 鏡用（反転）カメラの計算 ---
-        float offset = planeDistance_;
-
-        // カメラの位置を反転
-        Vector3 reflectPos = camera.GetTranslate();
-        // 【修正】鏡の面を基準に完全に対称な位置へ移動
-        // 鏡の面がY=offsetなら、2.0f * offset - cameraPos.y で求められます
-        reflectPos.y = 2.0f * offset - reflectPos.y;
-
-        // 回転も板の法線（Y軸）に合わせて反転
-        Vector3 reflectRot = camera.GetRotate();
-        // 【修正】ピッチ(X)とロール(Z)を反転することで、鏡の中を向くようにします
-        reflectRot.x = -reflectRot.x;
-        reflectRot.z = -reflectRot.z;
-
-        reflectCamera_.SetTranslate(reflectPos);
-        reflectCamera_.SetRotate(reflectRot);
-        reflectCamera_.Update();
-
-        // 鏡（板ポリ）自体はメインカメラから見える位置に更新
+        // 鏡の板ポリ自体の通常の更新
         object_->Update(camera);
 
-        // 構造体にReflectVPを追加している前提
         TransformationMatrixForReflect* wvpData = nullptr;
         object_->GetWvpResource()->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
 
+        // 鏡の板ポリ自体のワールド行列
         wvpData->World = object_->GetWorldMatrix();
-        // WVPはメインカメラから見た鏡の板の座標
+        // メインカメラから見た鏡の板のWVP
         wvpData->WVP = object_->GetWorldMatrix() * camera.GetViewProjectionMatrix();
-        // ReflectVPに鏡カメラの行列を入れる
-        wvpData->ReflectVP = reflectCamera_.GetViewProjectionMatrix();
+
+        // 【変更】カメラを反転させないため、通常のVPをそのまま渡す
+        //（オブジェクト側のReflectUpdateで反転されたWorldが渡ってくるため、カメラは通常のものでOK）
+        wvpData->ReflectVP = camera.GetViewProjectionMatrix();
+
+        if (Input::TriggerKey(DIK_C))
+        {
+            char buf[512];
+            OutputDebugStringA("\n--- [Debug ReflectVP] ---\n");
+
+            for (int i = 0; i < 4; ++i) {
+                // m[行][列] でアクセス
+                snprintf(buf, sizeof(buf), "| %7.4f\t, %7.4f\t, %7.4f\t, %7.4f |\n",
+                    wvpData->ReflectVP.m[i][0],
+                    wvpData->ReflectVP.m[i][1],
+                    wvpData->ReflectVP.m[i][2],
+                    wvpData->ReflectVP.m[i][3]);
+
+                OutputDebugStringA(buf);
+            }
+            OutputDebugStringA("-------------------------\n");
+        }
 
         object_->GetWvpResource()->Unmap(0, nullptr);
     }

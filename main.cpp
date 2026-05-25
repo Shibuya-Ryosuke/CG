@@ -5,6 +5,7 @@
 
 using namespace Engine;
 
+
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     Engine::Initialize();
@@ -19,17 +20,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     model->SetTexture(textureHandle);
     model->SetTranslate({ 0.0f,-2.0f,-2.0f });
 
-    Object3d* modelG = Object3d::Create("resources/mapping.obj");
-    modelG->SetTexture(a);
-    modelG->SetTranslate({ 0.0f,-3.5f,4.0f });
+    Object3d* modelGround = Object3d::Create("resources/mapping.obj");
+    modelGround->SetTexture(a);
+    modelGround->SetTranslate({ 0.0f,-3.5f,4.0f });
 
-    ReflectObject* reflectModel = new ReflectObject();
-    reflectModel->Initialize("resources/mirror.obj");
-    reflectModel->SetTranslate({ -2.0f,-3.0f,8.0f });
+    ReflectObject* leftMirror = new ReflectObject();
+    leftMirror->Initialize("resources/mirror.obj");
+    leftMirror->SetTranslate({ -4.0f,-3.0f,8.0f });
 
-    ReflectObject* r2 = new ReflectObject();
-    r2->Initialize("resources/mirror.obj");
-    r2->SetTranslate({ 8.0f,-3.0f,8.0f });
+    ReflectObject* rightMirror = new ReflectObject();
+    rightMirror->Initialize("resources/mirror.obj");
+    rightMirror->SetTranslate({ 4.0f,-3.0f,8.0f });
+    rightMirror->SetRotate({ 0.0f,0.5f,0.0f });
 
     // カメラ
     Camera* camera = new Camera();
@@ -41,9 +43,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Sprite* sprite = new Sprite;
     sprite->Initialize(b, { 0.0f, 0.0f });
 
+    // ImGuiで初期化させる
+    //debugCamera->SetTranslate({ 0.0f,0.0f,0.0f });
+    //debugCamera->SetRotate({ 0.0f,0.0f,0.0f });
 
-
-
+    //model->SetTranslate({ 0.0f,-2.0f,-2.0f });
+    //model->SetRotate({ 0.0f,0.0f,0.0f });
 
     // 音
     //uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
@@ -64,16 +69,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 #ifdef _DEBUG
         ImGui::Text("Model : Axis");
-        ImGui::SliderFloat3("translate", &modelT.x, -10.0f, 10.0f);
-        ImGui::SliderFloat3("rotate", &modelR.x, 0.0f, 10.0f);
-        ImGui::SliderFloat3("scale", &modelS.x, -1.0f, 1.0f);
+        ImGui::DragFloat3("Axis : translate", &modelT.x, 0.01f, -10.0f, 10.0f);
+        ImGui::DragFloat3("Axis : rotate", &modelR.x, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat3("Axis : scale", &modelS.x, 0.01f, -1.0f, 1.0f);
         ImGui::NewLine();
 
-        ImGui::SliderFloat3("a", &debugCamera->GetTranslate().x, -20.0f, 20.0f);
-
-        ImGui::SliderFloat3("rotate", &debugCamera->GetRotate().x, 0.0f, 0.0f);
-
-       
+        ImGui::Text("DebugCamera");
+        ImGui::DragFloat3("DebugCamera : translate", &debugCamera->GetTranslate().x, 0.01f, -20.0f, 20.0f);
+        ImGui::DragFloat3("DebugCamera : rotate", &debugCamera->GetRotate().x, 0.01f, 0.0f, 0.0f);
 #endif
 
         model->SetTranslate(modelT);
@@ -88,13 +91,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // カメラの種類によって更新変更
         if (debugCamera->GetIsAvailable()) {
             debugCamera->Update();
-            reflectModel->Update(*debugCamera);
-            r2->Update(*debugCamera);
+            leftMirror->Update(*debugCamera);
+            rightMirror->Update(*debugCamera);
             model->Update(*debugCamera);
-            modelG->Update(*debugCamera);
+            modelGround->Update(*debugCamera);
         } else {
             camera->Update();
-            reflectModel->Update(*camera);
+            leftMirror->Update(*camera);
             model->Update(*camera);
         }
         sprite->Update();
@@ -104,11 +107,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // 鏡の中用の描画設定
         GetObject3dCommon()->BeginDraw(Object3dCommon::DrawType::REFLECT);
 
-        model->ReflectUpdate(*debugCamera,reflectModel->GetWorldMatrix());
+        model->ReflectUpdate(*debugCamera,leftMirror->GetWorldMatrix());
         model->ReflectDraw();
 
-        modelG->ReflectUpdate(*debugCamera, reflectModel->GetWorldMatrix());
-        modelG->ReflectDraw();
+        modelGround->ReflectUpdate(*debugCamera, leftMirror->GetWorldMatrix());
+        modelGround->ReflectDraw();
         GetReflectCommon()->PostDraw();
         // 鏡終わり
 
@@ -119,11 +122,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // [3D描画フェーズ]
         GetObject3dCommon()->BeginDraw();
     
-        modelG->Draw();
+        modelGround->Draw();
         model->Draw();
 
-        reflectModel->Draw();
-        r2->Draw();
+        leftMirror->Draw();
+        rightMirror->Draw();
 
 
         // [2D描画フェーズ]
