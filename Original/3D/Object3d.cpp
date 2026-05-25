@@ -2,6 +2,8 @@
 #include "../Base/DirectXCommon.h"
 #include "Object3dCommon.h"
 #include "../Graphics/TextureManager.h"
+#include "../Reflect/ReflectCommon.h"
+#include "../Reflect/ReflectObject.h"
 
 namespace Engine {
 
@@ -134,23 +136,23 @@ namespace Engine {
         reflectWvpData_->WVP = mirrorWorld * reflectVP;
     }
 
-    void Object3d::ReflectUpdate(const DebugCamera& debugCamera, const Matrix4x4& reflectWorldMatrix) {
+    void Object3d::ReflectUpdate(const DebugCamera& debugCamera, ReflectObject* mirror) {
         Matrix4x4 normalWorld = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-        Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(reflectWorldMatrix);
+        Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(mirror->GetWorldMatrix());
         Matrix4x4 mirrorWorld = normalWorld * reflectMatrix;
 
         // --- 【修正】鏡の正面（Forward = Z軸）をワールド行列の2行目から正しく抽出 ---
         Vector3 mirrorNormal = {
-            reflectWorldMatrix.m[2][0],
-            reflectWorldMatrix.m[2][1],
-            reflectWorldMatrix.m[2][2]
+            mirror->GetWorldMatrix().m[2][0],
+            mirror->GetWorldMatrix().m[2][1],
+            mirror->GetWorldMatrix().m[2][2]
         };
         mirrorNormal = Normalize(mirrorNormal);
 
         Vector3 mirrorPos = {
-            reflectWorldMatrix.m[3][0],
-            reflectWorldMatrix.m[3][1],
-            reflectWorldMatrix.m[3][2]
+            mirror->GetWorldMatrix().m[3][0],
+            mirror->GetWorldMatrix().m[3][1],
+            mirror->GetWorldMatrix().m[3][2]
         };
 
         // 斜めクリップ済みの Projection 行列を取得
@@ -164,8 +166,9 @@ namespace Engine {
         // 反射パス専用の ViewProjection 行列を合成
         Matrix4x4 reflectVP = debugCamera.GetViewMatrix() * obliqueProj;
 
-        reflectWvpData_->World = mirrorWorld;
-        reflectWvpData_->WVP = mirrorWorld * reflectVP;
+        auto* wvpData = mirror->GetReflectWvpData();
+        wvpData->World = mirrorWorld;
+        wvpData->WVP = mirrorWorld * reflectVP;
     }
 
     void Object3d::Draw() {
@@ -194,6 +197,11 @@ namespace Engine {
         commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
         // 反射用をセット
         commandList->SetGraphicsRootConstantBufferView(1, reflectWvpResource_->GetGPUVirtualAddress());
+
+        // ─── ✨【引数なしで解決】ReflectCommon が今持っている「現在の鏡」のバッファをセットする ───
+    // ※PreDraw(leftMirror) された時に、ReflectCommon内部で「現在のアクティブな鏡」を記録しておきます
+        auto activeMirror = ReflectCommon::GetInstance()->GetActiveMirror();
+        commandList->SetGraphicsRootConstantBufferView(1, activeMirror->GetReflectWvpGPUAddress());
 
         // ライトの定数バッファをセット
         commandList->SetGraphicsRootConstantBufferView(3, lightResource_->GetGPUVirtualAddress());

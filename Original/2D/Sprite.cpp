@@ -98,7 +98,7 @@ namespace Engine {
         // RootParameter (0:Material, 1:WVP, 2:Texture)
         commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
         commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootDescriptorTable(2, ReflectCommon::GetInstance()->GetReflectionTextureHandle());
+        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
 
         // 4. インデックスを使って描画 (6つのインデックスを使用)
         commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);

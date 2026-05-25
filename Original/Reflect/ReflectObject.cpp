@@ -12,6 +12,7 @@ namespace Engine {
         // Blenderで作った「鏡の枠と面があるモデル」を読み込む
         object_ = Object3d::Create(modelPath);
         reflectCamera_.SetTranslate(GetObj().GetTranslate());
+        CreateReflectionResource();
     }
 
     void ReflectObject::Update(const Camera& camera) {
@@ -123,9 +124,8 @@ namespace Engine {
         ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
         commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-        // ReflectCommon::GetReflectionTextureHandle() は t0 と t1 が連続している
-        // ハンドル（デスクリプタテーブル）をセット
-        commandList->SetGraphicsRootDescriptorTable(2, reflectCommon->GetReflectionTextureHandle());
+        D3D12_GPU_DESCRIPTOR_HANDLE srvHandle = TextureManager::GetInstance()->GetGPUHandle(srvIndex_);
+        commandList->SetGraphicsRootDescriptorTable(2, srvHandle);
 
         // --- 5. ライト(b1) のセット ---
         // PS側の register(b1) にライトをセット
@@ -137,5 +137,83 @@ namespace Engine {
 
         // パイプラインを汚さずに描画だけ行う
         object_->DrawSimple();
+    }
+
+    void ReflectObject::CreateReflectionResource() {
+        auto device = DirectXCommon::GetInstance()->GetDevice();
+
+        // 1. 反射用テクスチャの設定（画面サイズに合わせる）
+        D3D12_RESOURCE_DESC resDesc{};
+        resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+        resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        resDesc.Width = 1280;
+        resDesc.Height = 720;
+        resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+        resDesc.DepthOrArraySize = 1;
+        resDesc.MipLevels = 1;
+        resDesc.SampleDesc.Count = 1;
+        resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+
+        float clearColor[] = { 0.1f, 0.25f, 0.5f, 1.0f };
+        D3D12_CLEAR_VALUE clearValue{};
+        clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        memcpy(clearValue.Color, clearColor, sizeof(float) * 4);
+
+        D3D12_HEAP_PROPERTIES heapProps{};
+        heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+        device->CreateCommittedResource(
+            &heapProps, D3D12_HEAP_FLAG_NONE, &resDesc,
+            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+            &clearValue, IID_PPV_ARGS(&reflectionResource_)
+        );
+
+        // 2. RTV(描き込み用)の作成
+        D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc{};
+        rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+        rtvHeapDesc.NumDescriptors = 1;
+        device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap_));
+        device->CreateRenderTargetView(reflectionResource_.Get(), nullptr, rtvHeap_->GetCPUDescriptorHandleForHeapStart());
+
+        // 3. SRV(鏡に貼る用)をTextureManagerに登録してインデックスを保存
+        srvIndex_ = TextureManager::GetInstance()->RegisterResource(reflectionResource_.Get());
+
+
+
+        // 4. 自分専用の反射用定数バッファ（WVP等）の生成
+        D3D12_HEAP_PROPERTIES cbHeapProps{};
+        cbHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD; // CPUから毎フレーム書き込むので UPLOAD
+
+        D3D12_RESOURCE_DESC cbDesc{};
+        cbDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+        // 256バイトアライメントの計算
+        cbDesc.Width = (sizeof(TransformationMatrixForReflect) + 255) & ~255;
+        cbDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+        cbDesc.Height = 1;
+        cbDesc.DepthOrArraySize = 1;
+        cbDesc.MipLevels = 1;
+        cbDesc.SampleDesc.Count = 1;
+
+        device->CreateCommittedResource(
+            &cbHeapProps, D3D12_HEAP_FLAG_NONE, &cbDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+            IID_PPV_ARGS(&reflectWvpResource_)
+        );
+
+        // 生成したらその場で Map して、書き込み用ポインタ（reflectWvpData_）を常時保持する
+        reflectWvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&reflectWvpData_));
+
+        // ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝
+    }
+
+    Matrix4x4 ReflectObject::CalculateReflectionViewProjection(const DebugCamera& debugCamera) {
+        // 1. 鏡の位置と法線から反射行列を作成
+        Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(this->GetWorldMatrix());
+
+        // 2. メインカメラのView行列を反射行列で変換（鏡の中の仮想カメラを作る）
+        Matrix4x4 reflectView = debugCamera.GetViewMatrix() * reflectMatrix;
+
+        // 3. 投影行列（射影行列）と合成
+        return reflectView * debugCamera.GetProjectionMatrix();
     }
 }

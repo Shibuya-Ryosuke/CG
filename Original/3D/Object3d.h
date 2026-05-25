@@ -9,6 +9,8 @@
 #include "../Light/Light.h"
 
 namespace Engine {
+    class ReflectObject;
+
     class Object3d {
     public:
         void Initialize();
@@ -26,7 +28,7 @@ namespace Engine {
         /// </summary>
         /// <param name="debugCamera">*デバッグカメラ</param>
         /// <param name="reflectZ">ReflectModel型のオブジェクトからGetWorldMatrixで取得</param>
-        void ReflectUpdate(const DebugCamera& debugCamera, const Matrix4x4& reflectWorldMatrix);
+        void ReflectUpdate(const DebugCamera& debugCamera, ReflectObject* mirror);
 
         void Draw();
         void ReflectDraw();

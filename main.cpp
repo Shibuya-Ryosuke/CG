@@ -13,7 +13,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // テクスチャ
     uint32_t textureHandle = GetTxManager()->Load("resources/uvChecker.png");
     uint32_t a = GetTxManager()->Load("resources/brick.png");
-    uint32_t b = GetTxManager()->Load("resources/a.png");
 
     // 3d
     Object3d* model = Object3d::Create("resources/axis.obj");
@@ -39,9 +38,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // デバッグカメラ
     DebugCamera* debugCamera = new DebugCamera();
     debugCamera->ToggleIsAvailable();
-
-    Sprite* sprite = new Sprite;
-    sprite->Initialize(b, { 0.0f, 0.0f });
 
     // ImGuiで初期化させる
     //debugCamera->SetTranslate({ 0.0f,0.0f,0.0f });
@@ -129,19 +125,32 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             leftMirror->Update(*camera);
             model->Update(*camera);
         }
-        sprite->Update();
 
+        // --------------------------- 左 -----------------------------
         // 描画先を鏡テクスチャに切り替え
-        GetReflectCommon()->PreDraw();
+        GetReflectCommon()->PreDraw(leftMirror);
         // 鏡の中用の描画設定
         GetObject3dCommon()->BeginDraw(Object3dCommon::DrawType::REFLECT);
 
-        model->ReflectUpdate(*debugCamera,leftMirror->GetWorldMatrix());
+        model->ReflectUpdate(*debugCamera,leftMirror);
         model->ReflectDraw();
 
-        modelGround->ReflectUpdate(*debugCamera, leftMirror->GetWorldMatrix());
+        modelGround->ReflectUpdate(*debugCamera, leftMirror);
         modelGround->ReflectDraw();
-        GetReflectCommon()->PostDraw();
+        GetReflectCommon()->PostDraw(leftMirror);
+        // -----------------------------------------------------------
+        
+        // --------------------------- 右 -----------------------------
+        GetReflectCommon()->PreDraw(rightMirror);
+        GetObject3dCommon()->BeginDraw(Object3dCommon::DrawType::REFLECT);
+
+        model->ReflectUpdate(*debugCamera, rightMirror);
+        model->ReflectDraw();
+
+        modelGround->ReflectUpdate(*debugCamera, rightMirror);
+        modelGround->ReflectDraw();
+        GetReflectCommon()->PostDraw(rightMirror);
+        // -----------------------------------------------------------
         // 鏡終わり
 
 
@@ -160,9 +169,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [2D描画フェーズ]
         GetSpriteCommon()->BeginDraw();
-        if (Input::PushKey(DIK_Z)) {
-            sprite->Draw();
-        }
 
         ImGuiManager::EndFrame(GetDxCommon()->GetCommandList());
         // 画面表示（PostDraw、コマンドリスト実行、スワップチェーン入れ替え）

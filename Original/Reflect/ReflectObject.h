@@ -2,11 +2,38 @@
 #include "../3d/Object3d.h"
 #include "../Camera/Camera.h"
 #include <memory>
+#include <d3d12.h>
+#include <wrl.h>
+#include "../Camera/DebugCamera.h"
 
 namespace Engine {
 
     class ReflectObject {
+    private:
+        struct TransformationMatrixForReflect {
+            Matrix4x4 WVP;
+            Matrix4x4 World;
+            Matrix4x4 ReflectVP;
+        };
+        Object3d* object_ = nullptr; // 鏡の実体（板モデル）
+
+        // 反射面を定義する（とりあえず Y=0 の平面とするための法線）
+        Vector3 planeNormal_ = { 0.0f, 1.0f, 0.0f };
+        float planeDistance_ = 0.0f; // 原点からの距離
+
+        Camera reflectCamera_;
+
+        void CreateReflectionResource();
+        Microsoft::WRL::ComPtr<ID3D12Resource> reflectionResource_;
+        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
+        uint32_t srvIndex_ = 0;
+
+        Microsoft::WRL::ComPtr<ID3D12Resource> reflectWvpResource_;
+        TransformationMatrixForReflect* reflectWvpData_ = nullptr;
+
+        Matrix4x4 CalculateReflectionViewProjection(const DebugCamera& debugCamera);
     public:
+
         ReflectObject() = default;
         ~ReflectObject() = default;
 
@@ -34,6 +61,20 @@ namespace Engine {
         void Draw();
 
         // Getter
+        // 鏡ごとのRTVハンドルを取得（PreDrawに渡す用）
+        D3D12_CPU_DESCRIPTOR_HANDLE GetRtvHandle() const {
+            return rtvHeap_->GetCPUDescriptorHandleForHeapStart();
+        }
+        // 鏡ごとのテクスチャリソースを取得（PostDrawに渡す用）
+        ID3D12Resource* GetResource() const { return reflectionResource_.Get(); }
+        // 鏡ごとのSRVインデックスを取得（Draw時のテクスチャ割り当て用）
+        uint32_t GetSrvIndex() const { return srvIndex_; }
+        // ✨ 鏡が持つ反射用バッファのGPUアドレスを返すゲッター
+        D3D12_GPU_VIRTUAL_ADDRESS GetReflectWvpGPUAddress() const {
+            return reflectWvpResource_->GetGPUVirtualAddress();
+        }
+        // ✨ 鏡の中の行列データを直接書き換えるためのポインタを返すゲッター
+        TransformationMatrixForReflect* GetReflectWvpData() { return reflectWvpData_; }
         Camera& GetReflectCamera() { return reflectCamera_; }
         Matrix4x4& GetWorldMatrix() { return GetObj().GetWorldMatrix(); }
         Object3d& GetObj() { return *object_; };
@@ -45,20 +86,6 @@ namespace Engine {
         void SetTranslate(const Vector3& translate) { object_->SetTranslate(translate); }
         void SetRotate(const Vector3& rotate) { object_->SetRotate(rotate); }
         void SetScale(const Vector3& scale) { object_->SetScale(scale); }
-
-    private:
-        struct TransformationMatrixForReflect {
-            Matrix4x4 WVP;
-            Matrix4x4 World;
-            Matrix4x4 ReflectVP;
-        };
-        Object3d* object_ = nullptr; // 鏡の実体（板モデル）
-
-        // 反射面を定義する（とりあえず Y=0 の平面とするための法線）
-        Vector3 planeNormal_ = { 0.0f, 1.0f, 0.0f };
-        float planeDistance_ = 0.0f; // 原点からの距離
-
-        Camera reflectCamera_;
     };
 
 }
