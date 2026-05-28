@@ -3,6 +3,7 @@
 #include "../Graphics/TextureManager.h"
 #include "../Math/Math.h"
 #include "../Input/Input.h"
+#include "../3D/Object3dCommon.h"
 #include <sstream>
 #include <iomanip>
 
@@ -139,6 +140,60 @@ namespace Engine {
         object_->DrawSimple();
     }
 
+    ReflectObject::ReflectWvpResource ReflectObject::CreateSingleReflectWvpResource() {
+        auto device = DirectXCommon::GetInstance()->GetDevice();
+        ReflectWvpResource newRes;
+
+        D3D12_HEAP_PROPERTIES cbHeapProps{};
+        cbHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+        D3D12_RESOURCE_DESC cbDesc{};
+        cbDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+        cbDesc.Width = (sizeof(TransformationMatrixForReflect) + 255) & ~255;
+        cbDesc.Height = 1;
+        cbDesc.DepthOrArraySize = 1;
+        cbDesc.MipLevels = 1;
+        cbDesc.SampleDesc.Count = 1;
+        cbDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+        device->CreateCommittedResource(
+            &cbHeapProps, D3D12_HEAP_FLAG_NONE, &cbDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+            IID_PPV_ARGS(&newRes.resource)
+        );
+
+        newRes.resource->Map(0, nullptr, reinterpret_cast<void**>(&newRes.data));
+        return newRes;
+    }
+
+    void ReflectObject::RegisterObject(Object3d* obj) {
+        drawObjects_.push_back(obj);
+        // 登録のたびにリソースを生成して追加
+        reflectWvpResources_.push_back(CreateSingleReflectWvpResource());
+    }
+
+    void ReflectObject::DrawReflect(const DebugCamera& debugCamera) {
+        auto reflectCommon = ReflectCommon::GetInstance();
+        
+
+        reflectCommon->PreDraw(this);
+        Object3dCommon::GetInstance()->BeginDraw(Object3dCommon::DrawType::REFLECT);
+
+        for (size_t i = 0; i < drawObjects_.size(); ++i) {
+            auto* data = reflectWvpResources_[i].data;
+            auto* res = reflectWvpResources_[i].resource.Get();
+
+            // ★計算の直前にアドレスを教えてあげる
+            drawObjects_[i]->SetReflectWvpGpuAddress(res->GetGPUVirtualAddress());
+
+            // 計算と描画
+            drawObjects_[i]->ReflectUpdate(debugCamera, this, data);
+            drawObjects_[i]->ReflectDraw();
+        }
+
+        reflectCommon->PostDraw(this);
+    }
+
     void ReflectObject::CreateReflectionResource() {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
@@ -177,31 +232,6 @@ namespace Engine {
 
         // 3. SRV(鏡に貼る用)をTextureManagerに登録してインデックスを保存
         srvIndex_ = TextureManager::GetInstance()->RegisterResource(reflectionResource_.Get());
-
-
-
-        // 4. 自分専用の反射用定数バッファ（WVP等）の生成
-        D3D12_HEAP_PROPERTIES cbHeapProps{};
-        cbHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD; // CPUから毎フレーム書き込むので UPLOAD
-
-        D3D12_RESOURCE_DESC cbDesc{};
-        cbDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-        // 256バイトアライメントの計算
-        cbDesc.Width = (sizeof(TransformationMatrixForReflect) + 255) & ~255;
-        cbDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-        cbDesc.Height = 1;
-        cbDesc.DepthOrArraySize = 1;
-        cbDesc.MipLevels = 1;
-        cbDesc.SampleDesc.Count = 1;
-
-        device->CreateCommittedResource(
-            &cbHeapProps, D3D12_HEAP_FLAG_NONE, &cbDesc,
-            D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-            IID_PPV_ARGS(&reflectWvpResource_)
-        );
-
-        // 生成したらその場で Map して、書き込み用ポインタ（reflectWvpData_）を常時保持する
-        reflectWvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&reflectWvpData_));
 
         // ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝
     }

@@ -93,19 +93,18 @@ namespace Engine {
 
     void Object3d::Update(const DebugCamera& debugCamera) {
         // ワールド行列の作成
-        Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 
         // WVP行列の計算 (World * ViewProjection)
-        Matrix4x4 wvpMatrix = worldMatrix * debugCamera.GetViewProjectionMatrix();
+        Matrix4x4 wvpMatrix = worldMatrix_ * debugCamera.GetViewProjectionMatrix();
 
-        wvpData_->World = worldMatrix;
+        wvpData_->World = worldMatrix_;
         wvpData_->WVP = wvpMatrix;
     }
 
     void Object3d::ReflectUpdate(const Camera& camera, const Matrix4x4& reflectWorldMatrix) {
-        Matrix4x4 normalWorld = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
         Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(reflectWorldMatrix);
-        Matrix4x4 mirrorWorld = normalWorld * reflectMatrix;
+        Matrix4x4 mirrorWorld = worldMatrix_ * reflectMatrix;
 
         // --- 【修正】鏡の正面（Forward = Z軸）をワールド行列の2行目から正しく抽出 ---
         Vector3 mirrorNormal = {
@@ -136,7 +135,7 @@ namespace Engine {
         reflectWvpData_->WVP = mirrorWorld * reflectVP;
     }
 
-    void Object3d::ReflectUpdate(const DebugCamera& debugCamera, ReflectObject* mirror) {
+    void Object3d::ReflectUpdate(const DebugCamera& debugCamera, ReflectObject* mirror, TransformationMatrixForReflect* outData) {
         Matrix4x4 normalWorld = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
         Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(mirror->GetWorldMatrix());
         Matrix4x4 mirrorWorld = normalWorld * reflectMatrix;
@@ -166,9 +165,9 @@ namespace Engine {
         // 反射パス専用の ViewProjection 行列を合成
         Matrix4x4 reflectVP = debugCamera.GetViewMatrix() * obliqueProj;
 
-        auto* wvpData = mirror->GetReflectWvpData();
-        wvpData->World = mirrorWorld;
-        wvpData->WVP = mirrorWorld * reflectVP;
+        outData->World = mirrorWorld;
+        outData->WVP = mirrorWorld * reflectVP;
+        outData->ReflectVP = reflectVP;
     }
 
     void Object3d::Draw() {
@@ -190,18 +189,13 @@ namespace Engine {
     void Object3d::ReflectDraw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
-        // 引数で受け取ったハンドルを使って記述子テーブルをセット
+        // 記述子テーブル等のセットアップはそのまま...
         commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
-
         commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
         commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
-        // 反射用をセット
-        commandList->SetGraphicsRootConstantBufferView(1, reflectWvpResource_->GetGPUVirtualAddress());
 
-        // ─── ✨【引数なしで解決】ReflectCommon が今持っている「現在の鏡」のバッファをセットする ───
-    // ※PreDraw(leftMirror) された時に、ReflectCommon内部で「現在のアクティブな鏡」を記録しておきます
-        auto activeMirror = ReflectCommon::GetInstance()->GetActiveMirror();
-        commandList->SetGraphicsRootConstantBufferView(1, activeMirror->GetReflectWvpGPUAddress());
+        // ★記憶しておいた自分専用のアドレスをセット
+        commandList->SetGraphicsRootConstantBufferView(1, reflectWvpGpuAddress_);
 
         // ライトの定数バッファをセット
         commandList->SetGraphicsRootConstantBufferView(3, lightResource_->GetGPUVirtualAddress());

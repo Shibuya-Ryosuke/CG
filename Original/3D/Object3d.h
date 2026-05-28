@@ -9,6 +9,12 @@
 #include "../Light/Light.h"
 
 namespace Engine {
+    struct TransformationMatrixForReflect {
+        Matrix4x4 WVP;
+        Matrix4x4 World;
+        Matrix4x4 ReflectVP;
+    };
+
     class ReflectObject;
 
     class Object3d {
@@ -28,7 +34,7 @@ namespace Engine {
         /// </summary>
         /// <param name="debugCamera">*デバッグカメラ</param>
         /// <param name="reflectZ">ReflectModel型のオブジェクトからGetWorldMatrixで取得</param>
-        void ReflectUpdate(const DebugCamera& debugCamera, ReflectObject* mirror);
+        void ReflectUpdate(const DebugCamera& debugCamera, ReflectObject* mirror, TransformationMatrixForReflect* outData);
 
         void Draw();
         void ReflectDraw();
@@ -40,6 +46,9 @@ namespace Engine {
 
         void CreateDirectionalLight();
 
+        void SetReflectWvpGpuAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) { reflectWvpGpuAddress_ = addr; }
+        
+        
         // Getter
         const Vector3& GetScale() const { return transform_.scale; }
         const Vector3& GetRotate() const { return transform_.rotate; }
@@ -94,5 +103,10 @@ namespace Engine {
         uint32_t textureHandle_ = 0; // メンバ変数として保持
 
         Matrix4x4 reflectVP_{};
+
+        Matrix4x4 worldMatrix_{};
+
+        // このモデルが反射描画時に使うバッファのアドレス
+        D3D12_GPU_VIRTUAL_ADDRESS reflectWvpGpuAddress_;
     };
 }

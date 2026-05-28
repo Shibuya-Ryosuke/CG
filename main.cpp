@@ -12,16 +12,21 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     // テクスチャ
     uint32_t textureHandle = GetTxManager()->Load("resources/uvChecker.png");
-    uint32_t a = GetTxManager()->Load("resources/brick.png");
+    uint32_t brick = GetTxManager()->Load("resources/brick.png");
+
+    // モデルリスト
+    std::vector<Object3d*> models;
 
     // 3d
-    Object3d* model = Object3d::Create("resources/axis.obj");
+    Object3d* model = Object3d::Create("resources/TR.obj");
     model->SetTexture(textureHandle);
     model->SetTranslate({ 0.0f,-2.0f,-2.0f });
+    models.push_back(model);
 
     Object3d* modelGround = Object3d::Create("resources/mapping.obj");
-    modelGround->SetTexture(a);
+    modelGround->SetTexture(brick);
     modelGround->SetTranslate({ 0.0f,-3.5f,4.0f });
+    models.push_back(modelGround);
 
     ReflectObject* leftMirror = new ReflectObject();
     leftMirror->Initialize("resources/mirror.obj");
@@ -31,6 +36,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     rightMirror->Initialize("resources/mirror.obj");
     rightMirror->SetTranslate({ 4.0f,-3.0f,8.0f });
     rightMirror->SetRotate({ 0.0f,0.5f,0.0f });
+
+    // 登録
+    for (auto* m : models) {
+        leftMirror->RegisterObject(m);
+        rightMirror->RegisterObject(m);
+    }
 
     // カメラ
     Camera* camera = new Camera();
@@ -50,6 +61,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     //uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
     //Audio::PlayAudio(alarm, 1.0f);
 
+    
+    Sprite sprite{};
+    sprite.Initialize(leftMirror->GetSrvIndex(), {0.0f,0.0f});
+    sprite.SetSize({ 1280,720 });
+
+    bool check = false;
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -72,20 +89,30 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         Vector3 rMirrorS = rightMirror->GetScale();
 
 #ifdef _DEBUG
-        ImGui::Begin("Axis");
-        ImGui::DragFloat3("Axis : translate", &modelT.x, 0.01f, -10.0f, 10.0f);
-        ImGui::DragFloat3("Axis : rotate", &modelR.x, 0.01f, 0.0f, 10.0f);
-        ImGui::DragFloat3("Axis : scale", &modelS.x, 0.01f, -1.0f, 1.0f);
+        ImGui::Begin("Model");
+        ImGui::DragFloat3("Model : translate", &modelT.x, 0.01f, -10.0f, 10.0f);
+        ImGui::DragFloat3("Model : rotate", &modelR.x, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat3("Model : scale", &modelS.x, 0.01f, -5.0f, 5.0f);
         ImGui::End();
 
         ImGui::Begin("Mirror");
         ImGui::DragFloat3("Left Mirror : translate", &lMirrorT.x, 0.01f, -10.0f, 10.0f);
-        ImGui::DragFloat3("Left Mirror : rotate", &lMirrorR.x, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat3("Left Mirror : rotate", &lMirrorR.x, 0.01f, -10.0f, 10.0f);
         ImGui::DragFloat3("Left Mirror : scale", &lMirrorS.x, 0.01f, -1.0f, 1.0f);
         ImGui::NewLine();
         ImGui::DragFloat3("Right Mirror : translate", &rMirrorT.x, 0.01f, -10.0f, 10.0f);
-        ImGui::DragFloat3("Right Mirror : rotate", &rMirrorR.x, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat3("Right Mirror : rotate", &rMirrorR.x, 0.01f, -10.0f, 10.0f);
         ImGui::DragFloat3("Right Mirror : scale", &rMirrorS.x, 0.01f, -1.0f, 1.0f);
+        ImGui::End();
+
+        ImGui::Begin("Sprite Texture");
+        if (ImGui::Checkbox("Left Mirror", &check)) {
+            if (check) {
+                sprite.SetTexture(leftMirror->GetSrvIndex());
+            } else {
+                sprite.SetTexture(rightMirror->GetSrvIndex());
+            }
+        }
         ImGui::End();
 
         ImGui::Begin("Camera");
@@ -116,42 +143,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // カメラの種類によって更新変更
         if (debugCamera->GetIsAvailable()) {
             debugCamera->Update();
-            leftMirror->Update(*debugCamera);
-            rightMirror->Update(*debugCamera);
             model->Update(*debugCamera);
             modelGround->Update(*debugCamera);
+            leftMirror->Update(*debugCamera);
+            rightMirror->Update(*debugCamera);
         } else {
             camera->Update();
             leftMirror->Update(*camera);
             model->Update(*camera);
         }
 
-        // --------------------------- 左 -----------------------------
-        // 描画先を鏡テクスチャに切り替え
-        GetReflectCommon()->PreDraw(leftMirror);
-        // 鏡の中用の描画設定
-        GetObject3dCommon()->BeginDraw(Object3dCommon::DrawType::REFLECT);
-
-        model->ReflectUpdate(*debugCamera,leftMirror);
-        model->ReflectDraw();
-
-        modelGround->ReflectUpdate(*debugCamera, leftMirror);
-        modelGround->ReflectDraw();
-        GetReflectCommon()->PostDraw(leftMirror);
-        // -----------------------------------------------------------
-        
-        // --------------------------- 右 -----------------------------
-        GetReflectCommon()->PreDraw(rightMirror);
-        GetObject3dCommon()->BeginDraw(Object3dCommon::DrawType::REFLECT);
-
-        model->ReflectUpdate(*debugCamera, rightMirror);
-        model->ReflectDraw();
-
-        modelGround->ReflectUpdate(*debugCamera, rightMirror);
-        modelGround->ReflectDraw();
-        GetReflectCommon()->PostDraw(rightMirror);
-        // -----------------------------------------------------------
-        // 鏡終わり
+        sprite.Update();
+        // 鏡
+        leftMirror->DrawReflect(*debugCamera);
+        rightMirror->DrawReflect(*debugCamera);
 
 
         // --- 描画処理 (Draw) ---
@@ -169,7 +174,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [2D描画フェーズ]
         GetSpriteCommon()->BeginDraw();
-
+        if (Input::PushKey(DIK_Z)) {
+            sprite.Draw();
+        }
         ImGuiManager::EndFrame(GetDxCommon()->GetCommandList());
         // 画面表示（PostDraw、コマンドリスト実行、スワップチェーン入れ替え）
         GetDxCommon()->PostDraw();

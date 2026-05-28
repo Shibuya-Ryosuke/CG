@@ -26,6 +26,7 @@ namespace Engine {
         void SetPosition(const Vector2& pos) { position_ = pos; }
         void SetRotate(float rotation) { rotation_ = rotation; }
         void SetSize(const Vector2& size) { size_ = size; }
+        void SetTexture(uint32_t textureHandle) { textureHandle_ = textureHandle; };
         void SetUVTransform(const Transform& uvTransform) { uvTransformSprite_ = uvTransform; }
 
     private:

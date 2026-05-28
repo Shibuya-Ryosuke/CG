@@ -10,11 +10,12 @@ namespace Engine {
 
     class ReflectObject {
     private:
-        struct TransformationMatrixForReflect {
-            Matrix4x4 WVP;
-            Matrix4x4 World;
-            Matrix4x4 ReflectVP;
+        struct ReflectWvpResource {
+            Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+            TransformationMatrixForReflect* data = nullptr;
         };
+        std::vector<ReflectWvpResource> reflectWvpResources_;
+
         Object3d* object_ = nullptr; // 鏡の実体（板モデル）
 
         // 反射面を定義する（とりあえず Y=0 の平面とするための法線）
@@ -28,10 +29,12 @@ namespace Engine {
         Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
         uint32_t srvIndex_ = 0;
 
-        Microsoft::WRL::ComPtr<ID3D12Resource> reflectWvpResource_;
-        TransformationMatrixForReflect* reflectWvpData_ = nullptr;
-
+        D3D12_GPU_DESCRIPTOR_HANDLE srvHandle_;
+       
         Matrix4x4 CalculateReflectionViewProjection(const DebugCamera& debugCamera);
+
+        std::vector<Object3d*> drawObjects_;
+
     public:
 
         ReflectObject() = default;
@@ -60,27 +63,34 @@ namespace Engine {
         // 描画（メインシーンの描画中に呼び出す）
         void Draw();
 
+        // 追加：リソース生成用
+        ReflectWvpResource CreateSingleReflectWvpResource();
+        void RegisterObject(Object3d* obj);
+        void DrawReflect(const DebugCamera& debugCamera); // ★一括描画用
+
         // Getter
         // 鏡ごとのRTVハンドルを取得（PreDrawに渡す用）
         D3D12_CPU_DESCRIPTOR_HANDLE GetRtvHandle() const {
             return rtvHeap_->GetCPUDescriptorHandleForHeapStart();
         }
+
         // 鏡ごとのテクスチャリソースを取得（PostDrawに渡す用）
         ID3D12Resource* GetResource() const { return reflectionResource_.Get(); }
         // 鏡ごとのSRVインデックスを取得（Draw時のテクスチャ割り当て用）
         uint32_t GetSrvIndex() const { return srvIndex_; }
         // ✨ 鏡が持つ反射用バッファのGPUアドレスを返すゲッター
-        D3D12_GPU_VIRTUAL_ADDRESS GetReflectWvpGPUAddress() const {
-            return reflectWvpResource_->GetGPUVirtualAddress();
+        D3D12_GPU_VIRTUAL_ADDRESS GetReflectWvpGPUAddress(size_t index) const {
+            return reflectWvpResources_[index].resource->GetGPUVirtualAddress();
         }
         // ✨ 鏡の中の行列データを直接書き換えるためのポインタを返すゲッター
-        TransformationMatrixForReflect* GetReflectWvpData() { return reflectWvpData_; }
+        TransformationMatrixForReflect* GetReflectWvpData(size_t index) { return reflectWvpResources_[index].data; }
         Camera& GetReflectCamera() { return reflectCamera_; }
         Matrix4x4& GetWorldMatrix() { return GetObj().GetWorldMatrix(); }
         Object3d& GetObj() { return *object_; };
         const Vector3& GetScale() const { return object_->GetScale(); }
         const Vector3& GetRotate() const { return object_->GetRotate(); }
         const Vector3& GetTranslate() const { return object_->GetTranslate(); }
+
 
         // --- セッター ---
         void SetTranslate(const Vector3& translate) { object_->SetTranslate(translate); }
