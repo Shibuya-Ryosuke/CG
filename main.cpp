@@ -63,7 +63,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     
     Sprite sprite{};
-    sprite.Initialize(leftMirror->GetSrvIndex(), {0.0f,0.0f});
+    sprite.Initialize(rightMirror->GetSrvIndex(), {0.0f,0.0f});
     sprite.SetSize({ 1280,720 });
 
     bool check = false;
@@ -154,6 +154,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         }
 
         sprite.Update();
+
         // 鏡
         leftMirror->DrawReflect(*debugCamera);
         rightMirror->DrawReflect(*debugCamera);

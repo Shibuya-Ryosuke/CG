@@ -22,14 +22,14 @@ namespace Engine {
         Vector3 planeNormal_ = { 0.0f, 1.0f, 0.0f };
         float planeDistance_ = 0.0f; // 原点からの距離
 
-        Camera reflectCamera_;
+        
 
         void CreateReflectionResource();
         Microsoft::WRL::ComPtr<ID3D12Resource> reflectionResource_;
         Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
         uint32_t srvIndex_ = 0;
 
-        D3D12_GPU_DESCRIPTOR_HANDLE srvHandle_;
+        D3D12_GPU_DESCRIPTOR_HANDLE srvHandle_{};
        
         Matrix4x4 CalculateReflectionViewProjection(const DebugCamera& debugCamera);
 
@@ -84,7 +84,7 @@ namespace Engine {
         }
         // ✨ 鏡の中の行列データを直接書き換えるためのポインタを返すゲッター
         TransformationMatrixForReflect* GetReflectWvpData(size_t index) { return reflectWvpResources_[index].data; }
-        Camera& GetReflectCamera() { return reflectCamera_; }
+  
         Matrix4x4& GetWorldMatrix() { return GetObj().GetWorldMatrix(); }
         Object3d& GetObj() { return *object_; };
         const Vector3& GetScale() const { return object_->GetScale(); }

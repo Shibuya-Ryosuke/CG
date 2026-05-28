@@ -12,7 +12,7 @@ namespace Engine {
     void ReflectObject::Initialize(const std::string& modelPath) {
         // Blenderで作った「鏡の枠と面があるモデル」を読み込む
         object_ = Object3d::Create(modelPath);
-        reflectCamera_.SetTranslate(GetObj().GetTranslate());
+        
         CreateReflectionResource();
     }
 
