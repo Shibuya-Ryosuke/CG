@@ -605,4 +605,43 @@ inline Matrix4x4 CalculateObliqueMatrix(
 
 	return obliqueProj;
 }
+// 座標(Vector3)を4x4行列で変換する関数
+inline Vector3 TransformPoint(const Vector3& p, const Matrix4x4& m) {
+	float w = p.x * m.m[0][3] + p.y * m.m[1][3] + p.z * m.m[2][3] + m.m[3][3];
+	return {
+		(p.x * m.m[0][0] + p.y * m.m[1][0] + p.z * m.m[2][0] + m.m[3][0]) / w,
+		(p.x * m.m[0][1] + p.y * m.m[1][1] + p.z * m.m[2][1] + m.m[3][1]) / w,
+		(p.x * m.m[0][2] + p.y * m.m[1][2] + p.z * m.m[2][2] + m.m[3][2]) / w
+	};
+}
+
+// 位置、注視点、上方向からビュー行列（左手系）を作成する関数
+inline Matrix4x4 MakeLookAtMatrix(const Vector3& eye, const Vector3& target, const Vector3& up) {
+	Vector3 zAxis = Normalize({ target.x - eye.x, target.y - eye.y, target.z - eye.z });
+
+	// 外積 (up x zAxis)
+	Vector3 xAxis = Normalize({
+		up.y * zAxis.z - up.z * zAxis.y,
+		up.z * zAxis.x - up.x * zAxis.z,
+		up.x * zAxis.y - up.y * zAxis.x
+		});
+
+	// 外積 (zAxis x xAxis)
+	Vector3 yAxis = {
+		zAxis.y * xAxis.z - zAxis.z * xAxis.y,
+		zAxis.z * xAxis.x - zAxis.x * xAxis.z,
+		zAxis.x * xAxis.y - zAxis.y * xAxis.x
+	};
+
+	Matrix4x4 result{};
+	result.m[0][0] = xAxis.x;   result.m[0][1] = yAxis.x;   result.m[0][2] = zAxis.x;   result.m[0][3] = 0.0f;
+	result.m[1][0] = xAxis.y;   result.m[1][1] = yAxis.y;   result.m[1][2] = zAxis.y;   result.m[1][3] = 0.0f;
+	result.m[2][0] = xAxis.z;   result.m[2][1] = yAxis.z;   result.m[2][2] = zAxis.z;   result.m[2][3] = 0.0f;
+	result.m[3][0] = -Dot(xAxis, eye);
+	result.m[3][1] = -Dot(yAxis, eye);
+	result.m[3][2] = -Dot(zAxis, eye);
+	result.m[3][3] = 1.0f;
+
+	return result;
+}
 //=================================================================================================

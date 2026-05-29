@@ -12,7 +12,6 @@ namespace Engine {
         Matrix4x4 World;
         Matrix4x4 ReflectVP;
     };
-
     class ReflectObject {
     private:
         struct ReflectWvpResource {

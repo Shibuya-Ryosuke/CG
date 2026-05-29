@@ -189,11 +189,26 @@ namespace Engine {
     }
 
     void ReflectObject::UpdateObject3d(const DebugCamera& debugCamera, Object3d* target, TransformationMatrixForReflect* data) {
+        // === 1. 鏡のZ回転を弾いた「反射用行列」をその場で作る ===
+        Vector3 mirrorScale = object_->GetScale();
+        Vector3 mirrorRotate = object_->GetRotate(); // (x, y, z) の回転
+        Vector3 mirrorTranslate = object_->GetTranslate();
+
+        // Z回転（ロール）だけを 0.0f にリセット
+        Vector3 fixRotate = { mirrorRotate.x, mirrorRotate.y, 0.0f };
+
+        // 反射計算専用の「偽の鏡ワールド行列」を作成
+        Matrix4x4 fakeMirrorWorld = MakeAffineMatrix(mirrorScale, fixRotate, mirrorTranslate);
+
+
+        // === 2. 元の処理の object_->GetWorldMatrix() を fakeMirrorWorld に置き換える ===
         Matrix4x4 normalWorld = MakeAffineMatrix(target->GetScale(), target->GetRotate(), target->GetTranslate());
-        Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(object_->GetWorldMatrix());
+
+        // ★ここを object_->GetWorldMatrix() から fakeMirrorWorld に変更
+        Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(fakeMirrorWorld);
         Matrix4x4 mirrorWorld = normalWorld * reflectMatrix;
 
-        // --- 【修正】鏡の正面（Forward = Z軸）をワールド行列の2行目から正しく抽出 ---
+        
         Matrix4x4 worldMatrix = object_->GetWorldMatrix();
         Vector3 mirrorNormal = {
             worldMatrix.m[2][0],
@@ -208,7 +223,6 @@ namespace Engine {
             worldMatrix.m[3][2]
         };
 
-        // 斜めクリップ済みの Projection 行列を取得
         Matrix4x4 obliqueProj = CalculateObliqueMatrix(
             debugCamera.GetProjectionMatrix(),
             debugCamera.GetViewMatrix(),
@@ -216,7 +230,7 @@ namespace Engine {
             mirrorPos
         );
 
-        // 反射パス専用の ViewProjection 行列を合成
+        
         Matrix4x4 reflectVP = debugCamera.GetViewMatrix() * obliqueProj;
 
         data->World = mirrorWorld;
