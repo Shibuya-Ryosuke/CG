@@ -155,7 +155,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         sprite.Update();
 
-        // 鏡
+        // 反射テクスチャに書き込むための更新＆描画
         leftMirror->ReflectProcess(*debugCamera);
         rightMirror->ReflectProcess(*debugCamera);
 
