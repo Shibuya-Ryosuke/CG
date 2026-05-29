@@ -135,8 +135,10 @@ namespace Engine {
         // プリミティブトポロジをセット（Object3dCommon準拠）
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        // パイプラインを汚さずに描画だけ行う
-        object_->DrawSimple();
+        // 自身の描画
+        D3D12_VERTEX_BUFFER_VIEW vbv = object_->GetVBV();
+        commandList->IASetVertexBuffers(0, 1, &vbv);
+        commandList->DrawInstanced(object_->GetVertexCount(), 1, 0, 0);
     }
 
     ReflectObject::ReflectWvpResource ReflectObject::CreateSingleReflectWvpResource() {

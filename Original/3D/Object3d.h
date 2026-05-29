@@ -18,7 +18,6 @@ namespace Engine {
         void Update(const DebugCamera& debugCamera);
 
         void Draw();
-        void DrawSimple();
 
         static Object3d* Create(const std::string& filePath);
 
