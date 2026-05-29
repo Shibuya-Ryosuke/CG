@@ -7,6 +7,12 @@
 #include "../Camera/DebugCamera.h"
 
 namespace Engine {
+    struct TransformationMatrixForReflect {
+        Matrix4x4 WVP;
+        Matrix4x4 World;
+        Matrix4x4 ReflectVP;
+    };
+
     class ReflectObject {
     private:
         struct ReflectWvpResource {
@@ -66,7 +72,6 @@ namespace Engine {
         // 追加：リソース生成用
         ReflectWvpResource CreateSingleReflectWvpResource();
         void RegisterObject(Object3d* obj);
-        void DrawReflect(const DebugCamera& debugCamera); // ★一括描画用
 
         /// UpdateとDraw
         void ReflectProcess(const DebugCamera& debugCamera);

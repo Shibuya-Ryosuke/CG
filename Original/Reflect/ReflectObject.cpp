@@ -171,28 +171,6 @@ namespace Engine {
         reflectWvpResources_.push_back(CreateSingleReflectWvpResource());
     }
 
-    void ReflectObject::DrawReflect(const DebugCamera& debugCamera) {
-        auto reflectCommon = ReflectCommon::GetInstance();
-        
-
-        reflectCommon->PreDraw(this);
-        Object3dCommon::GetInstance()->BeginDraw(Object3dCommon::DrawType::REFLECT);
-
-        for (size_t i = 0; i < drawObjects_.size(); ++i) {
-            auto* data = reflectWvpResources_[i].data;
-            auto* res = reflectWvpResources_[i].resource.Get();
-
-            // ★計算の直前にアドレスを教えてあげる
-            drawObjects_[i]->SetReflectWvpGpuAddress(res->GetGPUVirtualAddress());
-
-            // 計算と描画
-            drawObjects_[i]->ReflectUpdate(debugCamera, this, data);
-            drawObjects_[i]->ReflectDraw();
-        }
-
-        reflectCommon->PostDraw(this);
-    }
-
     void ReflectObject::ReflectProcess(const DebugCamera& debugCamera) {
         auto reflectCommon = ReflectCommon::GetInstance();
 

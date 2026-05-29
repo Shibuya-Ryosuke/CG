@@ -9,12 +9,6 @@
 #include "../Light/Light.h"
 
 namespace Engine {
-    struct TransformationMatrixForReflect {
-        Matrix4x4 WVP;
-        Matrix4x4 World;
-        Matrix4x4 ReflectVP;
-    };
-
     class ReflectObject;
 
     class Object3d {
@@ -23,21 +17,7 @@ namespace Engine {
         void Update(const Camera& camera);
         void Update(const DebugCamera& debugCamera);
 
-        /// <summary>
-        /// 反射用の更新
-        /// </summary>
-        /// <param name="camera"></param>
-        /// <param name="reflectWorldMatrix"></param>
-        void ReflectUpdate(const Camera& camera, const Matrix4x4& reflectWorldMatrix);
-        /// <summary>
-        /// 反射用の更新
-        /// </summary>
-        /// <param name="debugCamera">*デバッグカメラ</param>
-        /// <param name="reflectZ">ReflectModel型のオブジェクトからGetWorldMatrixで取得</param>
-        void ReflectUpdate(const DebugCamera& debugCamera, ReflectObject* mirror, TransformationMatrixForReflect* outData);
-
         void Draw();
-        void ReflectDraw();
         void DrawSimple();
 
         static Object3d* Create(const std::string& filePath);
@@ -45,8 +25,6 @@ namespace Engine {
         void CreateModel(const std::string& filePath);
 
         void CreateDirectionalLight();
-
-        void SetReflectWvpGpuAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) { reflectWvpGpuAddress_ = addr; }
         
         
         // Getter
@@ -98,14 +76,9 @@ namespace Engine {
         // 座標変換行列（WVP）用
         Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_;
         TransformationMatrix* wvpData_ = nullptr;
-        Microsoft::WRL::ComPtr<ID3D12Resource> reflectWvpResource_;
-        TransformationMatrix* reflectWvpData_ = nullptr;
 
         uint32_t textureHandle_ = 0; // メンバ変数として保持
 
         Matrix4x4 worldMatrix_{};
-
-        // このモデルが反射描画時に使うバッファのアドレス
-        D3D12_GPU_VIRTUAL_ADDRESS reflectWvpGpuAddress_;
     };
 }
