@@ -13,6 +13,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // テクスチャ
     uint32_t textureHandle = GetTxManager()->Load("resources/uvChecker.png");
     uint32_t brick = GetTxManager()->Load("resources/brick.png");
+    uint32_t wall = GetTxManager()->Load("resources/checkerBoard.png");
 
     // モデルリスト
     std::vector<Object3d*> models;
@@ -27,6 +28,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     modelGround->SetTexture(brick);
     modelGround->SetTranslate({ 0.0f,-3.5f,4.0f });
     models.push_back(modelGround);
+
+    Object3d* modelWall = Object3d::Create("resources/wall.obj");
+    modelWall->SetTexture(wall);
+    modelWall->SetTranslate({ 0.0f,-0.0f,-30.0f });
+    models.push_back(modelWall);
 
     ReflectObject* leftMirror = new ReflectObject();
     leftMirror->Initialize("resources/mirror.obj");
@@ -145,6 +151,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             debugCamera->Update();
             model->Update(*debugCamera);
             modelGround->Update(*debugCamera);
+            modelWall->Update(*debugCamera);
             leftMirror->Update(*debugCamera);
             rightMirror->Update(*debugCamera);
         } else {
@@ -168,6 +175,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     
         modelGround->Draw();
         model->Draw();
+        modelWall->Draw();
 
         leftMirror->Draw();
         rightMirror->Draw();

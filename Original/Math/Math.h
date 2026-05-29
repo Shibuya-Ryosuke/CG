@@ -567,10 +567,10 @@ inline Matrix4x4 CalculateObliqueMatrix(
 	// 【修正の核心】
 	// C++側の行列の掛け算規則（Row-major）に完全に準拠させ、
 	// 逆行列の「行」と平面ベクトルのドット積によって、正しいカメラ空間の平面を導出します。
-	cameraSpacePlane.x = viewInv.m[0][0] * worldPlane.x + viewInv.m[0][1] * worldPlane.y + viewInv.m[0][2] * worldPlane.z + viewInv.m[0][3] * worldPlane.w;
-	cameraSpacePlane.y = viewInv.m[1][0] * worldPlane.x + viewInv.m[1][1] * worldPlane.y + viewInv.m[1][2] * worldPlane.z + viewInv.m[1][3] * worldPlane.w;
-	cameraSpacePlane.z = viewInv.m[2][0] * worldPlane.x + viewInv.m[2][1] * worldPlane.y + viewInv.m[2][2] * worldPlane.z + viewInv.m[2][3] * worldPlane.w;
-	cameraSpacePlane.w = viewInv.m[3][0] * worldPlane.x + viewInv.m[3][1] * worldPlane.y + viewInv.m[3][2] * worldPlane.z + viewInv.m[3][3] * worldPlane.w;
+	cameraSpacePlane.x = viewInv.m[0][0] * worldPlane.x + viewInv.m[1][0] * worldPlane.y + viewInv.m[2][0] * worldPlane.z + viewInv.m[3][0] * worldPlane.w;
+	cameraSpacePlane.y = viewInv.m[0][1] * worldPlane.x + viewInv.m[1][1] * worldPlane.y + viewInv.m[2][1] * worldPlane.z + viewInv.m[3][1] * worldPlane.w;
+	cameraSpacePlane.z = viewInv.m[0][2] * worldPlane.x + viewInv.m[1][2] * worldPlane.y + viewInv.m[2][2] * worldPlane.z + viewInv.m[3][2] * worldPlane.w;
+	cameraSpacePlane.w = viewInv.m[0][3] * worldPlane.x + viewInv.m[1][3] * worldPlane.y + viewInv.m[2][3] * worldPlane.z + viewInv.m[3][3] * worldPlane.w;
 
 	// 鏡の裏側をカリングしないための符号調整（お使いのプロジェクション行列の性質上、ここは < 0.0f になります）
 	if (cameraSpacePlane.w < 0.0f) {
@@ -586,21 +586,21 @@ inline Matrix4x4 CalculateObliqueMatrix(
 	// クリップ空間のコーナー点 q の計算
 	// シェーダー側での反転を見越し、projection の「3列目」の成分を使って計算します
 	Vector4 q;
-	q.x = (Sgn(cameraSpacePlane.x) + projection.m[0][2]) / projection.m[0][0];
-	q.y = (Sgn(cameraSpacePlane.y) + projection.m[1][2]) / projection.m[1][1];
+	q.x = (Sgn(cameraSpacePlane.x) + projection.m[2][0]) / projection.m[0][0];
+	q.y = (Sgn(cameraSpacePlane.y) + projection.m[2][1]) / projection.m[1][1];
 	q.z = 1.0f;
 
 	// projection.m[3][2] に入っている平行移動成分（負の値）を使って W をスケーリング
-	q.w = (1.0f - projection.m[2][2]) / -projection.m[3][2];
+	q.w = (1.0f - projection.m[2][3]) / -projection.m[3][2];
 
 	// スケーリング係数 c
-	float c = 1.0f / Dot(cameraSpacePlane, q);
+	float c = 2.0f / Dot(cameraSpacePlane, q);
 
 	// 【重要】シェーダー側で正しく「3行目」にトランスポーズされるよう、
 	// C++コード上では「3列目（m[x][2]）」に対して安全に上書きを行います。
 	obliqueProj.m[0][2] = cameraSpacePlane.x * c;
 	obliqueProj.m[1][2] = cameraSpacePlane.y * c;
-	obliqueProj.m[2][2] = cameraSpacePlane.z * c;
+	obliqueProj.m[2][2] = cameraSpacePlane.z * c + 1.0f;
 	obliqueProj.m[3][2] = cameraSpacePlane.w * c;
 
 	return obliqueProj;

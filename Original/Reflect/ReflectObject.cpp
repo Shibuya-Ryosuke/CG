@@ -208,34 +208,36 @@ namespace Engine {
         Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(fakeMirrorWorld);
         Matrix4x4 mirrorWorld = normalWorld * reflectMatrix;
 
+
+        // 斜めクリップ。バグってるし、裏にあるオブジェクトを反射テクスチャに登録しなければ映らないのでクリップする必要もない。
         
-        Matrix4x4 worldMatrix = object_->GetWorldMatrix();
-        Vector3 mirrorNormal = {
-            worldMatrix.m[2][0],
-            worldMatrix.m[2][1],
-            worldMatrix.m[2][2]
-        };
-        mirrorNormal = Normalize(mirrorNormal);
+        //Matrix4x4 worldMatrix = object_->GetWorldMatrix();
+        //Vector3 mirrorNormal = {
+        //    worldMatrix.m[2][0],
+        //    worldMatrix.m[2][1],
+        //    worldMatrix.m[2][2]
+        //};
+        //mirrorNormal = Normalize(mirrorNormal);
 
-        Vector3 mirrorPos = {
-            worldMatrix.m[3][0],
-            worldMatrix.m[3][1],
-            worldMatrix.m[3][2]
-        };
+        //Vector3 mirrorPos = {
+        //    worldMatrix.m[3][0],
+        //    worldMatrix.m[3][1],
+        //    worldMatrix.m[3][2]
+        //};
 
-        Matrix4x4 obliqueProj = CalculateObliqueMatrix(
-            debugCamera.GetProjectionMatrix(),
-            debugCamera.GetViewMatrix(),
-            mirrorNormal,
-            mirrorPos
-        );
+        //Matrix4x4 obliqueProj = CalculateObliqueMatrix(
+        //    debugCamera.GetProjectionMatrix(),
+        //    debugCamera.GetViewMatrix(),
+        //    mirrorNormal,
+        //    mirrorPos
+        //);
 
-        
-        Matrix4x4 reflectVP = debugCamera.GetViewMatrix() * obliqueProj;
+        //
+        //Matrix4x4 reflectVP = debugCamera.GetViewMatrix() * obliqueProj;
 
         data->World = mirrorWorld;
-        data->WVP = mirrorWorld * reflectVP;
-        data->ReflectVP = reflectVP;
+        data->WVP = mirrorWorld * debugCamera.GetViewProjectionMatrix();
+        data->ReflectVP = debugCamera.GetViewProjectionMatrix();
     }
 
     void ReflectObject::DrawObject3d(Object3d* target, size_t index) {
