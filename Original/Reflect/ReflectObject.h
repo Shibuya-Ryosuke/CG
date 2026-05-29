@@ -7,7 +7,6 @@
 #include "../Camera/DebugCamera.h"
 
 namespace Engine {
-
     class ReflectObject {
     private:
         struct ReflectWvpResource {
@@ -22,9 +21,10 @@ namespace Engine {
         Vector3 planeNormal_ = { 0.0f, 1.0f, 0.0f };
         float planeDistance_ = 0.0f; // 原点からの距離
 
-        
-
+        void UpdateObject3d(const DebugCamera& debugCamera, Object3d* target, TransformationMatrixForReflect* data);
+        void DrawObject3d(Object3d* target, size_t index);
         void CreateReflectionResource();
+        
         Microsoft::WRL::ComPtr<ID3D12Resource> reflectionResource_;
         Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
         uint32_t srvIndex_ = 0;
@@ -67,6 +67,9 @@ namespace Engine {
         ReflectWvpResource CreateSingleReflectWvpResource();
         void RegisterObject(Object3d* obj);
         void DrawReflect(const DebugCamera& debugCamera); // ★一括描画用
+
+        /// UpdateとDraw
+        void ReflectProcess(const DebugCamera& debugCamera);
 
         // Getter
         // 鏡ごとのRTVハンドルを取得（PreDrawに渡す用）

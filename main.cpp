@@ -156,8 +156,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         sprite.Update();
 
         // 鏡
-        leftMirror->DrawReflect(*debugCamera);
-        rightMirror->DrawReflect(*debugCamera);
+        leftMirror->ReflectProcess(*debugCamera);
+        rightMirror->ReflectProcess(*debugCamera);
 
 
         // --- 描画処理 (Draw) ---

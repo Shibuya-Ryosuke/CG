@@ -53,15 +53,16 @@ namespace Engine {
         const Vector3& GetScale() const { return transform_.scale; }
         const Vector3& GetRotate() const { return transform_.rotate; }
         const Vector3& GetTranslate() const { return transform_.translate; }
-        // マテリアルリソースの取得
         ID3D12Resource* GetMaterialResource() const { return materialResource_.Get();};
-        // WVPリソース（座標変換行列）の取得
         ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
-        // ライトリソースの取得
         ID3D12Resource* GetLightResource() const { return lightResource_.Get(); };
         Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
-        // ReflectVP取得
-        const Matrix4x4& GetReflectVP() const { return reflectVP_; }
+        uint32_t GetTxHandle() const { return textureHandle_; }
+        D3D12_VERTEX_BUFFER_VIEW GetVBV() const { return vertexBufferView_; }
+        uint32_t GetVertexCount() const { return vertexCount_; }
+        D3D12_GPU_VIRTUAL_ADDRESS GetMaterialResourceGVA() const { return materialResource_->GetGPUVirtualAddress(); }
+        D3D12_GPU_VIRTUAL_ADDRESS GetLightResourceGVA() const { return lightResource_->GetGPUVirtualAddress(); }
+
 
         // Setter
         void SetScale(const Vector3& scale) { transform_.scale = scale; }
@@ -101,8 +102,6 @@ namespace Engine {
         TransformationMatrix* reflectWvpData_ = nullptr;
 
         uint32_t textureHandle_ = 0; // メンバ変数として保持
-
-        Matrix4x4 reflectVP_{};
 
         Matrix4x4 worldMatrix_{};
 

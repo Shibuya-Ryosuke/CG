@@ -12,7 +12,6 @@ namespace Engine {
     void ReflectObject::Initialize(const std::string& modelPath) {
         // Blenderで作った「鏡の枠と面があるモデル」を読み込む
         object_ = Object3d::Create(modelPath);
-        
         CreateReflectionResource();
     }
 
@@ -192,6 +191,72 @@ namespace Engine {
         }
 
         reflectCommon->PostDraw(this);
+    }
+
+    void ReflectObject::ReflectProcess(const DebugCamera& debugCamera) {
+        auto reflectCommon = ReflectCommon::GetInstance();
+
+        reflectCommon->PreDraw(this);
+        Object3dCommon::GetInstance()->BeginDraw(Object3dCommon::DrawType::REFLECT);
+
+        for (size_t i = 0; i < drawObjects_.size(); ++i) {
+            auto* data = reflectWvpResources_[i].data;
+            UpdateObject3d(debugCamera, drawObjects_[i], data);
+            DrawObject3d(drawObjects_[i], i);
+        }
+
+        reflectCommon->PostDraw(this);
+    }
+
+    void ReflectObject::UpdateObject3d(const DebugCamera& debugCamera, Object3d* target, TransformationMatrixForReflect* data) {
+        Matrix4x4 normalWorld = MakeAffineMatrix(target->GetScale(), target->GetRotate(), target->GetTranslate());
+        Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(object_->GetWorldMatrix());
+        Matrix4x4 mirrorWorld = normalWorld * reflectMatrix;
+
+        // --- 【修正】鏡の正面（Forward = Z軸）をワールド行列の2行目から正しく抽出 ---
+        Matrix4x4 worldMatrix = object_->GetWorldMatrix();
+        Vector3 mirrorNormal = {
+            worldMatrix.m[2][0],
+            worldMatrix.m[2][1],
+            worldMatrix.m[2][2]
+        };
+        mirrorNormal = Normalize(mirrorNormal);
+
+        Vector3 mirrorPos = {
+            worldMatrix.m[3][0],
+            worldMatrix.m[3][1],
+            worldMatrix.m[3][2]
+        };
+
+        // 斜めクリップ済みの Projection 行列を取得
+        Matrix4x4 obliqueProj = CalculateObliqueMatrix(
+            debugCamera.GetProjectionMatrix(),
+            debugCamera.GetViewMatrix(),
+            mirrorNormal,
+            mirrorPos
+        );
+
+        // 反射パス専用の ViewProjection 行列を合成
+        Matrix4x4 reflectVP = debugCamera.GetViewMatrix() * obliqueProj;
+
+        data->World = mirrorWorld;
+        data->WVP = mirrorWorld * reflectVP;
+        data->ReflectVP = reflectVP;
+    }
+
+    void ReflectObject::DrawObject3d(Object3d* target, size_t index) {
+        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        // 引数で受け取ったハンドルを使って記述子テーブルをセット
+        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(target->GetTxHandle()));
+        D3D12_VERTEX_BUFFER_VIEW vbv = target->GetVBV();
+        commandList->IASetVertexBuffers(0, 1, &vbv);
+        commandList->SetGraphicsRootConstantBufferView(0, target->GetMaterialResourceGVA());
+        commandList->SetGraphicsRootConstantBufferView(1, GetReflectWvpGPUAddress(index));
+
+        // ライトの定数バッファをセット
+        commandList->SetGraphicsRootConstantBufferView(3, target->GetLightResourceGVA());
+
+        commandList->DrawInstanced(target->GetVertexCount(), 1, 0, 0);
     }
 
     void ReflectObject::CreateReflectionResource() {
