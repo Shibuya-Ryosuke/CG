@@ -175,15 +175,23 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             rightMirror->Update(*debugCamera);
         } else {
             camera->Update();
-            leftMirror->Update(*camera);
             model->Update(*camera);
+            modelGround->Update(*camera);
+            modelWall->Update(*camera);
+            leftMirror->Update(*camera);
+            rightMirror->Update(*camera);
         }
 
         sprite.Update();
 
         // 反射テクスチャに書き込むための更新＆描画
-        leftMirror->ReflectProcess(*debugCamera);
-        rightMirror->ReflectProcess(*debugCamera);
+        if (debugCamera->GetIsAvailable()) {
+            leftMirror->ReflectProcess(*debugCamera);
+            rightMirror->ReflectProcess(*debugCamera);
+        } else {
+            leftMirror->ReflectProcess(*camera);
+            rightMirror->ReflectProcess(*camera);
+        }
 
 
         // --- 描画処理 (Draw) ---

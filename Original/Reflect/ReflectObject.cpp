@@ -31,24 +31,6 @@ namespace Engine {
         //（オブジェクト側のReflectUpdateで反転されたWorldが渡ってくるため、カメラは通常のものでOK）
         wvpData->ReflectVP = camera.GetViewProjectionMatrix();
 
-        if (Input::TriggerKey(DIK_C))
-        {
-            char buf[512];
-            OutputDebugStringA("\n--- [Debug ReflectVP] ---\n");
-
-            for (int i = 0; i < 4; ++i) {
-                // m[行][列] でアクセス
-                snprintf(buf, sizeof(buf), "| %7.4f\t, %7.4f\t, %7.4f\t, %7.4f |\n",
-                    wvpData->ReflectVP.m[i][0],
-                    wvpData->ReflectVP.m[i][1],
-                    wvpData->ReflectVP.m[i][2],
-                    wvpData->ReflectVP.m[i][3]);
-
-                OutputDebugStringA(buf);
-            }
-            OutputDebugStringA("-------------------------\n");
-        }
-
         object_->GetWvpResource()->Unmap(0, nullptr);
     }
 
@@ -67,24 +49,6 @@ namespace Engine {
         // 【変更】カメラを反転させないため、通常のVPをそのまま渡す
         //（オブジェクト側のReflectUpdateで反転されたWorldが渡ってくるため、カメラは通常のものでOK）
         wvpData->ReflectVP = debugCamera.GetViewProjectionMatrix();
-
-        if(Input::TriggerKey(DIK_C))
-        {
-            char buf[512];
-            OutputDebugStringA("\n--- [Debug ReflectVP] ---\n");
-
-            for (int i = 0; i < 4; ++i) {
-                // m[行][列] でアクセス
-                snprintf(buf, sizeof(buf), "| %7.4f\t, %7.4f\t, %7.4f\t, %7.4f |\n",
-                    wvpData->ReflectVP.m[i][0],
-                    wvpData->ReflectVP.m[i][1],
-                    wvpData->ReflectVP.m[i][2],
-                    wvpData->ReflectVP.m[i][3]);
-
-                OutputDebugStringA(buf);
-            }
-            OutputDebugStringA("-------------------------\n");
-        }
 
         object_->GetWvpResource()->Unmap(0, nullptr);
     }
@@ -173,6 +137,21 @@ namespace Engine {
         reflectWvpResources_.push_back(CreateSingleReflectWvpResource());
     }
 
+    void ReflectObject::ReflectProcess(const Camera& camera) {
+        auto reflectCommon = ReflectCommon::GetInstance();
+
+        reflectCommon->PreDraw(this);
+        Object3dCommon::GetInstance()->BeginDraw(Object3dCommon::DrawType::REFLECT);
+
+        for (size_t i = 0; i < drawObjects_.size(); ++i) {
+            auto* data = reflectWvpResources_[i].data;
+            UpdateObject3d(camera, drawObjects_[i], data);
+            DrawObject3d(drawObjects_[i], i);
+        }
+
+        reflectCommon->PostDraw(this);
+    }
+
     void ReflectObject::ReflectProcess(const DebugCamera& debugCamera) {
         auto reflectCommon = ReflectCommon::GetInstance();
 
@@ -186,6 +165,54 @@ namespace Engine {
         }
 
         reflectCommon->PostDraw(this);
+    }
+
+    void ReflectObject::UpdateObject3d(const Camera& Camera, Object3d* target, TransformationMatrixForReflect* data) {
+        // === 1. 鏡のZ回転を弾いた「反射用行列」をその場で作る ===
+        Vector3 mirrorScale = object_->GetScale();
+        Vector3 mirrorRotate = object_->GetRotate(); // (x, y, z) の回転
+        Vector3 mirrorTranslate = object_->GetTranslate();
+
+        // Z回転（ロール）だけを 0.0f にリセット
+        Vector3 fixRotate = { mirrorRotate.x, mirrorRotate.y, 0.0f };
+
+        // 反射計算専用の「偽の鏡ワールド行列」を作成
+        Matrix4x4 fakeMirrorWorld = MakeAffineMatrix(mirrorScale, fixRotate, mirrorTranslate);
+
+        // ★ここを object_->GetWorldMatrix() から fakeMirrorWorld に変更
+        Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(fakeMirrorWorld);
+        Matrix4x4 mirrorWorld = target->GetWorldMatrix() * reflectMatrix;
+
+
+        // 斜めクリップ。バグってるし、裏にあるオブジェクトを反射テクスチャに登録しなければ映らないのでクリップする必要もない。
+
+        //Matrix4x4 worldMatrix = object_->GetWorldMatrix();
+        //Vector3 mirrorNormal = {
+        //    worldMatrix.m[2][0],
+        //    worldMatrix.m[2][1],
+        //    worldMatrix.m[2][2]
+        //};
+        //mirrorNormal = Normalize(mirrorNormal);
+
+        //Vector3 mirrorPos = {
+        //    worldMatrix.m[3][0],
+        //    worldMatrix.m[3][1],
+        //    worldMatrix.m[3][2]
+        //};
+
+        //Matrix4x4 obliqueProj = CalculateObliqueMatrix(
+        //    debugCamera.GetProjectionMatrix(),
+        //    debugCamera.GetViewMatrix(),
+        //    mirrorNormal,
+        //    mirrorPos
+        //);
+
+        //
+        //Matrix4x4 reflectVP = debugCamera.GetViewMatrix() * obliqueProj;
+
+        data->World = mirrorWorld;
+        data->WVP = mirrorWorld * Camera.GetViewProjectionMatrix();
+        data->ReflectVP = Camera.GetViewProjectionMatrix();
     }
 
     void ReflectObject::UpdateObject3d(const DebugCamera& debugCamera, Object3d* target, TransformationMatrixForReflect* data) {

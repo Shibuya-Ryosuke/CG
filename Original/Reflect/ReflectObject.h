@@ -26,6 +26,7 @@ namespace Engine {
         Vector3 planeNormal_ = { 0.0f, 1.0f, 0.0f };
         float planeDistance_ = 0.0f; // 原点からの距離
 
+        void UpdateObject3d(const Camera& Camera, Object3d* target, TransformationMatrixForReflect* data);
         void UpdateObject3d(const DebugCamera& debugCamera, Object3d* target, TransformationMatrixForReflect* data);
         void DrawObject3d(Object3d* target, size_t index);
         void CreateReflectionResource();
@@ -73,6 +74,7 @@ namespace Engine {
         void RegisterObject(Object3d* obj);
 
         /// UpdateとDraw
+        void ReflectProcess(const Camera& camera);
         void ReflectProcess(const DebugCamera& debugCamera);
 
         // Getter
