@@ -3,7 +3,7 @@
 
 namespace Engine {
 	DebugCamera::DebugCamera() {
-		rotate_ = { 0,-0.790f,0 };
+		rotate_ = { 0,0,0 };
 		translate_ = { 0,0,-20 };
 
 		fovY_ = 0.45f;

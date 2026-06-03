@@ -13,7 +13,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // テクスチャ
     uint32_t textureHandle = GetTxManager()->Load("resources/uvChecker.png");
     uint32_t brick = GetTxManager()->Load("resources/brick.png");
-    uint32_t wall = GetTxManager()->Load("resources/checkerBoard.png");
+    uint32_t wall = GetTxManager()->Load("resources/wall.png");
 
     // モデルリスト
     std::vector<Object3d*> models;
@@ -31,16 +31,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     Object3d* modelWall = Object3d::Create("resources/wall.obj");
     modelWall->SetTexture(wall);
-    modelWall->SetTranslate({ 0.0f,-0.0f,-30.0f });
+    modelWall->SetTranslate({ 0.0f,-0.0f,-25.0f });
+    modelWall->SetScale({ 3.0f,1.0f,1.0f });
     models.push_back(modelWall);
 
     ReflectObject* leftMirror = new ReflectObject();
     leftMirror->Initialize("resources/mirror.obj");
-    leftMirror->SetTranslate({ -4.0f,-3.0f,8.0f });
+    leftMirror->SetTranslate({ -0.15f,-3.0f,8.0f });
 
     ReflectObject* rightMirror = new ReflectObject();
     rightMirror->Initialize("resources/mirror.obj");
-    rightMirror->SetTranslate({ 4.0f,-3.0f,8.0f });
+    rightMirror->SetTranslate({ 7.85f,-3.0f,8.0f });
     rightMirror->SetRotate({ 0.0f,0.5f,0.0f });
 
     // 登録
@@ -54,6 +55,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     // デバッグカメラ
     DebugCamera* debugCamera = new DebugCamera();
+    debugCamera->SetRotate({ 0.135f,0.0f,0.0f });
     debugCamera->ToggleIsAvailable();
 
     // ImGuiで初期化させる
@@ -85,6 +87,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         Vector3 modelT = model->GetTranslate();
         Vector3 modelR = model->GetRotate();
         Vector3 modelS = model->GetScale();
+        Vector4 modelColor = model->GetColor();
 
         Vector3 lMirrorT = leftMirror->GetTranslate();
         Vector3 lMirrorR = leftMirror->GetRotate();
@@ -98,7 +101,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         ImGui::Begin("Model");
         ImGui::DragFloat3("Model : translate", &modelT.x, 0.01f, -10.0f, 10.0f);
         ImGui::DragFloat3("Model : rotate", &modelR.x, 0.01f, 0.0f, 10.0f);
-        ImGui::DragFloat3("Model : scale", &modelS.x, 0.01f, -5.0f, 5.0f);
+        ImGui::DragFloat3("Model : scale", &modelS.x, 0.01f, -1.0f, 1.0f);
+        ImGui::DragFloat4("Model : color", &modelColor.x, 0.01f, 0.0f, 1.0f);
         ImGui::End();
 
         ImGui::Begin("Mirror");
@@ -132,6 +136,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         model->SetTranslate(modelT);
         model->SetRotate(modelR);
         model->SetScale(modelS);
+        model->SetColor(modelColor);
 
         leftMirror->SetTranslate(lMirrorT);
         leftMirror->SetRotate(lMirrorR);
@@ -144,6 +149,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // Aキーでカメラ切り替え
         if (Input::TriggerKey(DIK_A)) {
             debugCamera->ToggleIsAvailable();
+        }
+
+        if (Input::TriggerKey(DIK_SPACE)) {
+            debugCamera->SetTranslate({ 0.0f,0.0f,-20.0f });
+            debugCamera->SetRotate({ 0.135f,0.0f,0.0f });
+
+            model->SetTranslate({ 0.0f,-2.0f,-2.0f });
+            model->SetRotate({ 0.0f,0.0f,0.0f });
+            model->SetScale({ 1.0f,1.0f,1.0f });
+
+            leftMirror->SetTranslate({ -0.15f,-3.0f,8.0f });
+
+            rightMirror->SetTranslate({ 7.85f,-3.0f,8.0f });
+            rightMirror->SetRotate({ 0.0f,0.5f,0.0f });
         }
 
         // カメラの種類によって更新変更

@@ -30,6 +30,7 @@ namespace Engine {
         const Vector3& GetScale() const { return transform_.scale; }
         const Vector3& GetRotate() const { return transform_.rotate; }
         const Vector3& GetTranslate() const { return transform_.translate; }
+        Vector4& GetColor() const { return materialData_->color; };
         ID3D12Resource* GetMaterialResource() const { return materialResource_.Get();};
         ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
         ID3D12Resource* GetLightResource() const { return lightResource_.Get(); };
@@ -48,6 +49,7 @@ namespace Engine {
         void SetDirectionalLight(const DirectionalLight& light) { *lightData_ = light; }
         void SetLambertMode(const ShadingMode lambertMode) { materialData_->shadingMode = lambertMode; }
         void SetTexture(uint32_t handle) { textureHandle_ = handle; }
+        void SetColor(const Vector4& color) { materialData_->color = color; };
         
     private:
         // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）

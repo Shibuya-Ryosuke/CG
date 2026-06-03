@@ -200,13 +200,9 @@ namespace Engine {
         // 反射計算専用の「偽の鏡ワールド行列」を作成
         Matrix4x4 fakeMirrorWorld = MakeAffineMatrix(mirrorScale, fixRotate, mirrorTranslate);
 
-
-        // === 2. 元の処理の object_->GetWorldMatrix() を fakeMirrorWorld に置き換える ===
-        Matrix4x4 normalWorld = MakeAffineMatrix(target->GetScale(), target->GetRotate(), target->GetTranslate());
-
         // ★ここを object_->GetWorldMatrix() から fakeMirrorWorld に変更
         Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(fakeMirrorWorld);
-        Matrix4x4 mirrorWorld = normalWorld * reflectMatrix;
+        Matrix4x4 mirrorWorld = target->GetWorldMatrix() * reflectMatrix;
 
 
         // 斜めクリップ。バグってるし、裏にあるオブジェクトを反射テクスチャに登録しなければ映らないのでクリップする必要もない。
