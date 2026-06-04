@@ -5,29 +5,37 @@
 #include "../Math/Math.h"
 
 namespace Engine {
+    class DebugCamera;
+
     class Sprite {
     public:
         Sprite();
         ~Sprite();
 
-        void Initialize(uint32_t textureHandle, Vector2 position);
+        void Initialize(uint32_t textureHandle, Vector3 translate);
         void Finalize();
         void Update();
+        void Update(DebugCamera& debugCamera);
         void Draw();
 
+        void InitializeTriangle(uint32_t textureHandle, Vector3 translate, const Vector2& size);
+        void DrawTriangle();
 
         // Getter
-        const Vector2& GetPosition() const { return position_; }
-        float GetRotate() const { return rotation_; }
+        const Vector3& GetTranslate() const { return transform_.translate; }
+        const Vector3& GetRotate() const { return transform_.rotate; }
+        const Vector3& GetScale() const { return transform_.scale; }
         const Vector2& GetSize() const { return size_; }
         const Transform& GetUVTransform() const { return uvTransformSprite_; }
-
+        const Vector4& GetColor() const { return materialData_->color; };
         // Setter
-        void SetPosition(const Vector2& pos) { position_ = pos; }
-        void SetRotate(float rotation) { rotation_ = rotation; }
+        void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
+        void SetRotate(const Vector3& rotation) { transform_.rotate = rotation; }
+        void SetScale(const Vector3& scale) { transform_.scale = scale; };
         void SetSize(const Vector2& size) { size_ = size; }
         void SetTexture(uint32_t textureHandle) { textureHandle_ = textureHandle; };
         void SetUVTransform(const Transform& uvTransform) { uvTransformSprite_ = uvTransform; }
+        void SetColor(const Vector4& color) {  materialData_->color = color; };
 
     private:
         void CreateVertexResource();
@@ -35,6 +43,8 @@ namespace Engine {
         void CreateMaterialResource();
         void CreateWVPResource();
 
+        void CreateVertexResourceForTriangle();
+        void CreateIndexResourceForTriangle();
     private:
         // リソース類
         Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
@@ -53,8 +63,7 @@ namespace Engine {
 
         // スプライトのステータス
         uint32_t textureHandle_ = 0;
-        Vector2 position_ = { 0.0f, 0.0f };
-        float rotation_ = 0.0f;
+        Transform transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
         Vector2 size_ = { 1280.0f, 720.0f };
         Transform uvTransformSprite_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     };

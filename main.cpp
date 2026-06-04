@@ -10,189 +10,127 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     Engine::Initialize();
 
+    const int32_t kMax = 2;
+    const float kSpace = 1.5f;
+
     // テクスチャ
-    uint32_t textureHandle = GetTxManager()->Load("resources/uvChecker.png");
-    uint32_t brick = GetTxManager()->Load("resources/brick.png");
-    uint32_t wall = GetTxManager()->Load("resources/wall.png");
+    uint32_t none = GetTxManager()->Load("resources/a.png");
 
-    // モデルリスト
-    std::vector<Object3d*> models;
+    uint32_t textures[2]{
+        GetTxManager()->Load("resources/uvChecker.png"),
+        GetTxManager()->Load("resources/brick.png")
+    };
 
-    // 3d
-    Object3d* model = Object3d::Create("resources/TR.obj");
-    model->SetTexture(textureHandle);
-    model->SetTranslate({ 0.0f,-2.0f,-2.0f });
-    models.push_back(model);
+   
 
-    Object3d* modelGround = Object3d::Create("resources/mapping.obj");
-    modelGround->SetTexture(brick);
-    modelGround->SetTranslate({ 0.0f,-3.5f,4.0f });
-    models.push_back(modelGround);
-
-    Object3d* modelWall = Object3d::Create("resources/wall.obj");
-    modelWall->SetTexture(wall);
-    modelWall->SetTranslate({ 0.0f,-0.0f,-25.0f });
-    modelWall->SetScale({ 3.0f,1.0f,1.0f });
-    models.push_back(modelWall);
-
-    ReflectObject* leftMirror = new ReflectObject();
-    leftMirror->Initialize("resources/mirror.obj");
-    leftMirror->SetTranslate({ -0.15f,-3.0f,8.0f });
-
-    ReflectObject* rightMirror = new ReflectObject();
-    rightMirror->Initialize("resources/mirror.obj");
-    rightMirror->SetTranslate({ 7.85f,-3.0f,8.0f });
-    rightMirror->SetRotate({ 0.0f,0.5f,0.0f });
-
-    // 登録
-    for (auto* m : models) {
-        leftMirror->RegisterObject(m);
-        rightMirror->RegisterObject(m);
+    Sprite triangles[kMax];
+    Transform transforms[kMax]{};
+    Vector4 color[kMax]{};
+    uint32_t currentTextures[kMax]{};
+    for (uint32_t i = 0; i < kMax;i++) {
+        triangles[i].InitializeTriangle(textures[i], {-5.0f + i * 7.0f, 2.5f}, {5.0f,5.0f});
+        currentTextures[i] = textures[i];
     }
 
-    // カメラ
-    Camera* camera = new Camera();
 
-    // デバッグカメラ
     DebugCamera* debugCamera = new DebugCamera();
-    debugCamera->SetRotate({ 0.135f,0.0f,0.0f });
-    debugCamera->ToggleIsAvailable();
-
-    // ImGuiで初期化させる
-    //debugCamera->SetTranslate({ 0.0f,0.0f,0.0f });
-    //debugCamera->SetRotate({ 0.0f,0.0f,0.0f });
-
-    //model->SetTranslate({ 0.0f,-2.0f,-2.0f });
-    //model->SetRotate({ 0.0f,0.0f,0.0f });
-
-    // 音
-    //uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
-    //Audio::PlayAudio(alarm, 1.0f);
-
-    
-    Sprite sprite{};
-    sprite.Initialize(rightMirror->GetSrvIndex(), {0.0f,0.0f});
-    sprite.SetSize({ 1280,720 });
-
-    bool check = false;
+    debugCamera->Initialize();
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
-        // --- 更新処理 (Update) ---
-        // 入力受付
         Input::Update();
-
         ImGuiManager::NewFrame();
 
-        Vector3 modelT = model->GetTranslate();
-        Vector3 modelR = model->GetRotate();
-        Vector3 modelS = model->GetScale();
-        Vector4 modelColor = model->GetColor();
-
-        Vector3 lMirrorT = leftMirror->GetTranslate();
-        Vector3 lMirrorR = leftMirror->GetRotate();
-        Vector3 lMirrorS = leftMirror->GetScale();
-
-        Vector3 rMirrorT = rightMirror->GetTranslate();
-        Vector3 rMirrorR = rightMirror->GetRotate();
-        Vector3 rMirrorS = rightMirror->GetScale();
+      
+        for (uint32_t i = 0; i < kMax;i++) {
+            transforms[i].translate = triangles[i].GetTranslate();
+            transforms[i].rotate = triangles[i].GetRotate();
+            transforms[i].scale = triangles[i].GetScale();
+            color[i] = triangles[i].GetColor();
+        }
 
 #ifdef _DEBUG
-        ImGui::Begin("Model");
-        ImGui::DragFloat3("Model : translate", &modelT.x, 0.01f, -10.0f, 10.0f);
-        ImGui::DragFloat3("Model : rotate", &modelR.x, 0.01f, 0.0f, 10.0f);
-        ImGui::DragFloat3("Model : scale", &modelS.x, 0.01f, -1.0f, 1.0f);
-        ImGui::DragFloat4("Model : color", &modelColor.x, 0.01f, 0.0f, 1.0f);
-        ImGui::End();
+        ImGui::Begin("Triangles");
+        // 左の三角形
+        ImGui::Text("Transform");
+        ImGui::DragFloat3("left translate", &transforms[0].translate.x, 0.01f, -10.0f, 10.0f);
+        ImGui::DragFloat3("left rotate", &transforms[0].rotate.x, 0.01f, -5.0f, 5.0f);
+        ImGui::DragFloat3("left scale", &transforms[0].scale.x, 0.01f, -5.0f, 5.0f);
+        ImGui::Dummy(ImVec2(0.0f, kSpace));
 
-        ImGui::Begin("Mirror");
-        ImGui::DragFloat3("Left Mirror : translate", &lMirrorT.x, 0.01f, -10.0f, 10.0f);
-        ImGui::DragFloat3("Left Mirror : rotate", &lMirrorR.x, 0.01f, -10.0f, 10.0f);
-        ImGui::DragFloat3("Left Mirror : scale", &lMirrorS.x, 0.01f, -1.0f, 1.0f);
+        ImGui::Text("Color");
+        ImGui::ColorEdit4("left color", &color[0].x);
+        ImGui::Dummy(ImVec2(0.0f, kSpace));
+
+        ImGui::Text("Texture");
+        if (ImGui::Button("left uvChecker")) {
+            currentTextures[0] = textures[0];
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("left brick")) {
+            currentTextures[0] = textures[1];
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("left none")) {
+            currentTextures[0] = none;
+        }
+
         ImGui::NewLine();
-        ImGui::DragFloat3("Right Mirror : translate", &rMirrorT.x, 0.01f, -10.0f, 10.0f);
-        ImGui::DragFloat3("Right Mirror : rotate", &rMirrorR.x, 0.01f, -10.0f, 10.0f);
-        ImGui::DragFloat3("Right Mirror : scale", &rMirrorS.x, 0.01f, -1.0f, 1.0f);
-        ImGui::End();
+        ImGui::Separator();
+        ImGui::NewLine();
 
-        ImGui::Begin("Sprite Texture");
-        if (ImGui::Checkbox("Left Mirror", &check)) {
-            if (check) {
-                sprite.SetTexture(leftMirror->GetSrvIndex());
-            } else {
-                sprite.SetTexture(rightMirror->GetSrvIndex());
-            }
+        // 右の三角形
+        ImGui::Text("Transform");
+        ImGui::DragFloat3("right translate", &transforms[1].translate.x, 0.01f, -10.0f, 10.0f);
+        ImGui::DragFloat3("right rotate", &transforms[1].rotate.x, 0.01f, -5.0f, 5.0f);
+        ImGui::DragFloat3("right scale", &transforms[1].scale.x, 0.01f, -5.0f, 5.0f);
+        ImGui::Dummy(ImVec2(0.0f, kSpace));
+
+        ImGui::Text("Color");
+        ImGui::ColorEdit4("right color", &color[1].x);
+        ImGui::Dummy(ImVec2(0.0f, kSpace));
+
+        ImGui::Text("Texture");
+        if (ImGui::Button("right uvChecker ")) {
+            currentTextures[1] = textures[0];
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("right brick ")) {
+            currentTextures[1] = textures[1];
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("right none ")) {
+            currentTextures[1] = none;
+        }
+
+        ImGui::NewLine();
+        ImGui::Separator();
+        ImGui::NewLine();
+
+        if (ImGui::Button("Initialize")) {
+
         }
         ImGui::End();
 
-        ImGui::Begin("Camera");
-        ImGui::Text("DebugCamera");
-        ImGui::DragFloat3("DebugCamera : translate", &debugCamera->GetTranslate().x, 0.01f, -20.0f, 20.0f);
-        ImGui::DragFloat3("DebugCamera : rotate", &debugCamera->GetRotate().x, 0.01f, 0.0f, 0.0f);
+        ImGui::Begin("DebugCamera");
+        ImGui::DragFloat3("rotate", &debugCamera->GetRotate().x, 0.01f, -1000.0f, 1000.0f);
+        ImGui::DragFloat3("translate", &debugCamera->GetTranslate().x, 0.01f, -1000.0f, 1000.0f);
         ImGui::End();
 
 #endif
-
-        model->SetTranslate(modelT);
-        model->SetRotate(modelR);
-        model->SetScale(modelS);
-        model->SetColor(modelColor);
-
-        leftMirror->SetTranslate(lMirrorT);
-        leftMirror->SetRotate(lMirrorR);
-        leftMirror->SetScale(lMirrorS);
-
-        rightMirror->SetTranslate(rMirrorT);
-        rightMirror->SetRotate(rMirrorR);
-        rightMirror->SetScale(rMirrorS);
-
-        // Aキーでカメラ切り替え
-        if (Input::TriggerKey(DIK_A)) {
-            debugCamera->ToggleIsAvailable();
+        for (uint32_t i = 0; i < kMax;i++) {
+            triangles[i].SetTranslate(transforms[i].translate);
+            triangles[i].SetRotate(transforms[i].rotate);
+            triangles[i].SetScale(transforms[i].scale);
+            triangles[i].SetColor(color[i]);
+            triangles[i].SetTexture(currentTextures[i]);
         }
 
-        if (Input::TriggerKey(DIK_SPACE)) {
-            debugCamera->SetTranslate({ 0.0f,0.0f,-20.0f });
-            debugCamera->SetRotate({ 0.135f,0.0f,0.0f });
+        debugCamera->Update();
 
-            model->SetTranslate({ 0.0f,-2.0f,-2.0f });
-            model->SetRotate({ 0.0f,0.0f,0.0f });
-            model->SetScale({ 1.0f,1.0f,1.0f });
-
-            leftMirror->SetTranslate({ -0.15f,-3.0f,8.0f });
-
-            rightMirror->SetTranslate({ 7.85f,-3.0f,8.0f });
-            rightMirror->SetRotate({ 0.0f,0.5f,0.0f });
+        for (uint32_t i = 0; i < kMax;i++) {
+            triangles[i].Update(*debugCamera);
         }
-
-        // カメラの種類によって更新変更
-        if (debugCamera->GetIsAvailable()) {
-            debugCamera->Update();
-            model->Update(*debugCamera);
-            modelGround->Update(*debugCamera);
-            modelWall->Update(*debugCamera);
-            leftMirror->Update(*debugCamera);
-            rightMirror->Update(*debugCamera);
-        } else {
-            camera->Update();
-            model->Update(*camera);
-            modelGround->Update(*camera);
-            modelWall->Update(*camera);
-            leftMirror->Update(*camera);
-            rightMirror->Update(*camera);
-        }
-
-        sprite.Update();
-
-        // 反射テクスチャに書き込むための更新＆描画
-        if (debugCamera->GetIsAvailable()) {
-            leftMirror->ReflectProcess(*debugCamera);
-            rightMirror->ReflectProcess(*debugCamera);
-        } else {
-            leftMirror->ReflectProcess(*camera);
-            rightMirror->ReflectProcess(*camera);
-        }
-
 
         // --- 描画処理 (Draw) ---
         GetDxCommon()->PreDraw();
@@ -200,34 +138,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // [3D描画フェーズ]
         GetObject3dCommon()->BeginDraw();
     
-        modelGround->Draw();
-        model->Draw();
-        modelWall->Draw();
-
-        leftMirror->Draw();
-        rightMirror->Draw();
-
 
         // [2D描画フェーズ]
         GetSpriteCommon()->BeginDraw();
-        if (Input::PushKey(DIK_Z)) {
-            sprite.Draw();
-        }
+        for (uint32_t i = 0; i < kMax;i++) {
+            triangles[i].Draw();
+        };
+
         ImGuiManager::EndFrame(GetDxCommon()->GetCommandList());
         // 画面表示（PostDraw、コマンドリスト実行、スワップチェーン入れ替え）
         GetDxCommon()->PostDraw();
     }
     
-    // 生ポインタ解放
-    delete debugCamera;
-    debugCamera = nullptr;
-
-    delete camera;
-    camera = nullptr;
-
-    delete model;
-    model = nullptr;
-
     // エンジン終了
     Engine::Finalize();
 
