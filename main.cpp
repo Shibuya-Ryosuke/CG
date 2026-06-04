@@ -107,8 +107,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         ImGui::Separator();
         ImGui::NewLine();
 
-        if (ImGui::Button("Initialize")) {
+        for (uint32_t i = 0; i < kMax;i++) {
+            triangles[i].SetTranslate(transforms[i].translate);
+            triangles[i].SetRotate(transforms[i].rotate);
+            triangles[i].SetScale(transforms[i].scale);
+            triangles[i].SetColor(color[i]);
+            triangles[i].SetTexture(currentTextures[i]);
+        }
 
+        if (ImGui::Button("Initialize")) {
+            for (uint32_t i = 0; i < kMax;i++) {
+                triangles[i].InitializeTriangle(textures[i], { -5.0f + i * 7.0f, 2.5f }, { 5.0f,5.0f });
+                currentTextures[i] = textures[i];
+            }
+            debugCamera->Initialize();
         }
         ImGui::End();
 
@@ -118,13 +130,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         ImGui::End();
 
 #endif
-        for (uint32_t i = 0; i < kMax;i++) {
-            triangles[i].SetTranslate(transforms[i].translate);
-            triangles[i].SetRotate(transforms[i].rotate);
-            triangles[i].SetScale(transforms[i].scale);
-            triangles[i].SetColor(color[i]);
-            triangles[i].SetTexture(currentTextures[i]);
-        }
+        
 
         debugCamera->Update();
 
