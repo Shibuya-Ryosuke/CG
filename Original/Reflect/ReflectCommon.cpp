@@ -131,8 +131,8 @@ namespace Engine {
         auto device = dxCommon_->GetDevice();
 
         // 新しい反射シェーダーをコンパイル
-        auto vsBlob = ShaderCompiler::GetInstance()->Compile(L"Original/HLSL/Reflect/Reflect.VS.hlsl", L"vs_6_0");
-        auto psBlob = ShaderCompiler::GetInstance()->Compile(L"Original/HLSL/Reflect/Reflect.PS.hlsl", L"ps_6_0");
+        auto vsBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Reflect/Reflect.VS.hlsl", L"vs_6_0");
+        auto psBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Reflect/Reflect.PS.hlsl", L"ps_6_0");
 
         // InputLayout (Object3dと同じ)
         D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {

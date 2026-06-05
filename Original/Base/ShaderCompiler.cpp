@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include <format>
 #include <cassert>
+#include <filesystem>
 #include <initguid.h> 
 #include <dxcapi.h>
 
@@ -39,13 +40,23 @@ namespace Engine {
     Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(const std::wstring& filePath, const wchar_t* profile) {
 
         // 1.hlslファイルを読み込む
-        // これからシェーダーをコンパイルする旨をログに出す
         Logger::Log(Logger::ConvertString(std::format(L"Begin CompileShader, Path:{}, profile:{}\n", filePath, profile)));
+
+        // 【デバッグ用】プログラムが実際に探しに行っている絶対パスをログに出す
+        std::filesystem::path absolutePath = std::filesystem::absolute(filePath);
+        Logger::Log(Logger::ConvertString(std::format(L"Looking for file at: {}\n", absolutePath.wstring())));
+
         // hlslファイルを読み込む
         Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource = nullptr;
         HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+
         // 読めなかったら止める
-        assert(SUCCEEDED(hr));
+        if (FAILED(hr)) {
+            // assertの前に、ファイルが存在するかチェック
+            bool exists = std::filesystem::exists(filePath);
+            Logger::Log(Logger::ConvertString(std::format(L"File exists? : {}\n", exists ? L"TRUE" : L"FALSE")));
+            assert(SUCCEEDED(hr));
+        }
         // 読み込んだファイルの内容を設定する
         DxcBuffer shaderSourceBuffer;
         shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();

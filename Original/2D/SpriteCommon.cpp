@@ -111,8 +111,8 @@ namespace Engine {
         inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
         // シェーダーのコンパイル (Sprite専用のHLSLがある場合はパスを変更してください)
-        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Original/HLSL/Sprite.VS.hlsl", L"vs_6_0");
-        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Original/HLSL/Sprite.PS.hlsl", L"ps_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Sprite/Sprite.VS.hlsl", L"vs_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Sprite/Sprite.PS.hlsl", L"ps_6_0");
 
         // PSO の作成
         D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};

@@ -16,6 +16,18 @@
     <Filter Include="imgui">
       <UniqueIdentifier>{c43e52f0-1632-41a7-a02c-5071b91d0702}</UniqueIdentifier>
     </Filter>
+    <Filter Include="リソース ファイル\HLSL">
+      <UniqueIdentifier>{f9a25521-3498-4266-b3c9-e67c94f817a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\HLSL\Object3d">
+      <UniqueIdentifier>{dff1fa6e-d029-46b4-b561-c435ae72d04a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\HLSL\Sprite">
+      <UniqueIdentifier>{49bb948b-afed-4b17-b0cd-3ec18adff378}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\HLSL\Reflect">
+      <UniqueIdentifier>{7c1b1358-122b-4f68-adc1-9be6b0a36c4a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -96,16 +108,6 @@
     <ClCompile Include="Original\Reflect\ReflectObject.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Original\HLSL\Object3d.PS.hlsl" />
-    <FxCompile Include="Original\HLSL\Object3d.VS.hlsl" />
-    <FxCompile Include="Original\HLSL\Sprite.VS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="Original\HLSL\Sprite.PS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">
@@ -206,25 +208,39 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Original\HLSL\Object3d.hlsli">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="Original\HLSL\Sprite.hlsli">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="Original\HLSL\Reflect\Reflect.hlsli">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="Original\HLSL\Reflect\Reflect.PS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="Original\HLSL\Reflect\Reflect.VS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="Original\Externals\imgui\LICENSE.txt">
       <Filter>imgui</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\Object3d\Object3d.hlsli">
+      <Filter>リソース ファイル\HLSL\Object3d</Filter>
+    </None>
+    <None Include="HLSL\Sprite\Sprite.hlsli">
+      <Filter>リソース ファイル\HLSL\Sprite</Filter>
+    </None>
+    <None Include="HLSL\Reflect\Reflect.hlsli">
+      <Filter>リソース ファイル\HLSL\Reflect</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="HLSL\Object3d\Object3d.PS.hlsl">
+      <Filter>リソース ファイル\HLSL\Object3d</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Object3d\Object3d.VS.hlsl">
+      <Filter>リソース ファイル\HLSL\Object3d</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Sprite\Sprite.PS.hlsl">
+      <Filter>リソース ファイル\HLSL\Sprite</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Sprite\Sprite.VS.hlsl">
+      <Filter>リソース ファイル\HLSL\Sprite</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Reflect\Reflect.PS.hlsl">
+      <Filter>リソース ファイル\HLSL\Reflect</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Reflect\Reflect.VS.hlsl">
+      <Filter>リソース ファイル\HLSL\Reflect</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
