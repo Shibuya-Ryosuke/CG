@@ -111,8 +111,22 @@ namespace Engine {
 
         // ミニマップの作成
         DirectX::ScratchImage mipImages{};
-        hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
-        assert(SUCCEEDED(hr));
+        // 画像の幅か高さが1ピクセルなら、ミップマップを作らずに元の画像をそのまま使う
+        if (image.GetMetadata().width == 1 || image.GetMetadata().height == 1) {
+            // moveで中身をそのまま移動させる
+            mipImages = std::move(image);
+        } else {
+            // 2x2以上の通常画像ならミップマップを生成する
+            hr = DirectX::GenerateMipMaps(
+                image.GetImages(),
+                image.GetImageCount(),
+                image.GetMetadata(),
+                DirectX::TEX_FILTER_SRGB,
+                0,
+                mipImages
+            );
+            assert(SUCCEEDED(hr));
+        }
 
         // ミップマップ付きのデータを返す
         return mipImages;

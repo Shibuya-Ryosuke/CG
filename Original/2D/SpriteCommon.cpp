@@ -15,7 +15,7 @@ namespace Engine {
         dxCommon_ = DirectXCommon::GetInstance();
         CreateRootSignature();
         CreatePipelineState();
-        whiteTex = TextureManager::GetInstance()->Load("resources/a.png");
+        whiteTex = TextureManager::GetInstance()->Load("resources/white1x1.png");
     }
 
     void SpriteCommon::BeginDraw() {

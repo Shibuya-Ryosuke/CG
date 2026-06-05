@@ -136,9 +136,15 @@ namespace Engine {
 
         // 初期データ書き込み (上向きの二等辺三角形の例)
         // 0: 頂点(上中央), 1: 左下, 2: 右下
-        vertexData_[0].position = { size_.x / 2.0f, 0.0f, 0.0f, 1.0f };
-        vertexData_[1].position = { 0.0f, size_.y, 0.0f, 1.0f };
-        vertexData_[2].position = { size_.x, size_.y, 0.0f, 1.0f };
+        float halfX = size_.x / 2.0f;
+        float halfY = size_.y / 2.0f;
+
+        // 0: 頂点(上中央) -> Xは真ん中(0), Yは上方向(-halfY)
+        vertexData_[0].position = { 0.0f, -halfY, 0.0f, 1.0f };
+        // 1: 左下         -> Xは左方向(-halfX), Yは下方向(halfY)
+        vertexData_[1].position = { -halfX, halfY, 0.0f, 1.0f };
+        // 2: 右下         -> Xは右方向(halfX), Yは下方向(halfY)
+        vertexData_[2].position = { halfX, halfY, 0.0f, 1.0f };
 
         // UV座標も三角形に合わせてマッピング (必要に応じて調整してください)
         vertexData_[0].texcoord = { 0.5f, 0.0f };

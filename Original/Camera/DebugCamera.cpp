@@ -40,17 +40,16 @@ namespace Engine {
 
 	void DebugCamera::Update() {
 		
-		Vector3 move{};
-
+		
 		float wheel = static_cast<float>(Input::GetMouseWheel());
 		if (std::abs(wheel) > 0) {
-			move.z += wheel * wheelSpeed_;
+			translate_.z += wheel * wheelSpeed_;
 		}
 
 		// 左クリック時移動操作可能
-		if (Input::IsMousePush(0) && Input::IsMousePush(1)) {
-			move.x -= static_cast<float>(Input::GetMouseRelX() * moveSpeed_);
-			move.y += static_cast<float>(Input::GetMouseRelY() * moveSpeed_);
+		if (Input::IsMousePush(2)) {
+			translate_.x -= static_cast<float>(Input::GetMouseRelX() * moveSpeed_);
+			translate_.y += static_cast<float>(Input::GetMouseRelY() * moveSpeed_);
 		}
 
 		// 右クリック時回転操作可能
@@ -68,11 +67,6 @@ namespace Engine {
 		// 回転行列を作成
 		Matrix4x4 matRot = MakeRotateMatrix(rotate_);
 
-		// 移動ベクトルをカメラの向きに合わせて変換
-		move = move * matRot;
-
-		// 実際の座標に加算
-		translate_ += move;
 
 
 		// カメラのワールド行列を作成

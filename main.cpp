@@ -14,8 +14,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     const float kSpace = 1.5f;
 
     // テクスチャ
-    uint32_t none = GetTexManager()->Load("resources/a.png");
-
     uint32_t textures[2]{
         GetTexManager()->Load("resources/uvChecker.png"),
         GetTexManager()->Load("resources/brick.png")
@@ -28,7 +26,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Vector4 color[kMax]{};
     uint32_t currentTextures[kMax]{};
     for (uint32_t i = 0; i < kMax;i++) {
-        triangles[i].InitializeTriangle(textures[i], {-5.0f + i * 7.0f, 2.5f}, {5.0f,5.0f});
+        triangles[i].InitializeTriangle(textures[i], { -3.5f + i * 7.0f, 0.0f, 0.0f }, { 5.0f,5.0f });
         currentTextures[i] = textures[i];
     }
 
@@ -72,7 +70,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         }
         ImGui::SameLine();
         if (ImGui::Button("left none")) {
-            currentTextures[0] = none;
+            currentTextures[0] = GetSpriteCommon()->GetWhiteTex();
         }
 
         ImGui::NewLine();
@@ -100,7 +98,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         }
         ImGui::SameLine();
         if (ImGui::Button("right none ")) {
-            currentTextures[1] = none;
+            currentTextures[1] = GetSpriteCommon()->GetWhiteTex();
         }
 
         ImGui::NewLine();
@@ -115,16 +113,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             triangles[i].SetTexture(currentTextures[i]);
         }
 
+        ImGui::Text("Camera & Triangles");
         if (ImGui::Button("Initialize")) {
             for (uint32_t i = 0; i < kMax;i++) {
-                triangles[i].InitializeTriangle(textures[i], { -5.0f + i * 7.0f, 2.5f }, { 5.0f,5.0f });
+                triangles[i].InitializeTriangle(textures[i], { -3.5f + i * 7.0f, 0.0f, 0.0f }, { 5.0f,5.0f });
                 currentTextures[i] = textures[i];
             }
             debugCamera->Initialize();
         }
         ImGui::End();
 
-        ImGui::Begin("DebugCamera");
+        ImGui::Begin("Camera");
         ImGui::DragFloat3("rotate", &debugCamera->GetRotate().x, 0.01f, -1000.0f, 1000.0f);
         ImGui::DragFloat3("translate", &debugCamera->GetTranslate().x, 0.01f, -1000.0f, 1000.0f);
         ImGui::End();
