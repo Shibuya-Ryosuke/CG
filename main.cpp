@@ -16,7 +16,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     const uint32_t kRespawnTime = 5;
     const float kSpace = 1.5f;
 
-    bool isActiveMirror[4]{ false,false,false,false };
+    bool isActiveMirror[4]{ true,true,true,true };
     bool isVideoProd = false;
 
     // カメラ
@@ -168,6 +168,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
                 // カメラ
                 debugCamera->Initialize();
                 Vector3 translate = debugCamera->GetTranslate();
+                translate.x = 3.0f;
                 translate.z = -85.0f;
                 debugCamera->SetTranslate(translate);
 
