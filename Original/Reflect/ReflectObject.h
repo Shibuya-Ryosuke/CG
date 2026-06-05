@@ -58,7 +58,7 @@ namespace Engine {
         ReflectObject(ReflectObject&&) = default;
         ReflectObject& operator=(ReflectObject&&) = default;
 
-
+        static ReflectObject* Create(const std::string& filePath);
         // 初期化（板ポリゴンのモデルなどを読み込む）
         void Initialize(const std::string& modelPath);
 

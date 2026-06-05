@@ -8,6 +8,12 @@
 #include <iomanip>
 
 namespace Engine {
+    ReflectObject* ReflectObject::Create(const std::string& filePath) {
+        ReflectObject* instance = new ReflectObject();
+        instance->Initialize(filePath);
+
+        return instance;
+    }
 
     void ReflectObject::Initialize(const std::string& modelPath) {
         // Blenderで作った「鏡の枠と面があるモデル」を読み込む

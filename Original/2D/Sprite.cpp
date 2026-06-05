@@ -46,6 +46,8 @@ namespace Engine {
         // インデックス (main.cppの順序通り)
         indexData_[0] = 0; indexData_[1] = 1; indexData_[2] = 2;
         indexData_[3] = 1; indexData_[4] = 3; indexData_[5] = 2;
+
+        indexCount_ = 6;
     }
 
     void Sprite::Finalize() {
@@ -120,7 +122,7 @@ namespace Engine {
         commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
 
         // 4. インデックスを使って描画 (6つのインデックスを使用)
-        commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+        commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
     }
 
     void Sprite::InitializeTriangle(uint32_t textureHandle, Vector3 translate, const Vector2& size) {
@@ -134,16 +136,13 @@ namespace Engine {
         CreateMaterialResource();
         CreateWVPResource();
 
-        // 初期データ書き込み (上向きの二等辺三角形の例)
-        // 0: 頂点(上中央), 1: 左下, 2: 右下
+
         float halfX = size_.x / 2.0f;
         float halfY = size_.y / 2.0f;
 
-        // 0: 頂点(上中央) -> Xは真ん中(0), Yは上方向(-halfY)
+        // 頂点
         vertexData_[0].position = { 0.0f, -halfY, 0.0f, 1.0f };
-        // 1: 左下         -> Xは左方向(-halfX), Yは下方向(halfY)
         vertexData_[1].position = { -halfX, halfY, 0.0f, 1.0f };
-        // 2: 右下         -> Xは右方向(halfX), Yは下方向(halfY)
         vertexData_[2].position = { halfX, halfY, 0.0f, 1.0f };
 
         // UV座標も三角形に合わせてマッピング (必要に応じて調整してください)
@@ -155,22 +154,8 @@ namespace Engine {
         indexData_[0] = 0;
         indexData_[1] = 2;
         indexData_[2] = 1;
-    }
 
-    void Sprite::DrawTriangle() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-
-        // バッファをセット
-        commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
-        commandList->IASetIndexBuffer(&indexBufferView_);
-
-        // RootParameter (0:Material, 1:WVP, 2:Texture)
-        commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
-
-        // 3つのインデックスを使って描画
-        commandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
+        indexCount_ = 3;
     }
 
     void Sprite::CreateVertexResource() {

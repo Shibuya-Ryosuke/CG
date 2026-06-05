@@ -26,6 +26,7 @@ namespace Engine {
 
         // リソース作成
         InternalInitialize(modelData);
+        transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     }
 
     void Object3d::CreateDirectionalLight() {

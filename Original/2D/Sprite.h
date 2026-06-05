@@ -19,7 +19,6 @@ namespace Engine {
         void Draw();
 
         void InitializeTriangle(uint32_t textureHandle, Vector3 translate, const Vector2& size);
-        void DrawTriangle();
 
         // Getter
         const Vector3& GetTranslate() const { return transform_.translate; }
@@ -60,6 +59,7 @@ namespace Engine {
         SpriteMaterial* materialData_ = nullptr;
         Matrix4x4* wvpData_ = nullptr;
 
+        UINT indexCount_ = 0;
 
         // スプライトのステータス
         uint32_t textureHandle_ = 0;
