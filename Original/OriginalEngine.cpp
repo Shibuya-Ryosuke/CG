@@ -88,7 +88,7 @@ namespace Engine {
     // これらは Engine 名前空間の関数なので、上の匿名名前空間にある変数にアクセスできます。
     WinApp* GetWinApp() { return winApp_; }
     DirectXCommon* GetDxCommon() { return dxCommon_; }
-    TextureManager* GetTxManager() { return textureManager_; }
+    TextureManager* GetTexManager() { return textureManager_; }
     Object3dCommon* GetObject3dCommon() { return object3dCommon_; }
     SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
     ReflectCommon* GetReflectCommon() { return reflectCommon_; }

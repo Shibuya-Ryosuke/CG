@@ -32,7 +32,7 @@ namespace Engine {
 
     WinApp* GetWinApp();
     DirectXCommon* GetDxCommon();
-    TextureManager* GetTxManager();
+    TextureManager* GetTexManager();
     Object3dCommon* GetObject3dCommon();
     SpriteCommon* GetSpriteCommon();
     ReflectCommon* GetReflectCommon();

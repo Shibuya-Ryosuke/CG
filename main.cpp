@@ -14,11 +14,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     const float kSpace = 1.5f;
 
     // テクスチャ
-    uint32_t none = GetTxManager()->Load("resources/a.png");
+    uint32_t none = GetTexManager()->Load("resources/a.png");
 
     uint32_t textures[2]{
-        GetTxManager()->Load("resources/uvChecker.png"),
-        GetTxManager()->Load("resources/brick.png")
+        GetTexManager()->Load("resources/uvChecker.png"),
+        GetTexManager()->Load("resources/brick.png")
     };
 
    
