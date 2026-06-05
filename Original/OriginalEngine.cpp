@@ -1,4 +1,6 @@
 #include "OriginalEngine.h"
+#include <cstdlib>
+#include <ctime>
 #include <dxgidebug.h>
 #pragma comment(lib, "dxguid.lib")
 
@@ -55,6 +57,8 @@ namespace Engine {
             static_cast<int>(dxCommon_->GetBackBufferCount()),
             dxCommon_->GetBackBufferFormat()
         );
+
+        std::srand(static_cast<unsigned int>(std::time(nullptr)));
     }
 
     void Finalize() {
