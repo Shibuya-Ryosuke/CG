@@ -299,7 +299,7 @@ namespace RyoEngine {
         resDesc.SampleDesc.Count = 1;
         resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 
-        float clearColor[] = { 0.1f, 0.25f, 0.5f, 1.0f };
+        float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
         D3D12_CLEAR_VALUE clearValue{};
         clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
         memcpy(clearValue.Color, clearColor, sizeof(float) * 4);
