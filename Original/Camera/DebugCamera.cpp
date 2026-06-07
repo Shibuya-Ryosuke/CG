@@ -1,7 +1,7 @@
 #include "DebugCamera.h"
 #include "../Input/Input.h"
 
-namespace Engine {
+namespace RyoEngine {
 	DebugCamera::DebugCamera() {
 		rotate_ = { 0,0,0 };
 		translate_ = { 0,0,-20 };

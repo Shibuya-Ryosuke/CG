@@ -10,7 +10,7 @@
 #pragma comment(lib, "dxcompiler.lib")
 
 
-namespace Engine {
+namespace RyoEngine {
     ShaderCompiler* ShaderCompiler::GetInstance() {
         static ShaderCompiler instance;
         return &instance;

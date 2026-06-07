@@ -4,7 +4,7 @@
 #include "../Graphics/TextureManager.h"
 #include "../Reflect/ReflectCommon.h"
 
-namespace Engine {
+namespace RyoEngine {
     Sprite::Sprite() {};
     Sprite::~Sprite() {};
 

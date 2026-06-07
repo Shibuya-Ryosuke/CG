@@ -6,7 +6,7 @@
 #include <wrl.h>
 #include "../Camera/DebugCamera.h"
 
-namespace Engine {
+namespace RyoEngine {
     struct TransformationMatrixForReflect {
         Matrix4x4 WVP;
         Matrix4x4 World;

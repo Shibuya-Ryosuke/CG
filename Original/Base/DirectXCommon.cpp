@@ -8,7 +8,7 @@
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 
-namespace Engine{
+namespace RyoEngine{
 	DirectXCommon* DirectXCommon::GetInstance() {
 		static DirectXCommon instance;
 		return &instance;

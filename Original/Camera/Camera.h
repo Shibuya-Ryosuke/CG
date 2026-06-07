@@ -1,7 +1,7 @@
 #pragma once
 #include "../Math/Math.h"
 
-namespace Engine {
+namespace RyoEngine {
     class Camera {
     public:
         /// <summary>

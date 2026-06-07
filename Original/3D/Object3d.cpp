@@ -5,7 +5,7 @@
 #include "../Reflect/ReflectCommon.h"
 #include "../Reflect/ReflectObject.h"
 
-namespace Engine {
+namespace RyoEngine {
 
     void Object3d::Initialize() {
         // デフォルト設定などが必要ならここに書く

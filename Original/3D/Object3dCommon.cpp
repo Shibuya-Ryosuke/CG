@@ -5,7 +5,7 @@
 #include "../Graphics/TextureManager.h"
 #include <cassert>
 
-namespace Engine {
+namespace RyoEngine {
 	Object3dCommon* Object3dCommon::GetInstance() {
 		static Object3dCommon instance;
 		return &instance;

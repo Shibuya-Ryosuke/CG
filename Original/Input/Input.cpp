@@ -1,7 +1,7 @@
 #include "Input.h"
 #include <cassert>
 
-namespace Engine {
+namespace RyoEngine {
 	Input* Input::GetInstance() {
 		static Input instance;
 		return &instance;

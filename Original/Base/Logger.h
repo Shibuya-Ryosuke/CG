@@ -3,7 +3,7 @@
 #include <fstream>
 #include <Windows.h>
 
-namespace Engine {
+namespace RyoEngine {
 
 	class Logger {
 	public:

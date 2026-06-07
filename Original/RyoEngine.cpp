@@ -1,10 +1,10 @@
-#include "OriginalEngine.h"
+#include "RyoEngine.h"
 #include <cstdlib>
 #include <ctime>
 #include <dxgidebug.h>
 #pragma comment(lib, "dxguid.lib")
 
-namespace Engine {
+namespace RyoEngine {
 
     // 匿名名前空間：この cpp ファイルの中からしかアクセスできない領域
     namespace {
@@ -26,7 +26,7 @@ namespace Engine {
         dxCommon_ = DirectXCommon::GetInstance();
         dxCommon_->Initialize(winApp_);
 
-        shaderCompiler_ = Engine::ShaderCompiler::GetInstance();
+        shaderCompiler_ = RyoEngine::ShaderCompiler::GetInstance();
         shaderCompiler_->Initialize();
 
         // 入力関係初期化

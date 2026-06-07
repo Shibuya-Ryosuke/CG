@@ -25,7 +25,7 @@
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxguid.lib")
 
-namespace Engine {
+namespace RyoEngine {
 
     void Initialize();
     void Finalize();

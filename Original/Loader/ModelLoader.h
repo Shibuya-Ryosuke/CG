@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-namespace Engine {
+namespace RyoEngine {
 	class ModelLoader {
 	public:
 		ModelLoader() = delete;

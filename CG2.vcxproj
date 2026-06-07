@@ -48,7 +48,7 @@
     <ClCompile Include="Original\ImGui\ImGuiManager.cpp" />
     <ClCompile Include="Original\Input\Input.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
-    <ClCompile Include="Original\OriginalEngine.cpp" />
+    <ClCompile Include="Original\RyoEngine.cpp" />
     <ClCompile Include="Original\Reflect\ReflectCommon.cpp" />
     <ClCompile Include="Original\Reflect\ReflectObject.cpp" />
   </ItemGroup>
@@ -82,7 +82,7 @@
     <ClInclude Include="Original\Math\Geometry.h" />
     <ClInclude Include="Original\Math\Transform.h" />
     <ClInclude Include="Original\Math\Vector.h" />
-    <ClInclude Include="Original\OriginalEngine.h" />
+    <ClInclude Include="Original\RyoEngine.h" />
     <ClInclude Include="Original\Reflect\ReflectCommon.h" />
     <ClInclude Include="Original\Reflect\ReflectObject.h" />
   </ItemGroup>

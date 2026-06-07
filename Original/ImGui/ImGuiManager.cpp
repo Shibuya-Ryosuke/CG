@@ -5,7 +5,7 @@
 #include "../Externals/imgui/imgui_impl_dx12.h"
 #include "../Externals/imgui/imgui_impl_win32.h"
 
-namespace Engine {
+namespace RyoEngine {
     ImGuiManager* ImGuiManager::GetInstance() {
         static ImGuiManager instance;
         return &instance;

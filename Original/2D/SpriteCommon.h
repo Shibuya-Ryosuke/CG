@@ -3,7 +3,7 @@
 #include <wrl.h>
 #include <array>
 
-namespace Engine {
+namespace RyoEngine {
     class DirectXCommon;
 
     class SpriteCommon {

@@ -8,7 +8,7 @@
 #include "../Camera/DebugCamera.h"
 #include "../Light/Light.h"
 
-namespace Engine {
+namespace RyoEngine {
     class ReflectObject;
 
     class Object3d {

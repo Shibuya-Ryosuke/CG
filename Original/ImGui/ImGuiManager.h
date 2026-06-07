@@ -5,7 +5,7 @@
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 
-namespace Engine {
+namespace RyoEngine {
 
     class ImGuiManager {
     public:

@@ -3,7 +3,7 @@
 #include <wrl.h>
 #include "../Base/DirectXCommon.h"
 
-namespace Engine {
+namespace RyoEngine {
     class Object3dCommon {
     public:
         enum DrawType {

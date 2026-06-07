@@ -8,7 +8,7 @@
 #include "../Externals/DirectXTex/DirectXTex.h"
 #pragma comment(lib, "DirectXTex.lib")
 
-namespace Engine {
+namespace RyoEngine {
 	class TextureManager {
 	public:
 		// インスタンス取得

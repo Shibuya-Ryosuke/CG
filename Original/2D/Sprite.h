@@ -4,7 +4,7 @@
 #include <string>
 #include "../Math/Math.h"
 
-namespace Engine {
+namespace RyoEngine {
     class DebugCamera;
 
     class Sprite {

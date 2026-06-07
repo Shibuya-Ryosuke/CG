@@ -5,7 +5,7 @@
 #include "../Graphics/TextureManager.h"
 #include <cassert>
 
-namespace Engine {
+namespace RyoEngine {
     SpriteCommon* SpriteCommon::GetInstance() {
         static SpriteCommon instance;
         return &instance;

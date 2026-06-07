@@ -3,7 +3,7 @@
 #include "../Graphics/TextureManager.h"
 #include "../Base/ShaderCompiler.h"
 
-namespace Engine {
+namespace RyoEngine {
 
 
     ReflectCommon* ReflectCommon::GetInstance() {

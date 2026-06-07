@@ -1,6 +1,6 @@
 #include "Camera.h"
 
-namespace Engine {
+namespace RyoEngine {
     Camera::Camera() {
         // メンバ変数への代入
         rotate_ = { 0.0f, 0.0f, 0.0f };

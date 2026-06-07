@@ -4,7 +4,7 @@
 #include "../Externals/DirectXTex/d3dx12.h"
 
 
-namespace Engine {
+namespace RyoEngine {
     TextureManager* TextureManager::GetInstance() {
         static TextureManager instance;
         return &instance;

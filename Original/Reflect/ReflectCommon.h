@@ -6,7 +6,7 @@
 #include "../Math/Math.h"
 #include "ReflectObject.h"
 
-namespace Engine {
+namespace RyoEngine {
 
     class ReflectCommon {
     public:

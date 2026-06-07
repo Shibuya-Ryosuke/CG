@@ -6,7 +6,7 @@
 
 #include <cassert>
 
-namespace Engine {
+namespace RyoEngine {
 	// インスタンス初期化
 	Audio* Audio::instance = nullptr;
 

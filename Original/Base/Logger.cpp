@@ -8,7 +8,7 @@
 
 #pragma comment(lib, "Dbghelp.lib")
 
-namespace Engine {
+namespace RyoEngine {
 
 	std::ofstream Logger::logStream_;
 

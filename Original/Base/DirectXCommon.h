@@ -6,7 +6,7 @@
 
 class ShaderCompiler;
 
-namespace Engine {
+namespace RyoEngine {
 
 	class DirectXCommon {
 	public:

@@ -1,14 +1,14 @@
-#include "./Original/OriginalEngine.h"
+#include "./Original/RyoEngine.h"
 #ifdef _DEBUG
 #include "Original/Externals/imgui/imgui.h"
 #endif
 
-using namespace Engine;
+using namespace RyoEngine;
 
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
-    Engine::Initialize();
+    RyoEngine::Initialize();
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -73,7 +73,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     }
     
     // エンジン終了
-    Engine::Finalize();
+    RyoEngine::Finalize();
 
     return 0;
 }
