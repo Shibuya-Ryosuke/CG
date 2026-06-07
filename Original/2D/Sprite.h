@@ -19,6 +19,7 @@ namespace Engine {
         void Draw();
 
         void InitializeTriangle(uint32_t textureHandle, Vector3 translate, const Vector2& size);
+        void DrawTriangle();
 
         // Getter
         const Vector3& GetTranslate() const { return transform_.translate; }

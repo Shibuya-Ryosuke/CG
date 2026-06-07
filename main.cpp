@@ -420,7 +420,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         GetSpriteCommon()->BeginDraw();
         if (!isVideoProd) {
             for (uint32_t i = 0; i < kMax2dTriangles;i++) {
-                triangles2d[i].Draw();
+                triangles2d[i].DrawTriangle();
             };
         }
 
