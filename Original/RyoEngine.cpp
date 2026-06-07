@@ -12,7 +12,7 @@ namespace RyoEngine {
         DirectXCommon* dxCommon_ = nullptr;
         ShaderCompiler* shaderCompiler_ = nullptr;
         TextureManager* textureManager_ = nullptr;
-        Object3dCommon* object3dCommon_ = nullptr;
+        ModelCommon* modelCommon_ = nullptr;
         SpriteCommon* spriteCommon_ = nullptr;
         ReflectCommon* reflectCommon_ = nullptr;
         Audio* audio_ = nullptr;
@@ -37,8 +37,8 @@ namespace RyoEngine {
         textureManager_->Initialize();
 
         // 各種描画共通部の初期化
-        object3dCommon_ = Object3dCommon::GetInstance();
-        object3dCommon_->Initialize();
+        modelCommon_ = ModelCommon::GetInstance();
+        modelCommon_->Initialize();
 
         spriteCommon_ = SpriteCommon::GetInstance();
         spriteCommon_->Initialize();
@@ -72,7 +72,7 @@ namespace RyoEngine {
 
         reflectCommon_->Finalize();
         spriteCommon_->Finalize();
-        object3dCommon_->Finalize();
+        modelCommon_->Finalize();
         textureManager_->Finalize();
         shaderCompiler_->Finalize();
 
@@ -93,7 +93,7 @@ namespace RyoEngine {
     WinApp* GetWinApp() { return winApp_; }
     DirectXCommon* GetDxCommon() { return dxCommon_; }
     TextureManager* GetTexManager() { return textureManager_; }
-    Object3dCommon* GetObject3dCommon() { return object3dCommon_; }
+    ModelCommon* GetModelCommon() { return modelCommon_; }
     SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
     ReflectCommon* GetReflectCommon() { return reflectCommon_; }
 }

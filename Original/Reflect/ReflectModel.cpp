@@ -1,65 +1,65 @@
-#include "ReflectObject.h"
+#include "ReflectModel.h"
 #include "ReflectCommon.h"
 #include "../Graphics/TextureManager.h"
 #include "../Math/Math.h"
 #include "../Input/Input.h"
-#include "../3D/Object3dCommon.h"
+#include "../3D/ModelCommon.h"
 #include <sstream>
 #include <iomanip>
 
 namespace RyoEngine {
-    ReflectObject* ReflectObject::Create(const std::string& filePath) {
-        ReflectObject* instance = new ReflectObject();
+    ReflectModel* ReflectModel::Create(const std::string& filePath) {
+        ReflectModel* instance = new ReflectModel();
         instance->Initialize(filePath);
 
         return instance;
     }
 
-    void ReflectObject::Initialize(const std::string& modelPath) {
+    void ReflectModel::Initialize(const std::string& modelPath) {
         // Blenderで作った「鏡の枠と面があるモデル」を読み込む
-        object_ = Object3d::Create(modelPath);
+        model_ = Model::Create(modelPath);
         CreateReflectionResource();
     }
 
-    void ReflectObject::Update(const Camera& camera) {
+    void ReflectModel::Update(const Camera& camera) {
         // 鏡の板ポリ自体の通常の更新
-        object_->Update(camera);
+        model_->Update(camera);
 
         TransformationMatrixForReflect* wvpData = nullptr;
-        object_->GetWvpResource()->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
+        model_->GetWvpResource()->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
 
         // 鏡の板ポリ自体のワールド行列
-        wvpData->World = object_->GetWorldMatrix();
+        wvpData->World = model_->GetWorldMatrix();
         // メインカメラから見た鏡の板のWVP
-        wvpData->WVP = object_->GetWorldMatrix() * camera.GetViewProjectionMatrix();
+        wvpData->WVP = model_->GetWorldMatrix() * camera.GetViewProjectionMatrix();
 
         // 【変更】カメラを反転させないため、通常のVPをそのまま渡す
         //（オブジェクト側のReflectUpdateで反転されたWorldが渡ってくるため、カメラは通常のものでOK）
         wvpData->ReflectVP = camera.GetViewProjectionMatrix();
 
-        object_->GetWvpResource()->Unmap(0, nullptr);
+        model_->GetWvpResource()->Unmap(0, nullptr);
     }
 
-    void ReflectObject::Update(const DebugCamera& debugCamera) {
+    void ReflectModel::Update(const DebugCamera& debugCamera) {
         // 鏡の板ポリ自体の通常の更新
-        object_->Update(debugCamera);
+        model_->Update(debugCamera);
 
         TransformationMatrixForReflect* wvpData = nullptr;
-        object_->GetWvpResource()->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
+        model_->GetWvpResource()->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
 
         // 鏡の板ポリ自体のワールド行列
-        wvpData->World = object_->GetWorldMatrix();
+        wvpData->World = model_->GetWorldMatrix();
         // メインカメラから見た鏡の板のWVP
-        wvpData->WVP = object_->GetWorldMatrix() * debugCamera.GetViewProjectionMatrix();
+        wvpData->WVP = model_->GetWorldMatrix() * debugCamera.GetViewProjectionMatrix();
 
         // 【変更】カメラを反転させないため、通常のVPをそのまま渡す
         //（オブジェクト側のReflectUpdateで反転されたWorldが渡ってくるため、カメラは通常のものでOK）
         wvpData->ReflectVP = debugCamera.GetViewProjectionMatrix();
 
-        object_->GetWvpResource()->Unmap(0, nullptr);
+        model_->GetWvpResource()->Unmap(0, nullptr);
     }
 
-    void ReflectObject::Draw() {
+    void ReflectModel::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
         auto reflectCommon = ReflectCommon::GetInstance();
 
@@ -68,26 +68,26 @@ namespace RyoEngine {
         commandList->SetPipelineState(reflectCommon->GetPipelineState());
 
         // --- 2. 反射用マテリアル(b0) の更新とセット ---
-        // Object3dが持つ既存のmaterialResource_を流用して、反射用構造体で書き換えます
+        // Modelが持つ既存のmaterialResource_を流用して、反射用構造体で書き換えます
         // ※本来はReflectObject専用のResourceを持つのが理想ですが、メモリ節約のため流用します
         ReflectCommon::ReflectMaterial* matData = nullptr;
-        // Object3d::materialResource_ へのアクセス（必要に応じてゲッター作成かFriend設定）
+        // Model::materialResource_ へのアクセス（必要に応じてゲッター作成かFriend設定）
         // ここでは object_ の既存リソースに Map して書き込みます
-        object_->GetMaterialResource()->Map(0, nullptr, reinterpret_cast<void**>(&matData));
+        model_->GetMaterialResource()->Map(0, nullptr, reinterpret_cast<void**>(&matData));
         matData->color = { 0.0f, 0.0f, 0.0f, 0.0f };
         matData->enableLighting = 1;
         matData->shadingMode = 1; // Lambert
         matData->reflectionWeight = 0.8f; // 反射の強さ（0.0〜1.0）
         matData->shininess = 10.0f;
         matData->uvTransform = MakeIdentity4x4();
-        object_->GetMaterialResource()->Unmap(0, nullptr);
+        model_->GetMaterialResource()->Unmap(0, nullptr);
 
         // RootParameter(0) に PixelShader 用のマテリアル(b0) をセット
-        commandList->SetGraphicsRootConstantBufferView(0, object_->GetMaterialResource()->GetGPUVirtualAddress());
+        commandList->SetGraphicsRootConstantBufferView(0, model_->GetMaterialResource()->GetGPUVirtualAddress());
 
         // --- 3. 座標変換行列(b0) のセット ---
         // VS側の register(b0) に TransformationMatrix をセット
-        commandList->SetGraphicsRootConstantBufferView(1, object_->GetWvpResource()->GetGPUVirtualAddress());
+        commandList->SetGraphicsRootConstantBufferView(1, model_->GetWvpResource()->GetGPUVirtualAddress());
 
         // --- 4. テクスチャ(t0, t1) のセット ---
         // DescriptorHeapのセット
@@ -99,19 +99,19 @@ namespace RyoEngine {
 
         // --- 5. ライト(b1) のセット ---
         // PS側の register(b1) にライトをセット
-        commandList->SetGraphicsRootConstantBufferView(3, object_->GetLightResource()->GetGPUVirtualAddress());
+        commandList->SetGraphicsRootConstantBufferView(3, model_->GetLightResource()->GetGPUVirtualAddress());
 
         // --- 6. 描画実行 ---
-        // プリミティブトポロジをセット（Object3dCommon準拠）
+        // プリミティブトポロジをセット（ModelCommon準拠）
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         // 自身の描画
-        D3D12_VERTEX_BUFFER_VIEW vbv = object_->GetVBV();
+        D3D12_VERTEX_BUFFER_VIEW vbv = model_->GetVBV();
         commandList->IASetVertexBuffers(0, 1, &vbv);
-        commandList->DrawInstanced(object_->GetVertexCount(), 1, 0, 0);
+        commandList->DrawInstanced(model_->GetVertexCount(), 1, 0, 0);
     }
 
-    ReflectObject::ReflectWvpResource ReflectObject::CreateSingleReflectWvpResource() {
+    ReflectModel::ReflectWvpResource ReflectModel::CreateSingleReflectWvpResource() {
         auto device = DirectXCommon::GetInstance()->GetDevice();
         ReflectWvpResource newRes;
 
@@ -137,47 +137,47 @@ namespace RyoEngine {
         return newRes;
     }
 
-    void ReflectObject::RegisterObject(Object3d* obj) {
+    void ReflectModel::RegisterObject(Model* obj) {
         drawObjects_.push_back(obj);
         // 登録のたびにリソースを生成して追加
         reflectWvpResources_.push_back(CreateSingleReflectWvpResource());
     }
 
-    void ReflectObject::ReflectProcess(const Camera& camera) {
+    void ReflectModel::ReflectProcess(const Camera& camera) {
         auto reflectCommon = ReflectCommon::GetInstance();
 
         reflectCommon->PreDraw(this);
-        Object3dCommon::GetInstance()->BeginDraw(Object3dCommon::DrawType::REFLECT);
+        ModelCommon::GetInstance()->BeginDraw(ModelCommon::DrawType::REFLECT);
 
         for (size_t i = 0; i < drawObjects_.size(); ++i) {
             auto* data = reflectWvpResources_[i].data;
-            UpdateObject3d(camera, drawObjects_[i], data);
-            DrawObject3d(drawObjects_[i], i);
+            UpdateModel(camera, drawObjects_[i], data);
+            DrawModel(drawObjects_[i], i);
         }
 
         reflectCommon->PostDraw(this);
     }
 
-    void ReflectObject::ReflectProcess(const DebugCamera& debugCamera) {
+    void ReflectModel::ReflectProcess(const DebugCamera& debugCamera) {
         auto reflectCommon = ReflectCommon::GetInstance();
 
         reflectCommon->PreDraw(this);
-        Object3dCommon::GetInstance()->BeginDraw(Object3dCommon::DrawType::REFLECT);
+        ModelCommon::GetInstance()->BeginDraw(ModelCommon::DrawType::REFLECT);
 
         for (size_t i = 0; i < drawObjects_.size(); ++i) {
             auto* data = reflectWvpResources_[i].data;
-            UpdateObject3d(debugCamera, drawObjects_[i], data);
-            DrawObject3d(drawObjects_[i], i);
+            UpdateModel(debugCamera, drawObjects_[i], data);
+            DrawModel(drawObjects_[i], i);
         }
 
         reflectCommon->PostDraw(this);
     }
 
-    void ReflectObject::UpdateObject3d(const Camera& Camera, Object3d* target, TransformationMatrixForReflect* data) {
+    void ReflectModel::UpdateModel(const Camera& Camera, Model* target, TransformationMatrixForReflect* data) {
         // === 1. 鏡のZ回転を弾いた「反射用行列」をその場で作る ===
-        Vector3 mirrorScale = object_->GetScale();
-        Vector3 mirrorRotate = object_->GetRotate(); // (x, y, z) の回転
-        Vector3 mirrorTranslate = object_->GetTranslate();
+        Vector3 mirrorScale = model_->GetScale();
+        Vector3 mirrorRotate = model_->GetRotate(); // (x, y, z) の回転
+        Vector3 mirrorTranslate = model_->GetTranslate();
 
         // Z回転（ロール）だけを 0.0f にリセット
         Vector3 fixRotate = { mirrorRotate.x, mirrorRotate.y, 0.0f };
@@ -221,11 +221,11 @@ namespace RyoEngine {
         data->ReflectVP = Camera.GetViewProjectionMatrix();
     }
 
-    void ReflectObject::UpdateObject3d(const DebugCamera& debugCamera, Object3d* target, TransformationMatrixForReflect* data) {
+    void ReflectModel::UpdateModel(const DebugCamera& debugCamera, Model* target, TransformationMatrixForReflect* data) {
         // === 1. 鏡のZ回転を弾いた「反射用行列」をその場で作る ===
-        Vector3 mirrorScale = object_->GetScale();
-        Vector3 mirrorRotate = object_->GetRotate(); // (x, y, z) の回転
-        Vector3 mirrorTranslate = object_->GetTranslate();
+        Vector3 mirrorScale = model_->GetScale();
+        Vector3 mirrorRotate = model_->GetRotate(); // (x, y, z) の回転
+        Vector3 mirrorTranslate = model_->GetTranslate();
 
         // Z回転（ロール）だけを 0.0f にリセット
         Vector3 fixRotate = { mirrorRotate.x, mirrorRotate.y, 0.0f };
@@ -269,7 +269,7 @@ namespace RyoEngine {
         data->ReflectVP = debugCamera.GetViewProjectionMatrix();
     }
 
-    void ReflectObject::DrawObject3d(Object3d* target, size_t index) {
+    void ReflectModel::DrawModel(Model* target, size_t index) {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
         // 引数で受け取ったハンドルを使って記述子テーブルをセット
         commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(target->GetTxHandle()));
@@ -284,7 +284,7 @@ namespace RyoEngine {
         commandList->DrawInstanced(target->GetVertexCount(), 1, 0, 0);
     }
 
-    void ReflectObject::CreateReflectionResource() {
+    void ReflectModel::CreateReflectionResource() {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
         // 1. 反射用テクスチャの設定（画面サイズに合わせる）
@@ -326,7 +326,7 @@ namespace RyoEngine {
         // ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝
     }
 
-    Matrix4x4 ReflectObject::CalculateReflectionViewProjection(const DebugCamera& debugCamera) {
+    Matrix4x4 ReflectModel::CalculateReflectionViewProjection(const DebugCamera& debugCamera) {
         // 1. 鏡の位置と法線から反射行列を作成
         Matrix4x4 reflectMatrix = MakePlaneReflectionMatrix(this->GetWorldMatrix());
 

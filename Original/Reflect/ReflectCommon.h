@@ -4,7 +4,7 @@
 #include <cstdint>
 #include "../Base/DirectXCommon.h"
 #include "../Math/Math.h"
-#include "ReflectObject.h"
+#include "ReflectModel.h"
 
 namespace RyoEngine {
 
@@ -17,10 +17,10 @@ namespace RyoEngine {
 
         // 
         // テクスチャへの描き込み開始（レンダーターゲットの切り替え）
-        void PreDraw(ReflectObject* mirror);
+        void PreDraw(ReflectModel* mirror);
 
         // 反射テクスチャへの描き込み終了（リソースバリアの変更）
-        void PostDraw(ReflectObject* mirror);
+        void PostDraw(ReflectModel* mirror);
 
         // 終了処理
         void Finalize();
@@ -28,7 +28,7 @@ namespace RyoEngine {
         // --- ゲッター ---
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
         ID3D12PipelineState* GetPipelineState() const { return graphicsPipelineState_.Get(); }
-        ReflectObject* GetActiveMirror() const { return activeMirror_; }
+        ReflectModel* GetActiveMirror() const { return activeMirror_; }
 
         struct ReflectMaterial {
             Vector4 color;
@@ -54,7 +54,7 @@ namespace RyoEngine {
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
         Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
 
-        ReflectObject* activeMirror_ = nullptr;
+        ReflectModel* activeMirror_ = nullptr;
     };
 
 }

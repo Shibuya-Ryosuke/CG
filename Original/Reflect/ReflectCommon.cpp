@@ -18,7 +18,7 @@ namespace RyoEngine {
     }
 
 
-    void ReflectCommon::PreDraw(ReflectObject* mirror) {
+    void ReflectCommon::PreDraw(ReflectModel* mirror) {
         auto commandList = dxCommon_->GetCommandList();
         activeMirror_ = mirror;
 
@@ -48,7 +48,7 @@ namespace RyoEngine {
         commandList->RSSetScissorRects(1, &scissor);
     };
 
-    void ReflectCommon::PostDraw(ReflectObject* mirror) {
+    void ReflectCommon::PostDraw(ReflectModel* mirror) {
         auto commandList = dxCommon_->GetCommandList();
 
         // ✨ mirror からリソースを取得してバリアを戻す
@@ -134,7 +134,7 @@ namespace RyoEngine {
         auto vsBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Reflect/Reflect.VS.hlsl", L"vs_6_0");
         auto psBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Reflect/Reflect.PS.hlsl", L"ps_6_0");
 
-        // InputLayout (Object3dと同じ)
+        // InputLayout (Modelと同じ)
         D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
             { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },

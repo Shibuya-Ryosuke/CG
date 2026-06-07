@@ -1,19 +1,19 @@
-#include "Object3d.h"
+#include "Model.h"
 #include "../Base/DirectXCommon.h"
-#include "Object3dCommon.h"
+#include "Model.h"
 #include "../Graphics/TextureManager.h"
 #include "../Reflect/ReflectCommon.h"
-#include "../Reflect/ReflectObject.h"
+#include "../Reflect/ReflectModel.h"
 
 namespace RyoEngine {
 
-    void Object3d::Initialize() {
+    void Model::Initialize() {
         // デフォルト設定などが必要ならここに書く
         // scale rotate translate
         transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     }
 
-    void Object3d::CreateModel(const std::string& filePath) {
+    void Model::CreateModel(const std::string& filePath) {
         // パスからディレクトリを抽出
         std::string directoryPath = "";
         size_t pos = filePath.find_last_of('/');
@@ -29,7 +29,7 @@ namespace RyoEngine {
         transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     }
 
-    void Object3d::CreateDirectionalLight() {
+    void Model::CreateDirectionalLight() {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
         // DirectionalLightリソース作成
@@ -44,7 +44,7 @@ namespace RyoEngine {
         materialData_->shadingMode = ShadingMode::HALF_LAMBERT;
     }
 
-    void Object3d::InternalInitialize(const ModelLoader::ModelData& modelData) {
+    void Model::InternalInitialize(const ModelLoader::ModelData& modelData) {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
         // 1. 頂点バッファ作成
@@ -75,7 +75,7 @@ namespace RyoEngine {
         CreateDirectionalLight();
     }
 
-    void Object3d::Update(const Camera& camera) {
+    void Model::Update(const Camera& camera) {
         // ワールド行列の作成
         Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
         
@@ -86,7 +86,7 @@ namespace RyoEngine {
         wvpData_->WVP = wvpMatrix;
     }
 
-    void Object3d::Update(const DebugCamera& debugCamera) {
+    void Model::Update(const DebugCamera& debugCamera) {
         // ワールド行列の作成
         worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 
@@ -97,7 +97,7 @@ namespace RyoEngine {
         wvpData_->WVP = wvpMatrix;
     }
 
-    void Object3d::Draw() {
+    void Model::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
         // 引数で受け取ったハンドルを使って記述子テーブルをセット
@@ -113,8 +113,8 @@ namespace RyoEngine {
         commandList->DrawInstanced(vertexCount_, 1, 0, 0);
     }
 
-    Object3d* Object3d::Create(const std::string& filePath) {
-        Object3d* instance = new Object3d();
+    Model* Model::Create(const std::string& filePath) {
+        Model* instance = new Model();
         instance->Initialize(); // 共通の初期化
         instance->CreateModel(filePath); // モデル読み込みとリソース作成[cite: 17]
         return instance;

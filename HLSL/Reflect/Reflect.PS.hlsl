@@ -19,7 +19,7 @@ struct DirectionalLight
     float intensity;
 };
 
-// レジスタ番号は Object3d の運用に合わせる
+// レジスタ番号は Model の運用に合わせる
 ConstantBuffer<ReflectMaterial> gMaterial : register(b0);
 ConstantBuffer<DirectionalLight> gDirectionLight : register(b1); // ※1
 
@@ -55,7 +55,7 @@ PixelShaderOutput main(VertexShaderOutput input)
         reflectColor = gReflectTexture.Sample(gSampler, projectedUV);
     }
 
-    // 3. ライティング（Object3d.PS.hlsl の計算を移植）
+    // 3. ライティング（Model.PS.hlsl の計算を移植）
     float4 litColor = baseColor * gMaterial.color;
     if (gMaterial.enableLighting != 0)
     {

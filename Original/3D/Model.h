@@ -9,9 +9,9 @@
 #include "../Light/Light.h"
 
 namespace RyoEngine {
-    class ReflectObject;
+    class ReflectModel;
 
-    class Object3d {
+    class Model {
     public:
         void Initialize();
         void Update(const Camera& camera);
@@ -19,7 +19,7 @@ namespace RyoEngine {
 
         void Draw();
 
-        static Object3d* Create(const std::string& filePath);
+        static Model* Create(const std::string& filePath);
 
         void CreateModel(const std::string& filePath);
 

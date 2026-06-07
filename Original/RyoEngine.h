@@ -5,12 +5,12 @@
 #include "Graphics/TextureManager.h"
 #include "Loader/ModelLoader.h"
 #include "Base/ShaderCompiler.h"
-#include "3D/Object3dCommon.h"
-#include "3D/Object3d.h"
+#include "3D/ModelCommon.h"
+#include "3D/Model.h"
 #include "2D/SpriteCommon.h"
 #include "2D/Sprite.h"
 #include "Reflect/ReflectCommon.h"
-#include "Reflect/ReflectObject.h"
+#include "Reflect/ReflectModel.h"
 #include "Audio/Audio.h"
 #include "Math/Math.h"
 #include "Camera/Camera.h"
@@ -33,7 +33,7 @@ namespace RyoEngine {
     WinApp* GetWinApp();
     DirectXCommon* GetDxCommon();
     TextureManager* GetTexManager();
-    Object3dCommon* GetObject3dCommon();
+    ModelCommon* GetModelCommon();
     SpriteCommon* GetSpriteCommon();
     ReflectCommon* GetReflectCommon();
 }

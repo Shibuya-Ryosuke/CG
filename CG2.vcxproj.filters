@@ -19,14 +19,14 @@
     <Filter Include="リソース ファイル\HLSL">
       <UniqueIdentifier>{f9a25521-3498-4266-b3c9-e67c94f817a3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="リソース ファイル\HLSL\Object3d">
-      <UniqueIdentifier>{dff1fa6e-d029-46b4-b561-c435ae72d04a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="リソース ファイル\HLSL\Sprite">
       <UniqueIdentifier>{49bb948b-afed-4b17-b0cd-3ec18adff378}</UniqueIdentifier>
     </Filter>
     <Filter Include="リソース ファイル\HLSL\Reflect">
       <UniqueIdentifier>{7c1b1358-122b-4f68-adc1-9be6b0a36c4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\HLSL\Model">
+      <UniqueIdentifier>{11f21ad4-adfd-4df1-b2a0-b64fbfdcd0dc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -75,10 +75,10 @@
     <ClCompile Include="Original\Graphics\TextureManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\3D\Object3dCommon.cpp">
+    <ClCompile Include="Original\3D\ModelCommon.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\3D\Object3d.cpp">
+    <ClCompile Include="Original\3D\Model.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Camera\Camera.cpp">
@@ -105,7 +105,7 @@
     <ClCompile Include="Original\Reflect\ReflectCommon.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Reflect\ReflectObject.cpp">
+    <ClCompile Include="Original\Reflect\ReflectModel.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -173,10 +173,10 @@
     <ClInclude Include="Original\Graphics\TextureManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\3D\Object3dCommon.h">
+    <ClInclude Include="Original\3D\ModelCommon.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\3D\Object3d.h">
+    <ClInclude Include="Original\3D\Model.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Camera\Camera.h">
@@ -203,7 +203,7 @@
     <ClInclude Include="Original\Reflect\ReflectCommon.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Reflect\ReflectObject.h">
+    <ClInclude Include="Original\Reflect\ReflectModel.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -213,23 +213,17 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <None Include="HLSL\Object3d\Object3d.hlsli">
-      <Filter>リソース ファイル\HLSL\Object3d</Filter>
-    </None>
     <None Include="HLSL\Sprite\Sprite.hlsli">
       <Filter>リソース ファイル\HLSL\Sprite</Filter>
     </None>
     <None Include="HLSL\Reflect\Reflect.hlsli">
       <Filter>リソース ファイル\HLSL\Reflect</Filter>
     </None>
+    <None Include="HLSL\Model\Model.hlsli">
+      <Filter>リソース ファイル\HLSL\Model</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="HLSL\Object3d\Object3d.PS.hlsl">
-      <Filter>リソース ファイル\HLSL\Object3d</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\Object3d\Object3d.VS.hlsl">
-      <Filter>リソース ファイル\HLSL\Object3d</Filter>
-    </FxCompile>
     <FxCompile Include="HLSL\Sprite\Sprite.PS.hlsl">
       <Filter>リソース ファイル\HLSL\Sprite</Filter>
     </FxCompile>
@@ -241,6 +235,12 @@
     </FxCompile>
     <FxCompile Include="HLSL\Reflect\Reflect.VS.hlsl">
       <Filter>リソース ファイル\HLSL\Reflect</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Model\Model.PS.hlsl">
+      <Filter>リソース ファイル\HLSL\Model</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Model\Model.VS.hlsl">
+      <Filter>リソース ファイル\HLSL\Model</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

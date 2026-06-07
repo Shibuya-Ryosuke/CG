@@ -1,5 +1,5 @@
 #pragma once
-#include "../3d/Object3d.h"
+#include "../3d/Model.h"
 #include "../Camera/Camera.h"
 #include <memory>
 #include <d3d12.h>
@@ -12,7 +12,8 @@ namespace RyoEngine {
         Matrix4x4 World;
         Matrix4x4 ReflectVP;
     };
-    class ReflectObject {
+
+    class ReflectModel {
     private:
         struct ReflectWvpResource {
             Microsoft::WRL::ComPtr<ID3D12Resource> resource;
@@ -20,15 +21,15 @@ namespace RyoEngine {
         };
         std::vector<ReflectWvpResource> reflectWvpResources_;
 
-        Object3d* object_ = nullptr; // 鏡の実体（板モデル）
+        Model* model_ = nullptr; // 鏡の実体（板モデル）
 
         // 反射面を定義する（とりあえず Y=0 の平面とするための法線）
         Vector3 planeNormal_ = { 0.0f, 1.0f, 0.0f };
         float planeDistance_ = 0.0f; // 原点からの距離
 
-        void UpdateObject3d(const Camera& Camera, Object3d* target, TransformationMatrixForReflect* data);
-        void UpdateObject3d(const DebugCamera& debugCamera, Object3d* target, TransformationMatrixForReflect* data);
-        void DrawObject3d(Object3d* target, size_t index);
+        void UpdateModel(const Camera& Camera, Model* target, TransformationMatrixForReflect* data);
+        void UpdateModel(const DebugCamera& debugCamera, Model* target, TransformationMatrixForReflect* data);
+        void DrawModel(Model* target, size_t index);
         void CreateReflectionResource();
         
         Microsoft::WRL::ComPtr<ID3D12Resource> reflectionResource_;
@@ -39,26 +40,26 @@ namespace RyoEngine {
        
         Matrix4x4 CalculateReflectionViewProjection(const DebugCamera& debugCamera);
 
-        std::vector<Object3d*> drawObjects_;
+        std::vector<Model*> drawObjects_;
 
     public:
 
-        ReflectObject() = default;
-        ~ReflectObject() = default;
+        ReflectModel() = default;
+        ~ReflectModel() = default;
 
         // --- コピー禁止の設定 ---
         // コピーコンストラクタを削除
-        ReflectObject(const ReflectObject&) = delete;
+        ReflectModel(const ReflectModel&) = delete;
 
         // コピー代入演算子を削除
-        ReflectObject& operator=(const ReflectObject&) = delete;
+        ReflectModel& operator=(const ReflectModel&) = delete;
 
         // --- (任意) 移動の設定 ---
         // 所有権を移動させる「ムーブ」は許可しておくと便利な場合があります
-        ReflectObject(ReflectObject&&) = default;
-        ReflectObject& operator=(ReflectObject&&) = default;
+        ReflectModel(ReflectModel&&) = default;
+        ReflectModel& operator=(ReflectModel&&) = default;
 
-        static ReflectObject* Create(const std::string& filePath);
+        static ReflectModel* Create(const std::string& filePath);
         // 初期化（板ポリゴンのモデルなどを読み込む）
         void Initialize(const std::string& modelPath);
 
@@ -71,7 +72,7 @@ namespace RyoEngine {
 
         // 追加：リソース生成用
         ReflectWvpResource CreateSingleReflectWvpResource();
-        void RegisterObject(Object3d* obj);
+        void RegisterObject(Model* obj);
 
         /// UpdateとDraw
         void ReflectProcess(const Camera& camera);
@@ -95,16 +96,16 @@ namespace RyoEngine {
         TransformationMatrixForReflect* GetReflectWvpData(size_t index) { return reflectWvpResources_[index].data; }
   
         Matrix4x4& GetWorldMatrix() { return GetObj().GetWorldMatrix(); }
-        Object3d& GetObj() { return *object_; };
-        const Vector3& GetScale() const { return object_->GetScale(); }
-        const Vector3& GetRotate() const { return object_->GetRotate(); }
-        const Vector3& GetTranslate() const { return object_->GetTranslate(); }
+        Model& GetObj() { return *model_; };
+        const Vector3& GetScale() const { return model_->GetScale(); }
+        const Vector3& GetRotate() const { return model_->GetRotate(); }
+        const Vector3& GetTranslate() const { return model_->GetTranslate(); }
 
 
         // --- セッター ---
-        void SetTranslate(const Vector3& translate) { object_->SetTranslate(translate); }
-        void SetRotate(const Vector3& rotate) { object_->SetRotate(rotate); }
-        void SetScale(const Vector3& scale) { object_->SetScale(scale); }
+        void SetTranslate(const Vector3& translate) { model_->SetTranslate(translate); }
+        void SetRotate(const Vector3& rotate) { model_->SetRotate(rotate); }
+        void SetScale(const Vector3& scale) { model_->SetScale(scale); }
     };
 
 }

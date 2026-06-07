@@ -46,7 +46,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         GetDxCommon()->PreDraw();
 
         // [3D描画フェーズ]
-        GetObject3dCommon()->BeginDraw();
+        GetModelCommon()->BeginDraw();
         
 
 

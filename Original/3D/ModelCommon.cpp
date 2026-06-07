@@ -1,24 +1,25 @@
-#include "Object3dCommon.h"
+#include "Model.h"
 #include "../Base/Logger.h"
 #include "../Base/DirectXCommon.h"
 #include "../Base/ShaderCompiler.h"
 #include "../Graphics/TextureManager.h"
+#include "ModelCommon.h"
 #include <cassert>
 
 namespace RyoEngine {
-	Object3dCommon* Object3dCommon::GetInstance() {
-		static Object3dCommon instance;
+	ModelCommon* ModelCommon::GetInstance() {
+		static ModelCommon instance;
 		return &instance;
 	}
 
-	void Object3dCommon::Initialize() {
+	void ModelCommon::Initialize() {
 		dxCommon_ = DirectXCommon::GetInstance();
 		CreateRootSignature();
 		CreateRealPipelineState();
 		CreateReflectPipelineState();
 	}
 
-	void Object3dCommon::BeginDraw(DrawType drawType) {
+	void ModelCommon::BeginDraw(DrawType drawType) {
 		auto commandList = dxCommon_->GetCommandList();
 		commandList->SetGraphicsRootSignature(rootSignature_.Get());
 
@@ -38,7 +39,7 @@ namespace RyoEngine {
 		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	}
 
-	void Object3dCommon::Finalize() {
+	void ModelCommon::Finalize() {
 		// グラフィックスパイプラインを解放
 		reflectPipelineState_.Reset();
 		realPipelineState_.Reset();
@@ -50,7 +51,7 @@ namespace RyoEngine {
 		dxCommon_ = nullptr;
 	}
 
-	void Object3dCommon::CreateRootSignature() {
+	void ModelCommon::CreateRootSignature() {
 		HRESULT hr = S_OK;
 
 		// RootSignature作成
@@ -117,7 +118,7 @@ namespace RyoEngine {
 
 	}
 
-	void Object3dCommon::CreateRealPipelineState() {
+	void ModelCommon::CreateRealPipelineState() {
 		HRESULT hr = S_OK;
 
 		// InputLayout
@@ -169,10 +170,10 @@ namespace RyoEngine {
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
 		// Shaderをコンパイルする
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Object3d/Object3d.VS.hlsl",L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.VS.hlsl",L"vs_6_0");
 		assert(vertexShaderBlob != nullptr);
 
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Object3d/Object3d.PS.hlsl",L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.PS.hlsl",L"ps_6_0");
 		assert(pixelShaderBlob != nullptr);
 
 		// DepthStencilStateの設定
@@ -212,7 +213,7 @@ namespace RyoEngine {
 		assert(SUCCEEDED(hr));
 	}
 
-	void Object3dCommon::CreateReflectPipelineState() {
+	void ModelCommon::CreateReflectPipelineState() {
 		HRESULT hr = S_OK;
 
 		// InputLayout
@@ -264,10 +265,10 @@ namespace RyoEngine {
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
 		// Shaderをコンパイルする
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Object3d/Object3d.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.VS.hlsl", L"vs_6_0");
 		assert(vertexShaderBlob != nullptr);
 
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Object3d/Object3d.PS.hlsl", L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.PS.hlsl", L"ps_6_0");
 		assert(pixelShaderBlob != nullptr);
 
 		// DepthStencilStateの設定

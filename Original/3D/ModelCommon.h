@@ -4,7 +4,7 @@
 #include "../Base/DirectXCommon.h"
 
 namespace RyoEngine {
-    class Object3dCommon {
+    class ModelCommon {
     public:
         enum DrawType {
             REAL,
@@ -14,7 +14,7 @@ namespace RyoEngine {
         /// <summary>
         /// シングルトンインスタンスの取得
         /// </summary>
-        static Object3dCommon* GetInstance();
+        static ModelCommon* GetInstance();
 
         /// <summary>
         /// 初期化
@@ -33,10 +33,10 @@ namespace RyoEngine {
         ID3D12PipelineState* GetPipelineState() const { return realPipelineState_.Get(); }
 
     private:
-        Object3dCommon() = default;
-        ~Object3dCommon() = default;
-        Object3dCommon(const Object3dCommon&) = delete;
-        Object3dCommon& operator=(const Object3dCommon&) = delete;
+        ModelCommon() = default;
+        ~ModelCommon() = default;
+        ModelCommon(const ModelCommon&) = delete;
+        ModelCommon& operator=(const ModelCommon&) = delete;
 
         // DirectXCommonのポインタ（初期化時にキャッシュする用）
         DirectXCommon* dxCommon_ = nullptr;
