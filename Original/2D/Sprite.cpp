@@ -158,22 +158,6 @@ namespace Engine {
         indexCount_ = 3;
     }
 
-    void Sprite::DrawTriangle() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-
-        // バッファをセット
-        commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
-        commandList->IASetIndexBuffer(&indexBufferView_);
-
-        // RootParameter (0:Material, 1:WVP, 2:Texture)
-        commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
-
-        // 3つのインデックスを使って描画
-        commandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
-    }
-
     void Sprite::CreateVertexResource() {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
