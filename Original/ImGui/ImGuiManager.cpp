@@ -1,9 +1,11 @@
 #include "ImGuiManager.h"
 
 #ifdef _DEBUG
-#include "../Externals/imgui/imgui.h"
-#include "../Externals/imgui/imgui_impl_dx12.h"
-#include "../Externals/imgui/imgui_impl_win32.h"
+
+#include"../Externals/imgui/imgui.h"
+#include"../Externals/imgui/imgui_impl_dx12.h"
+#include"../Externals/imgui/imgui_impl_win32.h"
+
 
 namespace RyoEngine {
     ImGuiManager* ImGuiManager::GetInstance() {
@@ -35,12 +37,16 @@ namespace RyoEngine {
             instance->srvHeap_->GetCPUDescriptorHandleForHeapStart(),
             instance->srvHeap_->GetGPUDescriptorHandleForHeapStart()
         );
+
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     }
 
     void ImGuiManager::NewFrame() {
         ImGui_ImplDX12_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
+        ImGui::DockSpaceOverViewport();
     }
 
     void ImGuiManager::EndFrame(ID3D12GraphicsCommandList* commandList) {
