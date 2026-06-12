@@ -25,6 +25,9 @@ namespace RyoEngine {
 
         // 3. 1マス分のサイズを取得しておく（GetGPUHandleで使用するため）
         descriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+        // 0番目のスロットをImGui用に予約
+        textures_.push_back({ nullptr });
     }
 
     void TextureManager::Finalize() {

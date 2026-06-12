@@ -33,6 +33,8 @@ namespace RyoEngine {
 		/// </summary>
 		void PostDraw();
 
+		void CreateGameWindowView();
+
 		// ディスクリプタヒープの生成
 		static Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(
 			ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
@@ -53,6 +55,8 @@ namespace RyoEngine {
 		int32_t GetBackBufferWidth() const { return backBufferWidth_; }
 		int32_t GetBackBufferHeight() const { return backBufferHeight_; }
 		uint32_t GetBackBufferCount() const { return 2; }
+		uint32_t GetGameTexHandle() const { return gameTexHandle_; };
+
 		DXGI_FORMAT GetBackBufferFormat() const { return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; }
 
 	private:
@@ -87,6 +91,11 @@ namespace RyoEngine {
 
 		// DSV用ディスクリプタヒープ
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap_;
+
+		// 実行画面(ImGui表示用)のリソース
+		Microsoft::WRL::ComPtr<ID3D12Resource> gameWindowResource_ = nullptr;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> gameRtvHeap_ = nullptr;
+		uint32_t gameTexHandle_ = 0;
 
 		// DSV作成用の内部関数
 		void CreateDepthStencilView();

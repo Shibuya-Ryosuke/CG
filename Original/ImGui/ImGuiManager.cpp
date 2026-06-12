@@ -1,4 +1,5 @@
 #include "ImGuiManager.h"
+#include "../Graphics/TextureManager.h"
 
 #ifdef _DEBUG
 
@@ -14,15 +15,6 @@ namespace RyoEngine {
     }
 
     void ImGuiManager::Initialize(HWND hwnd, ID3D12Device* device, int bufferCount, DXGI_FORMAT rtvFormat) {
-        ImGuiManager* instance = GetInstance();
-
-        // 1. SRVヒープの作成
-        D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-        desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        desc.NumDescriptors = 1;
-        desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-        device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(instance->srvHeap_.GetAddressOf()));
-
         // 2. ImGuiコンテキスト作成
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -33,9 +25,9 @@ namespace RyoEngine {
             device,
             bufferCount,
             rtvFormat,
-            instance->srvHeap_.Get(),
-            instance->srvHeap_->GetCPUDescriptorHandleForHeapStart(),
-            instance->srvHeap_->GetGPUDescriptorHandleForHeapStart()
+            TextureManager::GetInstance()->GetDescriptorHeap(),
+            TextureManager::GetInstance()->GetCPUHandle(0),
+            TextureManager::GetInstance()->GetGPUHandle(0)
         );
 
         ImGuiIO& io = ImGui::GetIO();
@@ -50,13 +42,11 @@ namespace RyoEngine {
     }
 
     void ImGuiManager::EndFrame(ID3D12GraphicsCommandList* commandList) {
-        ImGuiManager* instance = GetInstance();
-
         ImGui::Render();
 
         // DescriptorHeapのセット
-        ID3D12DescriptorHeap* heaps[] = { instance->srvHeap_.Get() };
-        commandList->SetDescriptorHeaps(_countof(heaps), heaps);
+        ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap()};
+        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
         // 描画コマンド発行
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
