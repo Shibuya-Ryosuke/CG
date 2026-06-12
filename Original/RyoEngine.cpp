@@ -36,8 +36,6 @@ namespace RyoEngine {
         textureManager_ = TextureManager::GetInstance();
         textureManager_->Initialize();
 
-        dxCommon_->CreateGameWindowView();
-
         // 各種描画共通部の初期化
         modelCommon_ = ModelCommon::GetInstance();
         modelCommon_->Initialize();
