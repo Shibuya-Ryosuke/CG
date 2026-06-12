@@ -108,7 +108,7 @@ namespace RyoEngine {
     }
 
     uint32_t LoadTex(const std::string& filePath) {
-        GetTexManager()->Load(filePath);
+        return GetTexManager()->Load(filePath);
     }
 
     // --- ゲッターの実装 ---
