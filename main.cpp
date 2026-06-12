@@ -9,7 +9,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
-    uint32_t tex = LoadTex("resources/flower.png");
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
@@ -19,10 +18,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // -- 更新処理（Update） --
         // ----------------------
 
-        ImGui::ShowDemoWindow();
-        ImGui::Begin("a");
-        ImGui::Image((ImTextureID)GetTexManager()->GetGPUHandle(tex).ptr, ImVec2(500.0f, 500.0f), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-        ImGui::End();
+
+
 
         // ----------------------
         // ------ 更新終了 -------

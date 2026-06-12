@@ -1,6 +1,7 @@
 #include "DirectXCommon.h"
 #include "WinApp.h"
 #include "Logger.h"
+#include "../ImGui/ImGuiManager.h"
 #include "ShaderCompiler.h"
 #include <format>
 #include <cassert>
@@ -181,6 +182,7 @@ namespace RyoEngine{
 		// Fenceのsignalを待つためのイベントを作成する
 		fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
 		assert(fenceEvent_ != nullptr);
+
 	}
 
 	void DirectXCommon::Finalize() {
@@ -205,8 +207,10 @@ namespace RyoEngine{
 		}
 
 		// シェーダーコンパイラ
-	
 
+
+		gameRtvHeap_.Reset();
+		gameRenderTargetResource_.Reset();
 		// フェンス
 		fence_.Reset();
 
@@ -232,33 +236,24 @@ namespace RyoEngine{
 	}
 
 	void DirectXCommon::PreDraw() {
-		// これから書き込むバックバッファのインデックスを取得
-		uint32_t backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
-
-		// リソースバリアの設定(表示用から描画用へ切り替え)
+		// ★ゲーム用テクスチャの状態を描画可能（RENDER_TARGET）にする
+	// (Initialize直後はRENDER_TARGETですが、1フレーム目以降はShaderResourceから戻す必要があるため)
 		D3D12_RESOURCE_BARRIER barrier{};
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = swapChainResources_[backBufferIndex].Get();
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;      // 表示状態から
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画状態へ
+		barrier.Transition.pResource = gameRenderTargetResource_.Get();
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE; // 前フレームの最後でこれになってる
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		commandList_->ResourceBarrier(1, &barrier);
 
-		// 描画先の設定(RTVとDSV)
-		// RTVのハンドルを取得
-		const uint32_t descriptorSizeRTV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = GetCPUDescriptorHandle(rtvHeap_, descriptorSizeRTV, backBufferIndex);
-
-		// DSVのハンドル取得
+		// 描画先をゲーム用テクスチャのRTVと、既存のDSVに設定
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = gameRtvHeap_->GetCPUDescriptorHandleForHeapStart();
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 
-		// コマンドリストにセット
 		commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 
-		// 指定した色で画面全体をクリアする
-		float clearColor[] = { 0.1f, 0.25f, 0.5f, 1.0f };  // 青っぽい色。RGBAの順
+		// クリア処理
+		float clearColor[] = { 0.1f, 0.25f, 0.5f, 1.0f };
 		commandList_->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-		// 指定した深度で画面全体をクリアする
 		commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 		// ビューポートとシザー矩形の設定
@@ -282,48 +277,141 @@ namespace RyoEngine{
 
 
 	void DirectXCommon::PostDraw() {
-		// 現在のバックバッファのインデックスを取得
+		// =================================================================
+	// ① [追加] ゲーム用テクスチャを「描画先」から「シェーダー読み込み用(テクスチャ)」に切り替える
+	// =================================================================
+		D3D12_RESOURCE_BARRIER gameTexBarrier{};
+		gameTexBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		gameTexBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		gameTexBarrier.Transition.pResource = gameRenderTargetResource_.Get(); // ステップ①で作るテクスチャ
+		gameTexBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		gameTexBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE; // ImGuiから読める状態に
+		commandList_->ResourceBarrier(1, &gameTexBarrier);
+
+		// =================================================================
+		// ② [追加] 本来の画面（スワップチェーン）の現在のバックバッファインデックスを取得
+		// =================================================================
 		uint32_t backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
 
-		// リソースバリア
-		D3D12_RESOURCE_BARRIER barrier{};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = swapChainResources_[backBufferIndex].Get();
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-		commandList_->ResourceBarrier(1, &barrier);
+		// =================================================================
+		// ③ [追加] スワップチェーンを「表示状態」から「描画ターゲット状態」に切り替える
+		// =================================================================
+		D3D12_RESOURCE_BARRIER swapChainBarrier{};
+		swapChainBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		swapChainBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		swapChainBarrier.Transition.pResource = swapChainResources_[backBufferIndex].Get();
+		swapChainBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT; // 表示用から
+		swapChainBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画用に
+		commandList_->ResourceBarrier(1, &swapChainBarrier);
 
-		// コマンドリストを閉じて実行
+		// =================================================================
+		// ④ [追加] 最終的な描画先をスワップチェーン（本来の画面）に設定し、クリアする
+		// =================================================================
+		// ※GetCPUDescriptorHandleなどは既存の定義に合わせて呼び出してください
+		const uint32_t descriptorSizeRTV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		D3D12_CPU_DESCRIPTOR_HANDLE mainRtvHandle = GetCPUDescriptorHandle(rtvHeap_, descriptorSizeRTV, backBufferIndex);
+
+		commandList_->OMSetRenderTargets(1, &mainRtvHandle, false, nullptr); // ImGui描画に深度は不要なのでnullptrでOK
+
+		float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f }; // 黒でクリア
+		commandList_->ClearRenderTargetView(mainRtvHandle, clearColor, 0, nullptr);
+
+		// =================================================================
+		// ⑤ [元々の処理の移動] ここでImGuiの描画コマンドを発行！
+		// =================================================================
+		// 現在メインループ側(PostDrawの直前)でやっているImGuiのレンダー処理をここにまとめるとスッキリします
+#ifdef _DEBUG
+		ImGuiManager::EndFrame(commandList_.Get());
+#endif
+		// ※もし中身をバラで書くなら：
+		// ImGui::Render();
+		// ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
+		// commandList_->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		// ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList_.Get());
+
+		// =================================================================
+		// ⑥ [既存の処理] スワップチェーンを「描画ターゲット」から「表示状態(PRESENT)」に戻す
+		// =================================================================
+		D3D12_RESOURCE_BARRIER presentBarrier{};
+		presentBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		presentBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		presentBarrier.Transition.pResource = swapChainResources_[backBufferIndex].Get();
+		presentBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		presentBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+		commandList_->ResourceBarrier(1, &presentBarrier);
+
+		// =================================================================
+		// ⑦ [既存の処理] コマンドリストを閉じて実行 (ここから下は元のコードのまま)
+		// =================================================================
 		HRESULT hr = commandList_->Close();
 		assert(SUCCEEDED(hr));
 
-		// コマンドキューに実行を依頼
 		ID3D12CommandList* commandLists[] = { commandList_.Get() };
 		commandQueue_->ExecuteCommandLists(1, commandLists);
 
-		// GPUとOSに画面の交換を行うよう通知する
 		hr = swapChain_->Present(1, 0);
 		assert(SUCCEEDED(hr));
 
-		// Fenceの値を更新
+		// フェンス同期 (残す！)
 		fenceValue_++;
-		// GPUがここまでたどり着いたときに、Fenceの値を指定した値に代入するようにsignalを送る
 		commandQueue_->Signal(fence_.Get(), fenceValue_);
-		// Fenceの値が指定したSignal値にたどり着いているか確認する
-		// GetCompletedValueの初期値はFence作成時に渡した初期値
 		if (fence_->GetCompletedValue() < fenceValue_) {
-			// 指定したSignalにたどり着いていないので、たどり着くまで待つようにイベントを設定する
 			fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
-			// イベントを待つ
 			WaitForSingleObject(fenceEvent_, INFINITE);
 		}
 
-		// 次のフレーム用のコマンドリストを準備
+		// コマンドリストとアロケータのリセット (残す！)
 		hr = commandAllocator_->Reset();
 		assert(SUCCEEDED(hr));
 		hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
 		assert(SUCCEEDED(hr));
+	}
+
+	void DirectXCommon::CreateGameRenderTarget() {
+		HRESULT hr = S_OK;
+
+		// 1. レンダーターゲットとして使えるテクスチャリソースの設定
+		D3D12_RESOURCE_DESC texDesc{};
+		texDesc.Width = backBufferWidth_;
+		texDesc.Height = backBufferHeight_;
+		texDesc.MipLevels = 1;
+		texDesc.DepthOrArraySize = 1;
+		texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // ImGuiで扱いやすいフォーマット
+		texDesc.SampleDesc.Count = 1;
+		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		// ★重要: レンダーターゲットとして使用可能にするフラグ
+		texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+		D3D12_HEAP_PROPERTIES heapProps{};
+		heapProps.Type = D3D12_HEAP_TYPE_DEFAULT; // VRAM上
+
+		// クリア最適値の設定
+		D3D12_CLEAR_VALUE clearValue{};
+		clearValue.Format = texDesc.Format;
+		clearValue.Color[0] = 0.1f; // PreDrawのクリア色と合わせる
+		clearValue.Color[1] = 0.25f;
+		clearValue.Color[2] = 0.5f;
+		clearValue.Color[3] = 1.0f;
+
+		// リソース生成 (最初は描画ターゲット状態にしておく)
+		hr = device_->CreateCommittedResource(
+			&heapProps, D3D12_HEAP_FLAG_NONE, &texDesc,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, &clearValue, IID_PPV_ARGS(&gameRenderTargetResource_)
+		);
+		assert(SUCCEEDED(hr));
+
+		// 2. 専用のRTVディスクリプタヒープを作成
+		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc{};
+		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		rtvHeapDesc.NumDescriptors = 1;
+		hr = device_->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&gameRtvHeap_));
+		assert(SUCCEEDED(hr));
+
+		// RTVの作成
+		device_->CreateRenderTargetView(gameRenderTargetResource_.Get(), nullptr, gameRtvHeap_->GetCPUDescriptorHandleForHeapStart());
+
+		// 3. TextureManagerにリソースを登録してSRVを自動生成してもらう！
+		gameTextureHandle_ = TextureManager::GetInstance()->RegisterResource(gameRenderTargetResource_);
 	}
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(

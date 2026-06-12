@@ -1,4 +1,5 @@
 #pragma once
+#include "../Graphics/TextureManager.h"
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
@@ -33,6 +34,8 @@ namespace RyoEngine {
 		/// </summary>
 		void PostDraw();
 
+		void CreateGameRenderTarget();
+
 		// ディスクリプタヒープの生成
 		static Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(
 			ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
@@ -54,6 +57,11 @@ namespace RyoEngine {
 		int32_t GetBackBufferHeight() const { return backBufferHeight_; }
 		uint32_t GetBackBufferCount() const { return 2; }
 		DXGI_FORMAT GetBackBufferFormat() const { return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; }
+		
+		// メインループでImGui::Imageに渡すためのGPUハンドルを取得するゲッター
+		D3D12_GPU_DESCRIPTOR_HANDLE GetGameTextureGPUHandle() const {
+			return TextureManager::GetInstance()->GetGPUHandle(gameTextureHandle_);
+		}
 
 	private:
 		DirectXCommon() = default;
@@ -87,6 +95,11 @@ namespace RyoEngine {
 
 		// DSV用ディスクリプタヒープ
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap_;
+
+		// ゲーム画面のリソース系 
+		Microsoft::WRL::ComPtr<ID3D12Resource> gameRenderTargetResource_;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> gameRtvHeap_;
+		uint32_t gameTextureHandle_ = 0;
 
 		// DSV作成用の内部関数
 		void CreateDepthStencilView();

@@ -1,4 +1,5 @@
 #include "RyoEngine.h"
+#include "Externals/imgui/imgui.h"
 #include <cstdlib>
 #include <ctime>
 #include <dxgidebug.h>
@@ -35,6 +36,8 @@ namespace RyoEngine {
         // テクスチャマネージャーの初期化
         textureManager_ = TextureManager::GetInstance();
         textureManager_->Initialize();
+
+        dxCommon_->CreateGameRenderTarget();
 
         // 各種描画共通部の初期化
         modelCommon_ = ModelCommon::GetInstance();
@@ -99,12 +102,20 @@ namespace RyoEngine {
 
     void NewFrame() {
         Input::Update();
+
+#ifdef _DEBUG
         ImGuiManager::NewFrame();
+
+        ImGui::Begin("Game View");
+        D3D12_GPU_DESCRIPTOR_HANDLE gameTexHandle = dxCommon_->GetGameTextureGPUHandle();
+        ImVec2 viewSize{ 1280.0f,720.0f };
+        ImGui::Image(reinterpret_cast<ImTextureID>(gameTexHandle.ptr), viewSize);
+        ImGui::End();
+#endif
     }
 
     void EndFrame() {
-        ImGuiManager::EndFrame(GetDxCommon()->GetCommandList());
-        GetDxCommon()->PostDraw();
+        GetDxCommon()->PostDraw();  // ImGuiの終了処理はこの中にいる
     }
 
     uint32_t LoadTex(const std::string& filePath) {
