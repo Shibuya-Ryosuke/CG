@@ -11,9 +11,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
-        // 入力受付とImGuiフレーム開始
-        Input::Update();
-        ImGuiManager::NewFrame();
+        // フレーム開始
+        NewFrame();
 
         // ----------------------
         // -- 更新処理（Update） --
@@ -42,10 +41,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // --- 描画処理 (Draw) ---
         // ----------------------
-        GetDxCommon()->PreDraw();
-
         // [3D描画フェーズ]
-        GetModelCommon()->BeginDraw();
+        Begin3dDraw();
         
 
 
@@ -54,7 +51,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
         // [2D描画フェーズ]
-        GetSpriteCommon()->BeginDraw();
+        Begin2dDraw();
 
 
 
@@ -65,10 +62,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // ------ 描画終了 -------
         // ----------------------
-        // ImGuiフレーム終了
-        ImGuiManager::EndFrame(GetDxCommon()->GetCommandList());
-        // 画面表示（PostDraw、コマンドリスト実行、スワップチェーン入れ替え）
-        GetDxCommon()->PostDraw();
+
+        // フレーム終了
+        EndFrame();
     }
     
     // エンジン終了

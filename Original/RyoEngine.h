@@ -17,6 +17,8 @@
 #include "Camera/DebugCamera.h"
 #include "Input/Input.h"
 #include "ImGui/ImGuiManager.h"
+#include <cstdint>
+#include <string>
 #include <memory>
 
 #pragma comment(lib, "mfplat.lib")
@@ -29,6 +31,14 @@ namespace RyoEngine {
 
     void Initialize();
     void Finalize();
+
+    void Begin3dDraw();
+    void Begin2dDraw();
+
+    void NewFrame();
+    void EndFrame();
+
+    uint32_t LoadTex(const std::string& filePath);
 
     WinApp* GetWinApp();
     DirectXCommon* GetDxCommon();

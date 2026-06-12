@@ -88,6 +88,29 @@ namespace RyoEngine {
         }
     }
 
+    void Begin3dDraw() {
+        GetDxCommon()->PreDraw();
+        GetModelCommon()->BeginDraw();
+    }
+
+    void Begin2dDraw() {
+        GetSpriteCommon()->BeginDraw();
+    }
+
+    void NewFrame() {
+        Input::Update();
+        ImGuiManager::NewFrame();
+    }
+
+    void EndFrame() {
+        ImGuiManager::EndFrame(GetDxCommon()->GetCommandList());
+        GetDxCommon()->PostDraw();
+    }
+
+    uint32_t LoadTex(const std::string& filePath) {
+        GetTexManager()->Load(filePath);
+    }
+
     // --- ゲッターの実装 ---
     // これらは Engine 名前空間の関数なので、上の匿名名前空間にある変数にアクセスできます。
     WinApp* GetWinApp() { return winApp_; }
