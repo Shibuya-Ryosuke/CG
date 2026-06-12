@@ -236,17 +236,31 @@ namespace RyoEngine{
 	}
 
 	void DirectXCommon::PreDraw() {
-		// ★ゲーム用テクスチャの状態を描画可能（RENDER_TARGET）にする
-	// (Initialize直後はRENDER_TARGETですが、1フレーム目以降はShaderResourceから戻す必要があるため)
-		D3D12_RESOURCE_BARRIER barrier{};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Transition.pResource = gameRenderTargetResource_.Get();
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE; // 前フレームの最後でこれになってる
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		commandList_->ResourceBarrier(1, &barrier);
+#ifdef _DEBUG
+		// --- [Debug時] ゲーム用テクスチャへ描画 ---
+		D3D12_RESOURCE_BARRIER gameTexBarrier{};
+		gameTexBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		gameTexBarrier.Transition.pResource = gameRenderTargetResource_.Get();
+		gameTexBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		gameTexBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		commandList_->ResourceBarrier(1, &gameTexBarrier);
 
-		// 描画先をゲーム用テクスチャのRTVと、既存のDSVに設定
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = gameRtvHeap_->GetCPUDescriptorHandleForHeapStart();
+#else
+		// --- [Release時] 直接スワップチェーンへ描画 ---
+		uint32_t backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
+
+		D3D12_RESOURCE_BARRIER swapChainBarrier{};
+		swapChainBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		swapChainBarrier.Transition.pResource = swapChainResources_[backBufferIndex].Get();
+		swapChainBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		swapChainBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		commandList_->ResourceBarrier(1, &swapChainBarrier);
+
+		// 既存のRTVディスクリプタヒープからハンドルを計算
+		const uint32_t descriptorSizeRTV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = GetCPUDescriptorHandle(rtvHeap_, descriptorSizeRTV, backBufferIndex);
+#endif
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 
 		commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
@@ -277,58 +291,34 @@ namespace RyoEngine{
 
 
 	void DirectXCommon::PostDraw() {
-		// =================================================================
-	// ① [追加] ゲーム用テクスチャを「描画先」から「シェーダー読み込み用(テクスチャ)」に切り替える
-	// =================================================================
-		D3D12_RESOURCE_BARRIER gameTexBarrier{};
-		gameTexBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		gameTexBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		gameTexBarrier.Transition.pResource = gameRenderTargetResource_.Get(); // ステップ①で作るテクスチャ
-		gameTexBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		gameTexBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE; // ImGuiから読める状態に
-		commandList_->ResourceBarrier(1, &gameTexBarrier);
-
-		// =================================================================
-		// ② [追加] 本来の画面（スワップチェーン）の現在のバックバッファインデックスを取得
-		// =================================================================
 		uint32_t backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
 
-		// =================================================================
-		// ③ [追加] スワップチェーンを「表示状態」から「描画ターゲット状態」に切り替える
-		// =================================================================
+#ifdef _DEBUG
+		// --- [Debug時] ゲーム用テクスチャからスワップチェーンへ切り替えてImGuiを描画 ---
+		D3D12_RESOURCE_BARRIER gameTexBarrier{};
+		gameTexBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		gameTexBarrier.Transition.pResource = gameRenderTargetResource_.Get();
+		gameTexBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		gameTexBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		commandList_->ResourceBarrier(1, &gameTexBarrier);
+
 		D3D12_RESOURCE_BARRIER swapChainBarrier{};
 		swapChainBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		swapChainBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 		swapChainBarrier.Transition.pResource = swapChainResources_[backBufferIndex].Get();
-		swapChainBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT; // 表示用から
-		swapChainBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET; // 描画用に
+		swapChainBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		swapChainBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		commandList_->ResourceBarrier(1, &swapChainBarrier);
 
-		// =================================================================
-		// ④ [追加] 最終的な描画先をスワップチェーン（本来の画面）に設定し、クリアする
-		// =================================================================
-		// ※GetCPUDescriptorHandleなどは既存の定義に合わせて呼び出してください
 		const uint32_t descriptorSizeRTV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		D3D12_CPU_DESCRIPTOR_HANDLE mainRtvHandle = GetCPUDescriptorHandle(rtvHeap_, descriptorSizeRTV, backBufferIndex);
+		commandList_->OMSetRenderTargets(1, &mainRtvHandle, false, nullptr);
 
-		commandList_->OMSetRenderTargets(1, &mainRtvHandle, false, nullptr); // ImGui描画に深度は不要なのでnullptrでOK
-
-		float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f }; // 黒でクリア
+		float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		commandList_->ClearRenderTargetView(mainRtvHandle, clearColor, 0, nullptr);
 
-		// =================================================================
-		// ⑤ [元々の処理の移動] ここでImGuiの描画コマンドを発行！
-		// =================================================================
-		// 現在メインループ側(PostDrawの直前)でやっているImGuiのレンダー処理をここにまとめるとスッキリします
-#ifdef _DEBUG
+		// ImGuiの描画コマンド発行 (Release時は空関数になるので呼ばれても安全ですが、ifdefで囲むとより明確です)
 		ImGuiManager::EndFrame(commandList_.Get());
 #endif
-		// ※もし中身をバラで書くなら：
-		// ImGui::Render();
-		// ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
-		// commandList_->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-		// ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList_.Get());
-
 		// =================================================================
 		// ⑥ [既存の処理] スワップチェーンを「描画ターゲット」から「表示状態(PRESENT)」に戻す
 		// =================================================================
