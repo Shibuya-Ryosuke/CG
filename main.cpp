@@ -9,6 +9,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
+    Model* m = Model::Create("resources/mirror.obj");
+    uint32_t t = LoadTex("resources/flower.png");
+
+    m->SetTexture(t);
+
+    DebugCamera* camera = new DebugCamera();
+
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
@@ -18,7 +25,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // -- 更新処理（Update） --
         // ----------------------
 
-
+        camera->Update();
+        m->Update(*camera);
 
 
         // ----------------------
@@ -45,7 +53,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // [3D描画フェーズ]
         Begin3dDraw();
         
-
+        m->Draw();
 
         // 3D終了----------------------------------------------------
         

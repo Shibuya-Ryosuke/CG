@@ -366,7 +366,7 @@ namespace RyoEngine{
 		texDesc.Height = backBufferHeight_;
 		texDesc.MipLevels = 1;
 		texDesc.DepthOrArraySize = 1;
-		texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // ImGuiで扱いやすいフォーマット
+		texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // ImGuiで扱いやすいフォーマット
 		texDesc.SampleDesc.Count = 1;
 		texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		// ★重要: レンダーターゲットとして使用可能にするフラグ

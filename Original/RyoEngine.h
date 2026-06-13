@@ -38,6 +38,13 @@ namespace RyoEngine {
     void NewFrame();
     void EndFrame();
 
+    /// <summary>
+    /// ImGuiのゲーム画面サイズセット
+    /// (リリースでは処理なし関数に変化)
+    /// </summary>
+    /// <param name="viewSize">ゲーム画面サイズ(初期値 960*540)</param>
+    void SetImGuiViewSize(Vector2 viewSize);
+
     uint32_t LoadTex(const std::string& filePath);
 
     WinApp* GetWinApp();

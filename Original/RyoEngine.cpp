@@ -6,7 +6,16 @@
 #pragma comment(lib, "dxguid.lib")
 
 namespace RyoEngine {
-
+#ifdef _DEBUG
+    namespace {
+        Vector2 viewSize_{ 960.0f, 540.0f };
+    }
+    void SetImGuiViewSize(Vector2 viewSize) {
+        viewSize_ = viewSize;
+    }
+#else
+    void SetImGuiViewSize(Vector2 viewSize) {};
+#endif
     // 匿名名前空間：この cpp ファイルの中からしかアクセスできない領域
     namespace {
         WinApp* winApp_ = nullptr;
@@ -106,9 +115,10 @@ namespace RyoEngine {
 #ifdef _DEBUG
         ImGuiManager::NewFrame();
 
+        // ゲーム画面
         ImGui::Begin("Game View");
         D3D12_GPU_DESCRIPTOR_HANDLE gameTexHandle = dxCommon_->GetGameTextureGPUHandle();
-        ImVec2 viewSize{ 1280.0f,720.0f };
+        ImVec2 viewSize{ viewSize_.x,viewSize_.y };
         ImGui::Image(reinterpret_cast<ImTextureID>(gameTexHandle.ptr), viewSize);
         ImGui::End();
 #endif
