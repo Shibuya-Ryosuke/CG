@@ -125,7 +125,7 @@ namespace RyoEngine {
         commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
     }
 
-    void Sprite::SetTex(std::string filePath) {
+    void Sprite::SetTex(std::string& filePath) {
         textureHandle_ = TextureManager::GetInstance()->Load(filePath);
     }
 

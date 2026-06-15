@@ -154,7 +154,7 @@ namespace RyoEngine {
 		/// テクスチャのセット
 		/// </summary>
 		/// <param name="filepath">ファイルパス</param>
-		void SetTex(const std::string filepath);
+		void SetTex(const std::string& filepath);
 		
 		/// <summary>
 		/// 指向性ライトの指定

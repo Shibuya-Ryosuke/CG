@@ -33,7 +33,7 @@ namespace RyoEngine {
         void SetScale(const Vector3& scale) { transform_.scale = scale; };
         void SetSize(const Vector2& size) { size_ = size; }
         void SetTex(uint32_t textureHandle) { textureHandle_ = textureHandle; };
-        void SetTex(std::string filePath);
+        void SetTex(std::string& filePath);
         void SetUVTransform(const Transform& uvTransform) { uvTransformSprite_ = uvTransform; }
         void SetColor(const Vector4& color) {  materialData_->color = color; };
 

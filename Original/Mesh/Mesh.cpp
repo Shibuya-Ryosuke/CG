@@ -105,7 +105,7 @@ namespace RyoEngine {
         textureHandle_ = TextureManager::GetInstance()->GetWhiteTex();
     }
 
-    void Mesh::SetTex(const std::string filepath) { textureHandle_ = TextureManager::GetInstance()->Load(filepath); }
+    void Mesh::SetTex(const std::string& filepath) { textureHandle_ = TextureManager::GetInstance()->Load(filepath); }
 
     void Mesh::CreateMaterialResource() {
         auto device = DirectXCommon::GetInstance()->GetDevice();
