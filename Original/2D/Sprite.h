@@ -18,7 +18,7 @@ namespace RyoEngine {
         void Update(DebugCamera& debugCamera);
         void Draw();
 
-        void InitializeTriangle(uint32_t textureHandle, Vector3 translate, const Vector2& size);
+       
 
         // Getter
         const Vector3& GetTranslate() const { return transform_.translate; }
@@ -32,7 +32,8 @@ namespace RyoEngine {
         void SetRotate(const Vector3& rotation) { transform_.rotate = rotation; }
         void SetScale(const Vector3& scale) { transform_.scale = scale; };
         void SetSize(const Vector2& size) { size_ = size; }
-        void SetTexture(uint32_t textureHandle) { textureHandle_ = textureHandle; };
+        void SetTex(uint32_t textureHandle) { textureHandle_ = textureHandle; };
+        void SetTex(std::string filePath);
         void SetUVTransform(const Transform& uvTransform) { uvTransformSprite_ = uvTransform; }
         void SetColor(const Vector4& color) {  materialData_->color = color; };
 

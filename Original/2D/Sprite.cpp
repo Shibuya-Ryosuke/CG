@@ -125,37 +125,8 @@ namespace RyoEngine {
         commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
     }
 
-    void Sprite::InitializeTriangle(uint32_t textureHandle, Vector3 translate, const Vector2& size) {
-        textureHandle_ = textureHandle;
-        transform_.translate = translate;
-        size_ = size; // 三角形を収める矩形のサイズ
-
-        // 三角形用に3頂点・3インデックスでリソースを確保
-        CreateVertexResourceForTriangle();
-        CreateIndexResourceForTriangle();
-        CreateMaterialResource();
-        CreateWVPResource();
-
-
-        float halfX = size_.x / 2.0f;
-        float halfY = size_.y / 2.0f;
-
-        // 頂点
-        vertexData_[0].position = { 0.0f, -halfY, 0.0f, 1.0f };
-        vertexData_[1].position = { -halfX, halfY, 0.0f, 1.0f };
-        vertexData_[2].position = { halfX, halfY, 0.0f, 1.0f };
-
-        // UV座標も三角形に合わせてマッピング (必要に応じて調整してください)
-        vertexData_[0].texcoord = { 0.5f, 0.0f };
-        vertexData_[1].texcoord = { 0.0f, 1.0f };
-        vertexData_[2].texcoord = { 1.0f, 1.0f };
-
-        // インデックス (時計回りで1枚の三角形)
-        indexData_[0] = 0;
-        indexData_[1] = 2;
-        indexData_[2] = 1;
-
-        indexCount_ = 3;
+    void Sprite::SetTex(std::string filePath) {
+        textureHandle_ = TextureManager::GetInstance()->Load(filePath);
     }
 
     void Sprite::CreateVertexResource() {

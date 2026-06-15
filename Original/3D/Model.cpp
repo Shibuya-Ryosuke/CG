@@ -44,6 +44,10 @@ namespace RyoEngine {
         materialData_->shadingMode = ShadingMode::HALF_LAMBERT;
     }
 
+    void Model::SetTex(std::string filePath) {
+        textureHandle_ = TextureManager::GetInstance()->Load(filePath);
+    }
+
     void Model::InternalInitialize(const ModelLoader::ModelData& modelData) {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
@@ -117,6 +121,7 @@ namespace RyoEngine {
         Model* instance = new Model();
         instance->Initialize(); // 共通の初期化
         instance->CreateModel(filePath); // モデル読み込みとリソース作成[cite: 17]
+        instance->textureHandle_ = TextureManager::GetInstance()->GetWhiteTex();
         return instance;
     }
 }

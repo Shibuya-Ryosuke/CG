@@ -65,6 +65,8 @@ namespace RyoEngine {
 			return handleGPU;
 		}
 
+		uint32_t GetWhiteTex() { return whiteTex; }
+
 		// 外部で作ったリソースを登録してインデックスを返す
 		uint32_t RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
 
@@ -102,5 +104,7 @@ namespace RyoEngine {
 			const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList
 		);
 
+
+		uint32_t whiteTex = 0;
 	};
 }

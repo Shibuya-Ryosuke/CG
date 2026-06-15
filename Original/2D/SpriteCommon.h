@@ -18,7 +18,6 @@ namespace RyoEngine {
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
         ID3D12PipelineState* GetPipelineState() const { return graphicsPipelineState_.Get(); }
 
-        uint32_t GetWhiteTex() const { return whiteTex; };
 
     private:
         SpriteCommon() = default;
@@ -34,6 +33,5 @@ namespace RyoEngine {
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
         Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
 
-        uint32_t whiteTex = 0;
     };
 }

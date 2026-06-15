@@ -9,6 +9,7 @@
 #include "3D/Model.h"
 #include "2D/SpriteCommon.h"
 #include "2D/Sprite.h"
+#include "Mesh/Mesh.h"
 #include "Reflect/ReflectCommon.h"
 #include "Reflect/ReflectModel.h"
 #include "Audio/Audio.h"

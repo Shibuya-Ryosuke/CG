@@ -48,6 +48,7 @@
     <ClCompile Include="Original\ImGui\ImGuiManager.cpp" />
     <ClCompile Include="Original\Input\Input.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
+    <ClCompile Include="Original\Mesh\Mesh.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />
     <ClCompile Include="Original\Reflect\ReflectCommon.cpp" />
     <ClCompile Include="Original\Reflect\ReflectModel.cpp" />
@@ -82,6 +83,7 @@
     <ClInclude Include="Original\Math\Geometry.h" />
     <ClInclude Include="Original\Math\Transform.h" />
     <ClInclude Include="Original\Math\Vector.h" />
+    <ClInclude Include="Original\Mesh\Mesh.h" />
     <ClInclude Include="Original\RyoEngine.h" />
     <ClInclude Include="Original\Reflect\ReflectCommon.h" />
     <ClInclude Include="Original\Reflect\ReflectModel.h" />

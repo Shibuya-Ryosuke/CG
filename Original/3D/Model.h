@@ -48,7 +48,8 @@ namespace RyoEngine {
         void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
         void SetDirectionalLight(const DirectionalLight& light) { *lightData_ = light; }
         void SetLambertMode(const ShadingMode lambertMode) { materialData_->shadingMode = lambertMode; }
-        void SetTexture(uint32_t handle) { textureHandle_ = handle; }
+        void SetTex(uint32_t handle) { textureHandle_ = handle; }
+        void SetTex(std::string filePath);
         void SetColor(const Vector4& color) { materialData_->color = color; };
         
     private:

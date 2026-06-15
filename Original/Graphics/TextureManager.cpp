@@ -28,6 +28,8 @@ namespace RyoEngine {
 
         // 0番目のスロットをImGui用に予約
         textures_.push_back({ nullptr });
+
+        whiteTex = Load("resources/white1x1.png");
     }
 
     void TextureManager::Finalize() {
