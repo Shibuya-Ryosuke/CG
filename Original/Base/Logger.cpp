@@ -45,12 +45,7 @@ namespace RyoEngine {
 		}
 	}
 
-	void Logger::Log(const std::string& message) {
-		if (logStream_.is_open()) {
-			logStream_ << message << std::endl;
-		}
-		OutputDebugStringA((message + "\n").c_str());
-	}
+	
 
 	std::string Logger::ConvertString(const std::wstring& str) {
 		if (str.empty()) return std::string();
@@ -92,5 +87,11 @@ namespace RyoEngine {
 		MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle, MiniDumpNormal, &minidumpInformation, nullptr, nullptr);
 		// 他に関連付けられているSEH例外ハンドラがあれば実行。通常はプロセスを終了する
 		return EXCEPTION_EXECUTE_HANDLER;
+	}
+	void Logger::OutputLogMessage(const std::string& message) {
+		if (logStream_.is_open()) {
+			logStream_ << message << std::endl;
+		}
+		OutputDebugStringA((message + "\n").c_str());
 	}
 }

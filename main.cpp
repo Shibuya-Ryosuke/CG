@@ -22,7 +22,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Model* model = Model::Create("resources/mirror.obj");
     model->Initialize();
     
-
+    int o = 2;
+    float n = 3.0f;
+    Logger::Log("int {}, alpha {}", o, n);
     
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {

@@ -2,6 +2,8 @@
 #include <string>
 #include <fstream>
 #include <Windows.h>
+#include <format>
+#include <string_view>
 
 namespace RyoEngine {
 
@@ -25,7 +27,12 @@ namespace RyoEngine {
 		/// ログ出力
 		/// </summary>
 		/// <param name="message">書き出される文字</param>
-		static void Log(const std::string& message);
+		template <typename... Args>
+		static void Log(std::string_view format, Args&&... args) {
+			std::string message = std::vformat(format, std::make_format_args(args...));
+
+			OutputLogMessage(message);
+		}
 
 		/// <summary>
 		/// std::wstringからstd::stringへ変換
@@ -50,5 +57,7 @@ namespace RyoEngine {
 
 	private:
 		static std::ofstream logStream_;
+
+		static void OutputLogMessage(const std::string& message);
 	};
 }

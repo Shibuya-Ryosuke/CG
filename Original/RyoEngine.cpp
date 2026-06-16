@@ -74,6 +74,8 @@ namespace RyoEngine {
     }
 
     void Finalize() {
+        Logger::Finalize();
+
         // 4. 終了処理
         // 各リソースの解放、WinAppのUnregisterClassなどが走る
         // 初期化と逆の順序で解放
