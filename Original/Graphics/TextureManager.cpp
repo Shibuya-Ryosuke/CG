@@ -11,6 +11,7 @@ namespace RyoEngine {
     }
 
     void TextureManager::Initialize() {
+        Logger::Log("TexManager : Initializing...\n");
         device_ = DirectXCommon::GetInstance()->GetDevice();
 
         // 1. ヒープの設定
@@ -30,9 +31,12 @@ namespace RyoEngine {
         textures_.push_back({ nullptr });
 
         whiteTex = Load("resources/white1x1.png");
+
+        Logger::Log("Input : Initialized\n");
     }
 
     void TextureManager::Finalize() {
+        Logger::Log("TexManager : Finalizing...\n");
         // 中間リソース解放
         intermediateResources_.clear();
 
@@ -44,6 +48,7 @@ namespace RyoEngine {
 
         // デバイスポインタを初期化
         device_ = nullptr;
+        Logger::Log("TexManager : Finalized\n");
     }
 
     uint32_t TextureManager::Load(const std::string& filePath) {

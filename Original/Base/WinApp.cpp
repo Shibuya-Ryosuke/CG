@@ -40,7 +40,7 @@ namespace RyoEngine {
 	}
 
 	void WinApp::Initialize(const wchar_t* title, int32_t width, int32_t height) {
-		Logger::Log("WinApp: Initializing");
+		Logger::Log("WinApp : Initializing...\n");
 
 		// ウィンドウプロシージャ
 		wc_.lpfnWndProc = WindowProc;
@@ -92,6 +92,7 @@ namespace RyoEngine {
 
 		// ウィンドウを表示する
 		ShowWindow(hwnd_, SW_SHOW);
+		Logger::Log("WinApp : Initialized\n");
 	}
 
 	bool WinApp::ProcessMessage() {
@@ -107,8 +108,9 @@ namespace RyoEngine {
 	}
 
 	void WinApp::Finalize() {
-		Logger::Log("WinApp: Finalizing");
+		Logger::Log("WinApp : Finalizing...\n");
 		UnregisterClass(wc_.lpszClassName, wc_.hInstance);
+		Logger::Log("WinApp : Finalized\n");
 	}
 	
 }

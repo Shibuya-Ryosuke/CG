@@ -38,11 +38,11 @@ namespace RyoEngine {
 
 		assert(logStream_.is_open());
 
-		Log("Logger Initialized\n");
+		Log("___Logger Initialized___\n");
 	}
 
 	void Logger::Finalize() {
-		Log("Logger Finalized\n");
+		Log("___Logger Finalized___\n");
 		if (logStream_.is_open()) {
 			logStream_.close();
 		}

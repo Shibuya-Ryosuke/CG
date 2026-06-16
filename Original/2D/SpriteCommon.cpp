@@ -12,9 +12,11 @@ namespace RyoEngine {
     }
 
     void SpriteCommon::Initialize() {
+        Logger::Log("SpriteCommon : Initializing...\n");
         dxCommon_ = DirectXCommon::GetInstance();
         CreateRootSignature();
         CreatePipelineState();
+        Logger::Log("SpriteCommon : Initialized\n");
     }
 
     void SpriteCommon::BeginDraw() {
@@ -28,6 +30,7 @@ namespace RyoEngine {
     }
 
     void SpriteCommon::Finalize() {
+        Logger::Log("SpriteCommon : Finalizing...\n");
         // グラフィックスパイプラインを解放
         graphicsPipelineState_.Reset();
 
@@ -36,6 +39,7 @@ namespace RyoEngine {
 
         // 保持していた DirectXCommon のポインタをクリア
         dxCommon_ = nullptr;
+        Logger::Log("SpriteCommon : Finaled\n");
     }
 
     void SpriteCommon::CreateRootSignature() {

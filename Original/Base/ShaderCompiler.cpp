@@ -17,6 +17,7 @@ namespace RyoEngine {
     }
 
     void ShaderCompiler::Initialize() {
+        Logger::Log("ShaderCompiler : Initializing...\n");
         // DXCの初期化
         HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils_));
         assert(SUCCEEDED(hr));
@@ -27,14 +28,17 @@ namespace RyoEngine {
         // インクルードを処理するためのハンドラ
         hr = dxcUtils_->CreateDefaultIncludeHandler(&includeHandler_);
         assert(SUCCEEDED(hr));
+        Logger::Log("ShaderCompiler : Initialized\n");
     }
 
     void ShaderCompiler::Finalize()
     {
+        Logger::Log("ShaderCompiler : Finalizing...\n");
         // 保持しているリソースをすべて解放する
         includeHandler_.Reset();
         dxcCompiler_.Reset();
         dxcUtils_.Reset();
+        Logger::Log("ShaderComiler : Finalized\n");
     }
 
     Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(const std::wstring& filePath, const wchar_t* profile) {

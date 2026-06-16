@@ -1,5 +1,6 @@
 #include "ImGuiManager.h"
 #include "../Graphics/TextureManager.h"
+#include "../Base/Logger.h"
 
 #ifdef _DEBUG
 
@@ -15,6 +16,7 @@ namespace RyoEngine {
     }
 
     void ImGuiManager::Initialize(HWND hwnd, ID3D12Device* device, int bufferCount, DXGI_FORMAT rtvFormat) {
+        Logger::Log("ImGuiManager : Initializing...\n");
         // 2. ImGuiコンテキスト作成
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -32,6 +34,8 @@ namespace RyoEngine {
 
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+        Logger::Log("ImGuiManager : Initialized\n");
     }
 
     void ImGuiManager::NewFrame() {
@@ -53,6 +57,7 @@ namespace RyoEngine {
     }
 
     void ImGuiManager::Finalize() {
+        Logger::Log("ImGuiManager : Finalizing...\n");
         ImGuiManager* instance = GetInstance();
 
         ImGui_ImplDX12_Shutdown();
@@ -61,6 +66,7 @@ namespace RyoEngine {
 
         
         instance->srvHeap_.Reset();
+        Logger::Log("ImGuiManager : Finalized\n");
     }
 }
 #endif

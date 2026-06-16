@@ -16,7 +16,7 @@ namespace RyoEngine{
 	}
 
 	void DirectXCommon::Initialize(WinApp* winApp, int32_t width, int32_t height) {
-		Logger::Log("DirectXCommon: Initializing");
+		Logger::Log("DxCommon : Initializing...\n");
 
 		backBufferWidth_ = width;
 		backBufferHeight_ = height;
@@ -42,7 +42,7 @@ namespace RyoEngine{
 			// ソフトウェアアダプタでなければ採用！
 			if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
 				// 採用したアダプタの情報をログに出力。wstringのほうなので注意
-				Logger::Log("DirectXCommon: Using Adapter -> " + Logger::ConvertString(adapterDesc.Description));
+				Logger::Log("DxCommon : Using Adapter -> " + Logger::ConvertString(adapterDesc.Description));
 				break;
 			}
 			useAdapter = nullptr; // ソフトウェアアダプタの場合は見なかったことにする
@@ -73,7 +73,7 @@ namespace RyoEngine{
 		// デバイスの生成が上手くいかなかったので起動できない
 		assert(device_ != nullptr);
 		// 初期化完了のログを出力
-		Logger::Log("DirectXCommon: Device created.\n");
+		Logger::Log("DxCommon : Device created.\n");
 
         #ifdef _DEBUG
 		Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
@@ -183,9 +183,12 @@ namespace RyoEngine{
 		fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
 		assert(fenceEvent_ != nullptr);
 
+		Logger::Log("DxCommon : Initialized\n");
+
 	}
 
 	void DirectXCommon::Finalize() {
+		Logger::Log("DxCommon : Finalizing...\n");
 		// 処理待ち
 		// Fenceの値を更新
 		fenceValue_++;
@@ -233,6 +236,7 @@ namespace RyoEngine{
 		// デバイス周り（これが最後に消える必要がある）
 		dxgiFactory_.Reset();
 		device_.Reset();
+		Logger::Log("DxCommon Finalized\n");
 	}
 
 	void DirectXCommon::PreDraw() {
@@ -358,6 +362,7 @@ namespace RyoEngine{
 	}
 
 	void DirectXCommon::CreateGameRenderTarget() {
+		Logger::Log("* Creating GameRenderTarget... *\n");
 		HRESULT hr = S_OK;
 
 		// 1. レンダーターゲットとして使えるテクスチャリソースの設定
@@ -402,6 +407,8 @@ namespace RyoEngine{
 
 		// 3. TextureManagerにリソースを登録してSRVを自動生成してもらう！
 		gameTextureHandle_ = TextureManager::GetInstance()->RegisterResource(gameRenderTargetResource_);
+
+		Logger::Log("* Created *\n");
 	}
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(

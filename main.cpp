@@ -24,7 +24,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     
     int o = 2;
     float n = 3.0f;
-    Logger::Log("int {}, alpha {}", o, n);
+    Logger::LogWarning("int {}, alpha {}", o, n);
     
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {

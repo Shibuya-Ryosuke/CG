@@ -2,6 +2,7 @@
 #include "../Base/DirectXCommon.h"
 #include "../Graphics/TextureManager.h"
 #include "../Base/ShaderCompiler.h"
+#include "../Base/Logger.h"
 
 namespace RyoEngine {
 
@@ -12,9 +13,11 @@ namespace RyoEngine {
     }
 
     void ReflectCommon::Initialize() {
+        Logger::Log("ReflectCommon : Initializing...\n");
         dxCommon_ = DirectXCommon::GetInstance();
         CreateRootSignature();
         CreatePipelineState();
+        Logger::Log("ReflectCommon : Initialized\n");
     }
 
 
@@ -61,7 +64,12 @@ namespace RyoEngine {
     }
 
     void ReflectCommon::Finalize() {
-        // 解放処理
+        Logger::Log("ReflectCommon : Finalizing...\n");
+        dxCommon_ = nullptr;
+        rootSignature_.Reset();
+        graphicsPipelineState_.Reset();
+        activeMirror_ = nullptr;
+        Logger::Log("ReflectCommon : Finalized\n");
     }
 
     void ReflectCommon::CreateRootSignature() {

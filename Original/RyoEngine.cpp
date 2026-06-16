@@ -29,6 +29,8 @@ namespace RyoEngine {
     }
 
     void Initialize() {
+        Logger::Initialize();
+
         winApp_ = WinApp::GetInstance();
         winApp_->Initialize(L"test");
 
@@ -71,11 +73,12 @@ namespace RyoEngine {
         );
 
         std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+        Logger::Log("\n\n\n* Game Start * \n\n");
     }
 
     void Finalize() {
-        Logger::Finalize();
-
+        Logger::Log("\n\n\n* Game Finish *\n\n");
         // 4. 終了処理
         // 各リソースの解放、WinAppのUnregisterClassなどが走る
         // 初期化と逆の順序で解放
@@ -100,6 +103,8 @@ namespace RyoEngine {
         if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
             debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
         }
+
+        Logger::Finalize();
     }
 
     void Begin3dDraw() {
