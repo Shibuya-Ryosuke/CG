@@ -12,10 +12,10 @@ namespace RyoEngine {
         Sprite();
         ~Sprite();
 
-        void Initialize(uint32_t textureHandle, Vector3 translate);
+        void Initialize(uint32_t textureHandle, Vector2 position = { 0.0f,0.0f });
+        void Initialize(const std::string& filePath, Vector2 position = { 0.0f,0.0f });
         void Finalize();
         void Update();
-        void Update(DebugCamera& debugCamera);
         void Draw();
 
        
@@ -42,9 +42,6 @@ namespace RyoEngine {
         void CreateIndexResource();
         void CreateMaterialResource();
         void CreateWVPResource();
-
-        void CreateVertexResourceForTriangle();
-        void CreateIndexResourceForTriangle();
     private:
         // リソース類
         Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;

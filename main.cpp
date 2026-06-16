@@ -12,6 +12,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     DebugCamera* d = new DebugCamera;
     d->Initialize();
 
+    Sprite sprite;
+    sprite.Initialize("resources/flower.png",{10.0f,10.0f});
+
     Mesh triangle;
     triangle.CreateTriangle({ 0.0f,0.0f,1.0f }, { 2.0f,2.0f });
 
@@ -47,6 +50,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         model->Update(*d);
         triangle.Update(*d);
         sphere.Update(*d);
+        sprite.Update();
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------
@@ -80,7 +84,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [2D描画フェーズ]
         Begin2dDraw();
-
+        sprite.Draw();
         
 
         // 2D終了----------------------------------------------------

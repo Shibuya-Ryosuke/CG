@@ -8,9 +8,10 @@ namespace RyoEngine {
     Sprite::Sprite() {};
     Sprite::~Sprite() {};
 
-    void Sprite::Initialize(uint32_t textureHandle, Vector3 translate) {
+    void Sprite::Initialize(uint32_t textureHandle, Vector2 position) {
         textureHandle_ = textureHandle;
-        transform_.translate = translate;
+        transform_.translate.x = position.x;
+        transform_.translate.y = position.y;
         
         // 1. TextureManagerのインスタンスを取得
         TextureManager* textureManager = TextureManager::GetInstance();
@@ -50,6 +51,10 @@ namespace RyoEngine {
         indexCount_ = 6;
     }
 
+    void Sprite::Initialize(const std::string& filePath, Vector2 position) {
+        Initialize(TextureManager::GetInstance()->Load(filePath), position);
+    }
+
     void Sprite::Finalize() {
         // 1. 頂点リソースの解放
         if (vertexResource_) {
@@ -87,25 +92,6 @@ namespace RyoEngine {
 
         materialData_->uvTransform = uvTransformMatrix; // Material構造体に uvTransform を追加しておく
 
-        *wvpData_ = worldMatrix * viewMatrix * projectionMatrix;
-    }
-
-    void Sprite::Update(DebugCamera& debugCamera) {
-        Vector3 scale = { transform_.scale.x,-transform_.scale.y,transform_.scale.z };
-        Matrix4x4 worldMatrix = MakeAffineMatrix(scale, transform_.rotate, transform_.translate);
-
-        // 引数でもらったデバッグカメラから行列をもらう（参照なので「.」でアクセス）
-        Matrix4x4 viewMatrix = debugCamera.GetViewMatrix();
-        Matrix4x4 projectionMatrix = debugCamera.GetProjectionMatrix(); // これが透視投影行列になります
-
-        // UVトランスフォームの計算（カメラなし版と同じ）
-        Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite_.scale);
-        uvTransformMatrix = uvTransformMatrix * MakeRotateZMatrix(uvTransformSprite_.rotate.z);
-        uvTransformMatrix = uvTransformMatrix * MakeTranslateMatrix(uvTransformSprite_.translate);
-        materialData_->uvTransform = uvTransformMatrix;
-
-        // 行列の合成と定数バッファへの書き込み
-        // 透視投影（Perspective）が入ることで、遠近感が生まれます！
         *wvpData_ = worldMatrix * viewMatrix * projectionMatrix;
     }
 
@@ -174,29 +160,5 @@ namespace RyoEngine {
         wvpResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Matrix4x4));
         wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&wvpData_));
         *wvpData_ = MakeIdentity4x4();
-    }
-    void Sprite::CreateVertexResourceForTriangle() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
-
-        // 頂点3つ分のリソースを作成
-        vertexResource_ = DirectXCommon::CreateBufferResource(device, sizeof(SpriteVertexData) * 3);
-
-        vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
-        vertexBufferView_.SizeInBytes = sizeof(SpriteVertexData) * 3;
-        vertexBufferView_.StrideInBytes = sizeof(SpriteVertexData);
-
-        vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
-    }
-    void Sprite::CreateIndexResourceForTriangle() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
-
-        // インデックス3つ分のリソースを作成
-        indexResource_ = DirectXCommon::CreateBufferResource(device, sizeof(uint32_t) * 3);
-
-        indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
-        indexBufferView_.SizeInBytes = sizeof(uint32_t) * 3;
-        indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
-
-        indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
     }
 }
