@@ -9,25 +9,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
-    DebugCamera* d = new DebugCamera;
-    d->Initialize();
-
-    Sprite sprite;
-    sprite.Initialize("resources/flower.png",{10.0f,10.0f});
-
-    Mesh triangle;
-    triangle.CreateTriangle({ 0.0f,0.0f,1.0f }, { 2.0f,2.0f });
-
-    Mesh sphere;
-    sphere.CreateSphere({ 1.0f,-1.0f,3.0f }, 12, { 1.0f,1.0f,1.0f,1.0f });
-    sphere.SetTex("resources/flower.png");
-
-    Model* model = Model::Create("resources/mirror.obj");
-    model->Initialize();
-    
-    int o = 2;
-    float n = 3.0f;
-    Logger::LogWarning("int {}, alpha {}", o, n);
     
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -38,19 +19,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // -- 更新処理（Update） --
         // ----------------------
 
-        Vector3 a = sphere.GetDLDirection();
-
-        ImGui::Begin("debug");
-        ImGui::DragFloat3("light", &a.x, 0.001f, -1.0f, 1.0f);
-        ImGui::End();
-        sphere.SetDLDirection(a);
 
 
-        d->Update();
-        model->Update(*d);
-        triangle.Update(*d);
-        sphere.Update(*d);
-        sprite.Update();
+       
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------
@@ -74,9 +45,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // [3D描画フェーズ]
         Begin3dDraw();
-        model->Draw();
-        triangle.Draw();
-        sphere.Draw();
        
         // 3D終了----------------------------------------------------
         
@@ -84,7 +52,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [2D描画フェーズ]
         Begin2dDraw();
-        sprite.Draw();
         
 
         // 2D終了----------------------------------------------------
