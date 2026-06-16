@@ -2,6 +2,7 @@
 #include "Externals/imgui/imgui.h"
 #include <cstdlib>
 #include <ctime>
+#include <chrono>
 #include <dxgidebug.h>
 #pragma comment(lib, "dxguid.lib")
 
@@ -26,6 +27,11 @@ namespace RyoEngine {
         SpriteCommon* spriteCommon_ = nullptr;
         ReflectCommon* reflectCommon_ = nullptr;
         Audio* audio_ = nullptr;
+
+        std::chrono::high_resolution_clock::time_point lastTime_;
+        float deltaTime_ = 0.0f;
+        float fps_ = 0.0f;
+        float smoothedFps_ = 0.0f;
     }
 
     void Initialize() {
@@ -74,6 +80,8 @@ namespace RyoEngine {
 
         std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
+        lastTime_ = std::chrono::high_resolution_clock::now();
+
         Logger::Log("\n\n\n* Game Start * \n\n");
     }
 
@@ -117,9 +125,35 @@ namespace RyoEngine {
     }
 
     void NewFrame() {
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> elapsed = currentTime - lastTime_;
+        deltaTime_ = elapsed.count();
+        lastTime_ = currentTime;
+        if (deltaTime_ > 0.0f) {
+            fps_ = 1.0f / deltaTime_;
+            smoothedFps_ = (smoothedFps_ * 0.9f) + (fps_ * 0.1f);
+        }
+
+        // 念のためゼロ除算（クラッシュ）防止
+        if (deltaTime_ > 0.0f) {
+            fps_ = 1.0f / deltaTime_;
+            // 毎フレーム数値がガタガタ動くと見づらいので、10%ずつ近づけて滑らかにする（お好みで）
+            smoothedFps_ = (smoothedFps_ * 0.9f) + (fps_ * 0.1f);
+        }
+
         Input::Update();
 
 #ifdef _DEBUG
+
+        static float logTimer = 0.0f;
+        logTimer += deltaTime_;       // 毎フレームの経過時間を足していく
+
+        if (logTimer >= 2.0f) {       // 1.0秒（以上）経ったら
+            Logger::Log("Engine is running... FPS: {:.1f}", smoothedFps_);
+
+            logTimer -= 2.0f;
+        }
+
         ImGuiManager::NewFrame();
 
         // ゲーム画面
@@ -129,13 +163,18 @@ namespace RyoEngine {
         ImGui::Image(reinterpret_cast<ImTextureID>(gameTexHandle.ptr), viewSize);
         ImGui::End();
 
-        ImGui::Begin("Log Console");
+        // fps
+        ImGui::Begin("Performance");
+        ImGui::Text("FPS: %.1f", smoothedFps_);
+        ImGui::Text("DeltaTime: %.4f s (%.2f ms)", deltaTime_, deltaTime_ * 1000.0f);
+        ImGui::End();
 
+        // ログ
+        ImGui::Begin("Log Console");
         // 上部にクリアボタンを配置
-        if (ImGui::Button("Clear")) {
+        if (ImGui::Button("Clear Log History")) {
             RyoEngine::Logger::Clear();
         }
-
         ImGui::Separator();
 
         // スクロール領域の作成
@@ -163,7 +202,6 @@ namespace RyoEngine {
         if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
             ImGui::SetScrollHereY(1.0f);
         }
-
         ImGui::EndChild();
         ImGui::End();
 #endif
@@ -185,4 +223,7 @@ namespace RyoEngine {
     ModelCommon* GetModelCommon() { return modelCommon_; }
     SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
     ReflectCommon* GetReflectCommon() { return reflectCommon_; }
+
+    float GetDeltaTime() { return deltaTime_; }
+    float GetFPS() { return fps_; }
 }

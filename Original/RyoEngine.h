@@ -40,6 +40,16 @@ namespace RyoEngine {
     void EndFrame();
 
     /// <summary>
+    /// 前のフレームからの経過時間（秒）を取得
+    /// </summary>
+    float GetDeltaTime();
+
+    /// <summary>
+    /// 現在のFPSを取得
+    /// </summary>
+    float GetFPS();
+
+    /// <summary>
     /// ImGuiのゲーム画面サイズセット
     /// (リリースでは処理なし関数に変化)
     /// </summary>
