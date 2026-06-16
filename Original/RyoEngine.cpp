@@ -123,6 +123,44 @@ namespace RyoEngine {
         ImVec2 viewSize{ viewSize_.x,viewSize_.y };
         ImGui::Image(reinterpret_cast<ImTextureID>(gameTexHandle.ptr), viewSize);
         ImGui::End();
+
+        ImGui::Begin("Log Console");
+
+        // 上部にクリアボタンを配置
+        if (ImGui::Button("Clear")) {
+            RyoEngine::Logger::Clear();
+        }
+
+        ImGui::Separator();
+
+        // スクロール領域の作成
+        ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+        // ログ書き込み中の描画のバグを防ぐためロックを取得
+        {
+            std::lock_guard<std::mutex> lock(RyoEngine::Logger::GetMutex());
+            const auto& logs = RyoEngine::Logger::GetLogHistory();
+
+            // ログを一行ずつ描画
+            for (const auto& log : logs) {
+                // 文字列の先頭に応じて色を変えるカスタム（お好みで）
+                if (log.find("[Error]") != std::string::npos) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", log.c_str());
+                } else if (log.find("[Warning]") != std::string::npos) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "%s", log.c_str());
+                } else {
+                    ImGui::TextUnformatted(log.c_str());
+                }
+            }
+        }
+
+        // 新しいログが追加されたら自動で最下部までスクロール
+        if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+            ImGui::SetScrollHereY(1.0f);
+        }
+
+        ImGui::EndChild();
+        ImGui::End();
 #endif
     }
 

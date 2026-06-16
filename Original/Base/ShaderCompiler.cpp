@@ -40,7 +40,7 @@ namespace RyoEngine {
     Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(const std::wstring& filePath, const wchar_t* profile) {
 
         // 1.hlslファイルを読み込む
-        Logger::Log(Logger::ConvertString(std::format(L"Begin CompileShader, Path:{}, profile:{}\n", filePath, profile)));
+        Logger::Log(Logger::ConvertString(std::format(L"* Begin CompileShader *\n- path:{}\n- profile:{}\n", filePath, profile)));
 
         // 【デバッグ用】プログラムが実際に探しに行っている絶対パスをログに出す
         std::filesystem::path absolutePath = std::filesystem::absolute(filePath);
@@ -100,7 +100,7 @@ namespace RyoEngine {
         hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
         assert(SUCCEEDED(hr));
         // 成功したログを出す
-        Logger::Log(Logger::ConvertString(std::format(L"Compile Succeeded, path:{}, profile{}\n", filePath, profile)));
+        Logger::Log(Logger::ConvertString(std::format(L"* Compile Succeeded *\n- path:{}\n- profile{}\n", filePath, profile)));
         // 実行用のバイナリを返却
         return shaderBlob;
     }

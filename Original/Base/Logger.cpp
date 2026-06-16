@@ -11,6 +11,9 @@
 namespace RyoEngine {
 
 	std::ofstream Logger::logStream_;
+	
+	std::vector<std::string> Logger::logHistory_;
+	std::mutex Logger::logMutex_;
 
 	void Logger::Initialize() {
 		// クラッシュハンドラ登録
@@ -89,9 +92,25 @@ namespace RyoEngine {
 		return EXCEPTION_EXECUTE_HANDLER;
 	}
 	void Logger::OutputLogMessage(const std::string& message) {
+		// スレッドセーフにするためのロック
+		std::lock_guard<std::mutex> lock(logMutex_);
+
 		if (logStream_.is_open()) {
 			logStream_ << message << std::endl;
 		}
 		OutputDebugStringA((message + "\n").c_str());
+
+		// --- 追加: ImGui用のバッファに蓄積 ---
+		logHistory_.push_back(message);
+
+		// 古いログの削除（パフォーマンス維持のため）
+		if (logHistory_.size() > MAX_LOG_LINES) {
+			logHistory_.erase(logHistory_.begin());
+		}
+	}
+
+	void Logger::Clear() {
+		std::lock_guard<std::mutex> lock(logMutex_);
+		logHistory_.clear();
 	}
 }
