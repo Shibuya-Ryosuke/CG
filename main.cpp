@@ -9,14 +9,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
-    // フォント
-       // 1. インスタンスの作成（スマートポインタが安全でおすすめです）
-    std::unique_ptr<RyoEngine::FontLoader> gameFont = std::make_unique<RyoEngine::FontLoader>();
+    Sprite s;
+    s.Initialize("resources/flower.png", { 300.0f,400.0f });
 
-    // 2. 初期化関数を呼び出す（パスはご自身の環境（Resources内など）に合わせてください）
-    if (!gameFont->Initialize("Original/Resources/font.fnt", "Original/Resources/font_0.png")) {
-        assert(false);
-    }
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
@@ -27,14 +22,30 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
 
 
-
-       
+        s.Update();
+        
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------
         
+        Vector2 a = s.GetTranslate();
+        float b = s.GetRotate();
+        Vector2 c = s.GetScale();
 
+        Transform x = s.GetUVTransform();
+        ImGui::Begin("a");
+        ImGui::DragFloat2("trans", &a.x, 1.0f, -1000.0f, 1000.0f);
+        ImGui::DragFloat("rotate", &b, 1.0f, -1000.0f, 1000.0f);
+        ImGui::DragFloat2("scale", &c.x, 1.0f, -1000.0f, 1000.0f);
+        ImGui::DragFloat2("uvt", &x.translate.x, 0.01f, -100.0f, 100.0f);
+        ImGui::DragFloat3("uvr", &x.rotate.x, 0.01f, -100.0f, 100.0f);
+        ImGui::DragFloat2("uvs", &x.scale.x, 0.01f, -100.0f, 100.0f);
+        ImGui::End();
 
+        s.SetTranslate(a);
+        s.SetRotate(b);
+        s.SetScale(c);
+        s.SetUVTransform(x);
 
 
         // --------------------------------------------------------------------------------
@@ -59,8 +70,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [2D描画フェーズ]
         Begin2dDraw();
-        gameFont->ScreenPrint("h", { 100.0f,100.0f });
-
+        PrintText("hello", { 100.0f,300.0f });
+        s.Draw();
         // 2D終了----------------------------------------------------
         
 

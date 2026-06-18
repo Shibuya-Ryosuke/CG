@@ -48,9 +48,6 @@ namespace RyoEngine {
         indexData_[3] = 1; indexData_[4] = 3; indexData_[5] = 2;
 
         indexCount_ = 6;
-
-        // 初期時状態では切り抜きは無効
-        isCropped_ = false;
     }
 
     void Sprite::Initialize(const std::string& filePath, Vector2 position) {
@@ -104,32 +101,14 @@ namespace RyoEngine {
             0.0f, 100.0f
         );
 
-        // --- UV変換行列の計算 ---
-        Matrix4x4 uvTransformMatrix = MakeIdentity4x4();
+        // 2. uvTransformSprite_ (Vector3のまま) の行列計算
+        // ここは型が変わっていないので、元のコードを完全にそのまま使えます！
+        Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite_.scale);
+        uvTransformMatrix = uvTransformMatrix * MakeRotateZMatrix(uvTransformSprite_.rotate.z);
+        uvTransformMatrix = uvTransformMatrix * MakeTranslateMatrix(uvTransformSprite_.translate);
 
-        if (isCropped_) {
-            // 【文字描画用】SetTexCropで指定された範囲を 512x512 に対する割合(UV)に変換して行列を作成
-            float scaleX = texCropSize_.x / 512.0f;
-            float scaleY = texCropSize_.y / 512.0f;
-            float translateX = texCropPos_.x / 512.0f;
-            float translateY = texCropPos_.y / 512.0f;
-
-            Matrix4x4 matScale = MakeScaleMatrix(Vector3(scaleX, scaleY, 1.0f));
-            Matrix4x4 matTranslate = MakeTranslateMatrix(Vector3(translateX, translateY, 0.0f));
-
-            // スケールを適用してから移動させる
-            uvTransformMatrix = matScale * matTranslate;
-        } else {
-            // 【通常のスプライト用】従来通りのUV計算を行う
-            uvTransformMatrix = MakeScaleMatrix(uvTransformSprite_.scale);
-            uvTransformMatrix = uvTransformMatrix * MakeRotateZMatrix(uvTransformSprite_.rotate.z);
-            uvTransformMatrix = uvTransformMatrix * MakeTranslateMatrix(uvTransformSprite_.translate);
-        }
-
-        // 確定したUV変換行列をマテリアルデータに書き込む
+        // マテリアルとWVPへの書き込み (変更なし)
         materialData_->uvTransform = uvTransformMatrix;
-
-        // WVP行列の合成と書き込み
         *wvpData_ = worldMatrix * viewMatrix * projectionMatrix;
     }
 
@@ -147,24 +126,6 @@ namespace RyoEngine {
 
         // 4. インデックスを使って描画 (6つのインデックスを使用)
         commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
-    }
-
-    void Sprite::SetTexCrop(float x, float y, float width, float height) {
-        // 値をメンバ変数に記憶する
-        texCropPos_ = { x, y };
-        texCropSize_ = { width, height };
-        isCropped_ = true;
-
-        // --- 頂点座標の更新（これはこのままで完璧です！） ---
-        float left = 0.0f;
-        float right = width;
-        float top = 0.0f;
-        float bottom = height;
-
-        vertexData_[0].position = { left,  bottom, 0.0f, 1.0f }; // 左下
-        vertexData_[1].position = { left,  top,    0.0f, 1.0f }; // 左上
-        vertexData_[2].position = { right, bottom, 0.0f, 1.0f }; // 右下
-        vertexData_[3].position = { right, top,    0.0f, 1.0f }; // 右上
     }
 
     void Sprite::SetTex(std::string& filePath) {

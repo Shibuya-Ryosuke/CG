@@ -1,10 +1,11 @@
 #pragma once
+#include <d3d12.h>
+#include <wrl/client.h>
 #include <string>
 #include <unordered_map>
 #include <memory>
 #include <cstdint>
 #include "../Math/Math.h" // Vector2 などの定義がある場所（適宜調整してください）
-#include "../2D/Sprite.h"
 
 namespace RyoEngine {
 
@@ -30,7 +31,9 @@ namespace RyoEngine {
         FontLoader& operator=(const FontLoader&) = delete; // コピー代入演算子削除
 
         // 初期化用関数（.fntとテクスチャのロードを一括で行う）
-        bool Initialize(const std::string& fntFilePath, const std::string& textureFilePath);
+        void Initialize(const std::string& fntFilePath, const std::string& textureFilePath);
+
+        void Finalize();
 
         // 文字コード(Unicode)から文字情報を取得する関数
         const FontChar* GetCharInfo(char character) const;
@@ -40,7 +43,12 @@ namespace RyoEngine {
 
         void ScreenPrint(const std::string& text, Vector2 position, float scale = 1.0f);
 
+        void DrawAllText();
+
     private:
+
+        void CreateResource();
+
         // .fntファイルを読み込む関数
         bool LoadFnt(const std::string& filePath);
 
@@ -50,7 +58,32 @@ namespace RyoEngine {
         int32_t lineHeight_ = 0; // 行の高さ
 
         uint32_t textureHandle_ = 0;
-        std::unique_ptr<Sprite> fontSprite_;
+
+
+        static const size_t MAX_CHARS = 1024; // 最大描画文字数
+        Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
+        D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+        Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_;
+        D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
+
+        SpriteVertexData* vertexData_ = nullptr;
+        uint32_t* indexData_ = nullptr;
+
+        // マテリアル（UV変換行列を単位行列にするため）とWVP用
+        Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_;
+        Matrix4x4* wvpData_ = nullptr;
+        Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
+        SpriteMaterial* materialData_ = nullptr;
+
+        // ScreenPrintで指定された文字列の情報を保持する構造体
+        struct TextDrawCall {
+            std::string text;
+            Vector2 position;
+            float scale;
+        };
+
+        // メンバ変数に追加
+        std::vector<TextDrawCall> drawCalls_;
     };
 
 }

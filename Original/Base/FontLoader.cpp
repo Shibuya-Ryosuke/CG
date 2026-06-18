@@ -1,24 +1,111 @@
 #include "FontLoader.h"
 #include "Logger.h"
 #include "../Graphics/TextureManager.h"
+#include "../2D/SpriteCommon.h"
+#include "DirectXCommon.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
 
 namespace RyoEngine {
-    bool FontLoader::Initialize(const std::string& fntFilePath, const std::string& textureFilePath) {
+    void FontLoader::Initialize(const std::string& fntFilePath, const std::string& textureFilePath) {
         Logger::Log("Font loader : Initializing...\n");
-        if (!LoadFnt(fntFilePath)) {
-            return false;
-        }
+        CreateResource();
+
+        LoadFnt(fntFilePath);
 
         textureHandle_ = TextureManager::GetInstance()->Load(textureFilePath);
 
-        fontSprite_ = std::make_unique<Sprite>();
-        fontSprite_->Initialize(textureHandle_);
-
         Logger::LogSuccess("Font loader : Initialized\n");
-        return true;
+    }
+
+    void FontLoader::Finalize() {
+        if (vertexResource_) {
+            vertexResource_->Unmap(0, nullptr);
+            vertexResource_.Reset();
+        }
+        vertexData_ = nullptr;
+
+        if (indexResource_) {
+            indexResource_->Unmap(0, nullptr);
+            indexResource_.Reset();
+        }
+        indexData_ = nullptr;
+
+        if (materialResource_) {
+            materialResource_->Unmap(0, nullptr);
+            materialResource_.Reset();
+        }
+        materialData_ = nullptr;
+
+        if (wvpResource_) {
+            wvpResource_->Unmap(0, nullptr);
+            wvpResource_.Reset();
+        }
+        wvpData_ = nullptr;
+    }
+
+    void FontLoader::CreateResource() {
+        auto device = DirectXCommon::GetInstance()->GetDevice();
+
+        // ----------------------------------------------------
+        // 1. 頂点リソースの作成とマッピング
+        // ----------------------------------------------------
+        // 1文字あたり4頂点必要
+        size_t vertexBufferSize = sizeof(SpriteVertexData) * 4 * MAX_CHARS;
+        vertexResource_ = DirectXCommon::CreateBufferResource(device, vertexBufferSize);
+
+        // 頂点バッファビューの設定
+        vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
+        vertexBufferView_.SizeInBytes = static_cast<UINT>(vertexBufferSize);
+        vertexBufferView_.StrideInBytes = sizeof(SpriteVertexData);
+
+        // CPUから書き込むためのポインタを取得（常時Map）
+        vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
+
+
+        // ----------------------------------------------------
+        // 2. インデックスリソースの作成とマッピング
+        // ----------------------------------------------------
+        // 1文字あたり6インデックス（三角形2個分）必要
+        size_t indexBufferSize = sizeof(uint32_t) * 6 * MAX_CHARS;
+        indexResource_ = DirectXCommon::CreateBufferResource(device, indexBufferSize);
+
+        // インデックスバッファビューの設定
+        indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
+        indexBufferView_.SizeInBytes = static_cast<UINT>(indexBufferSize);
+        indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
+
+        // CPUから書き込むためのポインタを取得（常時Map）
+        indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
+
+
+        // ----------------------------------------------------
+        // 3. マテリアルリソースの作成と初期化
+        // ----------------------------------------------------
+        // マテリアルは全体で1つ（色とUV行列）
+        materialResource_ = DirectXCommon::CreateBufferResource(device, sizeof(SpriteMaterial));
+        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
+
+        // 初期値設定
+        materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+        materialData_->uvTransform = MakeIdentity4x4(); // UVは頂点側で直接制御するので等倍で固定
+
+
+        // ----------------------------------------------------
+        // 4. WVP(行列)リソースの作成と初期化
+        // ----------------------------------------------------
+        wvpResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Matrix4x4));
+        wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&wvpData_));
+
+        // スプライトは頂点座標自体がすでにスクリーン座標系(または2D空間)で計算されるため、
+        // WVP行列には正投影行列（Orthographic）をあらかじめ入れておきます。
+        *wvpData_ = MakeOrthographicMatrix(
+            0.0f, 0.0f,
+            (float)DirectXCommon::GetInstance()->GetBackBufferWidth(),
+            (float)DirectXCommon::GetInstance()->GetBackBufferHeight(),
+            0.0f, 100.0f
+        );
     }
 
     bool FontLoader::LoadFnt(const std::string& filePath) {
@@ -91,41 +178,90 @@ namespace RyoEngine {
     }
 
     void FontLoader::ScreenPrint(const std::string& text, Vector2 position, float scale) {
-        if (text.empty() || !fontSprite_) return;
+        if (text.empty()) return;
+        drawCalls_.push_back({ text, position, scale });
+    }
+    void FontLoader::DrawAllText() {
+        if (drawCalls_.empty()) return;
 
-        // 【変更】wstringへの変換を削除し、通常の std::string のまま処理する
-        Vector2 currentPos = position;
+        uint32_t charCount = 0;
+        float texWidth = 256.0;
+        float texHeight = 256.0f;
 
-        // char型 で1バイトずつシンプルにループを回す
-        for (char c : text) {
+        // たまった描画リクエストを順番に処理
+        for (const auto& call : drawCalls_) {
+            Vector2 currentPos = call.position;
 
-            // 改行処理
-            if (c == '\n') { // L'\n' から '\n' に変更
-                currentPos.x = position.x;
-                currentPos.y += lineHeight_ * scale;
-                continue;
+            for (char c : call.text) {
+                if (charCount >= MAX_CHARS) break;
+
+                if (c == '\n') {
+                    currentPos.x = call.position.x;
+                    currentPos.y += lineHeight_ * call.scale;
+                    continue;
+                }
+
+                const FontChar* info = GetCharInfo(c);
+                if (!info) continue;
+
+                float left = currentPos.x + (info->xoffset * call.scale);
+                float right = left + (info->width * call.scale);
+                float top = currentPos.y + (info->yoffset * call.scale);
+                float bottom = top + (info->height * call.scale);
+
+                float uLeft = info->x / texWidth;
+                float uRight = (info->x + info->width) / texWidth;
+                float vTop = info->y / texHeight;
+                float vBottom = (info->y + info->height) / texHeight;
+
+                uint32_t vIdx = charCount * 4;
+
+                // 累積された charCount の位置に書き込んでいくので、データが衝突しない
+                vertexData_[vIdx + 0].position = { left,  bottom, 0.0f, 1.0f };
+                vertexData_[vIdx + 1].position = { left,  top,    0.0f, 1.0f };
+                vertexData_[vIdx + 2].position = { right, bottom, 0.0f, 1.0f };
+                vertexData_[vIdx + 3].position = { right, top,    0.0f, 1.0f };
+
+                vertexData_[vIdx + 0].texcoord = { uLeft,  vBottom };
+                vertexData_[vIdx + 1].texcoord = { uLeft,  vTop };
+                vertexData_[vIdx + 2].texcoord = { uRight, vBottom };
+                vertexData_[vIdx + 3].texcoord = { uRight, vTop };
+
+                uint32_t iIdx = charCount * 6;
+                indexData_[iIdx + 0] = vIdx + 0; indexData_[iIdx + 1] = vIdx + 1; indexData_[iIdx + 2] = vIdx + 2;
+                indexData_[iIdx + 3] = vIdx + 1; indexData_[iIdx + 4] = vIdx + 3; indexData_[iIdx + 5] = vIdx + 2;
+
+                charCount++;
+                currentPos.x += info->xadvance * call.scale;
             }
 
-            // 文字情報を取得（char型のcをそのまま渡してOK）
-            const FontChar* info = GetCharInfo(c);
-            if (!info) continue;
-
-            // オフセットを考慮して描画座標を計算
-            Vector2 drawPos;
-            drawPos.x = currentPos.x + (info->xoffset * scale);
-            drawPos.y = currentPos.y + (info->yoffset * scale);
-
-            // Sprite クラスを操作して一文字切り抜いて描画
-            fontSprite_->SetTexCrop(float(info->x), float(info->y), float(info->width), float(info->height));
-            fontSprite_->SetTranslate(drawPos);
-            fontSprite_->SetSize(Vector2(info->width * scale, info->height * scale));
-
-            // 忘れずにスプライトの更新と描画を呼ぶ
-            fontSprite_->Update();
-            fontSprite_->Draw();
-
-            // 次の文字のために、文字の横幅（進み量）分だけ右にずらす
-            currentPos.x += info->xadvance * scale;
+            if (charCount >= MAX_CHARS) break;
         }
+
+        // 文字が1文字以上あれば描画コマンドを積む
+        if (charCount > 0) {
+            *wvpData_ = MakeOrthographicMatrix(
+                0.0f, 0.0f,
+                (float)DirectXCommon::GetInstance()->GetBackBufferWidth(),
+                (float)DirectXCommon::GetInstance()->GetBackBufferHeight(),
+                0.0f, 100.0f
+            );
+            materialData_->uvTransform = MakeIdentity4x4();
+
+            auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+
+            // リソースバインドとドローコール（前のターンの通り、Begin2dDraw側でPSO設定されていればバインドのみでOK）
+            commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
+            commandList->IASetIndexBuffer(&indexBufferView_);
+            commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
+            commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
+            commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
+
+            // 全ての合計文字数を一発でドロー！
+            commandList->DrawIndexedInstanced(charCount * 6, 1, 0, 0, 0);
+        }
+
+        // 描画が終わったら、今フレームのリクエストをクリアして来フレームに備える
+        drawCalls_.clear();
     }
 }

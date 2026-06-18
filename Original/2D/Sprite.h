@@ -18,9 +18,6 @@ namespace RyoEngine {
         void Update();
         void Draw();
 
-        // 切り抜き範囲を指定する関数 (引数: 左上X, 左上Y, 横幅, 縦幅)
-        void SetTexCrop(float x, float y, float width, float height);
-
         // Getter
         const Vector2& GetTranslate() const { return translate_; }
         const float& GetRotate() const { return rotate_; }
@@ -68,10 +65,5 @@ namespace RyoEngine {
 
         Vector2 texSize_ = { 1280.0f, 720.0f };
         Transform uvTransformSprite_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-
-        // 既存のメンバ変数の近くに追加
-        Vector2 texCropPos_ = { 0.0f, 0.0f };   // 切り抜き左上 (x, y)
-        Vector2 texCropSize_ = { 1.0f, 1.0f };  // 切り抜きサイズ (width, height)
-        bool isCropped_ = false;                // 切り抜きを行うかどうかのフラグ
     };
 }

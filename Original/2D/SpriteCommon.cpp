@@ -143,8 +143,8 @@ namespace RyoEngine {
         blendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
         blendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
         blendDesc.BlendOp = D3D12_BLEND_OP_ADD;
-        blendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-        blendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+        blendDesc.SrcBlendAlpha = D3D12_BLEND_INV_DEST_ALPHA;
+        blendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
         blendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
 
         // 書き込む RTV の情報 (DirectXCommon の設定に合わせる)[cite: 16]
