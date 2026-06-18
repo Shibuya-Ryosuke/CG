@@ -18,6 +18,7 @@
     <ClCompile Include="Original\3D\ModelCommon.cpp" />
     <ClCompile Include="Original\Audio\Audio.cpp" />
     <ClCompile Include="Original\Base\DirectXCommon.cpp" />
+    <ClCompile Include="Original\Base\FontLoader.cpp" />
     <ClCompile Include="Original\Base\Logger.cpp" />
     <ClCompile Include="Original\Base\ShaderCompiler.cpp" />
     <ClCompile Include="Original\Base\WinApp.cpp" />
@@ -60,6 +61,7 @@
     <ClInclude Include="Original\3D\ModelCommon.h" />
     <ClInclude Include="Original\Audio\Audio.h" />
     <ClInclude Include="Original\Base\DirectXCommon.h" />
+    <ClInclude Include="Original\Base\FontLoader.h" />
     <ClInclude Include="Original\Base\Logger.h" />
     <ClInclude Include="Original\Base\ShaderCompiler.h" />
     <ClInclude Include="Original\Base\WinApp.h" />

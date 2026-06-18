@@ -78,6 +78,8 @@ namespace RyoEngine {
             dxCommon_->GetBackBufferFormat()
         );
 
+       
+
         std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
         lastTime_ = std::chrono::high_resolution_clock::now();
@@ -192,6 +194,8 @@ namespace RyoEngine {
                     ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", log.c_str());
                 } else if (log.find("[Warning]") != std::string::npos) {
                     ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "%s", log.c_str());
+                } else if (log.find("[Success]") != std::string::npos) {
+                    ImGui::TextColored(ImVec4(0.1f, 0.7f, 1.0f, 1.0f), "%s", log.c_str());
                 } else {
                     ImGui::TextUnformatted(log.c_str());
                 }

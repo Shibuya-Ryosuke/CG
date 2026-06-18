@@ -18,20 +18,21 @@ namespace RyoEngine {
         void Update();
         void Draw();
 
-       
+        // 切り抜き範囲を指定する関数 (引数: 左上X, 左上Y, 横幅, 縦幅)
+        void SetTexCrop(float x, float y, float width, float height);
 
         // Getter
-        const Vector3& GetTranslate() const { return transform_.translate; }
-        const Vector3& GetRotate() const { return transform_.rotate; }
-        const Vector3& GetScale() const { return transform_.scale; }
-        const Vector2& GetSize() const { return size_; }
+        const Vector2& GetTranslate() const { return translate_; }
+        const float& GetRotate() const { return rotate_; }
+        const Vector2& GetScale() const { return scale_; }
+        const Vector2& GetSize() const { return texSize_; }
         const Transform& GetUVTransform() const { return uvTransformSprite_; }
         const Vector4& GetColor() const { return materialData_->color; };
         // Setter
-        void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
-        void SetRotate(const Vector3& rotation) { transform_.rotate = rotation; }
-        void SetScale(const Vector3& scale) { transform_.scale = scale; };
-        void SetSize(const Vector2& size) { size_ = size; }
+        void SetTranslate(const Vector2& translate) { translate_ = translate; }
+        void SetRotate(const float rotation) { rotate_ = rotation; }
+        void SetScale(const Vector2& scale) { scale_ = scale; };
+        void SetSize(const Vector2& size) { texSize_ = size; }
         void SetTex(uint32_t textureHandle) { textureHandle_ = textureHandle; };
         void SetTex(std::string& filePath);
         void SetUVTransform(const Transform& uvTransform) { uvTransformSprite_ = uvTransform; }
@@ -61,8 +62,16 @@ namespace RyoEngine {
 
         // スプライトのステータス
         uint32_t textureHandle_ = 0;
-        Transform transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-        Vector2 size_ = { 1280.0f, 720.0f };
+        Vector2 translate_ = { 0.0f,0.0f };
+        float rotate_ = 0.0f;
+        Vector2 scale_ = { 1.0f,1.0f };
+
+        Vector2 texSize_ = { 1280.0f, 720.0f };
         Transform uvTransformSprite_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+        // 既存のメンバ変数の近くに追加
+        Vector2 texCropPos_ = { 0.0f, 0.0f };   // 切り抜き左上 (x, y)
+        Vector2 texCropSize_ = { 1.0f, 1.0f };  // 切り抜きサイズ (width, height)
+        bool isCropped_ = false;                // 切り抜きを行うかどうかのフラグ
     };
 }

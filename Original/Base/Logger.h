@@ -39,6 +39,17 @@ namespace RyoEngine {
 		}
 
 		/// <summary>
+		/// ログ出力 (成功時に使用)
+		/// </summary>
+		/// <typeparam name="...Args"></typeparam>
+		/// <param name="format">文章</param>
+		/// <param name="...args">引数</param>
+		template <typename... Args>
+		static void LogSuccess(std::string_view format, Args&&... args) {
+			Log("[Success] " + std::string(format), std::forward<Args>(args)...);
+		}
+
+		/// <summary>
 		/// ログ出力 (警告時に使用)
 		/// </summary>
 		/// <typeparam name="...Args"></typeparam>

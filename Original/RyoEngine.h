@@ -2,6 +2,7 @@
 #include "Base/WinApp.h"
 #include "Base/DirectXCommon.h"
 #include "Base/Logger.h"
+#include "Base/FontLoader.h"
 #include "Graphics/TextureManager.h"
 #include "Loader/ModelLoader.h"
 #include "Base/ShaderCompiler.h"
