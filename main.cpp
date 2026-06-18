@@ -71,7 +71,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // [2D描画フェーズ]
         Begin2dDraw();
         PrintText("hello", { 100.0f,300.0f });
+        PrintText("wait", { 200.0f,100.0f });
+        PrintText("you\ncome", { 100.0f,320.0f });
         s.Draw();
+
         // 2D終了----------------------------------------------------
         
 
