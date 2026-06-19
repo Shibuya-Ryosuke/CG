@@ -183,7 +183,7 @@ namespace RyoEngine{
 		fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
 		assert(fenceEvent_ != nullptr);
 
-		Logger::Log("DxCommon : Initialized\n");
+		Logger::LogSuccess("DxCommon : Initialized\n");
 
 	}
 
@@ -236,7 +236,7 @@ namespace RyoEngine{
 		// デバイス周り（これが最後に消える必要がある）
 		dxgiFactory_.Reset();
 		device_.Reset();
-		Logger::Log("DxCommon Finalized\n");
+		Logger::LogSuccess("DxCommon Finalized\n");
 	}
 
 	void DirectXCommon::PreDraw() {
@@ -408,7 +408,16 @@ namespace RyoEngine{
 		// 3. TextureManagerにリソースを登録してSRVを自動生成してもらう！
 		gameTextureHandle_ = TextureManager::GetInstance()->RegisterResource(gameRenderTargetResource_);
 
-		Logger::Log("* Created *\n");
+		Logger::LogSuccess("* Created *\n");
+	}
+
+	void DirectXCommon::WaitForFence() {
+		fenceValue_++;
+		commandQueue_->Signal(fence_.Get(), fenceValue_);
+		if (fence_->GetCompletedValue() < fenceValue_) {
+			fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
+			WaitForSingleObject(fenceEvent_, INFINITE);
+		}
 	}
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(

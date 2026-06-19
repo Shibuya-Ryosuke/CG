@@ -35,7 +35,7 @@ namespace RyoEngine {
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-        Logger::Log("ImGuiManager : Initialized\n");
+        Logger::LogSuccess("ImGuiManager : Initialized\n");
     }
 
     void ImGuiManager::NewFrame() {
@@ -66,7 +66,7 @@ namespace RyoEngine {
 
         
         instance->srvHeap_.Reset();
-        Logger::Log("ImGuiManager : Finalized\n");
+        Logger::LogSuccess("ImGuiManager : Finalized\n");
     }
 }
 #endif

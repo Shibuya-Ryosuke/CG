@@ -28,7 +28,7 @@ namespace RyoEngine {
         // インクルードを処理するためのハンドラ
         hr = dxcUtils_->CreateDefaultIncludeHandler(&includeHandler_);
         assert(SUCCEEDED(hr));
-        Logger::Log("ShaderCompiler : Initialized\n");
+        Logger::LogSuccess("ShaderCompiler : Initialized\n");
     }
 
     void ShaderCompiler::Finalize()
@@ -38,7 +38,7 @@ namespace RyoEngine {
         includeHandler_.Reset();
         dxcCompiler_.Reset();
         dxcUtils_.Reset();
-        Logger::Log("ShaderComiler : Finalized\n");
+        Logger::LogSuccess("ShaderComiler : Finalized\n");
     }
 
     Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(const std::wstring& filePath, const wchar_t* profile) {
@@ -104,7 +104,7 @@ namespace RyoEngine {
         hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
         assert(SUCCEEDED(hr));
         // 成功したログを出す
-        Logger::Log(Logger::ConvertString(std::format(L"* Compile Succeeded *\n- path:{}\n- profile{}\n", filePath, profile)));
+        Logger::LogSuccess(Logger::ConvertString(std::format(L"* Compile Succeeded *\n- path:{}\n- profile{}\n", filePath, profile)));
         // 実行用のバイナリを返却
         return shaderBlob;
     }

@@ -26,10 +26,10 @@ namespace RyoEngine {
         ModelCommon* modelCommon_ = nullptr;
         SpriteCommon* spriteCommon_ = nullptr;
         ReflectCommon* reflectCommon_ = nullptr;
+        Font* fontOutputer_ = nullptr;
         Audio* audio_ = nullptr;
 
         std::chrono::high_resolution_clock::time_point lastTime_;
-        std::unique_ptr<RyoEngine::FontLoader> gameFont_;
         float deltaTime_ = 0.0f;
         float fps_ = 0.0f;
         float smoothedFps_ = 0.0f;
@@ -80,10 +80,8 @@ namespace RyoEngine {
         );
 
         // フォント
-        // 1. インスタンスの作成（スマートポインタが安全でおすすめです）
-        gameFont_ = std::make_unique<RyoEngine::FontLoader>();
-        // 2. 初期化関数を呼び出す（パスはご自身の環境（Resources内など）に合わせてください）
-        gameFont_->Initialize("Original/Resources/font.fnt", "Original/Resources/font_0.png");
+        fontOutputer_ = new Font();
+        fontOutputer_->Initialize("Original/Resources/font.fnt", "Original/Resources/font_0.png");
 
         std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
@@ -94,9 +92,11 @@ namespace RyoEngine {
 
     void Finalize() {
         Logger::Log("\n\n\n* Game Finish *\n\n");
-        // 4. 終了処理
-        // 各リソースの解放、WinAppのUnregisterClassなどが走る
-        // 初期化と逆の順序で解放
+        
+        fontOutputer_->Finalize();
+        delete fontOutputer_;
+        fontOutputer_ = nullptr;
+
         ImGuiManager::Finalize();
 
         audio_->Finalize();
@@ -217,16 +217,12 @@ namespace RyoEngine {
     }
 
     void EndFrame() {
-        gameFont_->DrawAllText();
+        fontOutputer_->DrawAllText();
         GetDxCommon()->PostDraw();  // ImGuiの終了処理はこの中にいる
     }
 
     uint32_t LoadTex(const std::string& filePath) {
         return GetTexManager()->Load(filePath);
-    }
-
-    void PrintText(const std::string& text, Vector2 position, float scale) {
-        gameFont_->ScreenPrint(text, position, scale);
     }
 
     // --- ゲッターの実装 ---
@@ -237,6 +233,7 @@ namespace RyoEngine {
     ModelCommon* GetModelCommon() { return modelCommon_; }
     SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
     ReflectCommon* GetReflectCommon() { return reflectCommon_; }
+    Font* GetFontOutputter() { return fontOutputer_; }
 
     float GetDeltaTime() { return deltaTime_; }
     float GetFPS() { return fps_; }

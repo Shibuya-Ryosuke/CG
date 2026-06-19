@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <memory>
 #include <cstdint>
+#include <format>
 #include "../Math/Math.h" // Vector2 などの定義がある場所（適宜調整してください）
 
 namespace RyoEngine {
@@ -20,15 +21,15 @@ namespace RyoEngine {
         int32_t xadvance = 0;  // 次の文字への進み量
     };
 
-    class FontLoader {
+    class Font {
     public:
         // 通常のコンストラクタ・デストラクタ
-        FontLoader() = default;
-        ~FontLoader() = default;
+        Font() = default;
+        ~Font() = default;
 
         // ★ コピーコンストラクタと代入演算子を明示的に削除
-        FontLoader(const FontLoader&) = delete;            // コピーコンストラクタ削除
-        FontLoader& operator=(const FontLoader&) = delete; // コピー代入演算子削除
+        Font(const Font&) = delete;            // コピーコンストラクタ削除
+        Font& operator=(const Font&) = delete; // コピー代入演算子削除
 
         // 初期化用関数（.fntとテクスチャのロードを一括で行う）
         void Initialize(const std::string& fntFilePath, const std::string& textureFilePath);
@@ -41,13 +42,22 @@ namespace RyoEngine {
         // 一行の高さ（改行時に使用）
         int32_t GetLineHeight() const { return lineHeight_; }
 
-        void ScreenPrint(const std::string& text, Vector2 position, float scale = 1.0f);
+        
+        
+        // ★ 追加: 引数付きで scale を省略したい場合（デフォルト 1.0f）
+        template <typename... Args>
+        void ScreenPrint(std::format_string<Args...> fmt, Vector2 position, Args&&... args) {
+            std::string formattedText = std::format(fmt, std::forward<Args>(args)...);
+            RegisterText(formattedText, position, 1.0f);
+        }
 
         void DrawAllText();
 
     private:
 
         void CreateResource();
+
+        void RegisterText(const std::string& text, Vector2 position, float scale);
 
         // .fntファイルを読み込む関数
         bool LoadFnt(const std::string& filePath);

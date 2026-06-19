@@ -92,7 +92,7 @@ namespace RyoEngine {
 
 		// ウィンドウを表示する
 		ShowWindow(hwnd_, SW_SHOW);
-		Logger::Log("WinApp : Initialized\n");
+		Logger::LogSuccess("WinApp : Initialized\n");
 	}
 
 	bool WinApp::ProcessMessage() {
@@ -110,7 +110,7 @@ namespace RyoEngine {
 	void WinApp::Finalize() {
 		Logger::Log("WinApp : Finalizing...\n");
 		UnregisterClass(wc_.lpszClassName, wc_.hInstance);
-		Logger::Log("WinApp : Finalized\n");
+		Logger::LogSuccess("WinApp : Finalized\n");
 	}
 	
 }

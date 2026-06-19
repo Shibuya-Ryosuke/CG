@@ -1,4 +1,4 @@
-#include "FontLoader.h"
+#include "Font.h"
 #include "Logger.h"
 #include "../Graphics/TextureManager.h"
 #include "../2D/SpriteCommon.h"
@@ -8,7 +8,7 @@
 #include <iostream>
 
 namespace RyoEngine {
-    void FontLoader::Initialize(const std::string& fntFilePath, const std::string& textureFilePath) {
+    void Font::Initialize(const std::string& fntFilePath, const std::string& textureFilePath) {
         Logger::Log("Font loader : Initializing...\n");
         CreateResource();
 
@@ -19,7 +19,8 @@ namespace RyoEngine {
         Logger::LogSuccess("Font loader : Initialized\n");
     }
 
-    void FontLoader::Finalize() {
+    void Font::Finalize() {
+        Logger::Log("Font : Finalizing...\n");
         if (vertexResource_) {
             vertexResource_->Unmap(0, nullptr);
             vertexResource_.Reset();
@@ -43,9 +44,10 @@ namespace RyoEngine {
             wvpResource_.Reset();
         }
         wvpData_ = nullptr;
+        Logger::LogSuccess("Font : Finalized\n");
     }
 
-    void FontLoader::CreateResource() {
+    void Font::CreateResource() {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
         // ----------------------------------------------------
@@ -108,7 +110,7 @@ namespace RyoEngine {
         );
     }
 
-    bool FontLoader::LoadFnt(const std::string& filePath) {
+    bool Font::LoadFnt(const std::string& filePath) {
         std::ifstream file(filePath);
         if (!file.is_open()) {
             Logger::LogError("Font file loading failed\nSearched file path : " + filePath + "\n");
@@ -162,7 +164,7 @@ namespace RyoEngine {
         return true;
     }
 
-    const FontChar* FontLoader::GetCharInfo(char character) const {
+    const FontChar* Font::GetCharInfo(char character) const {
         auto it = charMap_.find(character);
         if (it != charMap_.end()) {
             return &it->second;
@@ -177,11 +179,11 @@ namespace RyoEngine {
         return nullptr; // 完全にデータがない場合
     }
 
-    void FontLoader::ScreenPrint(const std::string& text, Vector2 position, float scale) {
+    void Font::RegisterText(const std::string& text, Vector2 position, float scale) {
         if (text.empty()) return;
         drawCalls_.push_back({ text, position, scale });
     }
-    void FontLoader::DrawAllText() {
+    void Font::DrawAllText() {
         if (drawCalls_.empty()) return;
 
         uint32_t charCount = 0;

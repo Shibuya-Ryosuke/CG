@@ -36,6 +36,7 @@ namespace RyoEngine {
 
 		void CreateGameRenderTarget();
 
+		void WaitForFence();
 		// ディスクリプタヒープの生成
 		static Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(
 			ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);

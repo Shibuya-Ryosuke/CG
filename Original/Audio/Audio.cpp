@@ -43,7 +43,7 @@ namespace RyoEngine {
 		hr = inst->xAudio2->CreateMasteringVoice(&inst->masterVoice);
 		assert(SUCCEEDED(hr));
 
-		Logger::Log("Audio : Initialized\n");
+		Logger::LogSuccess("Audio : Initialized\n");
 	}
 
 	void Audio::Finalize() {
@@ -69,7 +69,7 @@ namespace RyoEngine {
 		}
 		inst->xAudio2.Reset();
 		MFShutdown();
-		Logger::Log("Audio : Finalized\n");
+		Logger::LogSuccess("Audio : Finalized\n");
 	}
 
 	uint32_t Audio::LoadAudio(const char* filename) {

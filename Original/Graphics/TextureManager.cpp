@@ -32,7 +32,7 @@ namespace RyoEngine {
 
         whiteTex = Load("resources/white1x1.png");
 
-        Logger::Log("Input : Initialized\n");
+        Logger::LogSuccess("Input : Initialized\n");
     }
 
     void TextureManager::Finalize() {
@@ -46,9 +46,12 @@ namespace RyoEngine {
         // 重複読み込み防止用のマップをクリア
         filePathMap_.clear();
 
+        // ディスクリプタヒープの開放
+        descriptorHeap_.Reset();
+
         // デバイスポインタを初期化
         device_ = nullptr;
-        Logger::Log("TexManager : Finalized\n");
+        Logger::LogSuccess("TexManager : Finalized\n");
     }
 
     uint32_t TextureManager::Load(const std::string& filePath) {

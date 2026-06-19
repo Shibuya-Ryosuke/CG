@@ -2,7 +2,7 @@
 #include "Base/WinApp.h"
 #include "Base/DirectXCommon.h"
 #include "Base/Logger.h"
-#include "Base/FontLoader.h"
+#include "Base/Font.h"
 #include "Graphics/TextureManager.h"
 #include "Loader/ModelLoader.h"
 #include "Base/ShaderCompiler.h"
@@ -21,6 +21,8 @@
 #include "ImGui/ImGuiManager.h"
 #include <cstdint>
 #include <string>
+#include <format>
+#include <utility>
 #include <memory>
 
 #pragma comment(lib, "mfplat.lib")
@@ -30,6 +32,14 @@
 #pragma comment(lib, "dxguid.lib")
 
 namespace RyoEngine {
+
+    WinApp* GetWinApp();
+    DirectXCommon* GetDxCommon();
+    TextureManager* GetTexManager();
+    ModelCommon* GetModelCommon();
+    SpriteCommon* GetSpriteCommon();
+    ReflectCommon* GetReflectCommon();
+    Font* GetFontOutputter();
 
     void Initialize();
     void Finalize();
@@ -57,14 +67,12 @@ namespace RyoEngine {
     /// <param name="viewSize">ゲーム画面サイズ(初期値 960*540)</param>
     void SetImGuiViewSize(Vector2 viewSize);
 
-    void PrintText(const std::string& text, Vector2 position, float scale = 1.0f);
-
+    
     uint32_t LoadTex(const std::string& filePath);
-
-    WinApp* GetWinApp();
-    DirectXCommon* GetDxCommon();
-    TextureManager* GetTexManager();
-    ModelCommon* GetModelCommon();
-    SpriteCommon* GetSpriteCommon();
-    ReflectCommon* GetReflectCommon();
+    
+    template <typename... Args>
+    void PrintText(std::format_string<Args...> fmt, Vector2 position, Args&&... args) {
+        if (!GetFontOutputter()) return;
+        GetFontOutputter()->ScreenPrint(fmt, position,std::forward<Args>(args)...);
+    }
 }

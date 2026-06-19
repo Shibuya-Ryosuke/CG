@@ -17,7 +17,7 @@ namespace RyoEngine {
         dxCommon_ = DirectXCommon::GetInstance();
         CreateRootSignature();
         CreatePipelineState();
-        Logger::Log("ReflectCommon : Initialized\n");
+        Logger::LogSuccess("ReflectCommon : Initialized\n");
     }
 
 
@@ -69,7 +69,7 @@ namespace RyoEngine {
         rootSignature_.Reset();
         graphicsPipelineState_.Reset();
         activeMirror_ = nullptr;
-        Logger::Log("ReflectCommon : Finalized\n");
+        Logger::LogSuccess("ReflectCommon : Finalized\n");
     }
 
     void ReflectCommon::CreateRootSignature() {

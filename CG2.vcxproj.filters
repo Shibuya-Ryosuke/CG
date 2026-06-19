@@ -114,7 +114,7 @@
     <ClCompile Include="Original\Mesh\Mesh.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Base\FontLoader.cpp">
+    <ClCompile Include="Original\Base\Font.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -218,7 +218,7 @@
     <ClInclude Include="Original\Mesh\Mesh.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Base\FontLoader.h">
+    <ClInclude Include="Original\Base\Font.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

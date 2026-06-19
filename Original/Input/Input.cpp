@@ -44,7 +44,7 @@ namespace RyoEngine {
 		result = instance->mouse_->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
 		assert(SUCCEEDED(result));
 
-		Logger::Log("Input : Initialized\n");
+		Logger::LogSuccess("Input : Initialized\n");
 	}
 
 	void Input::Update() {

@@ -72,9 +72,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [2D描画フェーズ]
         Begin2dDraw();
-        PrintText("hello", { 100.0f,300.0f });
-        PrintText("wait", { 200.0f,100.0f });
-        PrintText("you\ncome", { 100.0f,320.0f });
+        PrintText("uvTranslate : {}, {}", {0.0f,0.0f}, x.x, x.y);
         s.Draw();
 
         // 2D終了----------------------------------------------------
@@ -89,6 +87,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         EndFrame();
     }
     
+    s.Finalize();
+
     // エンジン終了
     RyoEngine::Finalize();
 
