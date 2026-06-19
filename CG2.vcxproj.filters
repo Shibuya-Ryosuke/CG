@@ -42,9 +42,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Engine\ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Original\Loader\ModelLoader.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
@@ -128,6 +125,12 @@
     </ClCompile>
     <ClCompile Include="AL3-03\Player\Player.cpp">
       <Filter>AL3-03\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="AL3-03\GameScene.cpp">
+      <Filter>AL3-03</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>AL3-03</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -235,6 +238,9 @@
     </ClInclude>
     <ClInclude Include="AL3-03\Player\Player.h">
       <Filter>AL3-03\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="AL3-03\GameScene.h">
+      <Filter>AL3-03</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

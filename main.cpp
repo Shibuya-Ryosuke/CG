@@ -1,4 +1,6 @@
 #include "./Original/RyoEngine.h"
+#include "AL3-03/GameScene.h"
+
 #ifdef _DEBUG
 #include "Original/Externals/imgui/imgui.h"
 #endif
@@ -39,19 +41,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // --- 描画処理 (Draw) ---
         // ----------------------
-        // [3D描画フェーズ]
-        Begin3dDraw();
-        
-        // 3D終了----------------------------------------------------
-        
-
-
-        // [2D描画フェーズ]
-        Begin2dDraw();
-        
-
-        // 2D終了----------------------------------------------------
-        
+       
 
 
         // ----------------------

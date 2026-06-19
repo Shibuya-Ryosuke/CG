@@ -1,11 +1,16 @@
 #pragma once
-#include "../../Original/RyoEngine.h"
+#include "../Original/RyoEngine.h"
+#include "Player/Player.h"
 
 /// <summary>
-/// 自キャラ
+/// 統括
 /// </summary>
-class Player {
+class GameScene {
 public:
+
+	GameScene();
+	~GameScene();
+
 	/// <summary>
 	/// 初期化
 	/// </summary>
@@ -22,6 +27,9 @@ public:
 	void Draw();
 
 private:
-	// モデル
-	RyoEngine::Model* model_ = nullptr;
+	// 自キャラ
+	Player* player_ = nullptr;
+
+	// カメラ
+	RyoEngine::DebugCamera* debugCamera_ = nullptr;
 };

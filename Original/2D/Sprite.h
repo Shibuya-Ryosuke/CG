@@ -46,7 +46,7 @@ namespace RyoEngine {
         }
         void SetTexSize(const Vector2& size) { texSize_ = size; }
         void SetTex(uint32_t textureHandle) { textureHandle_ = textureHandle; };
-        void SetTex(std::string& filePath);
+        void SetTex(const std::string& filePath);
         void SetColor(const Vector4& color) {  materialData_->color = color; };
 
     private:

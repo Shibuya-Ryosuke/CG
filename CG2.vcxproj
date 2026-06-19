@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AL3-03\GameScene.cpp" />
     <ClCompile Include="AL3-03\Player\Player.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Original\2D\Sprite.cpp" />
@@ -56,6 +57,7 @@
     <ClCompile Include="Original\Reflect\ReflectModel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AL3-03\GameScene.h" />
     <ClInclude Include="AL3-03\Player\Player.h" />
     <ClInclude Include="Original\2D\Sprite.h" />
     <ClInclude Include="Original\2D\SpriteCommon.h" />

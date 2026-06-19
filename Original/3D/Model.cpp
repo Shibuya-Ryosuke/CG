@@ -44,7 +44,7 @@ namespace RyoEngine {
         materialData_->shadingMode = ShadingMode::HALF_LAMBERT;
     }
 
-    void Model::SetTex(std::string& filePath) {
+    void Model::SetTex(const std::string& filePath) {
         textureHandle_ = TextureManager::GetInstance()->Load(filePath);
     }
 
