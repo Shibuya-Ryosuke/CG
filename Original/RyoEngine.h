@@ -41,6 +41,7 @@ namespace RyoEngine {
     ReflectCommon* GetReflectCommon();
     Font* GetFontOutputter();
 
+    
     void Initialize();
     void Finalize();
 

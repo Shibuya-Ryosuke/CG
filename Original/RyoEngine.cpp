@@ -9,7 +9,7 @@
 namespace RyoEngine {
 #ifdef _DEBUG
     namespace {
-        Vector2 viewSize_{ 960.0f, 540.0f };
+        Vector2 viewSize_{ 720.0f, 405.0f };
     }
     void SetImGuiViewSize(Vector2 viewSize) {
         viewSize_ = viewSize;
@@ -33,6 +33,11 @@ namespace RyoEngine {
         float deltaTime_ = 0.0f;
         float fps_ = 0.0f;
         float smoothedFps_ = 0.0f;
+
+        std::chrono::steady_clock::time_point cpuStart_;
+        float cpuFrameTime_ = 0.0f;
+        float cpuFps_ = 0.0f;
+
     }
 
     void Initialize() {
@@ -132,6 +137,7 @@ namespace RyoEngine {
     }
 
     void NewFrame() {
+        cpuStart_ = std::chrono::high_resolution_clock::now();
         auto currentTime = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> elapsed = currentTime - lastTime_;
         deltaTime_ = elapsed.count();
@@ -155,10 +161,10 @@ namespace RyoEngine {
         static float logTimer = 0.0f;
         logTimer += deltaTime_;       // 毎フレームの経過時間を足していく
 
-        if (logTimer >= 2.0f) {       // 1.0秒（以上）経ったら
+        if (logTimer >= 5.0f) {       // 1.0秒（以上）経ったら
             Logger::Log("Engine is running... FPS: {:.1f}", smoothedFps_);
 
-            logTimer -= 2.0f;
+            logTimer -= 5.0f;
         }
 
         ImGuiManager::NewFrame();
@@ -174,6 +180,10 @@ namespace RyoEngine {
         ImGui::Begin("Performance");
         ImGui::Text("FPS: %.1f", smoothedFps_);
         ImGui::Text("DeltaTime: %.4f s (%.2f ms)", deltaTime_, deltaTime_ * 1000.0f);
+        ImGui::NewLine();
+
+        ImGui::Text("cpuFps : %.1f", cpuFps_);
+        ImGui::Text("cpuFrameTime : %.6f s (%.3f ms)", cpuFrameTime_, cpuFrameTime_ * 1000.0f);
         ImGui::End();
 
         // ログ
@@ -218,6 +228,16 @@ namespace RyoEngine {
 
     void EndFrame() {
         fontOutputer_->DrawAllText();
+
+        auto cpuEnd = std::chrono::high_resolution_clock::now();
+
+        // CPUの処理時間を計算 (秒単位)
+        std::chrono::duration<float> cpuElapsed = cpuEnd - cpuStart_;
+        cpuFrameTime_ = cpuElapsed.count();
+
+        // FPS換算 (もしこの処理だけでループしたら何FPS出るか)
+        cpuFps_ = (cpuFrameTime_ > 0.0f) ? (1.0f / cpuFrameTime_) : 0.0f;
+
         GetDxCommon()->PostDraw();  // ImGuiの終了処理はこの中にいる
     }
 
@@ -234,6 +254,7 @@ namespace RyoEngine {
     SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
     ReflectCommon* GetReflectCommon() { return reflectCommon_; }
     Font* GetFontOutputter() { return fontOutputer_; }
+
 
     float GetDeltaTime() { return deltaTime_; }
     float GetFPS() { return fps_; }

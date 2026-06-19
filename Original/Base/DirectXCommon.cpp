@@ -73,7 +73,7 @@ namespace RyoEngine{
 		// デバイスの生成が上手くいかなかったので起動できない
 		assert(device_ != nullptr);
 		// 初期化完了のログを出力
-		Logger::Log("DxCommon : Device created.\n");
+		Logger::LogSuccess("DxCommon : Device created.\n");
 
         #ifdef _DEBUG
 		Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;

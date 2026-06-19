@@ -42,7 +42,7 @@ namespace RyoEngine {
 	}
 
 	void Logger::Finalize() {
-		Log("___Logger Finalized___\n");
+		Log("\n___Logger Finalized___\n");
 		if (logStream_.is_open()) {
 			logStream_.close();
 		}
