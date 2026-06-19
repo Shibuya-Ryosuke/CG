@@ -32,21 +32,23 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         float b = s.GetRotate();
         Vector2 c = s.GetScale();
 
-        Transform x = s.GetUVTransform();
+        Vector2 x = s.GetUVTranslate();
+        float u = s.GetUVRotate();
+        Vector2 l = s.GetUVScale();
+
         ImGui::Begin("a");
         ImGui::DragFloat2("trans", &a.x, 1.0f, -1000.0f, 1000.0f);
         ImGui::DragFloat("rotate", &b, 1.0f, -1000.0f, 1000.0f);
         ImGui::DragFloat2("scale", &c.x, 1.0f, -1000.0f, 1000.0f);
-        ImGui::DragFloat2("uvt", &x.translate.x, 0.01f, -100.0f, 100.0f);
-        ImGui::DragFloat3("uvr", &x.rotate.x, 0.01f, -100.0f, 100.0f);
-        ImGui::DragFloat2("uvs", &x.scale.x, 0.01f, -100.0f, 100.0f);
+        ImGui::DragFloat2("uvt", &x.x, 0.01f, -100.0f, 100.0f);
+        ImGui::DragFloat("uvr", &u, 0.01f, -100.0f, 100.0f);
+        ImGui::DragFloat2("uvs", &l.x, 0.01f, -100.0f, 100.0f);
         ImGui::End();
 
-        s.SetTranslate(a);
-        s.SetRotate(b);
-        s.SetScale(c);
-        s.SetUVTransform(x);
+       
 
+        s.SetSRT(c, b, a);
+        s.SetUVSRT(l, u, x);
 
         // --------------------------------------------------------------------------------
         // Reflect

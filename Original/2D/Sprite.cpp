@@ -33,10 +33,12 @@ namespace RyoEngine {
 
         // 初期データ書き込み
         // 頂点情報 (0:左下, 1:左上, 2:右下, 3:右上)
-        vertexData_[0].position = { 0.0f, texSize_.y, 0.0f, 1.0f };
-        vertexData_[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };
-        vertexData_[2].position = { texSize_.x, texSize_.y, 0.0f, 1.0f };
-        vertexData_[3].position = { texSize_.x, 0.0f, 0.0f, 1.0f };
+        float halfWidth = texSize_.x * 0.5f;
+        float halfHeight = texSize_.y * 0.5f;
+        vertexData_[0].position = { -halfWidth,  halfHeight, 0.0f, 1.0f };
+        vertexData_[1].position = { -halfWidth, -halfHeight, 0.0f, 1.0f };
+        vertexData_[2].position = { halfWidth,  halfHeight, 0.0f, 1.0f };
+        vertexData_[3].position = { halfWidth, -halfHeight, 0.0f, 1.0f };
 
         vertexData_[0].texcoord = { 0.0f, 1.0f };
         vertexData_[1].texcoord = { 0.0f, 0.0f };
@@ -101,11 +103,19 @@ namespace RyoEngine {
             0.0f, 100.0f
         );
 
-        // 2. uvTransformSprite_ (Vector3のまま) の行列計算
-        // ここは型が変わっていないので、元のコードを完全にそのまま使えます！
-        Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite_.scale);
-        uvTransformMatrix = uvTransformMatrix * MakeRotateZMatrix(uvTransformSprite_.rotate.z);
-        uvTransformMatrix = uvTransformMatrix * MakeTranslateMatrix(uvTransformSprite_.translate);
+        // UVの中心 (0.5, 0.5) を原点に持ってくる移動行列
+        Matrix4x4 translateToCenter = MakeTranslateMatrix({ -0.5f, -0.5f, 0.0f });
+
+        // 新しいメンバ変数から各種行列を生成 (Z軸やZ座標は固定値を入れる)
+        Matrix4x4 scaleMat = MakeScaleMatrix({ uvScale_.x, uvScale_.y, 1.0f });
+        Matrix4x4 rotateMat = MakeRotateZMatrix(uvRotate_);
+        Matrix4x4 translateMat = MakeTranslateMatrix({ uvTranslate_.x, uvTranslate_.y, 0.0f });
+
+        // 原点から元の位置 (0.5, 0.5) に戻す移動行列
+        Matrix4x4 translateBack = MakeTranslateMatrix({ 0.5f, 0.5f, 0.0f });
+
+        // 行列を合成 (中心にずらす -> 拡大回転 -> 元に戻す -> UV移動)
+        Matrix4x4 uvTransformMatrix = translateToCenter * scaleMat * rotateMat * translateBack * translateMat;
 
         // マテリアルとWVPへの書き込み (変更なし)
         materialData_->uvTransform = uvTransformMatrix;
