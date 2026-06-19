@@ -33,6 +33,4 @@ private:
 	// カメラ
 	RyoEngine::Camera* camera_ = nullptr;
 	RyoEngine::DebugCamera* debugCamera_ = nullptr;
-
-	bool isDebug_ = true;
 };

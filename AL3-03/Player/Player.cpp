@@ -7,8 +7,12 @@ void Player::Initialize() {
 	model_->SetTex("resources/flower.png");
 }
 
-void Player::Update() {
-	model_->
+void Player::Update(DebugCamera& debugCamera) {
+	model_->Update(debugCamera);
+}
+
+void Player::Update(Camera& camera) {
+	model_->Update(camera);
 }
 
 void Player::Draw() {

@@ -11,6 +11,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
+    GameScene gameScene;
+    gameScene.Initialize();
+
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
@@ -20,7 +23,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // -- 更新処理（Update） --
         // ----------------------
 
-
+        gameScene.Update();
 
         // ----------------------
         // ------ 更新終了 -------
@@ -43,6 +46,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
        
 
+        gameScene.Draw();
 
         // ----------------------
         // ------ 描画終了 -------

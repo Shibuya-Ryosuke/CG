@@ -14,7 +14,12 @@ public:
 	/// <summary>
 	/// 更新
 	/// </summary>
-	void Update();
+	void Update(RyoEngine::DebugCamera& debugCamera);
+
+	/// <summary>
+	/// 更新
+	/// </summary>
+	void Update(RyoEngine::Camera& camera);
 
 	/// <summary>
 	/// 描画
