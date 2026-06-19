@@ -205,5 +205,7 @@ namespace RyoEngine {
 		uint32_t textureHandle_ = 0;
 		// 個別のステータス（実体）
 		Transform transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+		Matrix4x4 worldMatrix_{};
 	};
 }

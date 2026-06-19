@@ -144,28 +144,20 @@ namespace RyoEngine {
 
     void Mesh::Update(Camera& camera) {
         // 3D用のワールド行列計算
-        Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-
-        // カメラから行列を取得（透視投影）
-        Matrix4x4 viewMatrix = camera.GetViewMatrix();
-        Matrix4x4 projectionMatrix = camera.GetProjectionMatrix();
+        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 
         // 定数バッファに書き込み
-        wvpData_->World = worldMatrix;
-        wvpData_->WVP = worldMatrix * viewMatrix * projectionMatrix;
+        wvpData_->World = worldMatrix_;
+        wvpData_->WVP = worldMatrix_ * camera.GetViewProjectionMatrix();
     }
 
     void Mesh::Update(DebugCamera& debugCamera) {
         // 3D用のワールド行列計算
-        Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-
-        // カメラから行列を取得（透視投影）
-        Matrix4x4 viewMatrix = debugCamera.GetViewMatrix();
-        Matrix4x4 projectionMatrix = debugCamera.GetProjectionMatrix();
+        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 
         // 定数バッファに書き込み
-        wvpData_->World = worldMatrix;
-        wvpData_->WVP = worldMatrix * viewMatrix * projectionMatrix;
+        wvpData_->World = worldMatrix_;
+        wvpData_->WVP = worldMatrix_ *debugCamera.GetViewProjectionMatrix();
     }
 
     void Mesh::Draw() {

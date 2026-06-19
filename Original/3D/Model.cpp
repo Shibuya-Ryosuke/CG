@@ -81,12 +81,12 @@ namespace RyoEngine {
 
     void Model::Update(const Camera& camera) {
         // ワールド行列の作成
-        Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
+        worldMatrix_ = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
         
         // WVP行列の計算 (World * ViewProjection)
-        Matrix4x4 wvpMatrix = worldMatrix * camera.GetViewProjectionMatrix();
+        Matrix4x4 wvpMatrix = worldMatrix_ * camera.GetViewProjectionMatrix();
 
-        wvpData_->World = worldMatrix;
+        wvpData_->World = worldMatrix_;
         wvpData_->WVP = wvpMatrix;
     }
 
