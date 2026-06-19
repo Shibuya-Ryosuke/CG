@@ -31,5 +31,8 @@ private:
 	Player* player_ = nullptr;
 
 	// カメラ
+	RyoEngine::Camera* camera_ = nullptr;
 	RyoEngine::DebugCamera* debugCamera_ = nullptr;
+
+	bool isDebug_ = true;
 };

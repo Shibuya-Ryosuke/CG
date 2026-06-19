@@ -6,6 +6,8 @@ using namespace RyoEngine;
 GameScene::GameScene(){}
 GameScene::~GameScene() {
 	delete player_;
+	delete debugCamera_;
+	delete camera_;
 }
 
 void GameScene::Initialize() {
@@ -13,6 +15,8 @@ void GameScene::Initialize() {
 	player_ = new Player();
 	player_->Initialize();
 
+	debugCamera_->Initialize();
+	camera_->Initialize();
 }
 
 void GameScene::Update() {
