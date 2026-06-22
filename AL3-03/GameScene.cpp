@@ -18,7 +18,6 @@ void GameScene::Initialize() {
 
 	// 軸生成
 	axisIndicator_ = new AxisIndicator();
-	axisIndicator_->Initialize();
 	axisIndicator_->ToggleVisible();
 
 	debugCamera_ = new DebugCamera();
@@ -36,7 +35,7 @@ void GameScene::Update() {
 	}
 
 	if (!debugCamera_->GetIsAvailable()) {
-		if (Input::TriggerKey(DIK_SPACE)) {
+		if (Input::TriggerKey(DIK_C)) {
 			debugCamera_->ToggleIsAvailable();
 		}
 		camera_->Update();
@@ -46,7 +45,7 @@ void GameScene::Update() {
 		player_->Update(*camera_);
 
 	} else {
-		if (Input::TriggerKey(DIK_SPACE)) {
+		if (Input::TriggerKey(DIK_C)) {
 			debugCamera_->ToggleIsAvailable();
 		}
 		debugCamera_->Update();

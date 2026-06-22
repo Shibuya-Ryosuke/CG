@@ -10,19 +10,40 @@ void Player::Initialize() {
 }
 
 void Player::Update(DebugCamera& debugCamera) {
+	Rotate();
 	Translate();
+	Attack();
 
 	// 更新
 	model_->Update(debugCamera);
+	
+	// 弾更新
+	if (bullet_) {
+		bullet_->Update(debugCamera);
+	}
 }
 
 void Player::Update(Camera& camera) {
+	Rotate();
 	Translate();
+	Attack();
+
+	// 更新
 	model_->Update(camera);
+	
+	// 弾更新
+	if (bullet_) {
+		bullet_->Update(camera);
+	}
 }
 
 void Player::Draw() {
 	model_->Draw();
+
+	// 弾描画
+	if (bullet_) {
+		bullet_->Draw();
+	}
 }
 
 void Player::Translate() {
@@ -57,6 +78,18 @@ void Player::Translate() {
 
 	// セット
 	model_->SetTranslate(translate);
+}
+
+void Player::Attack() {
+	if (Input::PushKey(DIK_SPACE)) {
+		// 弾を生成し初期化
+		PlayerBullet* newBullet = new PlayerBullet();
+		newBullet->Initialize();
+		newBullet->SetTranslate(model_->GetTranslate());
+
+		// 弾を登録
+		bullet_ = newBullet;
+	}
 }
 
 void Player::Rotate() {

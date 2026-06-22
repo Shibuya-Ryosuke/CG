@@ -3,7 +3,7 @@
 using namespace RyoEngine;
 
 void PlayerBullet::Initialize() {
-	model_ = Model::Create("resources/playerBullet.obj");
+	model_ = Model::Create("resources/AL3-03/playerBullet.obj");
 	model_->SetTex("resources/a.png");
 }
 

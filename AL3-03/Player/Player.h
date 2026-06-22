@@ -1,5 +1,6 @@
 #pragma once
 #include "../../Original/RyoEngine.h"
+#include "../PlayerBullet/PlayerBullet.h"
 
 /// <summary>
 /// 自キャラ
@@ -29,12 +30,25 @@ public:
 	void Draw();
 
 private:
-
-	void Translate();
+	/// <summary>
+	/// 回転
+	/// </summary>
 	void Rotate();
+	/// <summary>
+	/// 移動
+	/// </summary>
+	void Translate();
+
+	/// <summary>
+	/// 攻撃
+	/// </summary>
 	void Attack();
+
+private:
 	// モデル
 	RyoEngine::Model* model_ = nullptr;
+	// 弾
+	PlayerBullet* bullet_ = nullptr;
 
 	// キャラクターの移動速さ
 	static constexpr float kCharacterSpeed_ = 0.2f;
