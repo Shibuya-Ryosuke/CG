@@ -1,6 +1,7 @@
 #pragma once
 #include "../Original/RyoEngine.h"
 #include "Player/Player.h"
+#include "AxisIndicator/AxisIndicator.h"
 
 /// <summary>
 /// 統括
@@ -29,6 +30,9 @@ public:
 private:
 	// 自キャラ
 	Player* player_ = nullptr;
+
+	// 軸
+	AxisIndicator* axisIndicator_ = nullptr;
 
 	// カメラ
 	RyoEngine::Camera* camera_ = nullptr;
