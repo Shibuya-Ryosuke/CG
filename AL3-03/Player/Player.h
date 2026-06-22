@@ -29,14 +29,19 @@ public:
 	void Draw();
 
 private:
+
+	void Translate();
+	void Rotate();
+	void Attack();
 	// モデル
 	RyoEngine::Model* model_ = nullptr;
 
 	// キャラクターの移動速さ
-	static constexpr float kCharacterSpeed = 0.2f;
-
+	static constexpr float kCharacterSpeed_ = 0.2f;
+	// 回転速さ
+	static constexpr float kRotSpeed_ = 0.02f;
 	// 移動限界座標
-	static constexpr Vector2 kMoveLimit{
+	static constexpr Vector2 kMoveLimit_{
 		.x = 30.0f,
 		.y = 15.0f
 	};

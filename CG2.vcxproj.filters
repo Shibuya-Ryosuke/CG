@@ -43,6 +43,9 @@
     <Filter Include="AL3-03\AxisIndicator">
       <UniqueIdentifier>{22517eb4-d9d6-4cf5-8450-ec790f39183a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AL3-03\PlayerBullet">
+      <UniqueIdentifier>{cc237960-45c5-42e1-b3be-85ae8545b893}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Original\Loader\ModelLoader.cpp">
@@ -137,6 +140,9 @@
     </ClCompile>
     <ClCompile Include="AL3-03\AxisIndicator\AxisIndicator.cpp">
       <Filter>AL3-03\AxisIndicator</Filter>
+    </ClCompile>
+    <ClCompile Include="AL3-03\PlayerBullet\PlayerBullet.cpp">
+      <Filter>AL3-03\PlayerBullet</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -250,6 +256,9 @@
     </ClInclude>
     <ClInclude Include="AL3-03\AxisIndicator\AxisIndicator.h">
       <Filter>AL3-03\AxisIndicator</Filter>
+    </ClInclude>
+    <ClInclude Include="AL3-03\PlayerBullet\PlayerBullet.h">
+      <Filter>AL3-03\PlayerBullet</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -10,60 +10,27 @@ void Player::Initialize() {
 }
 
 void Player::Update(DebugCamera& debugCamera) {
-	// 座標取得
-	Transform transform{
-		.scale = model_->GetScale(),
-		.rotate = model_->GetRotate(),
-		.translate = model_->GetTranslate()
-	};
-
-	// Imgui
-	ImGui::Begin("player");
-	ImGui::DragFloat3("translate", &transform.translate.x, 0.1f, -1000.0f, 1000.0f);
-	ImGui::End();
-
-	// キャラクターの移動ベクトル
-	Vector3 move{};
-
-	// 押し方向で移動ベクトルを変更 (左右)
-	if (Input::PushKey(DIK_LEFT)) {
-		move.x -= kCharacterSpeed;
-	} else if (Input::PushKey(DIK_RIGHT)) {
-		move.x += kCharacterSpeed;
-	}
-	// 押した方向で移動ベクトルを変更 (上下)
-	if (Input::PushKey(DIK_UP)) {
-		move.y += kCharacterSpeed;
-	} else if (Input::PushKey(DIK_DOWN)) {
-		move.y -= kCharacterSpeed;
-	}
-
-	// 移動
-	transform.translate += move;
-	// 移動制限
-	transform.translate.x = std::clamp(transform.translate.x, -kMoveLimit.x, kMoveLimit.x);
-	transform.translate.y = std::clamp(transform.translate.y, -kMoveLimit.y, kMoveLimit.y);
-
-	// セット
-	model_->SetScale(transform.scale);
-	model_->SetRotate(transform.rotate);
-	model_->SetTranslate(transform.translate);
+	Translate();
 
 	// 更新
 	model_->Update(debugCamera);
 }
 
 void Player::Update(Camera& camera) {
-	// 座標取得
-	Transform transform{
-		.scale = model_->GetScale(),
-		.rotate = model_->GetRotate(),
-		.translate = model_->GetTranslate()
-	};
+	Translate();
+	model_->Update(camera);
+}
+
+void Player::Draw() {
+	model_->Draw();
+}
+
+void Player::Translate() {
+	Vector3 translate = model_->GetTranslate();
 
 	// Imgui
 	ImGui::Begin("player");
-	ImGui::DragFloat3("translate", &transform.translate.x, 0.1f, -1000.0f, 1000.0f);
+	ImGui::DragFloat3("translate", &translate.x, 0.1f, -1000.0f, 1000.0f);
 	ImGui::End();
 
 	// キャラクターの移動ベクトル
@@ -71,31 +38,37 @@ void Player::Update(Camera& camera) {
 
 	// 押し方向で移動ベクトルを変更 (左右)
 	if (Input::PushKey(DIK_LEFT)) {
-		move.x -= kCharacterSpeed;
+		move.x -= kCharacterSpeed_;
 	} else if (Input::PushKey(DIK_RIGHT)) {
-		move.x += kCharacterSpeed;
+		move.x += kCharacterSpeed_;
 	}
 	// 押した方向で移動ベクトルを変更 (上下)
 	if (Input::PushKey(DIK_UP)) {
-		move.y += kCharacterSpeed;
+		move.y += kCharacterSpeed_;
 	} else if (Input::PushKey(DIK_DOWN)) {
-		move.y -= kCharacterSpeed;
+		move.y -= kCharacterSpeed_;
 	}
 
 	// 移動
-	transform.translate += move;
+	translate += move;
 	// 移動制限
-	transform.translate.x = std::clamp(transform.translate.x, -kMoveLimit.x, kMoveLimit.x);
-	transform.translate.y = std::clamp(transform.translate.y, -kMoveLimit.y, kMoveLimit.y);
+	translate.x = std::clamp(translate.x, -kMoveLimit_.x, kMoveLimit_.x);
+	translate.y = std::clamp(translate.y, -kMoveLimit_.y, kMoveLimit_.y);
 
 	// セット
-	model_->SetScale(transform.scale);
-	model_->SetRotate(transform.rotate);
-	model_->SetTranslate(transform.translate);
-
-	model_->Update(camera);
+	model_->SetTranslate(translate);
 }
 
-void Player::Draw() {
-	model_->Draw();
+void Player::Rotate() {
+	// 回転取得
+	Vector3 rotate = model_->GetRotate();
+
+	if (Input::PushKey(DIK_A)) {
+		rotate.y -= kRotSpeed_;
+	} else if (Input::PushKey(DIK_D)) {
+		rotate.y += kRotSpeed_;
+	}
+
+	// セット
+	model_->SetRotate(rotate);
 }
