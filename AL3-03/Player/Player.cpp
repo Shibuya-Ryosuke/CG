@@ -4,6 +4,14 @@
 
 using namespace RyoEngine;
 
+Player::~Player() {
+	// bulletの開放
+	for (PlayerBullet* bullet : bullets_) {
+		delete bullet;
+	}
+	bullets_.clear();
+}
+
 void Player::Initialize() {
 	model_ = Model::Create("resources/AL3-03/player.obj");
 	model_->SetTex("resources/flower.png");
@@ -18,8 +26,8 @@ void Player::Update(DebugCamera& debugCamera) {
 	model_->Update(debugCamera);
 	
 	// 弾更新
-	if (bullet_) {
-		bullet_->Update(debugCamera);
+	for (PlayerBullet * bullet : bullets_) {
+		bullet->Update(debugCamera);
 	}
 }
 
@@ -32,8 +40,8 @@ void Player::Update(Camera& camera) {
 	model_->Update(camera);
 	
 	// 弾更新
-	if (bullet_) {
-		bullet_->Update(camera);
+	for (PlayerBullet* bullet : bullets_) {
+		bullet->Update(camera);
 	}
 }
 
@@ -41,8 +49,8 @@ void Player::Draw() {
 	model_->Draw();
 
 	// 弾描画
-	if (bullet_) {
-		bullet_->Draw();
+	for (PlayerBullet* bullet : bullets_) {
+		bullet->Draw();
 	}
 }
 
@@ -82,18 +90,16 @@ void Player::Translate() {
 
 void Player::Attack() {
 	if (Input::TriggerKey(DIK_SPACE)) {
-		if (bullet_) {
-			delete bullet_;
-			bullet_ = nullptr;
-		}
+		// 自キャラの座標をコピー
+		Vector3 position = model_->GetTranslate();
 
-		// 弾を生成し初期化
+		// 弾を生成し、初期化
 		PlayerBullet* newBullet = new PlayerBullet();
 		newBullet->Initialize();
-		newBullet->SetTranslate(model_->GetTranslate());
+		newBullet->SetTranslate(position);
 
 		// 弾を登録
-		bullet_ = newBullet;
+		bullets_.push_back(newBullet);
 	}
 }
 

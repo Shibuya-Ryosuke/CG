@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Original/RyoEngine.h"
 #include "../PlayerBullet/PlayerBullet.h"
+#include <list>
 
 /// <summary>
 /// 自キャラ
@@ -8,7 +9,7 @@
 class Player {
 public:
 	Player() = default;
-	~Player() = default;
+	~Player();
 	/// <summary>
 	/// 初期化
 	/// </summary>
@@ -48,7 +49,8 @@ private:
 	// モデル
 	RyoEngine::Model* model_ = nullptr;
 	// 弾
-	PlayerBullet* bullet_ = nullptr;
+	std::list<PlayerBullet*> bullets_;
+
 
 	// キャラクターの移動速さ
 	static constexpr float kCharacterSpeed_ = 0.2f;

@@ -5,6 +5,7 @@ using namespace RyoEngine;
 void PlayerBullet::Initialize() {
 	model_ = Model::Create("resources/AL3-03/playerBullet.obj");
 	model_->SetTex("resources/a.png");
+	model_->SetColor({ 0.0f,0.0f,0.0f,1.0f });
 }
 
 void PlayerBullet::Update(const RyoEngine::Camera& camera) {
