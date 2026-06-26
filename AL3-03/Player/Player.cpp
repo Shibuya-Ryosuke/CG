@@ -81,7 +81,12 @@ void Player::Translate() {
 }
 
 void Player::Attack() {
-	if (Input::PushKey(DIK_SPACE)) {
+	if (Input::TriggerKey(DIK_SPACE)) {
+		if (bullet_) {
+			delete bullet_;
+			bullet_ = nullptr;
+		}
+
 		// 弾を生成し初期化
 		PlayerBullet* newBullet = new PlayerBullet();
 		newBullet->Initialize();

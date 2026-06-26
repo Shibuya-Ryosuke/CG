@@ -2,6 +2,9 @@
 using namespace RyoEngine;
 
 AxisIndicator::AxisIndicator() {
+	Initialize();
+}
+void AxisIndicator::Initialize() {
 	isVisible_ = false;
 	model_ = Model::Create("resources/AL3-03/axisIndicator.obj");
 	light_.color = { 1.0f,1.0f,1.0f,1.0f };
@@ -9,9 +12,6 @@ AxisIndicator::AxisIndicator() {
 	light_.intensity = 10.0f;
 	model_->SetScale({ 6.0f,6.0f,6.0f });
 	model_->SetDirectionalLight(light_);
-}
-void AxisIndicator::Initialize() {
-	AxisIndicator();
 }
 
 void AxisIndicator::Update(RyoEngine::Camera& camera) {
