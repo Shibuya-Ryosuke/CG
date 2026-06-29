@@ -28,7 +28,6 @@ void GameScene::Initialize() {
 	debugCamera_->ToggleIsAvailable();
 	debugCamera_->SetTranslate({ debugCamera_->GetTranslate().x,debugCamera_->GetTranslate().y, -80.0f });
 
-
 	camera_ = new Camera();
 	camera_->SetTranslate({ camera_->GetTranslate().x,camera_->GetTranslate().y, -80.0f });
 }
