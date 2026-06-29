@@ -15,13 +15,19 @@ void Enemy::Initialize(const Vector3& position, const Vector3& velocity) {
 	velocity_ = velocity;
 }
 
+// staticで宣言したメンバ関数ポインタテーブルの実体
+void (Enemy::* Enemy::spFuncTable[])() = {
+	&Enemy::PhaseApproach,  // 要素番号0
+	&Enemy::PhaseLeave      // 要素番号1
+};
+
 void Enemy::Update(RyoEngine::Camera& camera) {
-	UpdatePhase();
+	(this->*spFuncTable[static_cast<size_t>(phase_)])();
 	model_->Update(camera);
 }
 
 void Enemy::Update(RyoEngine::DebugCamera& debugCamera) {
-	UpdatePhase();
+	(this->*spFuncTable[static_cast<size_t>(phase_)])();
 	model_->Update(debugCamera);
 }
 
@@ -50,16 +56,4 @@ void Enemy::PhaseLeave() {
 	leaveVelocity *= kLeaveSpeedRate_;
 	// 移動
 	model_->SetTranslate(model_->GetTranslate() + leaveVelocity);
-}
-
-void Enemy::UpdatePhase() {
-	switch (phase_) {
-	case Phase::Approach:
-		PhaseApproach();
-		break;
-
-	case Phase::Leave:
-		PhaseLeave();
-		break;
-	}
 }

@@ -25,7 +25,9 @@ public:
 private:
 	void PhaseApproach();
 	void PhaseLeave();
-	void UpdatePhase();
+
+	// メンバ関数ポインタのテーブル
+	static void (Enemy::*spFuncTable[])();
 
 private:
 	// 自身
