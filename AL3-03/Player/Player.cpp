@@ -1,5 +1,6 @@
 #include "Player.h"
 #include "../../Original/Externals/imgui/imgui.h"
+#include "../Math.h"
 #include <algorithm>
 
 using namespace RyoEngine;
@@ -18,13 +19,22 @@ void Player::Initialize() {
 }
 
 void Player::Update(DebugCamera& debugCamera) {
+	// デスフラグの立った弾を削除
+	bullets_.remove_if([](PlayerBullet* bullet) {
+		if (bullet->IsDead()) {
+			delete bullet;
+			return true;
+		}
+		return false;
+	});
+
+	// 各種処理
 	Rotate();
 	Translate();
 	Attack();
 
 	// 更新
 	model_->Update(debugCamera);
-	
 	// 弾更新
 	for (PlayerBullet * bullet : bullets_) {
 		bullet->Update(debugCamera);
@@ -32,14 +42,19 @@ void Player::Update(DebugCamera& debugCamera) {
 }
 
 void Player::Update(Camera& camera) {
+	bullets_.remove_if([](PlayerBullet* bullet) {
+		if (bullet->IsDead()) {
+			delete bullet;
+			return true;
+		}
+		return false;
+	});
+
 	Rotate();
 	Translate();
 	Attack();
 
-	// 更新
 	model_->Update(camera);
-	
-	// 弾更新
 	for (PlayerBullet* bullet : bullets_) {
 		bullet->Update(camera);
 	}
@@ -93,11 +108,14 @@ void Player::Attack() {
 		// 自キャラの座標をコピー
 		Vector3 position = model_->GetTranslate();
 
-		// 弾を生成し、初期化
+		// 弾を生成
 		PlayerBullet* newBullet = new PlayerBullet();
-		newBullet->Initialize();
-		newBullet->SetTranslate(position);
-
+		// 弾の速度
+		Vector3 velocity(0, 0, newBullet->GetBulletSpeed());
+		// 速度ベクトルを自機の向きに合わせて回転させる
+		velocity = TransformNormal(velocity, model_->GetWorldMatrix());
+		// 初期化
+		newBullet->Initialize(position,velocity);
 		// 弾を登録
 		bullets_.push_back(newBullet);
 	}

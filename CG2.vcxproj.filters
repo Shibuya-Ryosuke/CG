@@ -260,6 +260,9 @@
     <ClInclude Include="AL3-03\PlayerBullet\PlayerBullet.h">
       <Filter>AL3-03\PlayerBullet</Filter>
     </ClInclude>
+    <ClInclude Include="AL3-03\Math.h">
+      <Filter>AL3-03</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Sprite\Sprite.hlsli">
