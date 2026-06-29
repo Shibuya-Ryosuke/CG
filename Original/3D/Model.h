@@ -19,8 +19,17 @@ namespace RyoEngine {
 
         void Draw();
 
+        /// <summary>
+        /// モデルの作成 (new代わりに使用)
+        /// </summary>
+        /// <param name="filePath">objファイルまでのファイルパス</param>
+        /// <returns></returns>
         static Model* Create(const std::string& filePath);
 
+        /// <summary>
+        /// モデルの作成 (代入・書き換え時に使用)
+        /// </summary>
+        /// <param name="filePath">objファイルまでのファイルパス</param>
         void CreateModel(const std::string& filePath);
 
         void CreateDirectionalLight();
