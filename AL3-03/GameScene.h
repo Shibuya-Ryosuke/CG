@@ -1,6 +1,7 @@
 #pragma once
 #include "../Original/RyoEngine.h"
 #include "Player/Player.h"
+#include "Enemy/Enemy.h"
 #include "AxisIndicator/AxisIndicator.h"
 
 /// <summary>
@@ -30,7 +31,8 @@ public:
 private:
 	// 自キャラ
 	Player* player_ = nullptr;
-
+	// 敵
+	Enemy* enemy_ = nullptr;
 	// 軸
 	AxisIndicator* axisIndicator_ = nullptr;
 

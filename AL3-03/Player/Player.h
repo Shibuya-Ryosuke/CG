@@ -53,7 +53,7 @@ private:
 
 
 	// キャラクターの移動速さ
-	static constexpr float kCharacterSpeed_ = 0.2f;
+	static constexpr float kMoveSpeed_ = 0.2f;
 	// 回転速さ
 	static constexpr float kRotSpeed_ = 0.02f;
 	// 移動限界座標

@@ -46,6 +46,9 @@
     <Filter Include="AL3-03\PlayerBullet">
       <UniqueIdentifier>{cc237960-45c5-42e1-b3be-85ae8545b893}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AL3-03\Enemy">
+      <UniqueIdentifier>{9cc09526-30fa-4efa-9ddb-df0d7420021c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Original\Loader\ModelLoader.cpp">
@@ -143,6 +146,9 @@
     </ClCompile>
     <ClCompile Include="AL3-03\PlayerBullet\PlayerBullet.cpp">
       <Filter>AL3-03\PlayerBullet</Filter>
+    </ClCompile>
+    <ClCompile Include="AL3-03\Enemy\Enemy.cpp">
+      <Filter>AL3-03\Enemy</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -262,6 +268,9 @@
     </ClInclude>
     <ClInclude Include="AL3-03\Math.h">
       <Filter>AL3-03</Filter>
+    </ClInclude>
+    <ClInclude Include="AL3-03\Enemy\Enemy.h">
+      <Filter>AL3-03\Enemy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

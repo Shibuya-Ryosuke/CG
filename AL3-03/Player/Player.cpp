@@ -14,8 +14,8 @@ Player::~Player() {
 }
 
 void Player::Initialize() {
-	model_ = Model::Create("resources/AL3-03/player.obj");
-	model_->SetTex("resources/flower.png");
+	model_ = Model::Create("resources/AL3-03/player/player.obj");
+	model_->SetTex("resources/AL3-03/player/player.png");
 }
 
 void Player::Update(DebugCamera& debugCamera) {
@@ -82,15 +82,15 @@ void Player::Translate() {
 
 	// 押し方向で移動ベクトルを変更 (左右)
 	if (Input::PushKey(DIK_LEFT)) {
-		move.x -= kCharacterSpeed_;
+		move.x -= kMoveSpeed_;
 	} else if (Input::PushKey(DIK_RIGHT)) {
-		move.x += kCharacterSpeed_;
+		move.x += kMoveSpeed_;
 	}
 	// 押した方向で移動ベクトルを変更 (上下)
 	if (Input::PushKey(DIK_UP)) {
-		move.y += kCharacterSpeed_;
+		move.y += kMoveSpeed_;
 	} else if (Input::PushKey(DIK_DOWN)) {
-		move.y -= kCharacterSpeed_;
+		move.y -= kMoveSpeed_;
 	}
 
 	// 移動

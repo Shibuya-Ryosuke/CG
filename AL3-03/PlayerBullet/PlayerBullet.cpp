@@ -3,8 +3,8 @@
 using namespace RyoEngine;
 
 void PlayerBullet::Initialize(const Vector3& position, const Vector3& velocity) {
-	model_ = Model::Create("resources/AL3-03/playerBullet.obj");
-	model_->SetTex("resources/a.png");
+	model_ = Model::Create("resources/AL3-03/playerBullet/playerBullet.obj");
+	model_->SetTex("resources/AL3-03/playerBullet/playerBullet.png");
 	model_->SetColor({ 0.0f,0.0f,0.0f,1.0f });
 
 	model_->SetTranslate(position);
