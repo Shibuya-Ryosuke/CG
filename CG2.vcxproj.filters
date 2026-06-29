@@ -272,6 +272,9 @@
     <ClInclude Include="AL3-03\Enemy\Enemy.h">
       <Filter>AL3-03\Enemy</Filter>
     </ClInclude>
+    <ClInclude Include="AL3-03\Enemy\EnemyState.h">
+      <Filter>AL3-03\Enemy</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Sprite\Sprite.hlsli">
