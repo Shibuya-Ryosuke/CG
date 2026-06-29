@@ -6,6 +6,12 @@
 /// </summary>
 class Enemy {
 public:
+	// 行動フェーズ
+	enum class Phase {
+		Approach,  // 接近する
+		Leave,     // 離脱する
+	};
+
 	Enemy() = default;
 	~Enemy();
 
@@ -17,11 +23,22 @@ public:
 	float GetMoveSpeed() { return kMoveSpeed_; }
 
 private:
+	void PhaseApproach();
+	void PhaseLeave();
+	void UpdatePhase();
+
+private:
 	// 自身
 	RyoEngine::Model* model_ = nullptr;
+	// フェーズ
+	Phase phase_ = Phase::Approach;
 
 	// 移動速度
 	static constexpr float kMoveSpeed_ = 0.1f;
+	// 接近フェーズ時の速度倍率
+	static constexpr float kApproachSpeedRate_ = 1.0f;
+	// 離脱フェーズ時の速度倍率
+	static constexpr float kLeaveSpeedRate_ = 1.8f;
 
 	// 速度
 	Vector3 velocity_{};
