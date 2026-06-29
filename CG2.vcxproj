@@ -62,6 +62,7 @@
   <ItemGroup>
     <ClInclude Include="AL3-03\AxisIndicator\AxisIndicator.h" />
     <ClInclude Include="AL3-03\Enemy\Enemy.h" />
+    <ClInclude Include="AL3-03\Enemy\EnemyState.h" />
     <ClInclude Include="AL3-03\GameScene.h" />
     <ClInclude Include="AL3-03\Math.h" />
     <ClInclude Include="AL3-03\PlayerBullet\PlayerBullet.h" />

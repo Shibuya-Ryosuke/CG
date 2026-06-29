@@ -1,17 +1,14 @@
 #pragma once
 #include "../../Original/RyoEngine.h"
 
+class IEnemyState;
+
 /// <summary>
 /// 敵
 /// </summary>
 class Enemy {
 public:
-	// 行動フェーズ
-	enum class Phase {
-		Approach,  // 接近する
-		Leave,     // 離脱する
-	};
-
+	
 	Enemy() = default;
 	~Enemy();
 
@@ -20,20 +17,23 @@ public:
 	void Update(RyoEngine::DebugCamera& debugCamera);
 	void Draw();
 
+	void ChangeState(IEnemyState* newState);
+
+	void MoveTranslate(const Vector3& translation); // 移動させる
+	float GetPositionZ() const;                     // Z座標を取得する
+	Vector3 GetVelocity() const { return velocity_; }
+	float GetApproachSpeedRate() const { return kApproachSpeedRate_; }
+	float GetLeaveSpeedRate() const { return kLeaveSpeedRate_; }
 	float GetMoveSpeed() { return kMoveSpeed_; }
 
 private:
-	void PhaseApproach();
-	void PhaseLeave();
-
-	// メンバ関数ポインタのテーブル
-	static void (Enemy::*spFuncTable[])();
+	void UpdateState();
 
 private:
 	// 自身
 	RyoEngine::Model* model_ = nullptr;
-	// フェーズ
-	Phase phase_ = Phase::Approach;
+	// ステート
+	IEnemyState* state_ = nullptr;
 
 	// 移動速度
 	static constexpr float kMoveSpeed_ = 0.1f;
