@@ -2,6 +2,11 @@
 
 using namespace RyoEngine;
 
+Enemy::~Enemy() {
+	delete model_;
+	model_ = nullptr;
+}
+
 void Enemy::Initialize(const Vector3& position, const Vector3& velocity) {
 	model_ = Model::Create("resources/AL3-03/enemy/enemy.obj");
 	model_->SetTex("resources/AL3-03/enemy/enemy.png");

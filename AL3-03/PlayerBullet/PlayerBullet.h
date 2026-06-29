@@ -4,7 +4,7 @@
 class PlayerBullet {
 public:
 	PlayerBullet() = default;
-	~PlayerBullet() = default;
+	~PlayerBullet();
 
 	void Initialize(const Vector3& position, const Vector3& velocity);
 

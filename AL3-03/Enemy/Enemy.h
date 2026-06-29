@@ -7,7 +7,7 @@
 class Enemy {
 public:
 	Enemy() = default;
-	~Enemy() = default;
+	~Enemy();
 
 	void Initialize(const Vector3& position, const Vector3& velocity);
 	void Update(RyoEngine::Camera& camera);

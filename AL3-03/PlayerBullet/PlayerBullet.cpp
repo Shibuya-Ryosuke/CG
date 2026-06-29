@@ -2,6 +2,11 @@
 
 using namespace RyoEngine;
 
+PlayerBullet::~PlayerBullet() {
+	delete model_;
+	model_ = nullptr;
+}
+
 void PlayerBullet::Initialize(const Vector3& position, const Vector3& velocity) {
 	model_ = Model::Create("resources/AL3-03/playerBullet/playerBullet.obj");
 	model_->SetTex("resources/AL3-03/playerBullet/playerBullet.png");

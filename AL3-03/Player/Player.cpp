@@ -11,6 +11,9 @@ Player::~Player() {
 		delete bullet;
 	}
 	bullets_.clear();
+
+	delete model_;
+	model_ = nullptr;
 }
 
 void Player::Initialize() {
