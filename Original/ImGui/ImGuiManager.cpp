@@ -41,6 +41,7 @@ namespace RyoEngine {
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
         ImGui::DockSpaceOverViewport();
+        ImGuizmo::BeginFrame();
     }
 
     void ImGuiManager::EndFrame(ID3D12GraphicsCommandList* commandList) {

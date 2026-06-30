@@ -24,6 +24,7 @@
     <ClCompile Include="Original\Base\WinApp.cpp" />
     <ClCompile Include="Original\Camera\Camera.cpp" />
     <ClCompile Include="Original\Camera\DebugCamera.cpp" />
+    <ClCompile Include="Original\Edit\AnimEdit.cpp" />
     <ClCompile Include="Original\Externals\imgui\GraphEditor.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
@@ -105,6 +106,7 @@
     <ClInclude Include="Original\Base\WinApp.h" />
     <ClInclude Include="Original\Camera\Camera.h" />
     <ClInclude Include="Original\Camera\DebugCamera.h" />
+    <ClInclude Include="Original\Edit\AnimEdit.h" />
     <ClInclude Include="Original\Externals\imgui\GraphEditor.h" />
     <ClInclude Include="Original\Externals\imgui\imconfig.h" />
     <ClInclude Include="Original\Externals\imgui\ImCurveEdit.h" />

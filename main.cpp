@@ -1,6 +1,7 @@
 #include "./Original/RyoEngine.h"
 #ifdef _DEBUG
 #include "Original/ImGui/ImGuiAllInclude.h"
+#include "Original/Edit/AnimEdit.h"
 #endif
 
 using namespace RyoEngine;
@@ -8,6 +9,8 @@ using namespace RyoEngine;
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
+
+    AnimEdit a;
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -17,8 +20,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // -- 更新処理（Update） --
         // ----------------------
-
-
+        
+        a.DrawUI();
 
         // ----------------------
         // ------ 更新終了 -------
