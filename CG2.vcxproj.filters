@@ -117,6 +117,24 @@
     <ClCompile Include="Original\Base\Font.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\GraphEditor.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImCurveEdit.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImGradient.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImGuizmo.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImSequencer.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImVectorEditor.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">
@@ -220,6 +238,30 @@
     </ClInclude>
     <ClInclude Include="Original\Base\Font.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\GraphEditor.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImCurveEdit.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImGradient.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImGuizmo.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImLightRig.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImSequencer.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImVectorEditor.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImZoomSlider.h">
+      <Filter>Externals\imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

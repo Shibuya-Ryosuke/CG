@@ -24,26 +24,64 @@
     <ClCompile Include="Original\Base\WinApp.cpp" />
     <ClCompile Include="Original\Camera\Camera.cpp" />
     <ClCompile Include="Original\Camera\DebugCamera.cpp" />
+    <ClCompile Include="Original\Externals\imgui\GraphEditor.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImCurveEdit.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImGradient.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
+    </ClCompile>
     <ClCompile Include="Original\Externals\imgui\imgui.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImGuizmo.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="Original\Externals\imgui\imgui_demo.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="Original\Externals\imgui\imgui_draw.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="Original\Externals\imgui\imgui_impl_dx12.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="Original\Externals\imgui\imgui_impl_win32.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="Original\Externals\imgui\imgui_tables.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="Original\Externals\imgui\imgui_widgets.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImSequencer.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImVectorEditor.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="Original\Graphics\TextureManager.cpp" />
     <ClCompile Include="Original\ImGui\ImGuiManager.cpp" />
@@ -67,14 +105,22 @@
     <ClInclude Include="Original\Base\WinApp.h" />
     <ClInclude Include="Original\Camera\Camera.h" />
     <ClInclude Include="Original\Camera\DebugCamera.h" />
+    <ClInclude Include="Original\Externals\imgui\GraphEditor.h" />
     <ClInclude Include="Original\Externals\imgui\imconfig.h" />
+    <ClInclude Include="Original\Externals\imgui\ImCurveEdit.h" />
+    <ClInclude Include="Original\Externals\imgui\ImGradient.h" />
     <ClInclude Include="Original\Externals\imgui\imgui.h" />
+    <ClInclude Include="Original\Externals\imgui\ImGuizmo.h" />
     <ClInclude Include="Original\Externals\imgui\imgui_impl_dx12.h" />
     <ClInclude Include="Original\Externals\imgui\imgui_impl_win32.h" />
     <ClInclude Include="Original\Externals\imgui\imgui_internal.h" />
+    <ClInclude Include="Original\Externals\imgui\ImLightRig.h" />
+    <ClInclude Include="Original\Externals\imgui\ImSequencer.h" />
     <ClInclude Include="Original\Externals\imgui\imstb_rectpack.h" />
     <ClInclude Include="Original\Externals\imgui\imstb_textedit.h" />
     <ClInclude Include="Original\Externals\imgui\imstb_truetype.h" />
+    <ClInclude Include="Original\Externals\imgui\ImVectorEditor.h" />
+    <ClInclude Include="Original\Externals\imgui\ImZoomSlider.h" />
     <ClInclude Include="Original\Graphics\TextureManager.h" />
     <ClInclude Include="Original\ImGui\ImGuiManager.h" />
     <ClInclude Include="Original\Input\Input.h" />
