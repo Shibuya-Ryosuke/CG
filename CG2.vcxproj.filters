@@ -253,9 +253,4 @@
       <Filter>リソース ファイル\HLSL\Model</Filter>
     </FxCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="Original\Externals\imgui\LICENSE.txt">
-      <Filter>Externals\imgui</Filter>
-    </Text>
-  </ItemGroup>
 </Project>
