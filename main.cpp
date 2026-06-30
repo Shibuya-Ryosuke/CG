@@ -1,6 +1,6 @@
 #include "./Original/RyoEngine.h"
 #ifdef _DEBUG
-#include "Original/Externals/imgui/imgui.h"
+#include "Original/ImGui/ImGuiAllInclude.h"
 #endif
 
 using namespace RyoEngine;

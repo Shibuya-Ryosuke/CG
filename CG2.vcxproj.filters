@@ -263,6 +263,9 @@
     <ClInclude Include="Original\Externals\imgui\ImZoomSlider.h">
       <Filter>Externals\imgui</Filter>
     </ClInclude>
+    <ClInclude Include="Original\ImGui\ImGuiAllInclude.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Sprite\Sprite.hlsli">

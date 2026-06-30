@@ -122,6 +122,7 @@
     <ClInclude Include="Original\Externals\imgui\ImVectorEditor.h" />
     <ClInclude Include="Original\Externals\imgui\ImZoomSlider.h" />
     <ClInclude Include="Original\Graphics\TextureManager.h" />
+    <ClInclude Include="Original\ImGui\ImGuiAllInclude.h" />
     <ClInclude Include="Original\ImGui\ImGuiManager.h" />
     <ClInclude Include="Original\Input\Input.h" />
     <ClInclude Include="Original\Light\Light.h" />
