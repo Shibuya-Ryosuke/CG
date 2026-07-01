@@ -83,6 +83,8 @@ namespace RyoEngine {
             static_cast<int>(dxCommon_->GetBackBufferCount()),
             dxCommon_->GetBackBufferFormat()
         );
+        // エディタ初期化
+        AnimEdit::Initialize();
 
         // フォント
         fontOutputer_ = new Font();

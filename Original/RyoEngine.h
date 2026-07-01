@@ -19,6 +19,7 @@
 #include "Camera/DebugCamera.h"
 #include "Input/Input.h"
 #include "ImGui/ImGuiManager.h"
+#include "Edit/AnimEdit.h"
 #include <cstdint>
 #include <string>
 #include <format>

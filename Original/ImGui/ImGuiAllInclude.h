@@ -1,5 +1,6 @@
 #pragma once
 
+
 #pragma warning(push)
 
 #pragma warning(disable : 5266)  // 「戻り値の型の'const'修飾子は無効です」 を無視
