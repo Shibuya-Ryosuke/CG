@@ -61,7 +61,8 @@ namespace RyoEngine {
 			}
 
 			// DelPoint の第2引数も int に変更
-			///void DelPoint(size_t curveIndex, int pointIndex) override {}
+			// void DelPoint(size_t curveIndex, size_t pointIndex) override {}
+			// 存在しない可能性あり
 		};
 
 		CurveDelegate m_CurveDelegate;
