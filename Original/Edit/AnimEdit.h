@@ -14,15 +14,19 @@ namespace RyoEngine {
 #ifdef _DEBUG
 		static void Initialize();
 		static void Update();
-		static void WindowManager(AnimEdit& instance);
-		static void DrawWindow(AnimEdit& instance);
+		static void WindowManager();
 		static void DrawUI();
+
+		static void SaveSettings(const char* filePath = "resources/json/editor/animationEditor.json");
+		static void LoadSettings(const char* filePath = "resources/json/editor/animationEditor.json");
 #else
 		static void Initialize(){}
 		static void Update(){}
 		static void WindowManager();
-		static void DrawWindow();
 		static void DrawUI(){}
+
+		static void SaveSettings(const char* filePath = "resources/json/editor/animationEditor.json") { (void)filePath; }
+		static void LoadSettings(const char* filePath = "resources/json/editor/animationEditor.json") { (void)filePath; }
 #endif
 
 

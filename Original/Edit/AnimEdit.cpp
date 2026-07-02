@@ -1,17 +1,23 @@
 #include "AnimEdit.h"
+#include "../Base/Logger.h"
+#include <vector>
+#include <string>
+#include <filesystem>
+#include <fstream> 
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 #ifdef _DEBUG
 #include "../ImGui/ImGuiAllInclude.h"
-#include <vector>
-#include <string>
 
 namespace RyoEngine {
 
 	struct AnimEdit::Impl {
 		struct WindowData {
-			int32_t id;
-			std::string name;
-			bool is_open;
+			int32_t id = 0;
+			std::string name = "";
+			bool is_open = false;
 			bool request_focus = false;
 		};
 
@@ -87,7 +93,7 @@ namespace RyoEngine {
 		
 		
 
-		WindowManager(instance);
+		WindowManager();
 		
 
 		ImGui::End();
@@ -117,7 +123,8 @@ namespace RyoEngine {
 		
 	}
 
-	void AnimEdit::WindowManager(AnimEdit& instance) {
+	void AnimEdit::WindowManager() {
+		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
 
 		// 新規ウィンドウの作成ボタン
@@ -137,7 +144,20 @@ namespace RyoEngine {
 
 			std::string name = "新規ウィンドウ " + std::to_string(allocated_id);
 			impl->m_SubWindows.push_back({ allocated_id, name, true });
+
 		}
+
+		// セーブ
+		ImGui::SameLine();
+		if (ImGui::Button("設定を保存")) {
+			SaveSettings();
+		}
+		// ロード
+		ImGui::SameLine();
+		if (ImGui::Button("設定を読み込み")) {
+			LoadSettings();
+		}
+
 		ImGui::Separator();
 
 		// 作成したウィンドウリストの一覧
@@ -249,6 +269,85 @@ namespace RyoEngine {
             ImCurveEdit::Edit(impl->m_CurveDelegate, size, 1);
 		}
 		ImGui::End();
+	}
+
+	void AnimEdit::SaveSettings(const char* filePath) {
+		AnimEdit& instance = GetInstance();
+		Impl* impl = instance.m_pImpl;
+
+		// フォルダ階層がない場合自動作成
+		std::filesystem::path p(filePath);
+		if (p.has_parent_path()) {
+			std::filesystem::create_directories(p.parent_path());
+		}
+
+		json j = json::array();
+		for (const auto& w : impl->m_SubWindows) {
+			json window_json;
+			window_json["id"] = w.id;
+			window_json["name"] = w.name;
+			// 要望通り、次回ロード時は閉じたいので false を保存（またはロード側で強制制御）
+			window_json["is_open"] = false;
+			j.push_back(window_json);
+		}
+
+		std::ofstream file(filePath);
+		if (file.is_open()) {
+			file << j.dump(4); // インデント4スペースで綺麗に出力
+
+			// セーブ成功
+			std::string successMes = "[Animation Editor]\nSave Successed.\nPath: " + std::string(filePath);
+			Logger::LogSuccess(successMes);
+		} else {
+			// セーブ失敗
+			std::string failMes = "[Animation Editor]\nSave failed.\nFailed Path: " + std::string(filePath);
+			Logger::LogWarning(failMes);
+		}
+	}
+
+	void AnimEdit::LoadSettings(const char* filePath) {
+		std::ifstream file(filePath);
+		if (!file.is_open()) {
+			std::string failMes = "[Animation Editor]\nLoad failed. File could not be opened.\nPath: " + std::string(filePath);
+			Logger::LogWarning(failMes);
+			return; // ファイルがなければ何もしない
+		}
+
+		json j;
+		try {
+			file >> j;
+		}
+		catch (const json::parse_error& e) {
+			// 【JSONのパースに失敗した場合】
+			std::string failMes = "[Animation Editor]\nLoad failed. JSON Parse Error: " + std::string(e.what()) + "\nPath: " + std::string(filePath);
+			Logger::LogWarning(failMes);
+			return; // JSONのパースエラー時は安全のため中断
+		}
+
+		AnimEdit& instance = GetInstance();
+		Impl* impl = instance.m_pImpl;
+
+		// 既存のリストをクリアして上書き
+		impl->m_SubWindows.clear();
+		impl->m_SelectedWindowIdx = -1;
+
+		if (j.is_array()) {
+			for (const auto& item : j) {
+				if (item.contains("id") && item.contains("name")) {
+					Impl::WindowData w;
+					w.id = item["id"].get<int32_t>();
+					w.name = item["name"].get<std::string>();
+					// 「とりあえず閉じた状態にしておいて」のご要望通り、一律 false に設定
+					w.is_open = false;
+					w.request_focus = false;
+					impl->m_SubWindows.push_back(w);
+				}
+			}
+		}
+		// 【ロード成功】
+	    // すべての処理が正常に終わったら成功ログを出す
+		std::string successMes = "[Animation Editor]\nLoad Successed.\nPath: " + std::string(filePath);
+		Logger::LogSuccess(successMes);
 	}
 }
 
