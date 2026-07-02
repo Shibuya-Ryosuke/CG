@@ -13,9 +13,15 @@ namespace RyoEngine {
 
 #ifdef _DEBUG
 		static void Initialize();
+		static void Update();
+		static void WindowManager(AnimEdit& instance);
+		static void DrawWindow(AnimEdit& instance);
 		static void DrawUI();
 #else
 		static void Initialize(){}
+		static void Update(){}
+		static void WindowManager();
+		static void DrawWindow();
 		static void DrawUI(){}
 #endif
 

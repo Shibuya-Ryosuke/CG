@@ -33,6 +33,13 @@ namespace RyoEngine {
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+        ImFontConfig config;
+        config.MergeMode = false;
+
+        ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msgothic.ttc", 13.0f, &config, io.Fonts->GetGlyphRangesJapanese());
+        if (font == nullptr) {
+            assert(font != nullptr);
+        }
         Logger::LogSuccess("ImGuiManager : Initialized\n");
     }
 
