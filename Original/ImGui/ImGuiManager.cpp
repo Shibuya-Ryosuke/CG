@@ -36,9 +36,12 @@ namespace RyoEngine {
         ImFontConfig config;
         config.MergeMode = false;
 
-        ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msgothic.ttc", 13.0f, &config, io.Fonts->GetGlyphRangesJapanese());
+        const char* ttcPath = "C:\\Windows\\Fonts\\msgothic.ttc";
+
+        ImFont* font = io.Fonts->AddFontFromFileTTF(ttcPath, 13.0f, &config, io.Fonts->GetGlyphRangesJapanese());
         if (font == nullptr) {
-            assert(font != nullptr);
+            std::string errorMsg = "Cannot load the ttc file.\nPath searched for: " + std::string(ttcPath);
+            Logger::LogError(errorMsg);
         }
         Logger::LogSuccess("ImGuiManager : Initialized\n");
     }

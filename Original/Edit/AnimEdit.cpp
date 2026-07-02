@@ -97,7 +97,7 @@ namespace RyoEngine {
 			// 【変更点2】×ボタンが押された時は、消去せず「非表示（スキップ）」にするだけに修正
 			if (!impl->m_SubWindows[i].is_open) continue;
 
-			std::string window_title = "Sub Window " +
+			std::string window_title = "新規ウィンドウ " +
 				std::to_string(impl->m_SubWindows[i].id) + "##" + std::to_string(impl->m_SubWindows[i].id);
 
 			if (impl->m_SubWindows[i].request_focus)
@@ -106,7 +106,7 @@ namespace RyoEngine {
 				impl->m_SubWindows[i].request_focus = false;
 			}
 
-			ImGui::SetNextWindowPos(ImVec2(500.0f, 300.0f), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowPos(ImVec2(500.0f, 500.0f), ImGuiCond_FirstUseEver);
 			ImGui::SetNextWindowSize(ImVec2(300.0f, 200.0f), ImGuiCond_FirstUseEver);
 
 			ImGui::Begin(window_title.c_str(), &impl->m_SubWindows[i].is_open);
@@ -121,7 +121,7 @@ namespace RyoEngine {
 		Impl* impl = instance.m_pImpl;
 
 		// 新規ウィンドウの作成ボタン
-		if (ImGui::Button("Create New Window")) {
+		if (ImGui::Button("新規作成")) {
 			int32_t allocated_id = 1;
 			while (true) {
 				bool id_exists = false;
@@ -135,15 +135,15 @@ namespace RyoEngine {
 				allocated_id++;
 			}
 
-			std::string name = "Sub Window " + std::to_string(allocated_id);
+			std::string name = "新規ウィンドウ " + std::to_string(allocated_id);
 			impl->m_SubWindows.push_back({ allocated_id, name, true });
 		}
 		ImGui::Separator();
 
 		// 作成したウィンドウリストの一覧
-		if (ImGui::TreeNode("WindowList")) {
+		if (ImGui::TreeNode("ウィンドウリスト")) {
 			// ドロップダウンのプレビュー文字（何も選択していないときは「選択してください」）
-			std::string preview_text = "Select Window...";
+			std::string preview_text = "ウィンドウを選択";
 			if ((impl->m_SelectedWindowIdx >= 0 && (impl->m_SelectedWindowIdx < (int)impl->m_SubWindows.size()))) {
 				preview_text = impl->m_SubWindows[impl->m_SelectedWindowIdx].name;
 
@@ -177,7 +177,7 @@ namespace RyoEngine {
 
 			// 再表示 (表示済みなら選択させる)
 			ImGui::SameLine();
-			if (ImGui::Button("Open"))
+			if (ImGui::Button("開く"))
 			{
 				if (impl->m_SelectedWindowIdx != -1)
 				{
@@ -191,7 +191,7 @@ namespace RyoEngine {
 			}
 
 			// 選択したウィンドウを削除 (ポップアップ表示)
-			if (ImGui::Button("Destroy"))
+			if (ImGui::Button("削除"))
 			{
 				if (impl->m_SelectedWindowIdx != -1)
 				{

@@ -191,7 +191,7 @@ namespace RyoEngine {
         // ログ
         ImGui::Begin("Log Console");
         // 上部にクリアボタンを配置
-        if (ImGui::Button("Clear Log History")) {
+        if (ImGui::Button("ログの履歴を削除")) {
             RyoEngine::Logger::Clear();
         }
         ImGui::Separator();
