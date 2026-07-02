@@ -1,0 +1,17 @@
+[
+    {
+        "id": 1,
+        "is_open": false,
+        "name": "新規ウィンドウ 1"
+    },
+    {
+        "id": 2,
+        "is_open": false,
+        "name": "新規ウィンドウ 2"
+    },
+    {
+        "id": 3,
+        "is_open": false,
+        "name": "新規ウィンドウ 3"
+    }
+]
