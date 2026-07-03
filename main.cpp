@@ -18,7 +18,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     DebugCamera* debugCamera = new DebugCamera();
 
-
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
