@@ -1,5 +1,6 @@
 #include "AnimEdit.h"
 #include "../Base/Logger.h"
+#include "../3D/Model.h"
 #include <vector>
 #include <string>
 #include <filesystem>
@@ -23,6 +24,8 @@ namespace RyoEngine {
 
 		std::vector<WindowData> m_SubWindows;
 		int32_t m_SelectedWindowIdx = -1;
+
+		std::vector<std::pair<std::string, Model*>> m_pTargetModels;
 
 
 		struct CurveDelegate : public ImCurveEdit::Delegate {
@@ -95,6 +98,7 @@ namespace RyoEngine {
 
 		WindowManager();
 		
+		ModelOperate();
 
 		ImGui::End();
 
@@ -349,6 +353,95 @@ namespace RyoEngine {
 		std::string successMes = "[Animation Editor]\nLoad Successed.\nPath: " + std::string(filePath);
 		Logger::LogSuccess(successMes);
 	}
+
+	void AnimEdit::ModelOperate() {
+	Impl* impl = GetInstance().m_pImpl;
+
+	ImGui::Spacing();
+	// ★ 1. 「登録済みオブジェクト一覧」を大元のTreeNodeExにする（デフォルトで開く設定）
+	if (ImGui::TreeNodeEx("登録済みオブジェクト", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+		if (impl->m_pTargetModels.empty()) {
+			ImGui::Text("操作対象オブジェクト: なし");
+		} else {
+			bool isNoNameTreeOpen = false;
+			bool hasCreatedNoNameTree = false;
+
+			// 登録されているすべてのモデルをループで処理
+			for (size_t i = 0; i < impl->m_pTargetModels.size(); ++i) {
+				const std::string& name = impl->m_pTargetModels[i].first;
+				Model* model = impl->m_pTargetModels[i].second;
+				if (!model) continue;
+
+				ImGui::PushID(static_cast<int>(i));
+
+				if (name == "NoName") {
+					if (!hasCreatedNoNameTree) {
+						isNoNameTreeOpen = ImGui::TreeNodeEx("Models", ImGuiTreeNodeFlags_DefaultOpen);
+						hasCreatedNoNameTree = true;
+					}
+
+					if (isNoNameTreeOpen) {
+						if (ImGui::TreeNodeEx((std::string("Model [") + std::to_string(i) + "]").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+							Vector3 translate = model->GetTranslate();
+							float pos[3] = { translate.x, translate.y, translate.z };
+
+							if (ImGui::DragFloat3("translate", pos, 0.1f)) {
+								model->SetTranslate({ pos[0], pos[1], pos[2] });
+							}
+
+							ImGui::TreePop();
+						}
+					}
+				} else {
+					if (isNoNameTreeOpen) {
+						ImGui::TreePop();
+						isNoNameTreeOpen = false;
+						hasCreatedNoNameTree = false;
+					}
+
+					if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+						Vector3 translate = model->GetTranslate();
+						float pos[3] = { translate.x, translate.y, translate.z };
+
+						if (ImGui::DragFloat3("translate", pos, 0.1f)) {
+							model->SetTranslate({ pos[0], pos[1], pos[2] });
+						}
+
+						ImGui::TreePop();
+					}
+				}
+
+				ImGui::PopID();
+			}
+
+			if (isNoNameTreeOpen) {
+				ImGui::TreePop();
+			}
+		}
+
+		// ★ 大元の「登録済みオブジェクト一覧」のTreePop（if文の中身の一番最後）
+		ImGui::TreePop();
+	}
+}
+
+	void AnimEdit::SetTargetModel(Model* model, const std::string& name) {
+		if (model == nullptr) {
+			Logger::LogWarning("[AnimEdit] (SetTargetModel)\nThe selected Model is nullptr.\n");
+			return;
+		}
+
+		// 重複登録を防ぐチェック
+		auto& models = GetInstance().m_pImpl->m_pTargetModels;
+		// すでに同じポインタが登録されていないかチェック
+		for (const auto& pair : models) {
+			if (pair.second == model) return;
+		}
+		// 名前とポインタのペアを追加
+		models.push_back(std::make_pair(name, model));
+	}
+
+	
 }
 
 #else

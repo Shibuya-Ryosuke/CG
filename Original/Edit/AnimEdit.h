@@ -1,6 +1,9 @@
 #pragma once
+#include <string>
 
 namespace RyoEngine {
+
+	class Model;
 
 	class AnimEdit {
 	public:
@@ -19,6 +22,10 @@ namespace RyoEngine {
 
 		static void SaveSettings(const char* filePath = "resources/json/editor/animationEditor.json");
 		static void LoadSettings(const char* filePath = "resources/json/editor/animationEditor.json");
+
+		static void ModelOperate();
+
+		static void SetTargetModel(Model* model, const std::string& name);
 #else
 		static void Initialize(){}
 		static void Update(){}
@@ -27,6 +34,10 @@ namespace RyoEngine {
 
 		static void SaveSettings(const char* filePath = "resources/json/editor/animationEditor.json") { (void)filePath; }
 		static void LoadSettings(const char* filePath = "resources/json/editor/animationEditor.json") { (void)filePath; }
+
+		static void ModelOperate() {};
+
+		static void SetTargetModel(Model* model, const std::string& name) { (void)model; (void)name; }
 #endif
 
 

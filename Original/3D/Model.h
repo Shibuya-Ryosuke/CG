@@ -24,7 +24,7 @@ namespace RyoEngine {
         /// </summary>
         /// <param name="filePath">objファイルまでのファイルパス</param>
         /// <returns></returns>
-        static Model* Create(const std::string& filePath);
+        static Model* Create(const std::string& filePath, const std::string& name = "NoName");
 
         /// <summary>
         /// モデルの作成 (代入・書き換え時に使用)
