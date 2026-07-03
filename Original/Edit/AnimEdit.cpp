@@ -1,6 +1,7 @@
 #include "AnimEdit.h"
 #include "../Base/Logger.h"
 #include "../3D/Model.h"
+#include "../Easing/Easing.h"
 #include <vector>
 #include <string>
 #include <filesystem>
@@ -20,11 +21,26 @@ namespace RyoEngine {
 			std::string name = "";
 			bool is_open = false;
 			bool request_focus = false;
+
+			// アニメーション管理
+			int32_t maxFrame = 60;        // 全体のフレーム数
+			int32_t currentFrame = 0;    // 現在の再生・編集位置
+
+			// キーフレームひとつあたりのデータ
+			struct KeyFrame {
+				int32_t frame = 0;                   // 何フレーム目か
+				Vector3 value = { 0.0f,0.0f,0.0f };  // その時の座標(今はTranslate。いずれSRTに拡張)
+				EasingType easing = EasingType::Lerp;
+			};
+			// このウィンドウが持つキーフレームたちの可変長配列
+			std::vector<KeyFrame> keyFrames;
 		};
 
+		// ウィンドウ
 		std::vector<WindowData> m_SubWindows;
 		int32_t m_SelectedWindowIdx = -1;
 
+		// モデルたち
 		std::vector<std::pair<std::string, Model*>> m_pTargetModels;
 
 
@@ -102,29 +118,82 @@ namespace RyoEngine {
 
 		ImGui::End();
 
+		// 量産されたサブウィンドウたちの描画ループ
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 
-			// 【変更点2】×ボタンが押された時は、消去せず「非表示（スキップ）」にするだけに修正
 			if (!impl->m_SubWindows[i].is_open) continue;
 
-			std::string window_title = "新規ウィンドウ " +
-				std::to_string(impl->m_SubWindows[i].id) + "##" + std::to_string(impl->m_SubWindows[i].id);
+			// 参照をとりだす
+			auto& window = impl->m_SubWindows[i];
 
-			if (impl->m_SubWindows[i].request_focus)
-			{
+			std::string window_title = "アニメーション編集: " +
+				window.name + "##" + std::to_string(window.id);
+
+			if (window.request_focus) {
 				ImGui::SetNextWindowFocus();
-				impl->m_SubWindows[i].request_focus = false;
+				window.request_focus = false;
 			}
 
 			ImGui::SetNextWindowPos(ImVec2(500.0f, 500.0f), ImGuiCond_FirstUseEver);
-			ImGui::SetNextWindowSize(ImVec2(300.0f, 200.0f), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowSize(ImVec2(350.0f, 200.0f), ImGuiCond_FirstUseEver);
 
-			ImGui::Begin(window_title.c_str(), &impl->m_SubWindows[i].is_open);
-			ImGui::Text("Window ID: %d", impl->m_SubWindows[i].id);
+
+			// サブウィンドウの生成
+			ImGui::Begin(window_title.c_str(), &window.is_open);
+			ImGui::Text("Window ID: %d", window.id);
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// ★【1番】このウィンドウ固有のタイムライン設定を描画！
+			// 全体の長さ
+			if (ImGui::InputInt("Max Frame", &window.maxFrame)) {
+				if (window.maxFrame < 1) window.maxFrame = 1;
+			}
+			if (window.currentFrame > window.maxFrame) {
+				window.currentFrame = window.maxFrame;
+			}
+			// 現在のフレーム位置（自分の maxFrame を最大値にする）
+			ImGui::SliderInt("Current Frame", &window.currentFrame, 0, window.maxFrame);
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// キーフレーム追加UI
+			if (ImGui::Button("Insert Keyframe")) {
+				// すでに同じフレームにキーが存在するかチェック
+				auto it = std::find_if(window.keyFrames.begin(), window.keyFrames.end(),
+					[&](const Impl::WindowData::KeyFrame& k) { return k.frame == window.currentFrame; });
+
+				if (it != window.keyFrames.end()) {
+					// すでに同じフレームにキーがあれば、現在の座標で上書き（今はまだ仮で0リセット）
+					it->value = Vector3{ 0.0f, 0.0f, 0.0f };
+				} else {
+					// 新しいフレームなら、新規追加
+					Impl::WindowData::KeyFrame newKey;
+					newKey.frame = window.currentFrame;
+					newKey.value = Vector3{ 0.0f, 0.0f, 0.0f }; // 今はまだ仮の値
+					newKey.easing = EasingType::Lerp;
+
+					window.keyFrames.push_back(newKey);
+
+					// フレーム順（昇順）に並び替え
+					std::sort(window.keyFrames.begin(), window.keyFrames.end(),
+						[](const Impl::WindowData::KeyFrame& a, const Impl::WindowData::KeyFrame& b) {
+							return a.frame < b.frame;
+						});
+				}
+			}
+			// 登録されてるキーフレームの一覧
+			ImGui::Text("キーフレーム数: %d", static_cast<int>(window.keyFrames.size()));
+			for (size_t k = 0; k < window.keyFrames.size(); ++k) {
+				ImGui::Text("  [%d] Frame: %d", static_cast<int>(k), window.keyFrames[k].frame);
+			}
+
 			ImGui::End();
 		}
-
-		
 	}
 
 	void AnimEdit::WindowManager() {
@@ -290,8 +359,12 @@ namespace RyoEngine {
 			json window_json;
 			window_json["id"] = w.id;
 			window_json["name"] = w.name;
-			// 要望通り、次回ロード時は閉じたいので false を保存（またはロード側で強制制御）
 			window_json["is_open"] = false;
+
+			// ★ セーブデータに項目を追加
+			window_json["max_frame"] = w.maxFrame;
+			window_json["current_frame"] = w.currentFrame;
+
 			j.push_back(window_json);
 		}
 
@@ -341,9 +414,13 @@ namespace RyoEngine {
 					Impl::WindowData w;
 					w.id = item["id"].get<int32_t>();
 					w.name = item["name"].get<std::string>();
-					// 「とりあえず閉じた状態にしておいて」のご要望通り、一律 false に設定
 					w.is_open = false;
 					w.request_focus = false;
+
+					// ★ ロード処理を追加（古いセーブデータでキーがない場合の安全ガード付き）
+					w.maxFrame = item.value("max_frame", 60);
+					w.currentFrame = item.value("current_frame", 0);
+
 					impl->m_SubWindows.push_back(w);
 				}
 			}
@@ -355,34 +432,52 @@ namespace RyoEngine {
 	}
 
 	void AnimEdit::ModelOperate() {
-	Impl* impl = GetInstance().m_pImpl;
+		Impl* impl = GetInstance().m_pImpl;
 
-	ImGui::Spacing();
-	// ★ 1. 「登録済みオブジェクト一覧」を大元のTreeNodeExにする（デフォルトで開く設定）
-	if (ImGui::TreeNodeEx("登録済みオブジェクト", ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::Spacing();
+		// ★ 1. 「登録済みオブジェクト一覧」を大元のTreeNodeExにする（デフォルトで開く設定）
+		if (ImGui::TreeNodeEx("登録済みオブジェクト", ImGuiTreeNodeFlags_DefaultOpen)) {
 
-		if (impl->m_pTargetModels.empty()) {
-			ImGui::Text("操作対象オブジェクト: なし");
-		} else {
-			bool isNoNameTreeOpen = false;
-			bool hasCreatedNoNameTree = false;
+			if (impl->m_pTargetModels.empty()) {
+				ImGui::Text("操作対象オブジェクト: なし");
+			} else {
+				bool isNoNameTreeOpen = false;
+				bool hasCreatedNoNameTree = false;
 
-			// 登録されているすべてのモデルをループで処理
-			for (size_t i = 0; i < impl->m_pTargetModels.size(); ++i) {
-				const std::string& name = impl->m_pTargetModels[i].first;
-				Model* model = impl->m_pTargetModels[i].second;
-				if (!model) continue;
+				// 登録されているすべてのモデルをループで処理
+				for (size_t i = 0; i < impl->m_pTargetModels.size(); ++i) {
+					const std::string& name = impl->m_pTargetModels[i].first;
+					Model* model = impl->m_pTargetModels[i].second;
+					if (!model) continue;
 
-				ImGui::PushID(static_cast<int>(i));
+					ImGui::PushID(static_cast<int>(i));
 
-				if (name == "NoName") {
-					if (!hasCreatedNoNameTree) {
-						isNoNameTreeOpen = ImGui::TreeNodeEx("Models", ImGuiTreeNodeFlags_DefaultOpen);
-						hasCreatedNoNameTree = true;
-					}
+					if (name == "NoName") {
+						if (!hasCreatedNoNameTree) {
+							isNoNameTreeOpen = ImGui::TreeNodeEx("Models", ImGuiTreeNodeFlags_DefaultOpen);
+							hasCreatedNoNameTree = true;
+						}
 
-					if (isNoNameTreeOpen) {
-						if (ImGui::TreeNodeEx((std::string("Model [") + std::to_string(i) + "]").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+						if (isNoNameTreeOpen) {
+							if (ImGui::TreeNodeEx((std::string("Model [") + std::to_string(i) + "]").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+								Vector3 translate = model->GetTranslate();
+								float pos[3] = { translate.x, translate.y, translate.z };
+
+								if (ImGui::DragFloat3("translate", pos, 0.1f)) {
+									model->SetTranslate({ pos[0], pos[1], pos[2] });
+								}
+
+								ImGui::TreePop();
+							}
+						}
+					} else {
+						if (isNoNameTreeOpen) {
+							ImGui::TreePop();
+							isNoNameTreeOpen = false;
+							hasCreatedNoNameTree = false;
+						}
+
+						if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 							Vector3 translate = model->GetTranslate();
 							float pos[3] = { translate.x, translate.y, translate.z };
 
@@ -393,37 +488,21 @@ namespace RyoEngine {
 							ImGui::TreePop();
 						}
 					}
-				} else {
-					if (isNoNameTreeOpen) {
-						ImGui::TreePop();
-						isNoNameTreeOpen = false;
-						hasCreatedNoNameTree = false;
-					}
 
-					if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-						Vector3 translate = model->GetTranslate();
-						float pos[3] = { translate.x, translate.y, translate.z };
-
-						if (ImGui::DragFloat3("translate", pos, 0.1f)) {
-							model->SetTranslate({ pos[0], pos[1], pos[2] });
-						}
-
-						ImGui::TreePop();
-					}
+					ImGui::PopID();
 				}
 
-				ImGui::PopID();
+				if (isNoNameTreeOpen) {
+					ImGui::TreePop();
+				}
 			}
 
-			if (isNoNameTreeOpen) {
-				ImGui::TreePop();
-			}
+			// ★ 大元の「登録済みオブジェクト一覧」のTreePop（if文の中身の一番最後）
+			ImGui::TreePop();
 		}
-
-		// ★ 大元の「登録済みオブジェクト一覧」のTreePop（if文の中身の一番最後）
-		ImGui::TreePop();
 	}
-}
+
+
 
 	void AnimEdit::SetTargetModel(Model* model, const std::string& name) {
 		if (model == nullptr) {

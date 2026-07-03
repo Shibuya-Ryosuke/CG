@@ -24,7 +24,6 @@ namespace RyoEngine {
 		static void LoadSettings(const char* filePath = "resources/json/editor/animationEditor.json");
 
 		static void ModelOperate();
-
 		static void SetTargetModel(Model* model, const std::string& name);
 #else
 		static void Initialize(){}
