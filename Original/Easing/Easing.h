@@ -4,6 +4,7 @@
 namespace RyoEngine {
 
     enum class EasingType : int32_t {
+        None,          // 無し
         Lerp,          // 線形補間（等速）
         EaseInQuad,    // 2次加速
         EaseOutQuad,   // 2次減速
