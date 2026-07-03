@@ -16,6 +16,142 @@ using json = nlohmann::json;
 namespace RyoEngine {
 
 	struct AnimEdit::Impl {
+		// キーフレームひとつあたりのデータ
+		struct KeyFrame {
+			int32_t frame = 0;                   // 何フレーム目か
+			Vector3 value = { 0.0f,0.0f,0.0f };  // その時の座標(今はTranslate。いずれSRTに拡張)
+			EasingType easing = EasingType::Lerp;
+		};
+
+		struct WindowData;
+
+		// --- ImSequencer と ImCurveEdit を統合したデリゲートクラス ---
+		struct WindowDelegate : public ImSequencer::SequenceInterface, public ImCurveEdit::Delegate {
+			Impl* m_pImpl = nullptr;
+			WindowData* m_pOwnerWindow = nullptr;
+
+			// ImSequencer用のダミー/キャッシュバッファ
+			// ImSequencerはアイテムごとの「開始/終了フレーム」を int* のポインタとして要求するため保持します
+			int m_ItemStartFrame[3] = { 0, 0, 0 };
+			int m_ItemEndFrame[3] = { 60, 60, 60 };
+			int m_ItemType[3] = { 0, 0, 0 };
+
+			// --- ImSequencer::SequenceInterface の実装 ---
+			int GetFrameMin() const override { return 0; }
+			int GetFrameMax() const override {
+				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return 60;
+				return m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx].maxFrame;
+			}
+			int GetItemCount() const override { return 3; } // Translate X, Y, Z の3つ
+
+			// お使いのヘッダファイル (ImSequencer.h) のシグネチャに完全準拠
+			void Get(int index, int** start, int** end, int* type, unsigned int* color) override {
+				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) {
+					m_ItemStartFrame[index] = 0;
+					m_ItemEndFrame[index] = 60;
+				} else {
+					auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+					m_ItemStartFrame[index] = 0;
+					m_ItemEndFrame[index] = window.maxFrame;
+				}
+
+				if (start) *start = &m_ItemStartFrame[index];
+				if (end) *end = &m_ItemEndFrame[index];
+				if (type) *type = m_ItemType[index];
+				if (color) {
+					uint32_t colors[] = { 0xFF0000FF, 0xFF00FF00, 0xFFFF0000 }; // R, G, B
+					*color = colors[index];
+				}
+			}
+
+			// シーケンサー左側のラベル表示用
+			const char* GetItemLabel(int index) const override {
+				static const char* labels[] = { "Translate.X", "Translate.Y", "Translate.Z" };
+				return labels[index];
+			}
+
+
+			// --- ImCurveEdit::Delegate の実装 ---
+			ImVec2& GetMin() override { static ImVec2 min(0.0f, -10.0f); return min; }
+			ImVec2& GetMax() override {
+				static ImVec2 max(60.0f, 100.0f);
+				if (m_pImpl && m_pImpl->m_SelectedWindowIdx != -1) {
+					max.x = static_cast<float>(m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx].maxFrame);
+				}
+				return max;
+			}
+
+			size_t GetCurveCount() override { return 3; } // X, Y, Z の3つ
+			bool IsVisible(size_t curveIndex) override { static_cast<void>(curveIndex); return true; }
+
+			size_t GetPointCount(size_t curveIndex) override {
+				static_cast<void>(curveIndex);
+				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return 0;
+				return m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx].keyFrames.size();
+			}
+
+			// カーブエディタ用の頂点（X=フレーム, Y=値）に変換して一時キャッシュバッファを返す
+			ImVec2* GetPoints(size_t curveIndex) override {
+				static std::vector<ImVec2> pointsCache;
+				pointsCache.clear();
+				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return nullptr;
+
+				auto& keys = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx].keyFrames;
+				for (const auto& k : keys) {
+					float val = (curveIndex == 0) ? k.value.x : (curveIndex == 1) ? k.value.y : k.value.z;
+					pointsCache.push_back(ImVec2(static_cast<float>(k.frame), val));
+				}
+				return pointsCache.data();
+			}
+
+			uint32_t GetCurveColor(size_t curveIndex) override {
+				uint32_t colors[] = { 0xFF0000FF, 0xFF00FF00, 0xFFFF0000 }; // R, G, B
+				return colors[curveIndex];
+			}
+
+			// グラフ上の点がドラッグされたとき
+			int EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) override {
+				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return pointIndex;
+				auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+				auto& keys = window.keyFrames;
+				if (pointIndex >= (int)keys.size()) return pointIndex;
+
+				// Y座標(値)を更新
+				if (curveIndex == 0) keys[pointIndex].value.x = value.y;
+				else if (curveIndex == 1) keys[pointIndex].value.y = value.y;
+				else keys[pointIndex].value.z = value.y;
+
+				// ★重要：ドラッグ中の点のフレーム(X座標)に、ウィンドウの現在のフレームを追従させる
+				keys[pointIndex].frame = static_cast<int32_t>(value.x);
+				window.currentFrame = keys[pointIndex].frame;
+
+				// フレームのドラッグ移動に合わせて自動ソート
+				std::sort(keys.begin(), keys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
+
+				return pointIndex;
+			}
+
+			// グラフ上を Ctrl + 左クリック等したときにキーフレームを追加する
+			void AddPoint(size_t curveIndex, ImVec2 value) override {
+				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return;
+				auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+
+				int32_t targetFrame = static_cast<int32_t>(value.x);
+				auto it = std::find_if(window.keyFrames.begin(), window.keyFrames.end(), [&](const KeyFrame& k) { return k.frame == targetFrame; });
+
+				if (it == window.keyFrames.end()) {
+					KeyFrame newKey;
+					newKey.frame = targetFrame;
+					if (curveIndex == 0) newKey.value.x = value.y;
+					else if (curveIndex == 1) newKey.value.y = value.y;
+					else newKey.value.z = value.y;
+
+					window.keyFrames.push_back(newKey);
+					std::sort(window.keyFrames.begin(), window.keyFrames.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
+				}
+			}
+		};
+
 		struct WindowData {
 			int32_t id = 0;
 			std::string name = "";
@@ -26,14 +162,10 @@ namespace RyoEngine {
 			int32_t maxFrame = 60;        // 全体のフレーム数
 			int32_t currentFrame = 0;    // 現在の再生・編集位置
 
-			// キーフレームひとつあたりのデータ
-			struct KeyFrame {
-				int32_t frame = 0;                   // 何フレーム目か
-				Vector3 value = { 0.0f,0.0f,0.0f };  // その時の座標(今はTranslate。いずれSRTに拡張)
-				EasingType easing = EasingType::Lerp;
-			};
 			// このウィンドウが持つキーフレームたちの可変長配列
 			std::vector<KeyFrame> keyFrames;
+			// ウィンドウごとに独立したデリゲートを持たせる
+			WindowDelegate delegate;
 		};
 
 		// ウィンドウ
@@ -42,53 +174,6 @@ namespace RyoEngine {
 
 		// モデルたち
 		std::vector<std::pair<std::string, Model*>> m_pTargetModels;
-
-
-		struct CurveDelegate : public ImCurveEdit::Delegate {
-			// データを保持する配列（初期値）
-			ImVec2 mPoints[3] = {
-				ImVec2(0.0f, 0.0f),
-				ImVec2(0.5f, 0.5f),
-				ImVec2(1.0f, 1.0f)
-			};
-
-
-			ImVec2& GetMin() override { static ImVec2 min(0.0f, 0.0f); return min; }
-			ImVec2& GetMax() override { static ImVec2 max(1.0f, 1.0f); return max; }
-			size_t GetCurveCount() override { return 1; }
-			bool IsVisible(size_t curveIndex) override {
-				static_cast<void>(curveIndex);
-				return true;
-			}
-			size_t GetPointCount(size_t curveIndex) override {
-				static_cast<void>(curveIndex);
-				return 3;
-			}
-			ImVec2* GetPoints(size_t curveIndex) override {
-				static_cast<void>(curveIndex);
-				return mPoints;
-			}
-			uint32_t GetCurveColor(size_t curveIndex) override {
-				static_cast<void>(curveIndex);
-				return 0xFF00FFFF;  // 紫色
-			}
-
-			
-			int EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) override {
-				static_cast<void>(curveIndex);
-				mPoints[pointIndex] = value;
-				return pointIndex;
-			}
-			void AddPoint(size_t curveIndex, ImVec2 value) override {
-				static_cast<void>(curveIndex);
-				static_cast<void>(value);
-			}
-			// DelPoint の第2引数も int に変更
-			// void DelPoint(size_t curveIndex, size_t pointIndex) override {}
-			// 存在しない可能性あり
-		};
-
-		CurveDelegate m_CurveDelegate;
 	};
 
 	// コンストラクタで生成
@@ -103,93 +188,126 @@ namespace RyoEngine {
 	void AnimEdit::Initialize(){}
 
 	void AnimEdit::Update() {
-		// 初期設定
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
 
-		// ディタ全体ウィンドウ開始
+		// アニメーションエディタのメインウィンドウ
 		ImGui::Begin("Animation Editor");
-		
-		
+		{
+			WindowManager();
+			ModelOperate();
 
-		WindowManager();
-		
-		ModelOperate();
-
+			// ★メインウィンドウ内のシーケンサーとグラフの描画コードは丸ごと削除しました
+		}
 		ImGui::End();
 
-		// 量産されたサブウィンドウたちの描画ループ
+		// 量産された各サブウィンドウ（インスペクタとして動作）
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
-
 			if (!impl->m_SubWindows[i].is_open) continue;
 
-			// 参照をとりだす
 			auto& window = impl->m_SubWindows[i];
-
-			std::string window_title = "アニメーション編集: " +
-				window.name + "##" + std::to_string(window.id);
+			std::string window_title = "インスペクタ: " + window.name + "##" + std::to_string(window.id);
 
 			if (window.request_focus) {
 				ImGui::SetNextWindowFocus();
 				window.request_focus = false;
 			}
 
-			ImGui::SetNextWindowPos(ImVec2(500.0f, 500.0f), ImGuiCond_FirstUseEver);
-			ImGui::SetNextWindowSize(ImVec2(350.0f, 200.0f), ImGuiCond_FirstUseEver);
+			// ★グラフが入るため初期サイズを少し大きめに変更
+			ImGui::SetNextWindowPos(ImVec2(100.0f, 600.0f), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowSize(ImVec2(550.0f, 500.0f), ImGuiCond_FirstUseEver);
 
-
-			// サブウィンドウの生成
 			ImGui::Begin(window_title.c_str(), &window.is_open);
+
+			if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) ||
+				(ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) && ImGui::IsMouseClicked(0))) {
+				impl->m_SelectedWindowIdx = static_cast<int32_t>(i);
+			}
+
 			ImGui::Text("Window ID: %d", window.id);
 
-			ImGui::Spacing();
-			ImGui::Separator();
-			ImGui::Spacing();
-
-			// ★【1番】このウィンドウ固有のタイムライン設定を描画！
-			// 全体の長さ
+			ImGui::PushItemWidth(150);
+			ImGui::SliderInt("Frame", &window.currentFrame, 0, window.maxFrame);
+			ImGui::SameLine();
 			if (ImGui::InputInt("Max Frame", &window.maxFrame)) {
 				if (window.maxFrame < 1) window.maxFrame = 1;
 			}
-			if (window.currentFrame > window.maxFrame) {
-				window.currentFrame = window.maxFrame;
-			}
-			// 現在のフレーム位置（自分の maxFrame を最大値にする）
-			ImGui::SliderInt("Current Frame", &window.currentFrame, 0, window.maxFrame);
+			ImGui::PopItemWidth();
 
 			ImGui::Spacing();
 			ImGui::Separator();
-			ImGui::Spacing();
 
-			// キーフレーム追加UI
-			if (ImGui::Button("Insert Keyframe")) {
-				// すでに同じフレームにキーが存在するかチェック
-				auto it = std::find_if(window.keyFrames.begin(), window.keyFrames.end(),
-					[&](const Impl::WindowData::KeyFrame& k) { return k.frame == window.currentFrame; });
+			// --- ★ 各ウィンドウ独自のタイムライン（シーケンサー）の描画 ---
+			int currentFrameItem = window.currentFrame;
+			int selectedItem = -1;
+			int firstFrame = 0;
 
-				if (it != window.keyFrames.end()) {
-					// すでに同じフレームにキーがあれば、現在の座標で上書き（今はまだ仮で0リセット）
-					it->value = Vector3{ 0.0f, 0.0f, 0.0f };
-				} else {
-					// 新しいフレームなら、新規追加
-					Impl::WindowData::KeyFrame newKey;
+			if (ImGui::TreeNode("translate (タイムライン)"))
+			{
+				if (ImGui::BeginChild("SequencerArea", ImVec2(0, 130), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar))
+				{
+					ImSequencer::Sequencer(&window.delegate, &currentFrameItem, nullptr, &selectedItem, &firstFrame,
+						ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_CHANGE_FRAME);
+				}
+				ImGui::EndChild();
+
+				// 開いている時だけ TreePop を呼ぶ
+				ImGui::TreePop();
+			}
+
+			window.currentFrame = currentFrameItem;
+
+			// --- ★ キーフレーム操作用補助ボタン ---
+			if (ImGui::Button("現在のフレームにキーを挿入")) {
+				auto it = std::find_if(window.keyFrames.begin(), window.keyFrames.end(), [&](const Impl::KeyFrame& k) { return k.frame == window.currentFrame; });
+				if (it == window.keyFrames.end()) {
+					Impl::KeyFrame newKey;
 					newKey.frame = window.currentFrame;
-					newKey.value = Vector3{ 0.0f, 0.0f, 0.0f }; // 今はまだ仮の値
-					newKey.easing = EasingType::Lerp;
-
+					if (!impl->m_pTargetModels.empty() && impl->m_pTargetModels[0].second) {
+						newKey.value = impl->m_pTargetModels[0].second->GetTranslate();
+					}
 					window.keyFrames.push_back(newKey);
-
-					// フレーム順（昇順）に並び替え
-					std::sort(window.keyFrames.begin(), window.keyFrames.end(),
-						[](const Impl::WindowData::KeyFrame& a, const Impl::WindowData::KeyFrame& b) {
-							return a.frame < b.frame;
-						});
+					std::sort(window.keyFrames.begin(), window.keyFrames.end(), [](const Impl::KeyFrame& a, const Impl::KeyFrame& b) { return a.frame < b.frame; });
 				}
 			}
-			// 登録されてるキーフレームの一覧
-			ImGui::Text("キーフレーム数: %d", static_cast<int>(window.keyFrames.size()));
-			for (size_t k = 0; k < window.keyFrames.size(); ++k) {
-				ImGui::Text("  [%d] Frame: %d", static_cast<int>(k), window.keyFrames[k].frame);
+			ImGui::SameLine();
+			if (ImGui::Button("選択中のフレームのキーを削除")) {
+				window.keyFrames.erase(std::remove_if(window.keyFrames.begin(), window.keyFrames.end(), [&](const Impl::KeyFrame& k) {
+					return k.frame == window.currentFrame;
+					}), window.keyFrames.end());
+			}
+
+			// --- ★ 各ウィンドウ独自のカーブエディタ（グラフ）の描画 ---
+			ImGui::Spacing();
+			ImGui::Text("イージングカーブエディタ (赤:X, 緑:Y, 青:Z)  Ctrl+左クリックで点追加");
+			if (ImGui::BeginChild("CurveEditorArea", ImVec2(0, 180), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar))
+			{
+				// Childウィンドウ内のサイズいっぱいにグラフを描画させる
+				ImVec2 curveSize = ImGui::GetContentRegionAvail();
+				ImCurveEdit::Edit(window.delegate, curveSize, window.id);
+			}
+			ImGui::EndChild();
+
+			// --- 値のインスペクタ表示とモデルへのリアルタイム反映 ---
+			auto it = std::find_if(window.keyFrames.begin(), window.keyFrames.end(), [&](const Impl::KeyFrame& k) {
+				return k.frame == window.currentFrame;
+				});
+
+			if (it != window.keyFrames.end()) {
+				ImGui::TextColored(ImVec4(1, 1, 0, 1), "キーフレーム位置");
+				float val[3] = { it->value.x, it->value.y, it->value.z };
+				if (ImGui::DragFloat3("Value", val, 0.1f)) {
+					it->value = Vector3{ val[0], val[1], val[2] };
+				}
+			} else {
+				ImGui::Text("（キーフレームなし）");
+			}
+
+			if (!window.keyFrames.empty() && !impl->m_pTargetModels.empty() && impl->m_pTargetModels[0].second) {
+				Model* targetModel = impl->m_pTargetModels[0].second;
+				if (it != window.keyFrames.end()) {
+					targetModel->SetTranslate(it->value);
+				}
 			}
 
 			ImGui::End();
@@ -216,8 +334,19 @@ namespace RyoEngine {
 			}
 
 			std::string name = "新規ウィンドウ " + std::to_string(allocated_id);
-			impl->m_SubWindows.push_back({ allocated_id, name, true });
 
+			// ★ デリゲートポインタの初期設定をしてから追加
+			Impl::WindowData newWindow;
+			newWindow.id = allocated_id;
+			newWindow.name = name;
+			newWindow.is_open = true;
+
+			impl->m_SubWindows.push_back(newWindow);
+
+			// push_back完了後、確定したメモリ番地をデリゲートにバインドする
+			auto& addedWindow = impl->m_SubWindows.back();
+			addedWindow.delegate.m_pOwnerWindow = &addedWindow;
+			addedWindow.delegate.m_pImpl = impl;
 		}
 
 		// セーブ
@@ -327,32 +456,28 @@ namespace RyoEngine {
 	}
 
 	void AnimEdit::DrawUI() {
-		AnimEdit& instance = GetInstance();
-		Impl* impl = instance.m_pImpl;
+		//AnimEdit& instance = GetInstance();
+		//Impl* impl = instance.m_pImpl;
 
-		// Animation Editor ウィンドウ生成
-		ImGui::Begin("Edit");
-		{
-			// ウィンドウいっぱいにグラフを表示させるサイズ指定
-			ImVec2 size = ImGui::GetContentRegionAvail();
+		//// Animation Editor ウィンドウ生成
+		//ImGui::Begin("Edit");
+		//{
+		//	// ウィンドウいっぱいにグラフを表示させるサイズ指定
+		//	ImVec2 size = ImGui::GetContentRegionAvail();
 
-            if (size.x < 100.0f) size.x = 100.0f;
-            if (size.y < 200.0f) size.y = 200.0f;
+  //          if (size.x < 100.0f) size.x = 100.0f;
+  //          if (size.y < 200.0f) size.y = 200.0f;
 
-            ImCurveEdit::Edit(impl->m_CurveDelegate, size, 1);
-		}
-		ImGui::End();
+  //          ImCurveEdit::Edit(impl->m_CombinedDelegate, size, 1);
+		//}
+		//ImGui::End();
 	}
 
 	void AnimEdit::SaveSettings(const char* filePath) {
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
-
-		// フォルダ階層がない場合自動作成
 		std::filesystem::path p(filePath);
-		if (p.has_parent_path()) {
-			std::filesystem::create_directories(p.parent_path());
-		}
+		if (p.has_parent_path()) { std::filesystem::create_directories(p.parent_path()); }
 
 		json j = json::array();
 		for (const auto& w : impl->m_SubWindows) {
@@ -360,51 +485,40 @@ namespace RyoEngine {
 			window_json["id"] = w.id;
 			window_json["name"] = w.name;
 			window_json["is_open"] = false;
-
-			// ★ セーブデータに項目を追加
 			window_json["max_frame"] = w.maxFrame;
 			window_json["current_frame"] = w.currentFrame;
 
+			json keys_arr = json::array();
+			for (const auto& k : w.keyFrames) {
+				json k_json;
+				k_json["frame"] = k.frame;
+				k_json["val_x"] = k.value.x;
+				k_json["val_y"] = k.value.y;
+				k_json["val_z"] = k.value.z;
+				keys_arr.push_back(k_json);
+			}
+			window_json["keyframes"] = keys_arr;
 			j.push_back(window_json);
 		}
 
 		std::ofstream file(filePath);
 		if (file.is_open()) {
-			file << j.dump(4); // インデント4スペースで綺麗に出力
-
-			// セーブ成功
-			std::string successMes = "[Animation Editor]\nSave Successed.\nPath: " + std::string(filePath);
-			Logger::LogSuccess(successMes);
+			file << j.dump(4);
+			Logger::LogSuccess("[Animation Editor] Save Successed.");
 		} else {
-			// セーブ失敗
-			std::string failMes = "[Animation Editor]\nSave failed.\nFailed Path: " + std::string(filePath);
-			Logger::LogWarning(failMes);
+			Logger::LogWarning("[Animation Editor] Save failed.");
 		}
 	}
 
 	void AnimEdit::LoadSettings(const char* filePath) {
 		std::ifstream file(filePath);
-		if (!file.is_open()) {
-			std::string failMes = "[Animation Editor]\nLoad failed. File could not be opened.\nPath: " + std::string(filePath);
-			Logger::LogWarning(failMes);
-			return; // ファイルがなければ何もしない
-		}
-
+		if (!file.is_open()) return;
 		json j;
-		try {
-			file >> j;
-		}
-		catch (const json::parse_error& e) {
-			// 【JSONのパースに失敗した場合】
-			std::string failMes = "[Animation Editor]\nLoad failed. JSON Parse Error: " + std::string(e.what()) + "\nPath: " + std::string(filePath);
-			Logger::LogWarning(failMes);
-			return; // JSONのパースエラー時は安全のため中断
-		}
+		try { file >> j; }
+		catch (...) { return; }
 
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
-
-		// 既存のリストをクリアして上書き
 		impl->m_SubWindows.clear();
 		impl->m_SelectedWindowIdx = -1;
 
@@ -415,20 +529,31 @@ namespace RyoEngine {
 					w.id = item["id"].get<int32_t>();
 					w.name = item["name"].get<std::string>();
 					w.is_open = false;
-					w.request_focus = false;
-
-					// ★ ロード処理を追加（古いセーブデータでキーがない場合の安全ガード付き）
 					w.maxFrame = item.value("max_frame", 60);
 					w.currentFrame = item.value("current_frame", 0);
 
+					if (item.contains("keyframes") && item["keyframes"].is_array()) {
+						for (const auto& k_item : item["keyframes"]) {
+							Impl::KeyFrame k;
+							k.frame = k_item.value("frame", 0);
+							k.value.x = k_item.value("val_x", 0.0f);
+							k.value.y = k_item.value("val_y", 0.0f);
+							k.value.z = k_item.value("val_z", 0.0f);
+							w.keyFrames.push_back(k);
+						}
+					}
 					impl->m_SubWindows.push_back(w);
 				}
 			}
+
+			for (auto& w : impl->m_SubWindows) {
+				w.delegate.m_pOwnerWindow = &w;
+				w.delegate.m_pImpl = impl;
+			}
+
 		}
-		// 【ロード成功】
-	    // すべての処理が正常に終わったら成功ログを出す
-		std::string successMes = "[Animation Editor]\nLoad Successed.\nPath: " + std::string(filePath);
-		Logger::LogSuccess(successMes);
+		if (!impl->m_SubWindows.empty()) impl->m_SelectedWindowIdx = 0;
+		Logger::LogSuccess("[Animation Editor] Load Successed.");
 	}
 
 	void AnimEdit::ModelOperate() {

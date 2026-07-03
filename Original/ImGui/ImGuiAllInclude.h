@@ -10,6 +10,7 @@
 #include"../Externals/imgui/imgui_impl_win32.h"
 #include"../Externals/imgui/ImGuizmo.h"
 #include"../Externals/imgui/GraphEditor.h"
+#include"../Externals/imgui/ImSequencer.h"
 #include"../Externals/imgui/ImCurveEdit.h"
 #include"../Externals/imgui/ImZoomSlider.h"
 #include"../Externals/imgui/ImGradient.h"
