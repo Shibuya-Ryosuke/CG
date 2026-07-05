@@ -570,6 +570,7 @@ namespace RyoEngine {
 				k_json["val_x"] = k.value.x;
 				k_json["val_y"] = k.value.y;
 				k_json["val_z"] = k.value.z;
+				k_json["easing"] = static_cast<int32_t>(k.easing);
 				keys_arr.push_back(k_json);
 			}
 			window_json["keyframes"] = keys_arr;
@@ -614,6 +615,7 @@ namespace RyoEngine {
 							k.value.x = k_item.value("val_x", 0.0f);
 							k.value.y = k_item.value("val_y", 0.0f);
 							k.value.z = k_item.value("val_z", 0.0f);
+							k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
 							w.keyFrames.push_back(k);
 						}
 					}
