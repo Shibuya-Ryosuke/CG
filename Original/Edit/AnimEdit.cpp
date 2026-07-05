@@ -61,6 +61,27 @@ namespace RyoEngine {
 
 		struct WindowData;
 
+		static void AdvanceFrame(WindowData& window) {
+			if (!window.isPlaying) return;
+
+			// ImGuiからデルタタイム（経過時間）を取得（例: 60fpsなら約0.0166秒）
+			float deltaTime = ImGui::GetIO().DeltaTime;
+			window.frameTimer += deltaTime;
+
+			// 1フレーム進むのに必要な時間 (1.0f / 60.0f = 約0.0166秒)
+			float timePerFrame = 1.0f / window.fps;
+
+			while (window.frameTimer >= timePerFrame) {
+				window.frameTimer -= timePerFrame;
+				window.currentFrame++;
+
+				// ループ再生の処理
+				if (window.currentFrame > window.maxFrame) {
+					window.currentFrame = 0; // 最初に戻る（ループしない場合は maxFrame で止めて isPlaying = false にする）
+				}
+			}
+		}
+
 		// --- ImSequencer と ImCurveEdit を統合したデリゲートクラス ---
 		struct WindowDelegate : public ImSequencer::SequenceInterface, public ImCurveEdit::Delegate {
 			Impl* m_pImpl = nullptr;
@@ -188,6 +209,10 @@ namespace RyoEngine {
 			int32_t currentFrame = 0;
 			int32_t firstFrame = 0;
 
+			bool isPlaying = false;
+			float frameTimer = 0.0f;
+			float fps = 60.0f;
+
 			std::vector<KeyFrame> keyFrames;
 			WindowDelegate delegate;
 		};
@@ -254,7 +279,7 @@ namespace RyoEngine {
 
 		static void DrawCurveEditor(WindowData& window) {
 			ImGui::Spacing();
-			ImGui::Text("イージングカーブエディタ (赤:X, 緑:Y, 青:Z)  Ctrl+左クリックで点追加");
+			ImGui::Text("イージングカーブエディタ (赤:X, 緑:Y, 青:Z)");
 			if (ImGui::BeginChild("CurveEditorArea", ImVec2(0, 180), ImGuiChildFlags_Border, ImGuiWindowFlags_NoScrollbar)) {
 				ImVec2 curveSize = ImGui::GetContentRegionAvail();
 				ImCurveEdit::Edit(window.delegate, curveSize, window.id);
@@ -270,7 +295,7 @@ namespace RyoEngine {
 			if (it != window.keyFrames.end()) {
 				ImGui::TextColored(ImVec4(1, 1, 0, 1), "キーフレーム位置");
 				float val[3] = { it->value.x, it->value.y, it->value.z };
-				if (ImGui::DragFloat3("Value", val, 0.1f)) {
+				if (ImGui::DragFloat3("translate", val, 0.1f)) {
 					it->value = Vector3{ val[0], val[1], val[2] };
 				}
 
@@ -387,6 +412,23 @@ namespace RyoEngine {
 			ImGui::PopItemWidth();
 
 			ImGui::Spacing();
+			if (window.isPlaying) {
+				if (ImGui::Button("|| 一時停止")) {
+					window.isPlaying = false;
+				}
+			} else {
+				if (ImGui::Button("> 再生")) {
+					window.isPlaying = true;
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("0フレームへ戻る")) {
+				window.isPlaying = false;
+				window.currentFrame = 0; // 最初に戻る
+				window.frameTimer = 0.0f;
+			}
+
+			ImGui::Spacing();
 			ImGui::Separator();
 
 			DrawTimeline(window);
@@ -395,6 +437,7 @@ namespace RyoEngine {
 			DrawValueInspector(window);
 			DrawKeyFrameList(window);
 
+			AdvanceFrame(window);
 			UpdateAnimationAnimate(window, impl);
 
 			ImGui::End();
