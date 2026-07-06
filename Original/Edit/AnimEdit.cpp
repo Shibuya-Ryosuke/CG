@@ -24,10 +24,18 @@ namespace RyoEngine {
 			MaxGroups
 		};
 
+		// ★ 追加：トランスフォームモード（SRT）の定義
+		enum class TransformMode {
+			Translate = 0,
+			Rotate,
+			Scale,
+			MaxModes
+		};
+
 		// キーフレームひとつあたりのデータ
 		struct KeyFrame {
 			int32_t frame = 0;                   // 何フレーム目か
-			Vector3 value = { 0.0f,0.0f,0.0f };                 // ★ Vector3 から float に変更
+			Vector3 value = { 0.0f,0.0f,0.0f };
 			EasingType easing = EasingType::Lerp;
 			AxisGroup group = AxisGroup::XYZ;
 		};
@@ -114,14 +122,26 @@ namespace RyoEngine {
 				}
 			}
 
+			// ★ 修正：現在の編集モード（SRT）に応じてタイムラインのラベルを動的に切り替える
 			const char* GetItemLabel(int index) const override {
-				static const char* labels[] = { "Translate.X", "Translate.Y", "Translate.Z" };
-				return labels[index];
+				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return "X";
+				auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+
+				if (window.currentTransformMode == static_cast<int>(TransformMode::Translate)) {
+					static const char* labels[] = { "Translate.X", "Translate.Y", "Translate.Z" };
+					return labels[index];
+				} else if (window.currentTransformMode == static_cast<int>(TransformMode::Rotate)) {
+					static const char* labels[] = { "Rotate.X", "Rotate.Y", "Rotate.Z" };
+					return labels[index];
+				} else {
+					static const char* labels[] = { "Scale.X", "Scale.Y", "Scale.Z" };
+					return labels[index];
+				}
 			}
 
-			ImVec2& GetMin() override { static ImVec2 min(0.0f, -10.0f); return min; }
+			ImVec2& GetMin() override { static ImVec2 min(0.0f, -30.0f); return min; }
 			ImVec2& GetMax() override {
-				static ImVec2 max(60.0f, 100.0f);
+				static ImVec2 max(60.0f, 50.0f);
 				if (m_pImpl && m_pImpl->m_SelectedWindowIdx != -1) {
 					max.x = static_cast<float>(m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx].maxFrame);
 				}
@@ -133,16 +153,16 @@ namespace RyoEngine {
 
 			uint32_t GetCurveColor(size_t curveIndex) override;
 
-			// --- ★ 修正：軸ごとの個別の配列サイズを返す ---
+			// --- ★ 修正：モード(SRT)の次元を追加して配列サイズを返す ---
 			size_t GetPointCount(size_t curveIndex) override;
 
-			// --- ★ 修正：軸ごとの個別キャッシュを生成 ---
+			// --- ★ 修正：モード(SRT)の次元を追加して個別キャッシュを生成 ---
 			ImVec2* GetPoints(size_t curveIndex) override;
 
-			// --- ★ 修正：該当する軸のキーフレームだけを編集 ---
+			// --- ★ 修正：モード(SRT)の次元を追加して該当する軸のキーフレームを編集 ---
 			int EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) override;
 
-			// --- ★ 修正：タイムラインからの直接追加も該当軸だけにする ---
+			// --- ★ 修正：モード(SRT)の次元を追加して追加処理を行う ---
 			void AddPoint(size_t curveIndex, ImVec2 value) override;
 		};
 
@@ -165,7 +185,11 @@ namespace RyoEngine {
 			bool insertY = true;
 			bool insertZ = true;
 
-			std::vector<KeyFrame> groupedKeyFrames[static_cast<size_t>(AxisGroup::MaxGroups)];
+			// ★ 修正：[TransformMode(3)][AxisGroup(8)] の2次元配列に拡張
+			std::vector<KeyFrame> groupedKeyFrames[static_cast<size_t>(TransformMode::MaxModes)][static_cast<size_t>(AxisGroup::MaxGroups)];
+
+			// ★ 追加：現在の編集対象トランスフォームモード (0:Translate, 1:Rotate, 2:Scale)
+			int currentTransformMode = 0;
 
 			// チェックボックスの選択状態から AxisGroup を判定するヘルパー
 			AxisGroup GetCurrentTargetGroup() const {
@@ -215,7 +239,9 @@ namespace RyoEngine {
 				}
 			}
 
-			if (ImGui::TreeNodeEx("translate (タイムライン)", ImGuiTreeNodeFlags_DefaultOpen)) {
+			// ★ 修正：現在のモード名をヘッダーに表示
+			const char* modeHeaderNames[] = { "タイムライン (translate)", "タイムライン (rotate)", "タイムライン (scale)" };
+			if (ImGui::TreeNodeEx(modeHeaderNames[window.currentTransformMode], ImGuiTreeNodeFlags_DefaultOpen)) {
 				if (ImGui::BeginChild("SequencerArea", ImVec2(0, 130), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar)) {
 					int currentFrameItem = window.currentFrame;
 					int selectedItem = -1;
@@ -241,12 +267,17 @@ namespace RyoEngine {
 				AxisGroup targetGroup = window.GetCurrentTargetGroup();
 				if (targetGroup == AxisGroup::None) return;
 
-				Vector3 modelPos = { 0.0f, 0.0f, 0.0f };
+				// ★ 修正：現在のモードに応じた値をモデルから取得
+				Vector3 modelVal = { 0.0f, 0.0f, 0.0f };
 				if (!impl->m_pTargetModels.empty() && impl->m_pTargetModels[0].second) {
-					modelPos = impl->m_pTargetModels[0].second->GetTranslate();
+					Model* m = impl->m_pTargetModels[0].second;
+					if (window.currentTransformMode == static_cast<int>(TransformMode::Translate)) modelVal = m->GetTranslate();
+					else if (window.currentTransformMode == static_cast<int>(TransformMode::Rotate)) modelVal = m->GetRotate();
+					else if (window.currentTransformMode == static_cast<int>(TransformMode::Scale)) modelVal = m->GetScale();
 				}
 
-				auto& keys = window.groupedKeyFrames[static_cast<size_t>(targetGroup)];
+				int mode = window.currentTransformMode;
+				auto& keys = window.groupedKeyFrames[mode][static_cast<size_t>(targetGroup)];
 
 				// 同じフレームに既にキーがあれば上書き、なければ新規追加
 				auto it = std::find_if(keys.begin(), keys.end(), [&](const KeyFrame& k) {
@@ -254,11 +285,11 @@ namespace RyoEngine {
 					});
 
 				if (it != keys.end()) {
-					it->value = modelPos; // ★ Vector3を一気に上書き
+					it->value = modelVal;
 				} else {
 					KeyFrame newKey;
 					newKey.frame = window.currentFrame;
-					newKey.value = modelPos;
+					newKey.value = modelVal;
 					newKey.group = targetGroup;
 					keys.push_back(newKey);
 					std::sort(keys.begin(), keys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
@@ -269,7 +300,8 @@ namespace RyoEngine {
 			if (ImGui::Button("選択中のフレームのキーを削除")) {
 				AxisGroup targetGroup = window.GetCurrentTargetGroup();
 				if (targetGroup != AxisGroup::None) {
-					auto& keys = window.groupedKeyFrames[static_cast<size_t>(targetGroup)];
+					int mode = window.currentTransformMode;
+					auto& keys = window.groupedKeyFrames[mode][static_cast<size_t>(targetGroup)];
 					keys.erase(std::remove_if(keys.begin(), keys.end(), [&](const KeyFrame& k) {
 						return k.frame == window.currentFrame;
 						}), keys.end());
@@ -279,7 +311,12 @@ namespace RyoEngine {
 
 		static void DrawCurveEditor(WindowData& window) {
 			ImGui::Spacing();
-			ImGui::Text("イージングカーブエディタ (赤:X, 緑:Y, 青:Z)");
+			const char* curveEditorNames[] = {
+				"グラフ (Translate) [赤:X, 緑:Y, 青:Z]",
+				"グラフ (Rotate) [赤:X, 緑:Y, 青:Z]",
+				"グラフ (Scale) [赤:X, 緑:Y, 青:Z]"
+			};
+			ImGui::Text("%s", curveEditorNames[window.currentTransformMode]);
 			if (ImGui::BeginChild("CurveEditorArea", ImVec2(0, 180), ImGuiChildFlags_Border, ImGuiWindowFlags_NoScrollbar)) {
 				ImVec2 curveSize = ImGui::GetContentRegionAvail();
 				ImCurveEdit::Edit(window.delegate, curveSize, window.id);
@@ -290,30 +327,39 @@ namespace RyoEngine {
 		static void DrawValueInspector(WindowData& window) {
 			const char* easingNames[] = { "None", "Lerp", "EaseInQuad", "EaseOutQuad", "EaseInOutQuad", "EaseOutBounce" };
 			bool hasKeyInCurrentFrame = false;
+			int mode = window.currentTransformMode;
 
 			// 全グループから現在のフレームにキーがあるか探す
 			for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
-				auto& keys = window.groupedKeyFrames[i];
+				auto& keys = window.groupedKeyFrames[mode][i];
 				auto it = std::find_if(keys.begin(), keys.end(), [&](const KeyFrame& k) { return k.frame == window.currentFrame; });
 
 				if (it != keys.end()) {
 					if (!hasKeyInCurrentFrame) {
-						ImGui::TextColored(ImVec4(1, 1, 0, 1), "キーフレーム情報 (現在のフレーム)");
+						ImGui::Spacing();
+						ImGui::TextColored(ImVec4(1, 1, 0, 1), "現在のキーフレーム情報");
 						hasKeyInCurrentFrame = true;
 					}
 
 					AxisGroup g = static_cast<AxisGroup>(i);
-					ImGui::Text("[%s グループ]", window.GetGroupName(g));
+					ImGui::Text("[ 所属グループ : %s ]", window.GetGroupName(g));
+
+					// ★ 修正：現在のモードに応じてラベルを切り替え
+					const char* labelX = (mode == 0) ? "Translate.X" : (mode == 1) ? "Rotate.X" : "Scale.X";
+					const char* labelY = (mode == 0) ? "Translate.Y" : (mode == 1) ? "Rotate.Y" : "Scale.Y";
+					const char* labelZ = (mode == 0) ? "Translate.Z" : (mode == 1) ? "Rotate.Z" : "Scale.Z";
 
 					// グループに応じて必要な軸のドラッグUIを出す
+					float dragSpeed = (mode == 0) ? 0.1f : 0.01f;
+
 					if (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ) {
-						ImGui::DragFloat("Translate.X", &it->value.x, 0.1f, -50.0f, 50.0f);
+						ImGui::DragFloat(labelX, &it->value.x, dragSpeed, -360.0f, 360.0f);
 					}
 					if (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ) {
-						ImGui::DragFloat("Translate.Y", &it->value.y, 0.1f, -50.0f, 50.0f);
+						ImGui::DragFloat(labelY, &it->value.y, dragSpeed, -360.0f, 360.0f);
 					}
 					if (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ) {
-						ImGui::DragFloat("Translate.Z", &it->value.z, 0.1f, -50.0f, 50.0f);
+						ImGui::DragFloat(labelZ, &it->value.z, dragSpeed, -360.0f, 360.0f);
 					}
 
 					int easingIdx = static_cast<int>(it->easing);
@@ -335,12 +381,13 @@ namespace RyoEngine {
 			if (ImGui::BeginChild("KeyFrameListArea", ImVec2(0, 120), ImGuiChildFlags_Border)) {
 
 				bool hasAnyKey = false;
+				int mode = window.currentTransformMode;
 
 				// 全7グループを走査 (1:X ~ 7:XYZ)
 				for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
-					auto& keys = window.groupedKeyFrames[i];
+					auto& keys = window.groupedKeyFrames[mode][i];
 
-					// ★ 空のグループは描画をスキップ！
+					// 空のグループは描画をスキップ
 					if (keys.empty()) continue;
 
 					hasAnyKey = true;
@@ -362,14 +409,14 @@ namespace RyoEngine {
 				}
 
 				if (!hasAnyKey) {
-					ImGui::Text("（キーフレームが登録されていません）");
+					ImGui::Text("（選択中のモードにキーフレームが登録されていません）");
 				}
 			}
 			ImGui::EndChild();
 		}
 
-		// 特定の軸に関係するキーだけを一瞬集約して評価するヘルパー
-		static float EvaluateAxisNew(int32_t currentFrame, const WindowData& window, int axisIndex, float defaultVal) {
+		// ★ 修正：モード(SRT)指定を引数に含めて評価する
+		static float EvaluateAxisNew(int32_t currentFrame, const WindowData& window, int mode, int axisIndex, float defaultVal) {
 			// axisIndex -> 0:X, 1:Y, 2:Z
 
 			// 今回の評価に関係するキーフレームを一時的に集める
@@ -385,7 +432,7 @@ namespace RyoEngine {
 				if (axisIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
 
 				if (include) {
-					for (const auto& k : window.groupedKeyFrames[i]) {
+					for (const auto& k : window.groupedKeyFrames[mode][i]) {
 						activeKeys.push_back(k);
 					}
 				}
@@ -396,7 +443,6 @@ namespace RyoEngine {
 			// フレーム順にソート
 			std::sort(activeKeys.begin(), activeKeys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
 
-			// --- あとは元の EvaluateAxis と同じ補間ロジック ---
 			if (currentFrame <= activeKeys.front().frame) return (axisIndex == 0 ? activeKeys.front().value.x : (axisIndex == 1 ? activeKeys.front().value.y : activeKeys.front().value.z));
 			if (currentFrame >= activeKeys.back().frame)  return (axisIndex == 0 ? activeKeys.back().value.x : (axisIndex == 1 ? activeKeys.back().value.y : activeKeys.back().value.z));
 
@@ -420,16 +466,34 @@ namespace RyoEngine {
 			return defaultVal;
 		}
 
+		// ★ 修正：Translate, Rotate, Scale すべてを個別に評価して適用する
 		static void UpdateAnimationAnimate(WindowData& window, Impl* impl) {
 			if (impl->m_pTargetModels.empty() || !impl->m_pTargetModels[0].second) return;
 			Model* targetModel = impl->m_pTargetModels[0].second;
-			Vector3 currentModelPos = targetModel->GetTranslate();
 
+			// 1. Translate 適用
+			Vector3 currentModelPos = targetModel->GetTranslate();
 			Vector3 finalTranslate;
-			finalTranslate.x = EvaluateAxisNew(window.currentFrame, window, 0, currentModelPos.x);
-			finalTranslate.y = EvaluateAxisNew(window.currentFrame, window, 1, currentModelPos.y);
-			finalTranslate.z = EvaluateAxisNew(window.currentFrame, window, 2, currentModelPos.z);
+			finalTranslate.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 0, currentModelPos.x);
+			finalTranslate.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 1, currentModelPos.y);
+			finalTranslate.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 2, currentModelPos.z);
 			targetModel->SetTranslate(finalTranslate);
+
+			// 2. Rotate 適用
+			Vector3 currentModelRot = targetModel->GetRotate();
+			Vector3 finalRotate;
+			finalRotate.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 0, currentModelRot.x);
+			finalRotate.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 1, currentModelRot.y);
+			finalRotate.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 2, currentModelRot.z);
+			targetModel->SetRotate(finalRotate);
+
+			// 3. Scale 適用
+			Vector3 currentModelScale = targetModel->GetScale();
+			Vector3 finalScale;
+			finalScale.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Scale), 0, currentModelScale.x);
+			finalScale.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Scale), 1, currentModelScale.y);
+			finalScale.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Scale), 2, currentModelScale.z);
+			targetModel->SetScale(finalScale);
 		}
 
 		static void DrawSubWindow(WindowData& window, size_t index, Impl* impl) {
@@ -441,7 +505,7 @@ namespace RyoEngine {
 			}
 
 			ImGui::SetNextWindowPos(ImVec2(100.0f, 600.0f), ImGuiCond_FirstUseEver);
-			ImGui::SetNextWindowSize(ImVec2(550.0f, 500.0f), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowSize(ImVec2(550.0f, 600.0f), ImGuiCond_FirstUseEver);
 
 			if (!ImGui::Begin(window_title.c_str(), &window.is_open)) {
 				ImGui::End();
@@ -483,6 +547,14 @@ namespace RyoEngine {
 			ImGui::Spacing();
 			ImGui::Separator();
 
+			// ★ 追加：編集対象のSRTモードを切り替えるコンボボックス
+			const char* transformModeNames[] = { "Translate (位置)", "Rotate (回転)", "Scale (拡縮)" };
+			ImGui::PushItemWidth(200);
+			ImGui::Combo("編集モード", &window.currentTransformMode, transformModeNames, IM_ARRAYSIZE(transformModeNames));
+			ImGui::PopItemWidth();
+
+			ImGui::Spacing();
+
 			DrawTimeline(window);
 			DrawKeyFrameButtons(window, impl);
 			DrawCurveEditor(window);
@@ -497,6 +569,7 @@ namespace RyoEngine {
 	size_t AnimEdit::Impl::WindowDelegate::GetPointCount(size_t curveIndex) {
 		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return 0;
 		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+		int mode = window.currentTransformMode;
 
 		size_t count = 0;
 		for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
@@ -506,7 +579,7 @@ namespace RyoEngine {
 			if (curveIndex == 1) include = (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ);
 			if (curveIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
 
-			if (include) count += window.groupedKeyFrames[i].size();
+			if (include) count += window.groupedKeyFrames[mode][i].size();
 		}
 		return count;
 	}
@@ -522,6 +595,7 @@ namespace RyoEngine {
 		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return nullptr;
 
 		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+		int mode = window.currentTransformMode;
 
 		// 該当軸が含まれるグループのキーをキャッシュに集める
 		for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
@@ -532,7 +606,7 @@ namespace RyoEngine {
 			if (curveIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
 
 			if (include) {
-				for (const auto& k : window.groupedKeyFrames[i]) {
+				for (const auto& k : window.groupedKeyFrames[mode][i]) {
 					float val = (curveIndex == 0 ? k.value.x : (curveIndex == 1 ? k.value.y : k.value.z));
 					pointsCache.push_back(ImVec2(static_cast<float>(k.frame), val));
 				}
@@ -546,6 +620,7 @@ namespace RyoEngine {
 	int AnimEdit::Impl::WindowDelegate::EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) {
 		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return pointIndex;
 		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+		int mode = window.currentTransformMode;
 
 		// 現在表示されている点をフレーム順に追跡して、元のグループのデータを書き換える
 		struct KeyRef { AxisGroup group; size_t index; int32_t originalFrame; };
@@ -559,32 +634,32 @@ namespace RyoEngine {
 			if (curveIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
 
 			if (include) {
-				for (size_t idx = 0; idx < window.groupedKeyFrames[i].size(); ++idx) {
-					refs.push_back({ g, idx, window.groupedKeyFrames[i][idx].frame });
+				for (size_t idx = 0; idx < window.groupedKeyFrames[mode][i].size(); ++idx) {
+					refs.push_back({ g, idx, window.groupedKeyFrames[mode][i][idx].frame });
 				}
 			}
 		}
 		std::sort(refs.begin(), refs.end(), [&](const KeyRef& a, const KeyRef& b) {
-			return window.groupedKeyFrames[static_cast<size_t>(a.group)][a.index].frame < window.groupedKeyFrames[static_cast<size_t>(b.group)][b.index].frame;
+			return window.groupedKeyFrames[mode][static_cast<size_t>(a.group)][a.index].frame < window.groupedKeyFrames[mode][static_cast<size_t>(b.group)][b.index].frame;
 			});
 
 		if (pointIndex >= (int)refs.size()) return pointIndex;
 
 		auto& targetRef = refs[pointIndex];
-		auto& key = window.groupedKeyFrames[static_cast<size_t>(targetRef.group)][targetRef.index];
+		auto& key = window.groupedKeyFrames[mode][static_cast<size_t>(targetRef.group)][targetRef.index];
 
 		// 値の書き換え (Vector3の該当軸のみ書き換え)
 		if (curveIndex == 0) key.value.x = value.y;
 		if (curveIndex == 1) key.value.y = value.y;
 		if (curveIndex == 2) key.value.z = value.y;
 
-		// ★フレーム移動（ここを変更することで、グループ内の全軸が同期して一緒に動くようになります！）
+		// フレーム移動
 		key.frame = static_cast<int32_t>(value.x);
 		window.currentFrame = key.frame;
 
 		// ソートし直す
-		std::sort(window.groupedKeyFrames[static_cast<size_t>(targetRef.group)].begin(),
-			window.groupedKeyFrames[static_cast<size_t>(targetRef.group)].end(),
+		std::sort(window.groupedKeyFrames[mode][static_cast<size_t>(targetRef.group)].begin(),
+			window.groupedKeyFrames[mode][static_cast<size_t>(targetRef.group)].end(),
 			[](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
 
 		return pointIndex;
@@ -593,13 +668,14 @@ namespace RyoEngine {
 	void AnimEdit::Impl::WindowDelegate::AddPoint(size_t curveIndex, ImVec2 value) {
 		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return;
 		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+		int mode = window.currentTransformMode;
 
 		// タイムラインの空きをダブルクリックして追加した場合は、現在のチェックボックス選択に応じたグループに追加
 		AxisGroup targetGroup = window.GetCurrentTargetGroup();
 		if (targetGroup == AxisGroup::None) targetGroup = AxisGroup::XYZ; // デフォルト安全用
 
 		int32_t targetFrame = static_cast<int32_t>(value.x);
-		auto& keys = window.groupedKeyFrames[static_cast<size_t>(targetGroup)];
+		auto& keys = window.groupedKeyFrames[mode][static_cast<size_t>(targetGroup)];
 		auto it = std::find_if(keys.begin(), keys.end(), [&](const KeyFrame& k) { return k.frame == targetFrame; });
 
 		if (it == keys.end()) {
@@ -688,6 +764,7 @@ namespace RyoEngine {
 			newWindow.id = allocated_id;
 			newWindow.name = name;
 			newWindow.is_open = true;
+			newWindow.currentTransformMode = 0; // デフォルトで Translate
 
 			impl->m_SubWindows.push_back(newWindow);
 
@@ -779,6 +856,7 @@ namespace RyoEngine {
 
 	void AnimEdit::DrawUI() {}
 
+	// ★ 修正：JSON形式を [TransformMode][AxisGroup] の入れ子構造に拡張して保存
 	void AnimEdit::SaveSettings(const char* filePath) {
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
@@ -796,22 +874,27 @@ namespace RyoEngine {
 			window_json["insert_x"] = w.insertX;
 			window_json["insert_y"] = w.insertY;
 			window_json["insert_z"] = w.insertZ;
+			window_json["current_transform_mode"] = w.currentTransformMode;
 
-			json groups_arr = json::array();
-			for (size_t i = 0; i < static_cast<size_t>(Impl::AxisGroup::MaxGroups); ++i) {
-				json group_json = json::array();
-				for (const auto& k : w.groupedKeyFrames[i]) {
-					json k_json;
-					k_json["frame"] = k.frame;
-					k_json["val_x"] = k.value.x;
-					k_json["val_y"] = k.value.y;
-					k_json["val_z"] = k.value.z;
-					k_json["easing"] = static_cast<int32_t>(k.easing);
-					group_json.push_back(k_json);
+			json modes_arr = json::array();
+			for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
+				json groups_arr = json::array();
+				for (size_t i = 0; i < static_cast<size_t>(Impl::AxisGroup::MaxGroups); ++i) {
+					json group_json = json::array();
+					for (const auto& k : w.groupedKeyFrames[m][i]) {
+						json k_json;
+						k_json["frame"] = k.frame;
+						k_json["val_x"] = k.value.x;
+						k_json["val_y"] = k.value.y;
+						k_json["val_z"] = k.value.z;
+						k_json["easing"] = static_cast<int32_t>(k.easing);
+						group_json.push_back(k_json);
+					}
+					groups_arr.push_back(group_json);
 				}
-				groups_arr.push_back(group_json);
+				modes_arr.push_back(groups_arr);
 			}
-			window_json["grouped_keyframes"] = groups_arr;
+			window_json["grouped_keyframes_srt"] = modes_arr; // 互換性のためにキー名を新調
 			j.push_back(window_json);
 		}
 
@@ -824,6 +907,7 @@ namespace RyoEngine {
 		}
 	}
 
+	// ★ 修正：拡張したJSON構造からデータを正しく展開・復元
 	void AnimEdit::LoadSettings(const char* filePath) {
 		std::ifstream file(filePath);
 		if (!file.is_open()) return;
@@ -848,12 +932,45 @@ namespace RyoEngine {
 					w.insertX = item.value("insert_x", true);
 					w.insertY = item.value("insert_y", true);
 					w.insertZ = item.value("insert_z", true);
+					w.currentTransformMode = item.value("current_transform_mode", 0);
 
-					if (item.contains("grouped_keyframes") && item["grouped_keyframes"].is_array()) {
+					// データのクリア
+					for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
+						for (size_t i = 0; i < static_cast<size_t>(Impl::AxisGroup::MaxGroups); ++i) {
+							w.groupedKeyFrames[m][i].clear();
+						}
+					}
+
+					if (item.contains("grouped_keyframes_srt") && item["grouped_keyframes_srt"].is_array()) {
+						auto modes_arr = item["grouped_keyframes_srt"];
+						size_t max_m = std::min(modes_arr.size(), static_cast<size_t>(Impl::TransformMode::MaxModes));
+
+						for (size_t m = 0; m < max_m; ++m) {
+							if (!modes_arr[m].is_array()) continue;
+							auto groups_arr = modes_arr[m];
+							size_t max_g = std::min(groups_arr.size(), static_cast<size_t>(Impl::AxisGroup::MaxGroups));
+
+							for (size_t i = 0; i < max_g; ++i) {
+								if (groups_arr[i].is_array()) {
+									for (const auto& k_item : groups_arr[i]) {
+										Impl::KeyFrame k;
+										k.frame = k_item.value("frame", 0);
+										k.value.x = k_item.value("val_x", 0.0f);
+										k.value.y = k_item.value("val_y", 0.0f);
+										k.value.z = k_item.value("val_z", 0.0f);
+										k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
+										k.group = static_cast<Impl::AxisGroup>(i);
+										w.groupedKeyFrames[m][i].push_back(k);
+									}
+								}
+							}
+						}
+					}
+					// 互換性救済：もし古いバージョンのセーブデータがあった場合、Translateに展開
+					else if (item.contains("grouped_keyframes") && item["grouped_keyframes"].is_array()) {
 						auto groups_arr = item["grouped_keyframes"];
 						size_t max_g = std::min(groups_arr.size(), static_cast<size_t>(Impl::AxisGroup::MaxGroups));
 						for (size_t i = 0; i < max_g; ++i) {
-							w.groupedKeyFrames[i].clear();
 							if (groups_arr[i].is_array()) {
 								for (const auto& k_item : groups_arr[i]) {
 									Impl::KeyFrame k;
@@ -863,11 +980,12 @@ namespace RyoEngine {
 									k.value.z = k_item.value("val_z", 0.0f);
 									k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
 									k.group = static_cast<Impl::AxisGroup>(i);
-									w.groupedKeyFrames[i].push_back(k);
+									w.groupedKeyFrames[0][i].push_back(k); // 0 = Translate
 								}
 							}
 						}
 					}
+
 					impl->m_SubWindows.push_back(w);
 				}
 			}
@@ -909,10 +1027,22 @@ namespace RyoEngine {
 							if (ImGui::TreeNodeEx((std::string("Model [") + std::to_string(i) + "]").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 								Vector3 translate = model->GetTranslate();
 								float pos[3] = { translate.x, translate.y, translate.z };
-
 								if (ImGui::DragFloat3("translate", pos, 0.1f)) {
 									model->SetTranslate({ pos[0], pos[1], pos[2] });
 								}
+
+								Vector3 rotate = model->GetRotate();
+								float rot[3] = { rotate.x, rotate.y, rotate.z };
+								if (ImGui::DragFloat3("rotate", rot, 0.1f)) {
+									model->SetRotate({ rot[0], rot[1], rot[2] });
+								}
+
+								Vector3 scale = model->GetScale();
+								float scl[3] = { scale.x, scale.y, scale.z };
+								if (ImGui::DragFloat3("scale", scl, 0.1f)) {
+									model->SetScale({ scl[0], scl[1], scl[2] });
+								}
+
 								ImGui::TreePop();
 							}
 						}
@@ -926,10 +1056,22 @@ namespace RyoEngine {
 						if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 							Vector3 translate = model->GetTranslate();
 							float pos[3] = { translate.x, translate.y, translate.z };
-
 							if (ImGui::DragFloat3("translate", pos, 0.1f)) {
 								model->SetTranslate({ pos[0], pos[1], pos[2] });
 							}
+
+							Vector3 rotate = model->GetRotate();
+							float rot[3] = { rotate.x, rotate.y, rotate.z };
+							if (ImGui::DragFloat3("rotate", rot, 0.1f)) {
+								model->SetRotate({ rot[0], rot[1], rot[2] });
+							}
+
+							Vector3 scale = model->GetScale();
+							float scl[3] = { scale.x, scale.y, scale.z };
+							if (ImGui::DragFloat3("scale", scl, 0.1f)) {
+								model->SetScale({ scl[0], scl[1], scl[2] });
+							}
+
 							ImGui::TreePop();
 						}
 					}
