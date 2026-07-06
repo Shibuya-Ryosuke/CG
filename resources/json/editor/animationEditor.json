@@ -1,25 +1,74 @@
 [
     {
         "current_frame": 0,
-        "id": 1,
-        "is_open": false,
-        "keyframes": [
-            {
-                "easing": 0,
-                "frame": 0,
-                "val_x": 0.0,
-                "val_y": 0.0,
-                "val_z": 0.0
-            },
-            {
-                "easing": 5,
-                "frame": 59,
-                "val_x": -38.599998474121094,
-                "val_y": -28.899999618530273,
-                "val_z": 203.64663696289063
-            }
+        "grouped_keyframes": [
+            [],
+            [
+                {
+                    "easing": 1,
+                    "frame": 0,
+                    "val_x": 0.0,
+                    "val_y": 0.0,
+                    "val_z": 0.0
+                },
+                {
+                    "easing": 2,
+                    "frame": 22,
+                    "val_x": -40.11199951171875,
+                    "val_y": 0.0,
+                    "val_z": 0.0
+                },
+                {
+                    "easing": 4,
+                    "frame": 38,
+                    "val_x": 23.134000778198242,
+                    "val_y": 3.161778211593628,
+                    "val_z": 0.0
+                }
+            ],
+            [
+                {
+                    "easing": 1,
+                    "frame": 7,
+                    "val_x": -15.9423828125,
+                    "val_y": 0.0,
+                    "val_z": 0.0
+                },
+                {
+                    "easing": 1,
+                    "frame": 69,
+                    "val_x": -15.9423828125,
+                    "val_y": -22.429771423339844,
+                    "val_z": 0.0
+                }
+            ],
+            [],
+            [],
+            [
+                {
+                    "easing": 1,
+                    "frame": 51,
+                    "val_x": -0.9232292175292969,
+                    "val_y": 3.4779560565948486,
+                    "val_z": 17.68099594116211
+                },
+                {
+                    "easing": 3,
+                    "frame": 82,
+                    "val_x": -18.42333221435547,
+                    "val_y": 5.375022888183594,
+                    "val_z": 7.1794586181640625
+                }
+            ],
+            [],
+            []
         ],
-        "max_frame": 100,
+        "id": 1,
+        "insert_x": false,
+        "insert_y": true,
+        "insert_z": false,
+        "is_open": false,
+        "max_frame": 120,
         "name": "新規ウィンドウ 1"
     }
 ]

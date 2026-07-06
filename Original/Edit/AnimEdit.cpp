@@ -16,14 +16,23 @@ using json = nlohmann::json;
 namespace RyoEngine {
 
 	struct AnimEdit::Impl {
+		enum class AxisGroup {
+			None, // どこにも属さない（予備）
+			X, Y, Z,
+			XY, XZ, YZ,
+			XYZ,
+			MaxGroups
+		};
+
 		// キーフレームひとつあたりのデータ
 		struct KeyFrame {
 			int32_t frame = 0;                   // 何フレーム目か
-			Vector3 value = { 0.0f,0.0f,0.0f };  // その時の座標(今はTranslate。いずれSRTに拡張)
+			Vector3 value = { 0.0f,0.0f,0.0f };                 // ★ Vector3 から float に変更
 			EasingType easing = EasingType::Lerp;
+			AxisGroup group = AxisGroup::XYZ;
 		};
 
-		// --- ★ 追加：イージング適用関数 ---
+		// --- イージング適用関数 ---
 		static float ApplyEasing(EasingType type, float t) {
 			switch (type) {
 			case EasingType::Lerp:          return t;
@@ -31,7 +40,6 @@ namespace RyoEngine {
 			case EasingType::EaseOutQuad:   return t * (2.0f - t);
 			case EasingType::EaseInOutQuad: return t < 0.5f ? 2.0f * t * t : -1.0f + (4.0f - 2.0f * t) * t;
 			case EasingType::EaseOutBounce:
-				// 簡易的なバウンド数式（プロジェクト内のEasing::EaseOutBounce(t)等があればそちらに転送してもOKです）
 				if (t < (1.0f / 2.75f)) {
 					return 7.5625f * t * t;
 				} else if (t < (2.0f / 2.75f)) {
@@ -46,17 +54,8 @@ namespace RyoEngine {
 				}
 			case EasingType::None:
 			default:
-				return (t >= 1.0f) ? 1.0f : 0.0f; // 1.0fに完全到達するまでは 0.0f（手前のキーフレーム位置）のまま
+				return (t >= 1.0f) ? 1.0f : 0.0f;
 			}
-		}
-
-		// --- ★ 追加：Vector3の補間関数 ---
-		static Vector3 LerpVector3(const Vector3& start, const Vector3& end, float t) {
-			return Vector3{
-				start.x + (end.x - start.x) * t,
-				start.y + (end.y - start.y) * t,
-				start.z + (end.z - start.z) * t
-			};
 		}
 
 		struct WindowData;
@@ -85,18 +84,16 @@ namespace RyoEngine {
 			Impl* m_pImpl = nullptr;
 			WindowData* m_pOwnerWindow = nullptr;
 
-			// ImSequencer用のダミー/キャッシュバッファ
 			int m_ItemStartFrame[3] = { 0, 0, 0 };
 			int m_ItemEndFrame[3] = { 60, 60, 60 };
 			int m_ItemType[3] = { 0, 0, 0 };
 
-			// --- ImSequencer::SequenceInterface の実装 ---
 			int GetFrameMin() const override { return 0; }
 			int GetFrameMax() const override {
 				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return 60;
 				return m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx].maxFrame;
 			}
-			int GetItemCount() const override { return 3; } // Translate X, Y, Z の3つ
+			int GetItemCount() const override { return 3; }
 
 			void Get(int index, int** start, int** end, int* type, unsigned int* color) override {
 				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) {
@@ -112,7 +109,7 @@ namespace RyoEngine {
 				if (end) *end = &m_ItemEndFrame[index];
 				if (type) *type = m_ItemType[index];
 				if (color) {
-					uint32_t colors[] = { 0xFF0000FF, 0xFF00FF00, 0xFFFF0000 }; // R, G, B
+					uint32_t colors[] = { 0xFF0000FF, 0xFF00FF00, 0xFFFF0000 };
 					*color = colors[index];
 				}
 			}
@@ -122,7 +119,6 @@ namespace RyoEngine {
 				return labels[index];
 			}
 
-			// --- ImCurveEdit::Delegate の実装 ---
 			ImVec2& GetMin() override { static ImVec2 min(0.0f, -10.0f); return min; }
 			ImVec2& GetMax() override {
 				static ImVec2 max(60.0f, 100.0f);
@@ -132,69 +128,22 @@ namespace RyoEngine {
 				return max;
 			}
 
-			size_t GetCurveCount() override { return 3; } // X, Y, Z の3つ
+			size_t GetCurveCount() override { return 3; }
 			bool IsVisible(size_t curveIndex) override { static_cast<void>(curveIndex); return true; }
 
-			size_t GetPointCount(size_t curveIndex) override {
-				static_cast<void>(curveIndex);
-				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return 0;
-				return m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx].keyFrames.size();
-			}
+			uint32_t GetCurveColor(size_t curveIndex) override;
 
-			ImVec2* GetPoints(size_t curveIndex) override {
-				static std::vector<ImVec2> pointsCache;
-				pointsCache.clear();
-				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return nullptr;
+			// --- ★ 修正：軸ごとの個別の配列サイズを返す ---
+			size_t GetPointCount(size_t curveIndex) override;
 
-				auto& keys = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx].keyFrames;
-				for (const auto& k : keys) {
-					float val = (curveIndex == 0) ? k.value.x : (curveIndex == 1) ? k.value.y : k.value.z;
-					pointsCache.push_back(ImVec2(static_cast<float>(k.frame), val));
-				}
-				return pointsCache.data();
-			}
+			// --- ★ 修正：軸ごとの個別キャッシュを生成 ---
+			ImVec2* GetPoints(size_t curveIndex) override;
 
-			uint32_t GetCurveColor(size_t curveIndex) override {
-				uint32_t colors[] = { 0xFF0000FF, 0xFF00FF00, 0xFFFF0000 }; // R, G, B
-				return colors[curveIndex];
-			}
+			// --- ★ 修正：該当する軸のキーフレームだけを編集 ---
+			int EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) override;
 
-			int EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) override {
-				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return pointIndex;
-				auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
-				auto& keys = window.keyFrames;
-				if (pointIndex >= (int)keys.size()) return pointIndex;
-
-				if (curveIndex == 0) keys[pointIndex].value.x = value.y;
-				else if (curveIndex == 1) keys[pointIndex].value.y = value.y;
-				else keys[pointIndex].value.z = value.y;
-
-				keys[pointIndex].frame = static_cast<int32_t>(value.x);
-				window.currentFrame = keys[pointIndex].frame;
-
-				std::sort(keys.begin(), keys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
-
-				return pointIndex;
-			}
-
-			void AddPoint(size_t curveIndex, ImVec2 value) override {
-				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return;
-				auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
-
-				int32_t targetFrame = static_cast<int32_t>(value.x);
-				auto it = std::find_if(window.keyFrames.begin(), window.keyFrames.end(), [&](const KeyFrame& k) { return k.frame == targetFrame; });
-
-				if (it == window.keyFrames.end()) {
-					KeyFrame newKey;
-					newKey.frame = targetFrame;
-					if (curveIndex == 0) newKey.value.x = value.y;
-					else if (curveIndex == 1) newKey.value.y = value.y;
-					else newKey.value.z = value.y;
-
-					window.keyFrames.push_back(newKey);
-					std::sort(window.keyFrames.begin(), window.keyFrames.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
-				}
-			}
+			// --- ★ 修正：タイムラインからの直接追加も該当軸だけにする ---
+			void AddPoint(size_t curveIndex, ImVec2 value) override;
 		};
 
 		struct WindowData {
@@ -211,7 +160,38 @@ namespace RyoEngine {
 			float frameTimer = 0.0f;
 			float fps = 60.0f;
 
-			std::vector<KeyFrame> keyFrames;
+			// チェックボックス用フラグ
+			bool insertX = true;
+			bool insertY = true;
+			bool insertZ = true;
+
+			std::vector<KeyFrame> groupedKeyFrames[static_cast<size_t>(AxisGroup::MaxGroups)];
+
+			// チェックボックスの選択状態から AxisGroup を判定するヘルパー
+			AxisGroup GetCurrentTargetGroup() const {
+				if (insertX && insertY && insertZ) return AxisGroup::XYZ;
+				if (insertX && insertY) return AxisGroup::XY;
+				if (insertX && insertZ) return AxisGroup::XZ;
+				if (insertY && insertZ) return AxisGroup::YZ;
+				if (insertX) return AxisGroup::X;
+				if (insertY) return AxisGroup::Y;
+				if (insertZ) return AxisGroup::Z;
+				return AxisGroup::None;
+			}
+
+			const char* GetGroupName(AxisGroup g) const {
+				switch (g) {
+				case AxisGroup::X:   return "X単体";
+				case AxisGroup::Y:   return "Y単体";
+				case AxisGroup::Z:   return "Z単体";
+				case AxisGroup::XY:  return "XY同時";
+				case AxisGroup::XZ:  return "XZ同時";
+				case AxisGroup::YZ:  return "YZ同時";
+				case AxisGroup::XYZ: return "XYZ同時";
+				default:             return "None";
+				}
+			}
+
 			WindowDelegate delegate;
 		};
 
@@ -221,7 +201,7 @@ namespace RyoEngine {
 		std::vector<std::pair<std::string, Model*>> m_pTargetModels;
 
 		// =========================================================================
-		//  Implのインナースコープに関数を引っ越し（これでアクセス権問題を解消）
+		//  UI / アニメーション処理関数
 		// =========================================================================
 		static void DrawTimeline(WindowData& window) {
 			ImGuiIO& io = ImGui::GetIO();
@@ -246,32 +226,54 @@ namespace RyoEngine {
 					window.currentFrame = currentFrameItem;
 				}
 				ImGui::EndChild();
-				ImGui::TreePop(); // TreePop は TreeNodeEx の場合も同様に必要です
+				ImGui::TreePop();
 			}
 		}
 
 		static void DrawKeyFrameButtons(WindowData& window, Impl* impl) {
+			ImGui::Spacing();
+			ImGui::Text("キー挿入対象（複数選択可）:");
+			ImGui::Checkbox("X", &window.insertX); ImGui::SameLine();
+			ImGui::Checkbox("Y", &window.insertY); ImGui::SameLine();
+			ImGui::Checkbox("Z", &window.insertZ);
+
 			if (ImGui::Button("現在のフレームにキーを挿入")) {
-				auto it = std::find_if(window.keyFrames.begin(), window.keyFrames.end(), [&](const KeyFrame& k) {
+				AxisGroup targetGroup = window.GetCurrentTargetGroup();
+				if (targetGroup == AxisGroup::None) return;
+
+				Vector3 modelPos = { 0.0f, 0.0f, 0.0f };
+				if (!impl->m_pTargetModels.empty() && impl->m_pTargetModels[0].second) {
+					modelPos = impl->m_pTargetModels[0].second->GetTranslate();
+				}
+
+				auto& keys = window.groupedKeyFrames[static_cast<size_t>(targetGroup)];
+
+				// 同じフレームに既にキーがあれば上書き、なければ新規追加
+				auto it = std::find_if(keys.begin(), keys.end(), [&](const KeyFrame& k) {
 					return k.frame == window.currentFrame;
 					});
-				if (it == window.keyFrames.end()) {
+
+				if (it != keys.end()) {
+					it->value = modelPos; // ★ Vector3を一気に上書き
+				} else {
 					KeyFrame newKey;
 					newKey.frame = window.currentFrame;
-					if (!impl->m_pTargetModels.empty() && impl->m_pTargetModels[0].second) {
-						newKey.value = impl->m_pTargetModels[0].second->GetTranslate();
-					}
-					window.keyFrames.push_back(newKey);
-					std::sort(window.keyFrames.begin(), window.keyFrames.end(), [](const KeyFrame& a, const KeyFrame& b) {
-						return a.frame < b.frame;
-						});
+					newKey.value = modelPos;
+					newKey.group = targetGroup;
+					keys.push_back(newKey);
+					std::sort(keys.begin(), keys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
 				}
 			}
+
 			ImGui::SameLine();
 			if (ImGui::Button("選択中のフレームのキーを削除")) {
-				window.keyFrames.erase(std::remove_if(window.keyFrames.begin(), window.keyFrames.end(), [&](const KeyFrame& k) {
-					return k.frame == window.currentFrame;
-					}), window.keyFrames.end());
+				AxisGroup targetGroup = window.GetCurrentTargetGroup();
+				if (targetGroup != AxisGroup::None) {
+					auto& keys = window.groupedKeyFrames[static_cast<size_t>(targetGroup)];
+					keys.erase(std::remove_if(keys.begin(), keys.end(), [&](const KeyFrame& k) {
+						return k.frame == window.currentFrame;
+						}), keys.end());
+				}
 			}
 		}
 
@@ -286,95 +288,147 @@ namespace RyoEngine {
 		}
 
 		static void DrawValueInspector(WindowData& window) {
-			auto it = std::find_if(window.keyFrames.begin(), window.keyFrames.end(), [&](const KeyFrame& k) {
-				return k.frame == window.currentFrame;
-				});
+			const char* easingNames[] = { "None", "Lerp", "EaseInQuad", "EaseOutQuad", "EaseInOutQuad", "EaseOutBounce" };
+			bool hasKeyInCurrentFrame = false;
 
-			if (it != window.keyFrames.end()) {
-				ImGui::TextColored(ImVec4(1, 1, 0, 1), "キーフレーム情報");
-				float val[3] = { it->value.x, it->value.y, it->value.z };
-				if (ImGui::DragFloat3("translate", val, 0.1f)) {
-					it->value = Vector3{ val[0], val[1], val[2] };
-				}
+			// 全グループから現在のフレームにキーがあるか探す
+			for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
+				auto& keys = window.groupedKeyFrames[i];
+				auto it = std::find_if(keys.begin(), keys.end(), [&](const KeyFrame& k) { return k.frame == window.currentFrame; });
 
-				// --- ★ 追加：イージングタイプ変更用のコンボボックス ---
-				const char* easingNames[] = { "None", "Lerp", "EaseInQuad", "EaseOutQuad", "EaseInOutQuad", "EaseOutBounce" };
-				int currentEasingIdx = static_cast<int>(it->easing);
-				if (ImGui::Combo("Easing", &currentEasingIdx, easingNames, IM_ARRAYSIZE(easingNames))) {
-					it->easing = static_cast<EasingType>(currentEasingIdx);
+				if (it != keys.end()) {
+					if (!hasKeyInCurrentFrame) {
+						ImGui::TextColored(ImVec4(1, 1, 0, 1), "キーフレーム情報 (現在のフレーム)");
+						hasKeyInCurrentFrame = true;
+					}
+
+					AxisGroup g = static_cast<AxisGroup>(i);
+					ImGui::Text("[%s グループ]", window.GetGroupName(g));
+
+					// グループに応じて必要な軸のドラッグUIを出す
+					if (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ) {
+						ImGui::DragFloat("Translate.X", &it->value.x, 0.1f, -50.0f, 50.0f);
+					}
+					if (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ) {
+						ImGui::DragFloat("Translate.Y", &it->value.y, 0.1f, -50.0f, 50.0f);
+					}
+					if (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ) {
+						ImGui::DragFloat("Translate.Z", &it->value.z, 0.1f, -50.0f, 50.0f);
+					}
+
+					int easingIdx = static_cast<int>(it->easing);
+					if (ImGui::Combo("Easing", &easingIdx, easingNames, IM_ARRAYSIZE(easingNames))) {
+						it->easing = static_cast<EasingType>(easingIdx);
+					}
+					ImGui::Separator();
 				}
-			} else {
-				ImGui::Text("（キーフレームなし）");
+			}
+
+			if (!hasKeyInCurrentFrame) {
+				ImGui::Text("（現在のフレームにキーフレームなし）");
 			}
 		}
 
 		static void DrawKeyFrameList(WindowData& window) {
 			ImGui::Spacing();
-			ImGui::Text("キーフレーム一覧 (クリックでジャンプ):");
-			if (ImGui::BeginChild("KeyFrameListArea", ImVec2(0, 100), ImGuiChildFlags_Border)) {
-				if (window.keyFrames.empty()) {
-					ImGui::Text("（キーフレームが登録されていません）");
-				} else {
-					for (size_t k_idx = 0; k_idx < window.keyFrames.size(); ++k_idx) {
-						auto& k = window.keyFrames[k_idx];
-						bool is_active = (k.frame == window.currentFrame);
+			ImGui::Text("グループ別キーフレーム一覧 (クリックでジャンプ):");
+			if (ImGui::BeginChild("KeyFrameListArea", ImVec2(0, 120), ImGuiChildFlags_Border)) {
 
-						std::string label = "キーフレーム " + std::to_string(k_idx + 1) + " (Frame: " + std::to_string(k.frame) + ")";
-						if (is_active) label += " (active)";
+				bool hasAnyKey = false;
 
-						if (ImGui::Selectable(label.c_str(), is_active)) {
-							window.currentFrame = k.frame;
+				// 全7グループを走査 (1:X ~ 7:XYZ)
+				for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
+					auto& keys = window.groupedKeyFrames[i];
+
+					// ★ 空のグループは描画をスキップ！
+					if (keys.empty()) continue;
+
+					hasAnyKey = true;
+					AxisGroup g = static_cast<AxisGroup>(i);
+					std::string groupLabel = std::string(window.GetGroupName(g)) + " (" + std::to_string(keys.size()) + ")";
+
+					if (ImGui::TreeNode(groupLabel.c_str())) {
+						for (const auto& key : keys) {
+							bool is_active = (key.frame == window.currentFrame);
+							std::string label = "フレーム: " + std::to_string(key.frame);
+							if (is_active) label += " (active)";
+
+							if (ImGui::Selectable(label.c_str(), is_active)) {
+								window.currentFrame = key.frame;
+							}
 						}
-
-						if (is_active) {
-							ImGui::SetScrollHereY();
-						}
+						ImGui::TreePop();
 					}
+				}
+
+				if (!hasAnyKey) {
+					ImGui::Text("（キーフレームが登録されていません）");
 				}
 			}
 			ImGui::EndChild();
 		}
 
-		static void UpdateAnimationAnimate(WindowData& window, Impl* impl) {
-			if (window.keyFrames.empty() || impl->m_pTargetModels.empty() || !impl->m_pTargetModels[0].second) {
-				return;
-			}
+		// 特定の軸に関係するキーだけを一瞬集約して評価するヘルパー
+		static float EvaluateAxisNew(int32_t currentFrame, const WindowData& window, int axisIndex, float defaultVal) {
+			// axisIndex -> 0:X, 1:Y, 2:Z
 
-			Model* targetModel = impl->m_pTargetModels[0].second;
-			Vector3 finalTranslate = { 0.0f, 0.0f, 0.0f };
+			// 今回の評価に関係するキーフレームを一時的に集める
+			std::vector<KeyFrame> activeKeys;
 
-			if (window.currentFrame <= window.keyFrames.front().frame) {
-				// 最初のキーフレーム以前なら、最初の値をそのまま適用
-				finalTranslate = window.keyFrames.front().value;
-			} else if (window.currentFrame >= window.keyFrames.back().frame) {
-				// 最後のキーフレーム以降なら、最後の値をそのまま適用
-				finalTranslate = window.keyFrames.back().value;
-			} else {
-				// 挟まれている2つのキーフレームを探索
-				for (size_t k = 1; k < window.keyFrames.size(); ++k) {
-					if (window.currentFrame <= window.keyFrames[k].frame) {
-						const auto& prevKey = window.keyFrames[k - 1];
-						const auto& nextKey = window.keyFrames[k];
+			for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
+				AxisGroup g = static_cast<AxisGroup>(i);
 
-						int32_t frameDiff = nextKey.frame - prevKey.frame;
-						if (frameDiff > 0) {
-							// 現在の進行度（0.0f ～ 1.0f）
-							float t = static_cast<float>(window.currentFrame - prevKey.frame) / static_cast<float>(frameDiff);
+				// 軸Indexに応じて、その軸が含まれるグループのキーを拾う
+				bool include = false;
+				if (axisIndex == 0) include = (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ);
+				if (axisIndex == 1) include = (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+				if (axisIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
 
-							// 到達目標（現在向かっている側）のキーフレームが持っている easing を用いて補間割合を変換
-							float easedT = ApplyEasing(nextKey.easing, t);
-
-							// 計算された補間割合で線形補間
-							finalTranslate = LerpVector3(prevKey.value, nextKey.value, easedT);
-						} else {
-							finalTranslate = nextKey.value;
-						}
-						break;
+				if (include) {
+					for (const auto& k : window.groupedKeyFrames[i]) {
+						activeKeys.push_back(k);
 					}
 				}
 			}
 
-			// 算出した座標をモデルにリアルタイム代入
+			if (activeKeys.empty()) return defaultVal;
+
+			// フレーム順にソート
+			std::sort(activeKeys.begin(), activeKeys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
+
+			// --- あとは元の EvaluateAxis と同じ補間ロジック ---
+			if (currentFrame <= activeKeys.front().frame) return (axisIndex == 0 ? activeKeys.front().value.x : (axisIndex == 1 ? activeKeys.front().value.y : activeKeys.front().value.z));
+			if (currentFrame >= activeKeys.back().frame)  return (axisIndex == 0 ? activeKeys.back().value.x : (axisIndex == 1 ? activeKeys.back().value.y : activeKeys.back().value.z));
+
+			for (size_t k = 1; k < activeKeys.size(); ++k) {
+				if (currentFrame <= activeKeys[k].frame) {
+					const auto& prevKey = activeKeys[k - 1];
+					const auto& nextKey = activeKeys[k];
+
+					int32_t frameDiff = nextKey.frame - prevKey.frame;
+					if (frameDiff > 0) {
+						float t = static_cast<float>(currentFrame - prevKey.frame) / static_cast<float>(frameDiff);
+						float easedT = ApplyEasing(nextKey.easing, t);
+
+						float pVal = (axisIndex == 0 ? prevKey.value.x : (axisIndex == 1 ? prevKey.value.y : prevKey.value.z));
+						float nVal = (axisIndex == 0 ? nextKey.value.x : (axisIndex == 1 ? nextKey.value.y : nextKey.value.z));
+						return pVal + (nVal - pVal) * easedT;
+					}
+					return (axisIndex == 0 ? nextKey.value.x : (axisIndex == 1 ? nextKey.value.y : nextKey.value.z));
+				}
+			}
+			return defaultVal;
+		}
+
+		static void UpdateAnimationAnimate(WindowData& window, Impl* impl) {
+			if (impl->m_pTargetModels.empty() || !impl->m_pTargetModels[0].second) return;
+			Model* targetModel = impl->m_pTargetModels[0].second;
+			Vector3 currentModelPos = targetModel->GetTranslate();
+
+			Vector3 finalTranslate;
+			finalTranslate.x = EvaluateAxisNew(window.currentFrame, window, 0, currentModelPos.x);
+			finalTranslate.y = EvaluateAxisNew(window.currentFrame, window, 1, currentModelPos.y);
+			finalTranslate.z = EvaluateAxisNew(window.currentFrame, window, 2, currentModelPos.z);
 			targetModel->SetTranslate(finalTranslate);
 		}
 
@@ -422,7 +476,7 @@ namespace RyoEngine {
 			ImGui::SameLine();
 			if (ImGui::Button("0フレームへ戻る")) {
 				window.isPlaying = false;
-				window.currentFrame = 0; // 最初に戻る
+				window.currentFrame = 0;
 				window.frameTimer = 0.0f;
 			}
 
@@ -439,8 +493,130 @@ namespace RyoEngine {
 		}
 	};
 
+	// --- 構造体の外側での WindowDelegate のメンバ関数定義 ---
+	size_t AnimEdit::Impl::WindowDelegate::GetPointCount(size_t curveIndex) {
+		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return 0;
+		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+
+		size_t count = 0;
+		for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
+			AxisGroup g = static_cast<AxisGroup>(i);
+			bool include = false;
+			if (curveIndex == 0) include = (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ);
+			if (curveIndex == 1) include = (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+			if (curveIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+
+			if (include) count += window.groupedKeyFrames[i].size();
+		}
+		return count;
+	}
+
+	uint32_t AnimEdit::Impl::WindowDelegate::GetCurveColor(size_t curveIndex) {
+		uint32_t colors[] = { 0xFF0000FF, 0xFF00FF00, 0xFFFF0000 }; // R, G, B
+		return colors[curveIndex];
+	}
+
+	ImVec2* AnimEdit::Impl::WindowDelegate::GetPoints(size_t curveIndex) {
+		static std::vector<ImVec2> pointsCache;
+		pointsCache.clear();
+		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return nullptr;
+
+		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+
+		// 該当軸が含まれるグループのキーをキャッシュに集める
+		for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
+			AxisGroup g = static_cast<AxisGroup>(i);
+			bool include = false;
+			if (curveIndex == 0) include = (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ);
+			if (curveIndex == 1) include = (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+			if (curveIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+
+			if (include) {
+				for (const auto& k : window.groupedKeyFrames[i]) {
+					float val = (curveIndex == 0 ? k.value.x : (curveIndex == 1 ? k.value.y : k.value.z));
+					pointsCache.push_back(ImVec2(static_cast<float>(k.frame), val));
+				}
+			}
+		}
+		// タイムライン描画のためにフレーム順でソート
+		std::sort(pointsCache.begin(), pointsCache.end(), [](const ImVec2& a, const ImVec2& b) { return a.x < b.x; });
+		return pointsCache.data();
+	}
+
+	int AnimEdit::Impl::WindowDelegate::EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) {
+		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return pointIndex;
+		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+
+		// 現在表示されている点をフレーム順に追跡して、元のグループのデータを書き換える
+		struct KeyRef { AxisGroup group; size_t index; int32_t originalFrame; };
+		std::vector<KeyRef> refs;
+
+		for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
+			AxisGroup g = static_cast<AxisGroup>(i);
+			bool include = false;
+			if (curveIndex == 0) include = (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ);
+			if (curveIndex == 1) include = (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+			if (curveIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+
+			if (include) {
+				for (size_t idx = 0; idx < window.groupedKeyFrames[i].size(); ++idx) {
+					refs.push_back({ g, idx, window.groupedKeyFrames[i][idx].frame });
+				}
+			}
+		}
+		std::sort(refs.begin(), refs.end(), [&](const KeyRef& a, const KeyRef& b) {
+			return window.groupedKeyFrames[static_cast<size_t>(a.group)][a.index].frame < window.groupedKeyFrames[static_cast<size_t>(b.group)][b.index].frame;
+			});
+
+		if (pointIndex >= (int)refs.size()) return pointIndex;
+
+		auto& targetRef = refs[pointIndex];
+		auto& key = window.groupedKeyFrames[static_cast<size_t>(targetRef.group)][targetRef.index];
+
+		// 値の書き換え (Vector3の該当軸のみ書き換え)
+		if (curveIndex == 0) key.value.x = value.y;
+		if (curveIndex == 1) key.value.y = value.y;
+		if (curveIndex == 2) key.value.z = value.y;
+
+		// ★フレーム移動（ここを変更することで、グループ内の全軸が同期して一緒に動くようになります！）
+		key.frame = static_cast<int32_t>(value.x);
+		window.currentFrame = key.frame;
+
+		// ソートし直す
+		std::sort(window.groupedKeyFrames[static_cast<size_t>(targetRef.group)].begin(),
+			window.groupedKeyFrames[static_cast<size_t>(targetRef.group)].end(),
+			[](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
+
+		return pointIndex;
+	}
+
+	void AnimEdit::Impl::WindowDelegate::AddPoint(size_t curveIndex, ImVec2 value) {
+		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return;
+		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+
+		// タイムラインの空きをダブルクリックして追加した場合は、現在のチェックボックス選択に応じたグループに追加
+		AxisGroup targetGroup = window.GetCurrentTargetGroup();
+		if (targetGroup == AxisGroup::None) targetGroup = AxisGroup::XYZ; // デフォルト安全用
+
+		int32_t targetFrame = static_cast<int32_t>(value.x);
+		auto& keys = window.groupedKeyFrames[static_cast<size_t>(targetGroup)];
+		auto it = std::find_if(keys.begin(), keys.end(), [&](const KeyFrame& k) { return k.frame == targetFrame; });
+
+		if (it == keys.end()) {
+			KeyFrame newKey;
+			newKey.frame = targetFrame;
+			if (curveIndex == 0) newKey.value.x = value.y;
+			if (curveIndex == 1) newKey.value.y = value.y;
+			if (curveIndex == 2) newKey.value.z = value.y;
+			newKey.group = targetGroup;
+			keys.push_back(newKey);
+			std::sort(keys.begin(), keys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
+		}
+	}
+
+
 	// =========================================================================
-	//  AnimEdit クラス実装
+	//  AnimEdit クラス本体の実装
 	// =========================================================================
 	AnimEdit::AnimEdit() {
 		m_pImpl = new Impl();
@@ -456,14 +632,11 @@ namespace RyoEngine {
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
 
-		// --- ★ 改善1: 1フレームの経過時間（DeltaTime）を安全に取得 ---
 		float deltaTime = ImGui::GetIO().DeltaTime;
 
-		// --- ★ 改善2: ウィンドウの状態に関わらず、すべてのアニメーションを常にバックグラウンドで更新 ---
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 			auto& window = impl->m_SubWindows[i];
 
-			// 再生を停止し0フレーム目の位置へ
 			if (!window.is_open) {
 				if (window.isPlaying) {
 					window.isPlaying = false;
@@ -473,12 +646,10 @@ namespace RyoEngine {
 				continue;
 			}
 
-			// AdvanceFrame に deltaTime を直接渡せるようにする（後述の修正）
 			Impl::AdvanceFrame(window, deltaTime);
 			Impl::UpdateAnimationAnimate(window, impl);
 		}
 
-		// メインのインスペクタウィンドウの描画
 		ImGui::Begin("Animation Editor");
 		{
 			WindowManager();
@@ -486,7 +657,6 @@ namespace RyoEngine {
 		}
 		ImGui::End();
 
-		// サブウィンドウの描画（ここでは描画の面倒だけを見る）
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 			if (impl->m_SubWindows[i].is_open) {
 				Impl::DrawSubWindow(impl->m_SubWindows[i], i, impl);
@@ -623,18 +793,25 @@ namespace RyoEngine {
 			window_json["is_open"] = false;
 			window_json["max_frame"] = w.maxFrame;
 			window_json["current_frame"] = w.currentFrame;
+			window_json["insert_x"] = w.insertX;
+			window_json["insert_y"] = w.insertY;
+			window_json["insert_z"] = w.insertZ;
 
-			json keys_arr = json::array();
-			for (const auto& k : w.keyFrames) {
-				json k_json;
-				k_json["frame"] = k.frame;
-				k_json["val_x"] = k.value.x;
-				k_json["val_y"] = k.value.y;
-				k_json["val_z"] = k.value.z;
-				k_json["easing"] = static_cast<int32_t>(k.easing);
-				keys_arr.push_back(k_json);
+			json groups_arr = json::array();
+			for (size_t i = 0; i < static_cast<size_t>(Impl::AxisGroup::MaxGroups); ++i) {
+				json group_json = json::array();
+				for (const auto& k : w.groupedKeyFrames[i]) {
+					json k_json;
+					k_json["frame"] = k.frame;
+					k_json["val_x"] = k.value.x;
+					k_json["val_y"] = k.value.y;
+					k_json["val_z"] = k.value.z;
+					k_json["easing"] = static_cast<int32_t>(k.easing);
+					group_json.push_back(k_json);
+				}
+				groups_arr.push_back(group_json);
 			}
-			window_json["keyframes"] = keys_arr;
+			window_json["grouped_keyframes"] = groups_arr;
 			j.push_back(window_json);
 		}
 
@@ -668,16 +845,27 @@ namespace RyoEngine {
 					w.is_open = false;
 					w.maxFrame = item.value("max_frame", 60);
 					w.currentFrame = item.value("current_frame", 0);
+					w.insertX = item.value("insert_x", true);
+					w.insertY = item.value("insert_y", true);
+					w.insertZ = item.value("insert_z", true);
 
-					if (item.contains("keyframes") && item["keyframes"].is_array()) {
-						for (const auto& k_item : item["keyframes"]) {
-							Impl::KeyFrame k;
-							k.frame = k_item.value("frame", 0);
-							k.value.x = k_item.value("val_x", 0.0f);
-							k.value.y = k_item.value("val_y", 0.0f);
-							k.value.z = k_item.value("val_z", 0.0f);
-							k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
-							w.keyFrames.push_back(k);
+					if (item.contains("grouped_keyframes") && item["grouped_keyframes"].is_array()) {
+						auto groups_arr = item["grouped_keyframes"];
+						size_t max_g = std::min(groups_arr.size(), static_cast<size_t>(Impl::AxisGroup::MaxGroups));
+						for (size_t i = 0; i < max_g; ++i) {
+							w.groupedKeyFrames[i].clear();
+							if (groups_arr[i].is_array()) {
+								for (const auto& k_item : groups_arr[i]) {
+									Impl::KeyFrame k;
+									k.frame = k_item.value("frame", 0);
+									k.value.x = k_item.value("val_x", 0.0f);
+									k.value.y = k_item.value("val_y", 0.0f);
+									k.value.z = k_item.value("val_z", 0.0f);
+									k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
+									k.group = static_cast<Impl::AxisGroup>(i);
+									w.groupedKeyFrames[i].push_back(k);
+								}
+							}
 						}
 					}
 					impl->m_SubWindows.push_back(w);
@@ -697,7 +885,7 @@ namespace RyoEngine {
 		Impl* impl = GetInstance().m_pImpl;
 
 		ImGui::Spacing();
-		if (ImGui::TreeNode("登録済みオブジェクト")) {
+		if (ImGui::TreeNodeEx("登録済みオブジェクト", ImGuiTreeNodeFlags_DefaultOpen)) {
 			if (impl->m_pTargetModels.empty()) {
 				ImGui::Text("操作対象オブジェクト: なし");
 			} else {
@@ -713,12 +901,12 @@ namespace RyoEngine {
 
 					if (name == "NoName") {
 						if (!hasCreatedNoNameTree) {
-							isNoNameTreeOpen = ImGui::TreeNode("Models");
+							isNoNameTreeOpen = ImGui::TreeNodeEx("Models", ImGuiTreeNodeFlags_DefaultOpen);
 							hasCreatedNoNameTree = true;
 						}
 
 						if (isNoNameTreeOpen) {
-							if (ImGui::TreeNode((std::string("Model [") + std::to_string(i) + "]").c_str())) {
+							if (ImGui::TreeNodeEx((std::string("Model [") + std::to_string(i) + "]").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 								Vector3 translate = model->GetTranslate();
 								float pos[3] = { translate.x, translate.y, translate.z };
 
@@ -735,7 +923,7 @@ namespace RyoEngine {
 							hasCreatedNoNameTree = false;
 						}
 
-						if (ImGui::TreeNode(name.c_str())) {
+						if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 							Vector3 translate = model->GetTranslate();
 							float pos[3] = { translate.x, translate.y, translate.z };
 
