@@ -5,7 +5,7 @@
         "is_open": false,
         "keyframes": [
             {
-                "easing": 1,
+                "easing": 0,
                 "frame": 0,
                 "val_x": 0.0,
                 "val_y": 0.0,
@@ -19,23 +19,7 @@
                 "val_z": 203.64663696289063
             }
         ],
-        "max_frame": 200,
+        "max_frame": 100,
         "name": "新規ウィンドウ 1"
-    },
-    {
-        "current_frame": 0,
-        "id": 2,
-        "is_open": false,
-        "keyframes": [],
-        "max_frame": 60,
-        "name": "新規ウィンドウ 2"
-    },
-    {
-        "current_frame": 0,
-        "id": 3,
-        "is_open": false,
-        "keyframes": [],
-        "max_frame": 60,
-        "name": "新規ウィンドウ 3"
     }
 ]

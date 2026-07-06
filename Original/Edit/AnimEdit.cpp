@@ -61,14 +61,12 @@ namespace RyoEngine {
 
 		struct WindowData;
 
-		static void AdvanceFrame(WindowData& window) {
+		static void AdvanceFrame(WindowData& window, float deltaTime) {
 			if (!window.isPlaying) return;
 
-			// ImGuiからデルタタイム（経過時間）を取得（例: 60fpsなら約0.0166秒）
-			float deltaTime = ImGui::GetIO().DeltaTime;
 			window.frameTimer += deltaTime;
 
-			// 1フレーム進むのに必要な時間 (1.0f / 60.0f = 約0.0166秒)
+			// 1フレーム進むのに必要な時間
 			float timePerFrame = 1.0f / window.fps;
 
 			while (window.frameTimer >= timePerFrame) {
@@ -77,7 +75,7 @@ namespace RyoEngine {
 
 				// ループ再生の処理
 				if (window.currentFrame > window.maxFrame) {
-					window.currentFrame = 0; // 最初に戻る（ループしない場合は maxFrame で止めて isPlaying = false にする）
+					window.currentFrame = 0;
 				}
 			}
 		}
@@ -237,7 +235,7 @@ namespace RyoEngine {
 				}
 			}
 
-			if (ImGui::TreeNode("translate (タイムライン)")) {
+			if (ImGui::TreeNodeEx("translate (タイムライン)", ImGuiTreeNodeFlags_DefaultOpen)) {
 				if (ImGui::BeginChild("SequencerArea", ImVec2(0, 130), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar)) {
 					int currentFrameItem = window.currentFrame;
 					int selectedItem = -1;
@@ -248,7 +246,7 @@ namespace RyoEngine {
 					window.currentFrame = currentFrameItem;
 				}
 				ImGui::EndChild();
-				ImGui::TreePop();
+				ImGui::TreePop(); // TreePop は TreeNodeEx の場合も同様に必要です
 			}
 		}
 
@@ -293,7 +291,7 @@ namespace RyoEngine {
 				});
 
 			if (it != window.keyFrames.end()) {
-				ImGui::TextColored(ImVec4(1, 1, 0, 1), "キーフレーム位置");
+				ImGui::TextColored(ImVec4(1, 1, 0, 1), "キーフレーム情報");
 				float val[3] = { it->value.x, it->value.y, it->value.z };
 				if (ImGui::DragFloat3("translate", val, 0.1f)) {
 					it->value = Vector3{ val[0], val[1], val[2] };
@@ -437,9 +435,6 @@ namespace RyoEngine {
 			DrawValueInspector(window);
 			DrawKeyFrameList(window);
 
-			AdvanceFrame(window);
-			UpdateAnimationAnimate(window, impl);
-
 			ImGui::End();
 		}
 	};
@@ -461,6 +456,29 @@ namespace RyoEngine {
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
 
+		// --- ★ 改善1: 1フレームの経過時間（DeltaTime）を安全に取得 ---
+		float deltaTime = ImGui::GetIO().DeltaTime;
+
+		// --- ★ 改善2: ウィンドウの状態に関わらず、すべてのアニメーションを常にバックグラウンドで更新 ---
+		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
+			auto& window = impl->m_SubWindows[i];
+
+			// 再生を停止し0フレーム目の位置へ
+			if (!window.is_open) {
+				if (window.isPlaying) {
+					window.isPlaying = false;
+					window.currentFrame = 0;
+					Impl::UpdateAnimationAnimate(window, impl);
+				}
+				continue;
+			}
+
+			// AdvanceFrame に deltaTime を直接渡せるようにする（後述の修正）
+			Impl::AdvanceFrame(window, deltaTime);
+			Impl::UpdateAnimationAnimate(window, impl);
+		}
+
+		// メインのインスペクタウィンドウの描画
 		ImGui::Begin("Animation Editor");
 		{
 			WindowManager();
@@ -468,11 +486,11 @@ namespace RyoEngine {
 		}
 		ImGui::End();
 
+		// サブウィンドウの描画（ここでは描画の面倒だけを見る）
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
-			if (!impl->m_SubWindows[i].is_open) continue;
-
-			// Impl内の静的関数として直接呼び出す
-			Impl::DrawSubWindow(impl->m_SubWindows[i], i, impl);
+			if (impl->m_SubWindows[i].is_open) {
+				Impl::DrawSubWindow(impl->m_SubWindows[i], i, impl);
+			}
 		}
 	}
 
@@ -519,7 +537,7 @@ namespace RyoEngine {
 
 		ImGui::Separator();
 
-		if (ImGui::TreeNode("ウィンドウリスト")) {
+		if (ImGui::TreeNodeEx("ウィンドウリスト", ImGuiTreeNodeFlags_DefaultOpen)) {
 			std::string preview_text = "ウィンドウを選択";
 			if ((impl->m_SelectedWindowIdx >= 0 && (impl->m_SelectedWindowIdx < (int)impl->m_SubWindows.size()))) {
 				preview_text = impl->m_SubWindows[impl->m_SelectedWindowIdx].name;
@@ -679,7 +697,7 @@ namespace RyoEngine {
 		Impl* impl = GetInstance().m_pImpl;
 
 		ImGui::Spacing();
-		if (ImGui::TreeNodeEx("登録済みオブジェクト", ImGuiTreeNodeFlags_DefaultOpen)) {
+		if (ImGui::TreeNode("登録済みオブジェクト")) {
 			if (impl->m_pTargetModels.empty()) {
 				ImGui::Text("操作対象オブジェクト: なし");
 			} else {
@@ -695,12 +713,12 @@ namespace RyoEngine {
 
 					if (name == "NoName") {
 						if (!hasCreatedNoNameTree) {
-							isNoNameTreeOpen = ImGui::TreeNodeEx("Models", ImGuiTreeNodeFlags_DefaultOpen);
+							isNoNameTreeOpen = ImGui::TreeNode("Models");
 							hasCreatedNoNameTree = true;
 						}
 
 						if (isNoNameTreeOpen) {
-							if (ImGui::TreeNodeEx((std::string("Model [") + std::to_string(i) + "]").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+							if (ImGui::TreeNode((std::string("Model [") + std::to_string(i) + "]").c_str())) {
 								Vector3 translate = model->GetTranslate();
 								float pos[3] = { translate.x, translate.y, translate.z };
 
@@ -717,7 +735,7 @@ namespace RyoEngine {
 							hasCreatedNoNameTree = false;
 						}
 
-						if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+						if (ImGui::TreeNode(name.c_str())) {
 							Vector3 translate = model->GetTranslate();
 							float pos[3] = { translate.x, translate.y, translate.z };
 
