@@ -319,7 +319,73 @@ namespace RyoEngine {
 			ImGui::Text("%s", curveEditorNames[window.currentTransformMode]);
 			if (ImGui::BeginChild("CurveEditorArea", ImVec2(0, 180), ImGuiChildFlags_Border, ImGuiWindowFlags_NoScrollbar)) {
 				ImVec2 curveSize = ImGui::GetContentRegionAvail();
+
+				// 子ウィンドウ自体の位置とサイズを取得
+				ImVec2 windowPos = ImGui::GetWindowPos();
+				ImVec2 windowSize = ImGui::GetWindowSize();
+
+				// ★ 1. グラフの「暗い灰色のボックス」の正確な描画範囲（上下左右）を計算
+				// ImCurveEditの内部の枠線（パディング）を考慮した矩形を作ります
+				float paddingX = 8.0f;
+				float paddingY = 4.0f; // ImCurveEdit の上下一枠分のデフォルト余白
+
+				ImVec2 clipMin(windowPos.x + paddingX, windowPos.y + paddingY);
+				ImVec2 clipMax(windowPos.x + windowSize.x - paddingX, windowPos.y + windowSize.y - paddingY);
+
+				// グラフを描画
 				ImCurveEdit::Edit(window.delegate, curveSize, window.id);
+
+				// デリゲートからフレームの最小・最大値を取得
+				float frameMin = static_cast<float>(window.delegate.GetFrameMin());
+				float frameMax = static_cast<float>(window.delegate.GetFrameMax());
+
+				if (frameMax > frameMin) {
+					// ★ 動く量を調整する倍率（1動いたら0.9動かしたいなら 0.9f）
+					float motionScale = 0.98825f;
+
+					// 起点（例えば最小フレーム）からの「移動量」を計算し、そこに倍率をかける
+					float baseFrame = frameMin; // どこを基準にしてズラすか（通常は最小フレーム）
+					float movedFrame = (static_cast<float>(window.currentFrame) - baseFrame) * motionScale;
+
+					// 倍率をかけた後の「現在の位置」を割り出す
+					float adjustedFrame = baseFrame + movedFrame;
+
+					// 補正したフレーム値を使って、グラフ全体の中の割合（0.0 〜 1.0）を計算
+					float t = (adjustedFrame - frameMin) / (frameMax - frameMin);
+
+					// 画面上のピクセル座標に変換
+					float lineX = clipMin.x + (clipMax.x - clipMin.x) * t;
+					if (lineX >= clipMin.x && lineX <= clipMax.x) {
+						// 最前面の描画リストを取得
+						ImDrawList* drawList = ImGui::GetForegroundDrawList();
+
+						ImVec2 lineStart(lineX, clipMin.y);
+						ImVec2 lineEnd(lineX, clipMax.y);
+
+						// ★ 現在の子ウィンドウの DrawList から、親のスクロール等を考慮した「実際に画面に見えている表示領域」を取得
+						ImDrawList* currentDrawList = ImGui::GetWindowDrawList();
+						ImVec2 currentWindowClipMin = currentDrawList->GetClipRectMin();
+						ImVec2 currentWindowClipMax = currentDrawList->GetClipRectMax();
+
+						// グラフのボックス範囲（clipMin/Max）と、Windowの実際の表示領域の「重なり合う矩形」を計算する
+						ImVec2 finalClipMin, finalClipMax;
+						finalClipMin.x = (clipMin.x > currentWindowClipMin.x) ? clipMin.x : currentWindowClipMin.x;
+						finalClipMin.y = (clipMin.y > currentWindowClipMin.y) ? clipMin.y : currentWindowClipMin.y;
+						finalClipMax.x = (clipMax.x < currentWindowClipMax.x) ? clipMax.x : currentWindowClipMax.x;
+						finalClipMax.y = (clipMax.y < currentWindowClipMax.y) ? clipMax.y : currentWindowClipMax.y;
+
+						// クリップ領域が有効（潰れていない）場合のみ描画
+						if (finalClipMin.x < finalClipMax.x && finalClipMin.y < finalClipMax.y) {
+							// 計算した安全な範囲で最前面レイヤーにクリッピングをかける
+							drawList->PushClipRect(finalClipMin, finalClipMax, false);
+
+							// 白色（0xFFFFFFFF）で太さ 1.0f の細線を描画
+							drawList->AddLine(lineStart, lineEnd, 0xFFFFFFFF, 1.0f);
+
+							drawList->PopClipRect();
+						}
+					}
+				}
 			}
 			ImGui::EndChild();
 		}
