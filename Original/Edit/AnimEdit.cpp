@@ -216,6 +216,11 @@ namespace RyoEngine {
 				}
 			}
 
+			bool useTrigger = false;               // トリガー機能を使うか
+			std::string triggerFlagName = "None";  // 監視するフラグの名前
+			bool triggerCondition = true;          // trueのとき開始するか、falseのときか
+			bool lastTriggerState = false;         // 前フレームのフラグ状態
+
 			WindowDelegate delegate;
 		};
 
@@ -224,6 +229,36 @@ namespace RyoEngine {
 
 		std::vector<std::pair<std::string, Model*>> m_pTargetModels;
 
+		std::vector<std::pair<std::string, bool*>> m_RegisteredFlags; // ★追加：登録フラグのリスト
+		
+		// ★追加：トリガー条件の監視ロジック関数
+		static void CheckAnimationTrigger(WindowData& window, Impl* impl) {
+			if (!window.useTrigger || window.triggerFlagName == "None") return;
+
+			bool* pCurrentFlag = nullptr;
+			for (const auto& pair : impl->m_RegisteredFlags) {
+				if (pair.first == window.triggerFlagName) {
+					pCurrentFlag = pair.second;
+					break;
+				}
+			}
+			if (!pCurrentFlag) return;
+
+			bool currentVal = *pCurrentFlag;
+			bool isTriggered = false;
+			if (window.triggerCondition == true) {
+				if (!window.lastTriggerState && currentVal) isTriggered = true; // false -> true の瞬間
+			} else {
+				if (window.lastTriggerState && !currentVal) isTriggered = true; // true -> false の瞬間
+			}
+
+			if (isTriggered) {
+				window.currentFrame = 0;
+				window.frameTimer = 0.0f;
+				window.isPlaying = true; // 再生開始
+			}
+			window.lastTriggerState = currentVal;
+		}
 		// =========================================================================
 		//  UI / アニメーション処理関数
 		// =========================================================================
@@ -610,6 +645,32 @@ namespace RyoEngine {
 				window.frameTimer = 0.0f;
 			}
 
+			// ★追加：再生ボタンと編集モード（Combo）の間にトリガー設定UIを挟む
+			ImGui::Spacing();
+			if (ImGui::CollapsingHeader("アニメーション再生トリガー設定", ImGuiTreeNodeFlags_DefaultOpen)) {
+				ImGui::Checkbox("トリガーによる開始を有効化", &window.useTrigger);
+				if (window.useTrigger) {
+					ImGui::Indent();
+					std::string combo_preview = window.triggerFlagName;
+					if (ImGui::BeginCombo("対象フラグ", combo_preview.c_str())) {
+						if (ImGui::Selectable("None", window.triggerFlagName == "None")) { window.triggerFlagName = "None"; }
+						for (const auto& pair : impl->m_RegisteredFlags) {
+							if (ImGui::Selectable(pair.first.c_str(), window.triggerFlagName == pair.first)) {
+								window.triggerFlagName = pair.first;
+								window.lastTriggerState = *pair.second;
+							}
+						}
+						ImGui::EndCombo();
+					}
+					ImGui::Text("開始条件:"); ImGui::SameLine();
+					if (ImGui::RadioButton("True になったとき", window.triggerCondition == true)) { window.triggerCondition = true; }
+					ImGui::SameLine();
+					if (ImGui::RadioButton("False になったとき", window.triggerCondition == false)) { window.triggerCondition = false; }
+					ImGui::Unindent();
+				}
+			}
+			ImGui::Separator();
+
 			ImGui::Spacing();
 			ImGui::Separator();
 
@@ -770,6 +831,15 @@ namespace RyoEngine {
 
 	void AnimEdit::Initialize() {}
 
+	void AnimEdit::RegisterTriggerFlag(const std::string& name, bool* ptr) {
+		if (!ptr) return;
+		auto& flags = GetInstance().m_pImpl->m_RegisteredFlags;
+		for (const auto& pair : flags) {
+			if (pair.second == ptr) return; // 重複防止
+		}
+		flags.push_back(std::make_pair(name, ptr));
+	}
+
 	void AnimEdit::Update() {
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
@@ -778,6 +848,8 @@ namespace RyoEngine {
 
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 			auto& window = impl->m_SubWindows[i];
+
+			Impl::CheckAnimationTrigger(window, impl);
 
 			if (!window.is_open) {
 				if (window.isPlaying) {
@@ -795,6 +867,13 @@ namespace RyoEngine {
 		ImGui::Begin("Animation Editor");
 		{
 			WindowManager();
+
+			ImGui::Spacing();
+			//if (ImGui::TreeNode("トリガーテスト用")) {
+			//	ImGui::Checkbox("Editor_TestFlag の状態", &impl->m_TestFlag);
+			//	ImGui::TreePop();
+			//}
+
 			ModelOperate();
 		}
 		ImGui::End();
@@ -941,6 +1020,9 @@ namespace RyoEngine {
 			window_json["insert_y"] = w.insertY;
 			window_json["insert_z"] = w.insertZ;
 			window_json["current_transform_mode"] = w.currentTransformMode;
+			window_json["use_trigger"] = w.useTrigger;                  // ★追加
+			window_json["trigger_flag_name"] = w.triggerFlagName;        // ★追加
+			window_json["trigger_condition"] = w.triggerCondition;      // ★追加
 
 			json modes_arr = json::array();
 			for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
@@ -999,6 +1081,10 @@ namespace RyoEngine {
 					w.insertY = item.value("insert_y", true);
 					w.insertZ = item.value("insert_z", true);
 					w.currentTransformMode = item.value("current_transform_mode", 0);
+					w.useTrigger = item.value("use_trigger", false);                     // ★追加
+					w.triggerFlagName = item.value("trigger_flag_name", "None");         // ★追加
+					w.triggerCondition = item.value("trigger_condition", true);          // ★追加
+					w.lastTriggerState = false;
 
 					// データのクリア
 					for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {

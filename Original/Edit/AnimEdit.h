@@ -26,6 +26,9 @@ namespace RyoEngine {
 
 		static void ModelOperate();
 		static void SetTargetModel(Model* model, const std::string& name);
+
+		// ★ 追加：外部のboolフラグを名前付きでエディタに登録する関数
+		static void RegisterTriggerFlag(const std::string& name, bool* ptr);
 #else
 		static void Initialize(){}
 		static void Update(){}
@@ -38,14 +41,13 @@ namespace RyoEngine {
 		static void ModelOperate() {};
 
 		static void SetTargetModel(Model* model, const std::string& name) { (void)model; (void)name; }
+
+		// リリースビルド時は何もしない
+		static void RegisterTriggerFlag(const std::string& name, bool* ptr) { (void)name; (void)ptr; }
 #endif
 
 
 	private:
-		/// <summary>
-		/// インスタンス取得
-		/// </summary>
-		/// <returns>インスタンス</returns>
 		static AnimEdit& GetInstance() {
 			static AnimEdit instance;
 			return instance;

@@ -1,4 +1,5 @@
 #include "./Original/RyoEngine.h"
+#include "player/player.h"
 #ifdef _DEBUG
 #include "Original/ImGui/ImGuiAllInclude.h"
 #endif
@@ -10,12 +11,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
-    Model* model = Model::Create("resources/mirror.obj");
-    model->SetTex("resources/flower.png");
-
-    Model* model2 = Model::Create("resources/TR.obj");
-    model2->SetTex("resources/wall.png");
-
+    Player player;
+    player.Initialize();
+   
     DebugCamera* debugCamera = new DebugCamera();
 
 
@@ -31,8 +29,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         AnimEdit::Update();
 
         debugCamera->Update();
-        model->Update(*debugCamera);
-        model2->Update(*debugCamera);
+        player.Update(*debugCamera);
+      
 
         // ----------------------
         // ------ 更新終了 -------
@@ -56,8 +54,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // [3D描画フェーズ]
         Begin3dDraw();
         
-        model->Draw();
-        model2->Draw();
+        player.Draw();
+        
 
         // 3D終了----------------------------------------------------
         
@@ -79,7 +77,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         EndFrame();
     }
 
-    delete model;
+    
     delete debugCamera;
     // エンジン終了
     RyoEngine::Finalize();
