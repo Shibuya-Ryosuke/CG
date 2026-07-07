@@ -12,5 +12,5 @@ private:
 	RyoEngine::Model* model_ = nullptr;
 
 	bool pushA_ = false;
-
+	bool isRoop_ = false;
 };

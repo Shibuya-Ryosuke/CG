@@ -70,19 +70,35 @@ namespace RyoEngine {
 
 		static void AdvanceFrame(WindowData& window, float deltaTime) {
 			if (!window.isPlaying) return;
-
 			window.frameTimer += deltaTime;
-
-			// 1フレーム進むのに必要な時間
 			float timePerFrame = 1.0f / window.fps;
-
 			while (window.frameTimer >= timePerFrame) {
 				window.frameTimer -= timePerFrame;
 				window.currentFrame++;
 
-				// ループ再生の処理
 				if (window.currentFrame > window.maxFrame) {
-					window.currentFrame = 0;
+					// ループする場合
+					if (window.isLoop) {
+						window.currentLoopCount++; // ループ回数をカウント
+
+						// maxLoopCount が 1 以上、かつ現在のカウントがそこに達したら終了
+						if (window.maxLoopCount > 0 && window.currentLoopCount >= window.maxLoopCount) {
+							window.currentFrame = window.maxFrame; // 最終フレームで止める
+							window.isPlaying = false;
+							window.currentLoopCount = 0;
+							window.currentFrame = 0;
+							break;
+						} else {
+							window.currentFrame = 0; // まだ回数に達していない、または無限ループ(0)ならループ
+						}
+					} else {
+						// ループしない場合は、1回再生して終了
+						window.currentFrame = window.maxFrame; // 最終フレームで止める
+						window.isPlaying = false;
+						window.currentLoopCount = 0;
+						window.currentFrame = 0;
+						break;
+					}
 				}
 			}
 		}
@@ -221,6 +237,11 @@ namespace RyoEngine {
 			bool triggerCondition = true;          // trueのとき開始するか、falseのときか
 			bool lastTriggerState = false;         // 前フレームのフラグ状態
 
+			// ★ 今回の変更：ループチェックと再生回数
+			bool isLoop = true;                    // ループするかどうか
+			int32_t maxLoopCount = 1;              // 指定された再生回数 (1以上で有効、0は無限ループなど)
+			int32_t currentLoopCount = 0;          // 現在何回目の再生か
+
 			WindowDelegate delegate;
 		};
 
@@ -255,6 +276,7 @@ namespace RyoEngine {
 			if (isTriggered) {
 				window.currentFrame = 0;
 				window.frameTimer = 0.0f;
+				window.currentLoopCount = 0; // ★追加：ループカウントをリセット
 				window.isPlaying = true; // 再生開始
 			}
 			window.lastTriggerState = currentVal;
@@ -647,7 +669,7 @@ namespace RyoEngine {
 
 			// ★追加：再生ボタンと編集モード（Combo）の間にトリガー設定UIを挟む
 			ImGui::Spacing();
-			if (ImGui::CollapsingHeader("アニメーション再生トリガー設定", ImGuiTreeNodeFlags_DefaultOpen)) {
+			if (ImGui::CollapsingHeader("アニメーション再生設定", ImGuiTreeNodeFlags_DefaultOpen)) {
 				ImGui::Checkbox("トリガーによる開始を有効化", &window.useTrigger);
 				if (window.useTrigger) {
 					ImGui::Indent();
@@ -668,8 +690,25 @@ namespace RyoEngine {
 					if (ImGui::RadioButton("False になったとき", window.triggerCondition == false)) { window.triggerCondition = false; }
 					ImGui::Unindent();
 				}
+
+				ImGui::Spacing();
+				ImGui::Separator();
+
+				// --- ループ・終了の設定 ---
+				ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ ループ・再生回数設定 ]");
+				ImGui::Checkbox("ループする", &window.isLoop);
+
+				if (window.isLoop) {
+					ImGui::Indent();
+					ImGui::PushItemWidth(100);
+					if (ImGui::InputInt("再生回数 (0で無限)", &window.maxLoopCount)) {
+						if (window.maxLoopCount < 0) window.maxLoopCount = 0; // 負の数は防止
+					}
+					ImGui::PopItemWidth();
+					ImGui::Text("現在: %d / %d 回目", window.currentLoopCount + 1, window.maxLoopCount);
+					ImGui::Unindent();
+				}
 			}
-			ImGui::Separator();
 
 			ImGui::Spacing();
 			ImGui::Separator();
@@ -1020,9 +1059,13 @@ namespace RyoEngine {
 			window_json["insert_y"] = w.insertY;
 			window_json["insert_z"] = w.insertZ;
 			window_json["current_transform_mode"] = w.currentTransformMode;
+			
 			window_json["use_trigger"] = w.useTrigger;                  // ★追加
 			window_json["trigger_flag_name"] = w.triggerFlagName;        // ★追加
-			window_json["trigger_condition"] = w.triggerCondition;      // ★追加
+			window_json["trigger_condition"] = w.triggerCondition;
+			// ★追加
+			window_json["is_loop"] = w.isLoop;
+			window_json["max_loop_count"] = w.maxLoopCount;
 
 			json modes_arr = json::array();
 			for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
@@ -1081,10 +1124,15 @@ namespace RyoEngine {
 					w.insertY = item.value("insert_y", true);
 					w.insertZ = item.value("insert_z", true);
 					w.currentTransformMode = item.value("current_transform_mode", 0);
+					
 					w.useTrigger = item.value("use_trigger", false);                     // ★追加
 					w.triggerFlagName = item.value("trigger_flag_name", "None");         // ★追加
 					w.triggerCondition = item.value("trigger_condition", true);          // ★追加
 					w.lastTriggerState = false;
+					// ★ 以下を追記
+					w.isLoop = item.value("is_loop", true);
+					w.maxLoopCount = item.value("max_loop_count", 1);
+					w.currentLoopCount = 0;
 
 					// データのクリア
 					for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
