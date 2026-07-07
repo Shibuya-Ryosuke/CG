@@ -68,8 +68,9 @@ namespace RyoEngine {
 
 		struct WindowData;
 
-		static void AdvanceFrame(WindowData& window, float deltaTime) {
+		static void AdvanceFrame(WindowData& window, float deltaTime) { // 引数の impl も不要になります
 			if (!window.isPlaying) return;
+
 			window.frameTimer += deltaTime;
 			float timePerFrame = 1.0f / window.fps;
 			while (window.frameTimer >= timePerFrame) {
@@ -77,26 +78,20 @@ namespace RyoEngine {
 				window.currentFrame++;
 
 				if (window.currentFrame > window.maxFrame) {
-					// ループする場合
 					if (window.isLoop) {
-						window.currentLoopCount++; // ループ回数をカウント
-
-						// maxLoopCount が 1 以上、かつ現在のカウントがそこに達したら終了
+						window.currentLoopCount++;
 						if (window.maxLoopCount > 0 && window.currentLoopCount >= window.maxLoopCount) {
-							window.currentFrame = window.maxFrame; // 最終フレームで止める
+							window.currentFrame = window.maxFrame;
 							window.isPlaying = false;
 							window.currentLoopCount = 0;
-							window.currentFrame = 0;
 							break;
 						} else {
-							window.currentFrame = 0; // まだ回数に達していない、または無限ループ(0)ならループ
+							window.currentFrame = 0;
 						}
 					} else {
-						// ループしない場合は、1回再生して終了
-						window.currentFrame = window.maxFrame; // 最終フレームで止める
+						window.currentFrame = window.maxFrame;
 						window.isPlaying = false;
 						window.currentLoopCount = 0;
-						window.currentFrame = 0;
 						break;
 					}
 				}
@@ -242,6 +237,12 @@ namespace RyoEngine {
 			int32_t maxLoopCount = 1;              // 指定された再生回数 (1以上で有効、0は無限ループなど)
 			int32_t currentLoopCount = 0;          // 現在何回目の再生か
 
+			// ★ 今回追加する「再生継続フラグ」用の設定データ
+			bool useKeepRunning = false;           // 継続フラグによる再生維持を有効にするか
+			std::string keepFlagName = "None";     // 監視する継続フラグの名前
+			bool keepCondition = true;             // trueの間は再生するか、falseの間か
+			bool returnToZeroOnStop = false;
+
 			WindowDelegate delegate;
 		};
 
@@ -254,6 +255,44 @@ namespace RyoEngine {
 		
 		// ★追加：トリガー条件の監視ロジック関数
 		static void CheckAnimationTrigger(WindowData& window, Impl* impl) {
+			// ==========================================
+			// ★ 修正：毎フレーム最優先で走る「再生継続フラグ」のチェック
+			// ==========================================
+			if (window.useKeepRunning && window.keepFlagName != "None") {
+				bool* pKeepFlag = nullptr;
+				for (const auto& pair : impl->m_RegisteredFlags) {
+					if (pair.first == window.keepFlagName) {
+						pKeepFlag = pair.second;
+						break;
+					}
+				}
+
+				if (pKeepFlag) {
+					bool currentKeepVal = *pKeepFlag;
+					// 条件を満たしていない場合（例: Trueの間だけ再生なのに False になったとき）
+					if (currentKeepVal != window.keepCondition) {
+
+						// 1. もし今再生中だったら強制停止する
+						if (window.isPlaying) {
+							window.isPlaying = false;
+
+							// 「停止時に0に戻す」がONなら戻す
+							if (window.returnToZeroOnStop) {
+								window.currentFrame = 0;
+								window.frameTimer = 0.0f;
+							}
+						}
+
+						// 2. 条件を満たしていない間は、この後に続く「開始トリガー」の判定を絶対にやらせない
+						window.lastTriggerState = false; // トリガーの履歴だけ更新を阻止/維持
+						return; // ★ここで関数を抜けることで、開始トリガーを完全に無効化する
+					}
+				}
+			}
+
+			// ==========================================
+			// 既存の「開始トリガー」の監視ロジック（ここからは継続フラグが安全なときだけ通る）
+			// ==========================================
 			if (!window.useTrigger || window.triggerFlagName == "None") return;
 
 			bool* pCurrentFlag = nullptr;
@@ -268,16 +307,20 @@ namespace RyoEngine {
 			bool currentVal = *pCurrentFlag;
 			bool isTriggered = false;
 			if (window.triggerCondition == true) {
-				if (!window.lastTriggerState && currentVal) isTriggered = true; // false -> true の瞬間
+				if (!window.lastTriggerState && currentVal) isTriggered = true; // false -> true
 			} else {
-				if (window.lastTriggerState && !currentVal) isTriggered = true; // true -> false の瞬間
+				if (window.lastTriggerState && !currentVal) isTriggered = true; // true -> false
 			}
 
 			if (isTriggered) {
-				window.currentFrame = 0;
-				window.frameTimer = 0.0f;
-				window.currentLoopCount = 0; // ★追加：ループカウントをリセット
-				window.isPlaying = true; // 再生開始
+				// ★ 修正：「停止時に0に戻す」がOFF、かつ現在すでに途中まで進んでいるなら0に戻さない
+				if (window.returnToZeroOnStop || window.currentFrame >= window.maxFrame) {
+					window.currentFrame = 0;
+					window.frameTimer = 0.0f;
+					window.currentLoopCount = 0;
+				}
+
+				window.isPlaying = true; // 再生開始（または再開）！
 			}
 			window.lastTriggerState = currentVal;
 		}
@@ -654,6 +697,12 @@ namespace RyoEngine {
 			if (window.isPlaying) {
 				if (ImGui::Button("|| 一時停止")) {
 					window.isPlaying = false;
+
+					//// ★ 追加：手動停止時も設定に従う
+					//if (window.returnToZeroOnStop) {
+					//	window.currentFrame = 0;
+					//	window.frameTimer = 0.0f;
+					//}
 				}
 			} else {
 				if (ImGui::Button("> 再生")) {
@@ -690,6 +739,31 @@ namespace RyoEngine {
 					if (ImGui::RadioButton("False になったとき", window.triggerCondition == false)) { window.triggerCondition = false; }
 					ImGui::Unindent();
 				}
+
+				ImGui::Spacing();
+				ImGui::Separator();
+
+				// --- ★ 新設：再生継続の設定 ---
+				ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ 再生継続条件 ]");
+				ImGui::Checkbox("フラグの状態による再生継続を有効化", &window.useKeepRunning);
+				if (window.useKeepRunning) {
+					ImGui::Indent();
+					if (ImGui::BeginCombo("対象フラグ##Keep", window.keepFlagName.c_str())) {
+						if (ImGui::Selectable("None", window.keepFlagName == "None")) { window.keepFlagName = "None"; }
+						for (const auto& pair : impl->m_RegisteredFlags) {
+							if (ImGui::Selectable(pair.first.c_str(), window.keepFlagName == pair.first)) {
+								window.keepFlagName = pair.first;
+							}
+						}
+						ImGui::EndCombo();
+					}
+					if (ImGui::RadioButton("True の間は再生##Keep", window.keepCondition == true)) { window.keepCondition = true; }
+					ImGui::SameLine();
+					if (ImGui::RadioButton("False の間は再生##Keep", window.keepCondition == false)) { window.keepCondition = false; }
+					ImGui::Unindent();
+				}
+
+				ImGui::Checkbox("途中で止められたときフレームを0に戻す", &window.returnToZeroOnStop);
 
 				ImGui::Spacing();
 				ImGui::Separator();
@@ -1067,6 +1141,11 @@ namespace RyoEngine {
 			window_json["is_loop"] = w.isLoop;
 			window_json["max_loop_count"] = w.maxLoopCount;
 
+			window_json["use_keep_running"] = w.useKeepRunning;
+			window_json["keep_flag_name"] = w.keepFlagName;
+			window_json["keep_condition"] = w.keepCondition;
+			window_json["return_to_zero_on_stop"] = w.returnToZeroOnStop; // ★追加
+
 			json modes_arr = json::array();
 			for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
 				json groups_arr = json::array();
@@ -1133,6 +1212,11 @@ namespace RyoEngine {
 					w.isLoop = item.value("is_loop", true);
 					w.maxLoopCount = item.value("max_loop_count", 1);
 					w.currentLoopCount = 0;
+
+					w.useKeepRunning = item.value("use_keep_running", false);
+					w.keepFlagName = item.value("keep_flag_name", "None");
+					w.keepCondition = item.value("keep_condition", true);
+					w.returnToZeroOnStop = item.value("return_to_zero_on_stop", false); // ★追加
 
 					// データのクリア
 					for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
