@@ -772,14 +772,14 @@ namespace RyoEngine {
 				window.currentFrame = 0;
 				window.currentLoopCount = 0;
 			}
-			ImGui::Separator();
-			ImGui::Spacing();
-
 			// ★ ゲーム同期モードの時は、タイムラインの操作を無効化（グレーアウト）する
 			if (window.isGameSyncMode) {
-				ImGui::TextColored(ImVec4(1.0f, 0.15f, 0.12f, 1.0f), "[ 現在はゲーム同期モードのため操作できません ]");
+				ImGui::TextColored(ImVec4(1.0f, 0.15f, 0.12f, 1.0f), "[ 現在はゲーム同期モードのため一部操作が出来ません ]");
 				ImGui::BeginDisabled();
 			}
+
+			ImGui::Separator();
+			ImGui::Spacing();
 
 			ImGui::PushItemWidth(150);
 			ImGui::SliderInt("Frame", &window.currentFrame, 0, window.maxFrame);
