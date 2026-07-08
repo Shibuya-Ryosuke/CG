@@ -79,20 +79,22 @@ namespace RyoEngine {
 
 				if (window.currentFrame > window.maxFrame) {
 					if (window.isLoop) {
+						// 【無限ループ】
+						window.currentFrame = 0;
+						window.currentLoopCount++; // カウントだけ進めて0フレームからリピート
+					} else {
+						// 【回数指定再生（1回以上）】
 						window.currentLoopCount++;
-						if (window.maxLoopCount > 0 && window.currentLoopCount >= window.maxLoopCount) {
+						if (window.currentLoopCount >= window.maxLoopCount) {
+							// 指定回数再生し終えたら停止
 							window.currentFrame = window.maxFrame;
 							window.isPlaying = false;
 							window.currentLoopCount = 0;
 							break;
 						} else {
+							// まだ指定回数に達していないなら次の周回へ
 							window.currentFrame = 0;
 						}
-					} else {
-						window.currentFrame = window.maxFrame;
-						window.isPlaying = false;
-						window.currentLoopCount = 0;
-						break;
 					}
 				}
 			}
@@ -278,7 +280,6 @@ namespace RyoEngine {
 
 							// 「停止時に0に戻す」がONなら戻す
 							if (window.returnToZeroOnStop) {
-								window.currentFrame = 0;
 								window.frameTimer = 0.0f;
 							}
 						}
@@ -286,6 +287,18 @@ namespace RyoEngine {
 						// 2. 条件を満たしていない間は、この後に続く「開始トリガー」の判定を絶対にやらせない
 						window.lastTriggerState = false; // トリガーの履歴だけ更新を阻止/維持
 						return; // ★ここで関数を抜けることで、開始トリガーを完全に無効化する
+					}
+
+					// 開始トリガーがOFFで、現在停止中、かつループ条件（無限 or 残り回数あり）を満たしているなら自動再開
+					if (!window.useTrigger && !window.isPlaying) {
+						
+						if (window.returnToZeroOnStop) {
+							window.currentFrame = 0;
+						}
+
+						if (window.isLoop || (window.currentLoopCount < window.maxLoopCount)) {
+							window.isPlaying = true;
+						}
 					}
 				}
 			}
@@ -763,45 +776,74 @@ namespace RyoEngine {
 					ImGui::Unindent();
 				}
 
-				ImGui::Checkbox("途中で止められたときフレームを0に戻す", &window.returnToZeroOnStop);
+				ImGui::Checkbox("途中で止められたとき再再生時フレームを0に戻す", &window.returnToZeroOnStop);
 
 				ImGui::Spacing();
 				ImGui::Separator();
 
+
 				// --- ループ・終了の設定 ---
 				ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ ループ・再生回数設定 ]");
-				ImGui::Checkbox("ループする", &window.isLoop);
 
-				if (window.isLoop) {
+				// チェックボックスの変更を検知
+				if (ImGui::Checkbox("ループする", &window.isLoop)) {
+					if (window.isLoop) {
+						window.maxLoopCount = 0; // ループON時は無限ループ(0)で固定
+					} else {
+						window.maxLoopCount = 1; // ループOFF時はデフォルト1回再生にする
+					}
+
+					// ★追加：設定が変わったので、現在の再生状態をリセットする
+					window.currentFrame = 0;
+					window.currentLoopCount = 0;
+					window.frameTimer = 0.0f;
+					// 必要に応じて一度再生を止める場合は以下も有効化
+					// window.isPlaying = false; 
+				}
+
+				if (!window.isLoop) {
+					// ループOFF（回数指定）のときのみUIを表示
 					ImGui::Indent();
 					ImGui::PushItemWidth(100);
-					if (ImGui::InputInt("再生回数 (0で無限)", &window.maxLoopCount)) {
-						if (window.maxLoopCount < 0) window.maxLoopCount = 0; // 負の数は防止
+
+					// 再生回数の変更を検知
+					if (ImGui::InputInt("再生回数", &window.maxLoopCount)) {
+						if (window.maxLoopCount < 1) window.maxLoopCount = 1; // 下限値を1にする
+
+						// ★追加：回数設定が変わったのでリセット
+						window.currentFrame = 0;
+						window.currentLoopCount = 0;
+						window.frameTimer = 0.0f;
 					}
 					ImGui::PopItemWidth();
+
 					ImGui::Text("現在: %d / %d 回目", window.currentLoopCount + 1, window.maxLoopCount);
 					ImGui::Unindent();
+				} else {
+					ImGui::Indent();
+					ImGui::Text("無限ループ中 (通算再生: %d 回)", window.currentLoopCount + 1);
+					ImGui::Unindent();
 				}
+
+				ImGui::Spacing();
+				ImGui::Separator();
+
+				// ★ 追加：編集対象のSRTモードを切り替えるコンボボックス
+				const char* transformModeNames[] = { "Translate (位置)", "Rotate (回転)", "Scale (拡縮)" };
+				ImGui::PushItemWidth(200);
+				ImGui::Combo("編集モード", &window.currentTransformMode, transformModeNames, IM_ARRAYSIZE(transformModeNames));
+				ImGui::PopItemWidth();
+
+				ImGui::Spacing();
+
+				DrawTimeline(window);
+				DrawKeyFrameButtons(window, impl);
+				DrawCurveEditor(window);
+				DrawValueInspector(window);
+				DrawKeyFrameList(window);
+
+				ImGui::End();
 			}
-
-			ImGui::Spacing();
-			ImGui::Separator();
-
-			// ★ 追加：編集対象のSRTモードを切り替えるコンボボックス
-			const char* transformModeNames[] = { "Translate (位置)", "Rotate (回転)", "Scale (拡縮)" };
-			ImGui::PushItemWidth(200);
-			ImGui::Combo("編集モード", &window.currentTransformMode, transformModeNames, IM_ARRAYSIZE(transformModeNames));
-			ImGui::PopItemWidth();
-
-			ImGui::Spacing();
-
-			DrawTimeline(window);
-			DrawKeyFrameButtons(window, impl);
-			DrawCurveEditor(window);
-			DrawValueInspector(window);
-			DrawKeyFrameList(window);
-
-			ImGui::End();
 		}
 	};
 
