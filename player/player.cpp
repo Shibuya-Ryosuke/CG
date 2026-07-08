@@ -6,17 +6,17 @@ void Player::Initialize() {
 	model_ = Model::Create("resources/mirror.obj");
 	model_->SetTex("resources/flower.png");
 
-	AnimEdit::RegisterTriggerFlag("player : pushA", &pushA_);
-	AnimEdit::RegisterTriggerFlag("player : playManager", &playManager_);
+	AnimEdit::RegisterTriggerFlag("player : toggleA", &toggleA_);
+	AnimEdit::RegisterTriggerFlag("player : holdM", &hold_M_);
 }
 
 void Player::Update(RyoEngine::DebugCamera& debugCamera) {
 	if(Input::TriggerKey(DIK_A)) {
-		pushA_ = !pushA_;
+		toggleA_ = !toggleA_;
 	}
-	playManager_ = true;
+	hold_M_ = true;
 	if (Input::PushKey(DIK_M)) {
-		playManager_ = false;
+		hold_M_ = false;
 	}
 
 	model_->Update(debugCamera);

@@ -15,7 +15,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     player.Initialize();
    
     DebugCamera* debugCamera = new DebugCamera();
-
+    debugCamera->SetTranslate({debugCamera->GetTranslate().x,debugCamera->GetTranslate().y -2.0f, -100.0f });
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {

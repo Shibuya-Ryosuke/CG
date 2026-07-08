@@ -68,7 +68,7 @@ namespace RyoEngine {
 
 		struct WindowData;
 
-		static void AdvanceFrame(WindowData& window, float deltaTime) { // 引数の impl も不要になります
+		static void AdvanceFrame(WindowData& window, float deltaTime) {
 			if (!window.isPlaying) return;
 
 			window.frameTimer += deltaTime;
@@ -78,24 +78,21 @@ namespace RyoEngine {
 				window.currentFrame++;
 
 				if (window.currentFrame > window.maxFrame) {
-					if (window.isLoop) {
+					// ★修正：編集モードなら設定に関係なく無限ループ(0フレームに戻す)させる
+					if (!window.isGameSyncMode || window.isLoop) {
 						// 【無限ループ】
 						window.currentFrame = 0;
-						window.currentLoopCount++; // カウントだけ進めて0フレームからリピート
+						window.currentLoopCount++;
 					} else {
-						// 【回数指定再生】
+						// 【ゲーム同期モード かつ 回数指定再生】
 						window.currentLoopCount++;
 						if (window.currentLoopCount >= window.maxLoopCount) {
-							// ★ すべての再生が終了した瞬間
 							window.currentFrame = window.maxFrame;
 							window.isPlaying = false;
-							window.currentLoopCount = 0; // 0 に戻す
-
-							// 自動再生が誤作動しないようにトリガー履歴をリセット
+							window.currentLoopCount = 0;
 							window.lastTriggerState = false;
 							break;
 						} else {
-							// 次の周回へ
 							window.currentFrame = 0;
 						}
 					}
@@ -246,10 +243,13 @@ namespace RyoEngine {
 			bool useKeepRunning = false;           // 継続フラグによる再生維持を有効にするか
 			std::string keepFlagName = "None";     // 監視する継続フラグの名前
 			bool keepCondition = true;             // trueの間は再生するか、falseの間か
-			
+			bool lastKeepState = false;
+
+			// false = 編集モード(制限無視)、true = ゲーム同期モード
+			bool isGameSyncMode = false;
+
 			// 途中で止められたとき0に戻すフラグ
 			//bool returnToZeroOnStop = false;
-			bool lastKeepState = false;
 
 			WindowDelegate delegate;
 		};
@@ -263,9 +263,14 @@ namespace RyoEngine {
 		
 		// ★追加：トリガー条件の監視ロジック関数
 		static void CheckAnimationTrigger(WindowData& window, Impl* impl) {
+			// ★追加：編集モードの時は、ゲーム側のトリガーや継続フラグを一切見ない
+			if (!window.isGameSyncMode) {
+				return;
+			}
+
 			// ==========================================
-	// ★ 毎フレーム最優先で走る「再生継続フラグ」のチェック
-	// ==========================================
+			// ★ 毎フレーム最優先で走る「再生継続フラグ」のチェック
+			// ==========================================
 			if (window.useKeepRunning && window.keepFlagName != "None") {
 				bool* pKeepFlag = nullptr;
 				for (const auto& pair : impl->m_RegisteredFlags) {
@@ -359,16 +364,25 @@ namespace RyoEngine {
 			}
 
 			// ★ 修正：現在のモード名をヘッダーに表示
-			const char* modeHeaderNames[] = { "タイムライン (translate)", "タイムライン (rotate)", "タイムライン (scale)" };
-			if (ImGui::TreeNodeEx(modeHeaderNames[window.currentTransformMode], ImGuiTreeNodeFlags_DefaultOpen)) {
+			//const char* modeHeaderNames[] = { "タイムライン (translate)", "タイムライン (rotate)", "タイムライン (scale)" };
+			if (ImGui::TreeNodeEx("タイムライン", ImGuiTreeNodeFlags_DefaultOpen)) {
 				if (ImGui::BeginChild("SequencerArea", ImVec2(0, 130), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar)) {
 					int currentFrameItem = window.currentFrame;
 					int selectedItem = -1;
 
-					ImSequencer::Sequencer(&window.delegate, &currentFrameItem, nullptr, &selectedItem, &window.firstFrame,
-						ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_CHANGE_FRAME);
+					// ★修正：ゲーム同期モードの時はフラグを 0 にしてフレーム変更や範囲変更を禁止する
+					int sequencerFlags = ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_CHANGE_FRAME;
+					if (window.isGameSyncMode) {
+						sequencerFlags = 0; // すべての編集・操作フラグを外す
+					}
 
-					window.currentFrame = currentFrameItem;
+					ImSequencer::Sequencer(&window.delegate, &currentFrameItem, nullptr, &selectedItem, &window.firstFrame, sequencerFlags);
+
+					// ★修正：ゲーム同期モードの時は、手動シークの結果（currentFrameItem）を適用せず、
+					// システム（ゲーム）側が進めた現在のフレームを維持する
+					if (!window.isGameSyncMode) {
+						window.currentFrame = currentFrameItem;
+					}
 				}
 				ImGui::EndChild();
 				ImGui::TreePop();
@@ -377,11 +391,15 @@ namespace RyoEngine {
 
 		static void DrawKeyFrameButtons(WindowData& window, Impl* impl) {
 			ImGui::Spacing();
-			ImGui::Text("キー挿入対象（複数選択可）:");
+			if (window.isGameSyncMode) {
+				ImGui::BeginDisabled();
+			}
+			ImGui::Text("キー挿入対象（複数選択可）:");ImGui::SameLine();
 			ImGui::Checkbox("X", &window.insertX); ImGui::SameLine();
 			ImGui::Checkbox("Y", &window.insertY); ImGui::SameLine();
 			ImGui::Checkbox("Z", &window.insertZ);
 
+			ImGui::Spacing();
 			if (ImGui::Button("現在のフレームにキーを挿入")) {
 				AxisGroup targetGroup = window.GetCurrentTargetGroup();
 				if (targetGroup == AxisGroup::None) return;
@@ -416,7 +434,7 @@ namespace RyoEngine {
 			}
 
 			ImGui::SameLine();
-			if (ImGui::Button("選択中のフレームのキーを削除")) {
+			if (ImGui::Button("現在のフレームのキーを削除")) {
 				AxisGroup targetGroup = window.GetCurrentTargetGroup();
 				if (targetGroup != AxisGroup::None) {
 					int mode = window.currentTransformMode;
@@ -425,6 +443,9 @@ namespace RyoEngine {
 						return k.frame == window.currentFrame;
 						}), keys.end());
 				}
+			}
+			if (window.isGameSyncMode) {
+				ImGui::EndDisabled();
 			}
 		}
 
@@ -514,49 +535,66 @@ namespace RyoEngine {
 			bool hasKeyInCurrentFrame = false;
 			int mode = window.currentTransformMode;
 
-			// 全グループから現在のフレームにキーがあるか探す
-			for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
-				auto& keys = window.groupedKeyFrames[mode][i];
-				auto it = std::find_if(keys.begin(), keys.end(), [&](const KeyFrame& k) { return k.frame == window.currentFrame; });
+			
 
-				if (it != keys.end()) {
-					if (!hasKeyInCurrentFrame) {
-						ImGui::Spacing();
-						ImGui::TextColored(ImVec4(1, 1, 0, 1), "現在のキーフレーム情報");
-						hasKeyInCurrentFrame = true;
-					}
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1,1,0,1));
+			bool isOpen = ImGui::TreeNodeEx("現在のキーフレーム情報", ImGuiTreeNodeFlags_DefaultOpen);
+			ImGui::PopStyleColor();
 
-					AxisGroup g = static_cast<AxisGroup>(i);
-					ImGui::Text("[ 所属グループ : %s ]", window.GetGroupName(g));
-
-					// ★ 修正：現在のモードに応じてラベルを切り替え
-					const char* labelX = (mode == 0) ? "Translate.X" : (mode == 1) ? "Rotate.X" : "Scale.X";
-					const char* labelY = (mode == 0) ? "Translate.Y" : (mode == 1) ? "Rotate.Y" : "Scale.Y";
-					const char* labelZ = (mode == 0) ? "Translate.Z" : (mode == 1) ? "Rotate.Z" : "Scale.Z";
-
-					// グループに応じて必要な軸のドラッグUIを出す
-					float dragSpeed = (mode == 0) ? 0.1f : 0.01f;
-
-					if (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ) {
-						ImGui::DragFloat(labelX, &it->value.x, dragSpeed, -360.0f, 360.0f);
-					}
-					if (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ) {
-						ImGui::DragFloat(labelY, &it->value.y, dragSpeed, -360.0f, 360.0f);
-					}
-					if (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ) {
-						ImGui::DragFloat(labelZ, &it->value.z, dragSpeed, -360.0f, 360.0f);
-					}
-
-					int easingIdx = static_cast<int>(it->easing);
-					if (ImGui::Combo("Easing", &easingIdx, easingNames, IM_ARRAYSIZE(easingNames))) {
-						it->easing = static_cast<EasingType>(easingIdx);
-					}
-					ImGui::Separator();
+			if (isOpen) {
+				if (window.isGameSyncMode) {
+					ImGui::BeginDisabled();
 				}
-			}
+				// 全グループから現在のフレームにキーがあるか探す
+				for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
+					auto& keys = window.groupedKeyFrames[mode][i];
+					auto it = std::find_if(keys.begin(), keys.end(), [&](const KeyFrame& k) { return k.frame == window.currentFrame; });
 
-			if (!hasKeyInCurrentFrame) {
-				ImGui::Text("（現在のフレームにキーフレームなし）");
+					if (it != keys.end()) {
+
+						if (!hasKeyInCurrentFrame) {
+							ImGui::Spacing();
+							hasKeyInCurrentFrame = true;
+						}
+
+						AxisGroup g = static_cast<AxisGroup>(i);
+						ImGui::Text("[ 所属グループ : %s ]", window.GetGroupName(g));
+
+						// ★ 修正：現在のモードに応じてラベルを切り替え
+						const char* labelX = (mode == 0) ? "Translate.X" : (mode == 1) ? "Rotate.X" : "Scale.X";
+						const char* labelY = (mode == 0) ? "Translate.Y" : (mode == 1) ? "Rotate.Y" : "Scale.Y";
+						const char* labelZ = (mode == 0) ? "Translate.Z" : (mode == 1) ? "Rotate.Z" : "Scale.Z";
+
+						// グループに応じて必要な軸のドラッグUIを出す
+						float dragSpeed = (mode == 0) ? 0.1f : 0.01f;
+						if (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ) {
+							ImGui::DragFloat(labelX, &it->value.x, dragSpeed, -360.0f, 360.0f);
+						}
+						if (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ) {
+							ImGui::DragFloat(labelY, &it->value.y, dragSpeed, -360.0f, 360.0f);
+						}
+						if (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ) {
+							ImGui::DragFloat(labelZ, &it->value.z, dragSpeed, -360.0f, 360.0f);
+						}
+
+						int easingIdx = static_cast<int>(it->easing);
+						if (ImGui::Combo("Easing", &easingIdx, easingNames, IM_ARRAYSIZE(easingNames))) {
+							it->easing = static_cast<EasingType>(easingIdx);
+						}
+					}
+				}
+
+				if (!hasKeyInCurrentFrame) {
+					ImGui::Text("（現在のフレームにキーフレームがありません）");
+				}
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::Spacing();
+
+				if (window.isGameSyncMode) {
+					ImGui::EndDisabled();
+				}
+				ImGui::TreePop();
 			}
 		}
 
@@ -580,6 +618,9 @@ namespace RyoEngine {
 					std::string groupLabel = std::string(window.GetGroupName(g)) + " (" + std::to_string(keys.size()) + ")";
 
 					if (ImGui::TreeNode(groupLabel.c_str())) {
+						if (window.isGameSyncMode) {
+							ImGui::BeginDisabled();
+						}
 						for (const auto& key : keys) {
 							bool is_active = (key.frame == window.currentFrame);
 							std::string label = "フレーム: " + std::to_string(key.frame);
@@ -589,12 +630,21 @@ namespace RyoEngine {
 								window.currentFrame = key.frame;
 							}
 						}
+						if (window.isGameSyncMode) {
+							ImGui::EndDisabled();
+						}
 						ImGui::TreePop();
 					}
 				}
 
 				if (!hasAnyKey) {
+					if (window.isGameSyncMode) {
+						ImGui::BeginDisabled();
+					}
 					ImGui::Text("（選択中のモードにキーフレームが登録されていません）");
+					if (window.isGameSyncMode) {
+						ImGui::EndDisabled();
+					}
 				}
 			}
 			ImGui::EndChild();
@@ -702,7 +752,34 @@ namespace RyoEngine {
 				impl->m_SelectedWindowIdx = static_cast<int32_t>(index);
 			}
 
-			ImGui::Text("Window ID: %d", window.id);
+			//ImGui::Text("Window ID: %d", window.id);
+			//ImGui::Separator();
+
+			// ★追加：動作モードの切り替えUI
+			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "[ 動作プレビューモード ]");
+			if (ImGui::RadioButton("編集モード (常時再生)", !window.isGameSyncMode)) {
+				window.isGameSyncMode = false;
+				// モード切り替え時に一度状態をリセット
+				window.isPlaying = false;
+				window.currentFrame = 0;
+				window.currentLoopCount = 0;
+			}
+			ImGui::SameLine();
+			if (ImGui::RadioButton("ゲーム同期モード (設定適用)", window.isGameSyncMode)) {
+				window.isGameSyncMode = true;
+				// モード切り替え時に一度状態をリセット
+				window.isPlaying = false;
+				window.currentFrame = 0;
+				window.currentLoopCount = 0;
+			}
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// ★ ゲーム同期モードの時は、タイムラインの操作を無効化（グレーアウト）する
+			if (window.isGameSyncMode) {
+				ImGui::TextColored(ImVec4(1.0f, 0.15f, 0.12f, 1.0f), "[ 現在はゲーム同期モードのため操作できません ]");
+				ImGui::BeginDisabled();
+			}
 
 			ImGui::PushItemWidth(150);
 			ImGui::SliderInt("Frame", &window.currentFrame, 0, window.maxFrame);
@@ -713,6 +790,7 @@ namespace RyoEngine {
 			ImGui::PopItemWidth();
 
 			ImGui::Spacing();
+
 			if (window.isPlaying) {
 				if (ImGui::Button("|| 一時停止")) {
 					window.isPlaying = false;
@@ -740,6 +818,10 @@ namespace RyoEngine {
 				window.currentFrame = 0;
 				window.frameTimer = 0.0f;
 			}
+			if (window.isGameSyncMode) {
+				ImGui::EndDisabled(); // ★ 忘れずに閉じる
+			}
+
 
 			// ★追加：再生ボタンと編集モード（Combo）の間にトリガー設定UIを挟む
 			ImGui::Spacing();
@@ -773,14 +855,23 @@ namespace RyoEngine {
 				DrawCurveEditor(window);           // カーブエディタ
 				DrawValueInspector(window);        // インスペクタ
 				DrawKeyFrameList(window);          // グループ別キーフレーム一覧
+				ImGui::Spacing();
 				ImGui::TreePop();
 			} // ★ここで「キーフレーム」を閉じる
+			ImGui::Spacing();
 
 
 			// ==========================================
 			// 4. 【アニメーション再生設定】（トリガーからループ設定まで）
 			// ==========================================
 			if (ImGui::CollapsingHeader("アニメーション再生設定")) {
+				if (!window.isGameSyncMode) {
+					ImGui::TextColored(ImVec4(1.0f, 0.15f, 0.12f, 1.0f), "[ 現在は編集モードのため以下の設定が無視されます ]");
+					ImGui::Spacing();
+				} else {
+					ImGui::BeginDisabled();
+				}
+				
 				ImGui::Checkbox("トリガーによる開始を有効化", &window.useTrigger);
 				if (window.useTrigger) {
 					ImGui::Indent();
@@ -806,7 +897,7 @@ namespace RyoEngine {
 				ImGui::Separator();
 
 				// --- 再生継続の設定 ---
-				ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ 再生継続条件 ]");
+				//ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ 再生継続条件 ]");
 				ImGui::Checkbox("フラグの状態による再生継続を有効化", &window.useKeepRunning);
 				if (window.useKeepRunning) {
 					ImGui::Indent();
@@ -829,7 +920,7 @@ namespace RyoEngine {
 				ImGui::Separator();
 
 				// --- ループ・終了の設定 ---
-				ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ ループ・再生回数設定 ]");
+				//ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ ループ・再生回数設定 ]");
 
 				if (ImGui::Checkbox("ループする", &window.isLoop)) {
 					if (window.isLoop) {
@@ -857,10 +948,14 @@ namespace RyoEngine {
 
 					ImGui::Text("現在: %d / %d 回目", displayLoopCount, window.maxLoopCount);
 					ImGui::Unindent();
-				} else {
-					ImGui::Indent();
-					ImGui::Text("無限ループ中 (通算再生: %d 回)", window.currentLoopCount + 1);
-					ImGui::Unindent();
+				} //else {
+				//	ImGui::Indent();
+				//	ImGui::Text("無限ループ中 (通算再生: %d 回)", window.currentLoopCount + 1);
+				//	ImGui::Unindent();
+				//}
+
+				if (window.isGameSyncMode) {
+					ImGui::EndDisabled();
 				}
 			} // ★ここで「アニメーション再生設定」を閉じる
 			// ==========================================
@@ -927,6 +1022,11 @@ namespace RyoEngine {
 		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return pointIndex;
 		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
 		int mode = window.currentTransformMode;
+
+		// ゲーム同期モードのときはキーフレーム操作を無効
+		if (window.isGameSyncMode) {
+			return pointIndex;
+		}
 
 		// 現在表示されている点をフレーム順に追跡して、元のグループのデータを書き換える
 		struct KeyRef { AxisGroup group; size_t index; int32_t originalFrame; };

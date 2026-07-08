@@ -11,6 +11,6 @@ public:
 private:
 	RyoEngine::Model* model_ = nullptr;
 
-	bool pushA_ = false;
-	bool playManager_ = true;
+	bool toggleA_ = false;
+	bool hold_M_ = true;
 };
