@@ -83,16 +83,19 @@ namespace RyoEngine {
 						window.currentFrame = 0;
 						window.currentLoopCount++; // カウントだけ進めて0フレームからリピート
 					} else {
-						// 【回数指定再生（1回以上）】
+						// 【回数指定再生】
 						window.currentLoopCount++;
 						if (window.currentLoopCount >= window.maxLoopCount) {
-							// 指定回数再生し終えたら停止
+							// ★ すべての再生が終了した瞬間
 							window.currentFrame = window.maxFrame;
 							window.isPlaying = false;
-							window.currentLoopCount = 0;
+							window.currentLoopCount = 0; // 0 に戻す
+
+							// 自動再生が誤作動しないようにトリガー履歴をリセット
+							window.lastTriggerState = false;
 							break;
 						} else {
-							// まだ指定回数に達していないなら次の周回へ
+							// 次の周回へ
 							window.currentFrame = 0;
 						}
 					}
@@ -243,7 +246,10 @@ namespace RyoEngine {
 			bool useKeepRunning = false;           // 継続フラグによる再生維持を有効にするか
 			std::string keepFlagName = "None";     // 監視する継続フラグの名前
 			bool keepCondition = true;             // trueの間は再生するか、falseの間か
-			bool returnToZeroOnStop = false;
+			
+			// 途中で止められたとき0に戻すフラグ
+			//bool returnToZeroOnStop = false;
+			bool lastKeepState = false;
 
 			WindowDelegate delegate;
 		};
@@ -258,8 +264,8 @@ namespace RyoEngine {
 		// ★追加：トリガー条件の監視ロジック関数
 		static void CheckAnimationTrigger(WindowData& window, Impl* impl) {
 			// ==========================================
-			// ★ 修正：毎フレーム最優先で走る「再生継続フラグ」のチェック
-			// ==========================================
+	// ★ 毎フレーム最優先で走る「再生継続フラグ」のチェック
+	// ==========================================
 			if (window.useKeepRunning && window.keepFlagName != "None") {
 				bool* pKeepFlag = nullptr;
 				for (const auto& pair : impl->m_RegisteredFlags) {
@@ -271,40 +277,40 @@ namespace RyoEngine {
 
 				if (pKeepFlag) {
 					bool currentKeepVal = *pKeepFlag;
-					// 条件を満たしていない場合（例: Trueの間だけ再生なのに False になったとき）
-					if (currentKeepVal != window.keepCondition) {
 
-						// 1. もし今再生中だったら強制停止する
+					// --- 条件を満たしていない場合（強制停止） ---
+					if (currentKeepVal != window.keepCondition) {
 						if (window.isPlaying) {
 							window.isPlaying = false;
-
-							// 「停止時に0に戻す」がONなら戻す
-							if (window.returnToZeroOnStop) {
-								window.frameTimer = 0.0f;
-							}
+							//if (window.returnToZeroOnStop) {
+							//	window.frameTimer = 0.0f;
+							//}
 						}
-
-						// 2. 条件を満たしていない間は、この後に続く「開始トリガー」の判定を絶対にやらせない
-						window.lastTriggerState = false; // トリガーの履歴だけ更新を阻止/維持
-						return; // ★ここで関数を抜けることで、開始トリガーを完全に無効化する
+						// 状態が変化したことを記録
+						window.lastKeepState = false;
+						window.lastTriggerState = false;
+						return; // 開始トリガーの判定もさせない
 					}
 
-					// 開始トリガーがOFFで、現在停止中、かつループ条件（無限 or 残り回数あり）を満たしているなら自動再開
+					// --- 条件を満たしている（安全な）場合 ---
 					if (!window.useTrigger && !window.isPlaying) {
-						
-						if (window.returnToZeroOnStop) {
-							window.currentFrame = 0;
-						}
-
-						if (window.isLoop || (window.currentLoopCount < window.maxLoopCount)) {
+						// ★重要: 「前回のフレームでは条件を満たしていなかった(false)」かつ「今回は満たした(true)」
+						// つまり、フラグが切り替わったまさにその瞬間だけ、1回だけ再生を開始する
+						if (!window.lastKeepState) {
+							//if (window.returnToZeroOnStop) {
+							//	window.currentFrame = 0;
+							//}
 							window.isPlaying = true;
 						}
 					}
+
+					// 条件を満たしている間は true を維持
+					window.lastKeepState = true;
 				}
 			}
 
 			// ==========================================
-			// 既存の「開始トリガー」の監視ロジック（ここからは継続フラグが安全なときだけ通る）
+			// 既存の「開始トリガー」の監視ロジック（ここからは一切触らない）
 			// ==========================================
 			if (!window.useTrigger || window.triggerFlagName == "None") return;
 
@@ -327,11 +333,11 @@ namespace RyoEngine {
 
 			if (isTriggered) {
 				// ★ 修正：「停止時に0に戻す」がOFF、かつ現在すでに途中まで進んでいるなら0に戻さない
-				if (window.returnToZeroOnStop || window.currentFrame >= window.maxFrame) {
-					window.currentFrame = 0;
-					window.frameTimer = 0.0f;
-					window.currentLoopCount = 0;
-				}
+				//if (window.returnToZeroOnStop || window.currentFrame >= window.maxFrame) {
+				//	window.currentFrame = 0;
+				//	window.frameTimer = 0.0f;
+				//	window.currentLoopCount = 0;
+				//}
 
 				window.isPlaying = true; // 再生開始（または再開）！
 			}
@@ -719,6 +725,12 @@ namespace RyoEngine {
 				}
 			} else {
 				if (ImGui::Button("> 再生")) {
+					// ★追加：もし指定回数をすべて再生し終えている状態なら、最初からリスタートする
+					if (window.isLoop && window.maxLoopCount > 0 && window.currentLoopCount >= window.maxLoopCount) {
+						window.currentFrame = 0;
+						window.currentLoopCount = 0;
+						window.frameTimer = 0.0f;
+					}
 					window.isPlaying = true;
 				}
 			}
@@ -731,7 +743,44 @@ namespace RyoEngine {
 
 			// ★追加：再生ボタンと編集モード（Combo）の間にトリガー設定UIを挟む
 			ImGui::Spacing();
-			if (ImGui::CollapsingHeader("アニメーション再生設定", ImGuiTreeNodeFlags_DefaultOpen)) {
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// ==========================================
+			// 1. 【編集モード】（独立・常時表示）
+			// ==========================================
+			const char* transformModeNames[] = { "Translate (位置)", "Rotate (回転)", "Scale (拡縮)" };
+			ImGui::PushItemWidth(200);
+			ImGui::Combo("編集モード", &window.currentTransformMode, transformModeNames, IM_ARRAYSIZE(transformModeNames));
+			ImGui::PopItemWidth();
+
+			ImGui::Spacing();
+
+
+			// ==========================================
+			// 2. 【タイムライン】（独立・常時表示）
+			// ==========================================
+			DrawTimeline(window);
+
+			ImGui::Spacing();
+
+
+			// ==========================================
+			// 3. 【キーフレーム】（新設した折りたたみヘッダー）
+			// ==========================================
+			if (ImGui::TreeNodeEx("キーフレーム", ImGuiTreeNodeFlags_DefaultOpen)) {
+				DrawKeyFrameButtons(window, impl); // キー挿入対象などのボタン類
+				DrawCurveEditor(window);           // カーブエディタ
+				DrawValueInspector(window);        // インスペクタ
+				DrawKeyFrameList(window);          // グループ別キーフレーム一覧
+				ImGui::TreePop();
+			} // ★ここで「キーフレーム」を閉じる
+
+
+			// ==========================================
+			// 4. 【アニメーション再生設定】（トリガーからループ設定まで）
+			// ==========================================
+			if (ImGui::CollapsingHeader("アニメーション再生設定")) {
 				ImGui::Checkbox("トリガーによる開始を有効化", &window.useTrigger);
 				if (window.useTrigger) {
 					ImGui::Indent();
@@ -756,7 +805,7 @@ namespace RyoEngine {
 				ImGui::Spacing();
 				ImGui::Separator();
 
-				// --- ★ 新設：再生継続の設定 ---
+				// --- 再生継続の設定 ---
 				ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ 再生継続条件 ]");
 				ImGui::Checkbox("フラグの状態による再生継続を有効化", &window.useKeepRunning);
 				if (window.useKeepRunning) {
@@ -776,74 +825,49 @@ namespace RyoEngine {
 					ImGui::Unindent();
 				}
 
-				ImGui::Checkbox("途中で止められたとき再再生時フレームを0に戻す", &window.returnToZeroOnStop);
-
 				ImGui::Spacing();
 				ImGui::Separator();
-
 
 				// --- ループ・終了の設定 ---
 				ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ ループ・再生回数設定 ]");
 
-				// チェックボックスの変更を検知
 				if (ImGui::Checkbox("ループする", &window.isLoop)) {
 					if (window.isLoop) {
-						window.maxLoopCount = 0; // ループON時は無限ループ(0)で固定
+						window.maxLoopCount = 0;
 					} else {
-						window.maxLoopCount = 1; // ループOFF時はデフォルト1回再生にする
+						window.maxLoopCount = 1;
 					}
-
-					// ★追加：設定が変わったので、現在の再生状態をリセットする
 					window.currentFrame = 0;
 					window.currentLoopCount = 0;
 					window.frameTimer = 0.0f;
-					// 必要に応じて一度再生を止める場合は以下も有効化
-					// window.isPlaying = false; 
 				}
 
 				if (!window.isLoop) {
-					// ループOFF（回数指定）のときのみUIを表示
 					ImGui::Indent();
 					ImGui::PushItemWidth(100);
-
-					// 再生回数の変更を検知
 					if (ImGui::InputInt("再生回数", &window.maxLoopCount)) {
-						if (window.maxLoopCount < 1) window.maxLoopCount = 1; // 下限値を1にする
-
-						// ★追加：回数設定が変わったのでリセット
-						window.currentFrame = 0;
-						window.currentLoopCount = 0;
-						window.frameTimer = 0.0f;
+						if (window.maxLoopCount < 1) window.maxLoopCount = 1;
 					}
 					ImGui::PopItemWidth();
 
-					ImGui::Text("現在: %d / %d 回目", window.currentLoopCount + 1, window.maxLoopCount);
+					int displayLoopCount = 0;
+					if (window.isPlaying || (window.currentLoopCount > 0 && window.currentLoopCount < window.maxLoopCount)) {
+						displayLoopCount = window.currentLoopCount + 1;
+					}
+
+					ImGui::Text("現在: %d / %d 回目", displayLoopCount, window.maxLoopCount);
 					ImGui::Unindent();
 				} else {
 					ImGui::Indent();
 					ImGui::Text("無限ループ中 (通算再生: %d 回)", window.currentLoopCount + 1);
 					ImGui::Unindent();
 				}
-
-				ImGui::Spacing();
-				ImGui::Separator();
-
-				// ★ 追加：編集対象のSRTモードを切り替えるコンボボックス
-				const char* transformModeNames[] = { "Translate (位置)", "Rotate (回転)", "Scale (拡縮)" };
-				ImGui::PushItemWidth(200);
-				ImGui::Combo("編集モード", &window.currentTransformMode, transformModeNames, IM_ARRAYSIZE(transformModeNames));
-				ImGui::PopItemWidth();
-
-				ImGui::Spacing();
-
-				DrawTimeline(window);
-				DrawKeyFrameButtons(window, impl);
-				DrawCurveEditor(window);
-				DrawValueInspector(window);
-				DrawKeyFrameList(window);
-
-				ImGui::End();
-			}
+			} // ★ここで「アニメーション再生設定」を閉じる
+			// ==========================================
+			// 最後にサブウィンドウ自体を閉じる
+			// ==========================================
+			ImGui::NewLine();
+			ImGui::End();
 		}
 	};
 
@@ -1024,10 +1048,6 @@ namespace RyoEngine {
 			WindowManager();
 
 			ImGui::Spacing();
-			//if (ImGui::TreeNode("トリガーテスト用")) {
-			//	ImGui::Checkbox("Editor_TestFlag の状態", &impl->m_TestFlag);
-			//	ImGui::TreePop();
-			//}
 
 			ModelOperate();
 		}
@@ -1186,7 +1206,7 @@ namespace RyoEngine {
 			window_json["use_keep_running"] = w.useKeepRunning;
 			window_json["keep_flag_name"] = w.keepFlagName;
 			window_json["keep_condition"] = w.keepCondition;
-			window_json["return_to_zero_on_stop"] = w.returnToZeroOnStop; // ★追加
+			//window_json["return_to_zero_on_stop"] = w.returnToZeroOnStop; // ★追加
 
 			json modes_arr = json::array();
 			for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
@@ -1258,7 +1278,7 @@ namespace RyoEngine {
 					w.useKeepRunning = item.value("use_keep_running", false);
 					w.keepFlagName = item.value("keep_flag_name", "None");
 					w.keepCondition = item.value("keep_condition", true);
-					w.returnToZeroOnStop = item.value("return_to_zero_on_stop", false); // ★追加
+					//w.returnToZeroOnStop = item.value("return_to_zero_on_stop", false); // ★追加
 
 					// データのクリア
 					for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
