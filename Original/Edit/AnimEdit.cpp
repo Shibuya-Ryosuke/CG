@@ -16,15 +16,16 @@ using json = nlohmann::json;
 namespace RyoEngine {
 
 	struct AnimEdit::Impl {
+		// キーフレームの軸グループ
 		enum class AxisGroup {
-			None, // どこにも属さない（予備）
+			None,
 			X, Y, Z,
 			XY, XZ, YZ,
 			XYZ,
 			MaxGroups
 		};
 
-		// ★ 追加：トランスフォームモード（SRT）の定義
+		// トランスフォームモード（SRT）の定義
 		enum class TransformMode {
 			Translate = 0,
 			Rotate,
@@ -34,7 +35,7 @@ namespace RyoEngine {
 
 		// キーフレームひとつあたりのデータ
 		struct KeyFrame {
-			int32_t frame = 0;                   // 何フレーム目か
+			int32_t frame = 0;
 			Vector3 value = { 0.0f,0.0f,0.0f };
 			EasingType easing = EasingType::Lerp;
 			AxisGroup group = AxisGroup::XYZ;
@@ -68,24 +69,34 @@ namespace RyoEngine {
 
 		struct WindowData;
 
+		// アニメーションのフレーム更新、主に再生管理
 		static void AdvanceFrame(WindowData& window, float deltaTime) {
+			// 再生中なら処理なし
 			if (!window.isPlaying) return;
-
+			// 60fpsで再生
 			window.frameTimer += deltaTime;
 			float timePerFrame = 1.0f / window.fps;
+
+			// フレームの更新
 			while (window.frameTimer >= timePerFrame) {
 				window.frameTimer -= timePerFrame;
 				window.currentFrame++;
 
 				if (window.currentFrame > window.maxFrame) {
-					// ★修正：編集モードなら設定に関係なく無限ループ(0フレームに戻す)させる
+					// 編集モードなら設定に関係なく無限ループ
 					if (!window.isGameSyncMode || window.isLoop) {
-						// 【無限ループ】
+						// 無限ループ
 						window.currentFrame = 0;
 						window.currentLoopCount++;
-					} else {
-						// 【ゲーム同期モード かつ 回数指定再生】
+					} else {   // ゲーム同期モード かつ 回数指定再生
+						// ループカウントを増加
 						window.currentLoopCount++;
+
+						// 再生回数が指定された回数以上になったら
+						// 現在フレームを終了フレームで固定
+						// 再生を停止
+						// ループカウントを0にしてフレーム更新を抜ける
+						// そうでなければまた初めから再生
 						if (window.currentLoopCount >= window.maxLoopCount) {
 							window.currentFrame = window.maxFrame;
 							window.isPlaying = false;
@@ -179,28 +190,36 @@ namespace RyoEngine {
 		};
 
 		struct WindowData {
+			// ウィンドウのID、名前
 			int32_t id = 0;
 			std::string name = "";
+			// 開閉判断
 			bool is_open = false;
+			// 選択しているか
 			bool request_focus = false;
 
+			// フレーム関係の初期設定
+			// 最大60、現在0、開始0
 			int32_t maxFrame = 60;
 			int32_t currentFrame = 0;
 			int32_t firstFrame = 0;
 
+			// 再生中かどうか
 			bool isPlaying = false;
+			// フレーム再生関連
 			float frameTimer = 0.0f;
 			float fps = 60.0f;
 
 			// チェックボックス用フラグ
+			// キーフレームの軸指定に使用
 			bool insertX = true;
 			bool insertY = true;
 			bool insertZ = true;
 
-			// ★ 修正：[TransformMode(3)][AxisGroup(8)] の2次元配列に拡張
+			// キーフレームリスト
 			std::vector<KeyFrame> groupedKeyFrames[static_cast<size_t>(TransformMode::MaxModes)][static_cast<size_t>(AxisGroup::MaxGroups)];
 
-			// ★ 追加：現在の編集対象トランスフォームモード (0:Translate, 1:Rotate, 2:Scale)
+			// 現在の編集対象トランスフォームモード (0:Translate, 1:Rotate, 2:Scale)
 			int currentTransformMode = 0;
 
 			// チェックボックスの選択状態から AxisGroup を判定するヘルパー
@@ -228,67 +247,76 @@ namespace RyoEngine {
 				}
 			}
 
+			// トリガーによる開始 関係
 			bool useTrigger = false;               // トリガー機能を使うか
 			std::string triggerFlagName = "None";  // 監視するフラグの名前
 			bool triggerCondition = true;          // trueのとき開始するか、falseのときか
 			bool lastTriggerState = false;         // 前フレームのフラグ状態
 
-			// ★ 今回の変更：ループチェックと再生回数
+			// ループ・再生回数指定 関係
 			bool isLoop = true;                    // ループするかどうか
 			int32_t maxLoopCount = 1;              // 指定された再生回数 (1以上で有効、0は無限ループなど)
 			int32_t currentLoopCount = 0;          // 現在何回目の再生か
 
-			// ★ 今回追加する「再生継続フラグ」用の設定データ
+			// フラグによる再生継続 関係
 			bool useKeepRunning = false;           // 継続フラグによる再生維持を有効にするか
 			std::string keepFlagName = "None";     // 監視する継続フラグの名前
 			bool keepCondition = true;             // trueの間は再生するか、falseの間か
 			bool lastKeepState = false;
 
-			// false = 編集モード(制限無視)、true = ゲーム同期モード
+			// モードフラグ
+			// false: 編集モード
+			// true: ゲーム同期モード
 			bool isGameSyncMode = false;
 
 			// 途中で止められたとき0に戻すフラグ
 			//bool returnToZeroOnStop = false;
 
+			// デリゲートの実体
 			WindowDelegate delegate;
 		};
 
+		// 新規作成で作られたウィンドウたちの情報を格納する可変長配列
 		std::vector<WindowData> m_SubWindows;
+		// 現在選択しているウィンドウ (-1は未選択を意味)
 		int32_t m_SelectedWindowIdx = -1;
 
+		// 登録されたモデルリスト
 		std::vector<std::pair<std::string, Model*>> m_pTargetModels;
-
+		// 登録されたフラグリスト
 		std::vector<std::pair<std::string, bool*>> m_RegisteredFlags; // ★追加：登録フラグのリスト
 		
-		// ★追加：トリガー条件の監視ロジック関数
+		// トリガーによる開始 を監視する関数
 		static void CheckAnimationTrigger(WindowData& window, Impl* impl) {
-			// ★追加：編集モードの時は、ゲーム側のトリガーや継続フラグを一切見ない
+			// 編集モードの時は以下処理をスキップ
 			if (!window.isGameSyncMode) {
 				return;
 			}
 
-			// ==========================================
-			// ★ 毎フレーム最優先で走る「再生継続フラグ」のチェック
-			// ==========================================
+			// 再生継続フラグチェック
+			// 再生継続が有効かつフラグが選択されているときのみ実行
 			if (window.useKeepRunning && window.keepFlagName != "None") {
+				// 走査結果を入れる箱
 				bool* pKeepFlag = nullptr;
+				// 登録されている管理対象フラグリストから名前が一致するものが出てくるまで走査
 				for (const auto& pair : impl->m_RegisteredFlags) {
+					// 出てきたら箱にフラグを入れ走査を抜ける
 					if (pair.first == window.keepFlagName) {
 						pKeepFlag = pair.second;
 						break;
 					}
 				}
 
+				// フラグが存在したら
 				if (pKeepFlag) {
+					// 箱に入っているフラグの状態 (t/f) を取り出す
 					bool currentKeepVal = *pKeepFlag;
 
 					// --- 条件を満たしていない場合（強制停止） ---
 					if (currentKeepVal != window.keepCondition) {
 						if (window.isPlaying) {
+							// 停止
 							window.isPlaying = false;
-							//if (window.returnToZeroOnStop) {
-							//	window.frameTimer = 0.0f;
-							//}
 						}
 						// 状態が変化したことを記録
 						window.lastKeepState = false;
@@ -298,12 +326,8 @@ namespace RyoEngine {
 
 					// --- 条件を満たしている（安全な）場合 ---
 					if (!window.useTrigger && !window.isPlaying) {
-						// ★重要: 「前回のフレームでは条件を満たしていなかった(false)」かつ「今回は満たした(true)」
-						// つまり、フラグが切り替わったまさにその瞬間だけ、1回だけ再生を開始する
+						// 前回は偽だったとき、つまり偽から真になった一瞬だけ再生をオンにする
 						if (!window.lastKeepState) {
-							//if (window.returnToZeroOnStop) {
-							//	window.currentFrame = 0;
-							//}
 							window.isPlaying = true;
 						}
 					}
@@ -313,28 +337,35 @@ namespace RyoEngine {
 				}
 			}
 
-			// ==========================================
-			// 既存の「開始トリガー」の監視ロジック（ここからは一切触らない）
-			// ==========================================
+			// フラグによる開始 の監視
+			// フラグによる開始がfalse、フラグ名がNoneのいずれかの場合以下処理をスキップ
 			if (!window.useTrigger || window.triggerFlagName == "None") return;
 
+			// 箱を用意
 			bool* pCurrentFlag = nullptr;
+			// 名前一致のフラグが見つかるまで走査
 			for (const auto& pair : impl->m_RegisteredFlags) {
+				// 見つかったら箱に入れる
 				if (pair.first == window.triggerFlagName) {
 					pCurrentFlag = pair.second;
 					break;
 				}
 			}
+			// フラグが存在しなければ以下処理をスキップ
 			if (!pCurrentFlag) return;
 
+			// 箱に入れたフラグのbool状態を格納
 			bool currentVal = *pCurrentFlag;
 			bool isTriggered = false;
 			if (window.triggerCondition == true) {
-				if (!window.lastTriggerState && currentVal) isTriggered = true; // false -> true
+				// falseからtrueになった瞬間
+				if (!window.lastTriggerState && currentVal) isTriggered = true;
 			} else {
-				if (window.lastTriggerState && !currentVal) isTriggered = true; // true -> false
+				// trueからfalseになった瞬間
+				if (window.lastTriggerState && !currentVal) isTriggered = true;
 			}
 
+			// 開始
 			if (isTriggered) {
 				 // 開始時フラグによる再再生時、ループカウント、フレームを正常化
 				if (window.currentFrame >= window.maxFrame) {
@@ -343,13 +374,16 @@ namespace RyoEngine {
 					window.currentLoopCount = 0;
 				}
 
-				window.isPlaying = true; // 再生開始（または再開）！
+				window.isPlaying = true; // 再生開始 (または一時停止からの再開)
 			}
+			// 状態の記録
 			window.lastTriggerState = currentVal;
 		}
+
 		// =========================================================================
 		//  UI / アニメーション処理関数
 		// =========================================================================
+		// タイムラインの描画
 		static void DrawTimeline(WindowData& window) {
 			ImGuiIO& io = ImGui::GetIO();
 			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) || ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
@@ -362,23 +396,23 @@ namespace RyoEngine {
 				}
 			}
 
-			// ★ 修正：現在のモード名をヘッダーに表示
 			//const char* modeHeaderNames[] = { "タイムライン (translate)", "タイムライン (rotate)", "タイムライン (scale)" };
+			// タイムライン関係
 			if (ImGui::TreeNodeEx("タイムライン", ImGuiTreeNodeFlags_DefaultOpen)) {
 				if (ImGui::BeginChild("SequencerArea", ImVec2(0, 130), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar)) {
 					int currentFrameItem = window.currentFrame;
 					int selectedItem = -1;
 
-					// ★修正：ゲーム同期モードの時はフラグを 0 にしてフレーム変更や範囲変更を禁止する
+					// ゲームモード同期時、フレーム操作を禁止
 					int sequencerFlags = ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_CHANGE_FRAME;
 					if (window.isGameSyncMode) {
 						sequencerFlags = 0; // すべての編集・操作フラグを外す
 					}
 
+					// タイムライン表示
 					ImSequencer::Sequencer(&window.delegate, &currentFrameItem, nullptr, &selectedItem, &window.firstFrame, sequencerFlags);
 
-					// ★修正：ゲーム同期モードの時は、手動シークの結果（currentFrameItem）を適用せず、
-					// システム（ゲーム）側が進めた現在のフレームを維持する
+					// ゲームモード同期時、システムが進めるフレームに従う
 					if (!window.isGameSyncMode) {
 						window.currentFrame = currentFrameItem;
 					}
@@ -388,22 +422,27 @@ namespace RyoEngine {
 			}
 		}
 
+		// キーフレーム関係 (ボタン)
 		static void DrawKeyFrameButtons(WindowData& window, Impl* impl) {
 			ImGui::Spacing();
 			if (window.isGameSyncMode) {
 				ImGui::BeginDisabled();
 			}
+			// 挿入させたい軸を選ぶ
 			ImGui::Text("キー挿入対象（複数選択可）:");ImGui::SameLine();
 			ImGui::Checkbox("X", &window.insertX); ImGui::SameLine();
 			ImGui::Checkbox("Y", &window.insertY); ImGui::SameLine();
 			ImGui::Checkbox("Z", &window.insertZ);
 
 			ImGui::Spacing();
+
+			// --- キーフレーム追加ボタン ---
 			if (ImGui::Button("現在のフレームにキーを挿入")) {
 				AxisGroup targetGroup = window.GetCurrentTargetGroup();
+				// 挿入対称軸が選択されていない場合以下処理をスキップ
 				if (targetGroup == AxisGroup::None) return;
 
-				// ★ 修正：現在のモードに応じた値をモデルから取得
+				// 現在のモードに応じた値をモデルから取得
 				Vector3 modelVal = { 0.0f, 0.0f, 0.0f };
 				if (!impl->m_pTargetModels.empty() && impl->m_pTargetModels[0].second) {
 					Model* m = impl->m_pTargetModels[0].second;
@@ -412,6 +451,7 @@ namespace RyoEngine {
 					else if (window.currentTransformMode == static_cast<int>(TransformMode::Scale)) modelVal = m->GetScale();
 				}
 
+				// 保存すべきキーフレームリストの参照を取得
 				int mode = window.currentTransformMode;
 				auto& keys = window.groupedKeyFrames[mode][static_cast<size_t>(targetGroup)];
 
@@ -433,9 +473,14 @@ namespace RyoEngine {
 			}
 
 			ImGui::SameLine();
+
+			// キーフレーム削除ボタン
 			if (ImGui::Button("現在のフレームのキーを削除")) {
+				// 現在のキーフレームにいる軸グループを取得
 				AxisGroup targetGroup = window.GetCurrentTargetGroup();
+				// そのグループ内に軸があるなら実行
 				if (targetGroup != AxisGroup::None) {
+					// 該当キーフレームを削除
 					int mode = window.currentTransformMode;
 					auto& keys = window.groupedKeyFrames[mode][static_cast<size_t>(targetGroup)];
 					keys.erase(std::remove_if(keys.begin(), keys.end(), [&](const KeyFrame& k) {
@@ -448,13 +493,16 @@ namespace RyoEngine {
 			}
 		}
 
+		// カーブエディタの描画
 		static void DrawCurveEditor(WindowData& window) {
 			ImGui::Spacing();
+			// 表示名
 			const char* curveEditorNames[] = {
 				"グラフ (Translate) [赤:X, 緑:Y, 青:Z]",
 				"グラフ (Rotate) [赤:X, 緑:Y, 青:Z]",
 				"グラフ (Scale) [赤:X, 緑:Y, 青:Z]"
 			};
+
 			ImGui::Text("%s", curveEditorNames[window.currentTransformMode]);
 			if (ImGui::BeginChild("CurveEditorArea", ImVec2(0, 180), ImGuiChildFlags_Border, ImGuiWindowFlags_NoScrollbar)) {
 				ImVec2 curveSize = ImGui::GetContentRegionAvail();
@@ -462,12 +510,10 @@ namespace RyoEngine {
 				// 子ウィンドウ自体の位置とサイズを取得
 				ImVec2 windowPos = ImGui::GetWindowPos();
 				ImVec2 windowSize = ImGui::GetWindowSize();
-
-				// ★ 1. グラフの「暗い灰色のボックス」の正確な描画範囲（上下左右）を計算
-				// ImCurveEditの内部の枠線（パディング）を考慮した矩形を作ります
+				// 余白
 				float paddingX = 8.0f;
-				float paddingY = 4.0f; // ImCurveEdit の上下一枠分のデフォルト余白
-
+				float paddingY = 4.0f;
+				// クリップ位置
 				ImVec2 clipMin(windowPos.x + paddingX, windowPos.y + paddingY);
 				ImVec2 clipMax(windowPos.x + windowSize.x - paddingX, windowPos.y + windowSize.y - paddingY);
 
@@ -479,7 +525,7 @@ namespace RyoEngine {
 				float frameMax = static_cast<float>(window.delegate.GetFrameMax());
 
 				if (frameMax > frameMin) {
-					// ★ 動く量を調整する倍率（1動いたら0.9動かしたいなら 0.9f）
+					// 白線が動く量を調整する倍率
 					float motionScale = 0.98825f;
 
 					// 起点（例えば最小フレーム）からの「移動量」を計算し、そこに倍率をかける
@@ -501,7 +547,7 @@ namespace RyoEngine {
 						ImVec2 lineStart(lineX, clipMin.y);
 						ImVec2 lineEnd(lineX, clipMax.y);
 
-						// ★ 現在の子ウィンドウの DrawList から、親のスクロール等を考慮した「実際に画面に見えている表示領域」を取得
+						// 現在の子ウィンドウの DrawList から、親のスクロール等を考慮した「実際に画面に見えている表示領域」を取得
 						ImDrawList* currentDrawList = ImGui::GetWindowDrawList();
 						ImVec2 currentWindowClipMin = currentDrawList->GetClipRectMin();
 						ImVec2 currentWindowClipMax = currentDrawList->GetClipRectMax();
@@ -529,17 +575,17 @@ namespace RyoEngine {
 			ImGui::EndChild();
 		}
 
+		// キーフレーム情報系
 		static void DrawValueInspector(WindowData& window) {
 			const char* easingNames[] = { "None", "Lerp", "EaseInQuad", "EaseOutQuad", "EaseInOutQuad", "EaseOutBounce" };
 			bool hasKeyInCurrentFrame = false;
 			int mode = window.currentTransformMode;
 
-			
-
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1,1,0,1));
 			bool isOpen = ImGui::TreeNodeEx("現在のキーフレーム情報", ImGuiTreeNodeFlags_DefaultOpen);
 			ImGui::PopStyleColor();
 
+			// isOpenはツリーノード
 			if (isOpen) {
 				if (window.isGameSyncMode) {
 					ImGui::BeginDisabled();
@@ -565,24 +611,28 @@ namespace RyoEngine {
 						const char* labelZ = (mode == 0) ? "Translate.Z" : (mode == 1) ? "Rotate.Z" : "Scale.Z";
 
 						// グループに応じて必要な軸のドラッグUIを出す
-						float dragSpeed = (mode == 0) ? 0.1f : 0.01f;
+						float dragSpeed = (mode == 0) ? 0.1f : 0.01f;  // ドラッグスピードはtranslateの時だけ早くしてある
+						// X
 						if (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ) {
 							ImGui::DragFloat(labelX, &it->value.x, dragSpeed, -360.0f, 360.0f);
 						}
+						// Y
 						if (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ) {
 							ImGui::DragFloat(labelY, &it->value.y, dragSpeed, -360.0f, 360.0f);
 						}
+						// Z
 						if (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ) {
 							ImGui::DragFloat(labelZ, &it->value.z, dragSpeed, -360.0f, 360.0f);
 						}
 
+						// イージングの選択
 						int easingIdx = static_cast<int>(it->easing);
 						if (ImGui::Combo("Easing", &easingIdx, easingNames, IM_ARRAYSIZE(easingNames))) {
 							it->easing = static_cast<EasingType>(easingIdx);
 						}
 					}
 				}
-
+				// キーフレームないとき
 				if (!hasKeyInCurrentFrame) {
 					ImGui::Text("（現在のフレームにキーフレームがありません）");
 				}
@@ -597,6 +647,7 @@ namespace RyoEngine {
 			}
 		}
 
+		// キーフレームのリストを表示
 		static void DrawKeyFrameList(WindowData& window) {
 			ImGui::Spacing();
 			ImGui::Text("グループ別キーフレーム一覧 (クリックでジャンプ):");
@@ -621,10 +672,13 @@ namespace RyoEngine {
 							ImGui::BeginDisabled();
 						}
 						for (const auto& key : keys) {
+							// 現在のフレームがキーフレームが持つフレーム位置と同じなら
+							// active として表示
 							bool is_active = (key.frame == window.currentFrame);
 							std::string label = "フレーム: " + std::to_string(key.frame);
 							if (is_active) label += " (active)";
 
+							// 現在のフレームを選択したキーフレームのフレームに上書き
 							if (ImGui::Selectable(label.c_str(), is_active)) {
 								window.currentFrame = key.frame;
 							}
@@ -635,7 +689,7 @@ namespace RyoEngine {
 						ImGui::TreePop();
 					}
 				}
-
+				// キーフレームが見つからなかったとき
 				if (!hasAnyKey) {
 					if (window.isGameSyncMode) {
 						ImGui::BeginDisabled();
@@ -648,8 +702,8 @@ namespace RyoEngine {
 			}
 			ImGui::EndChild();
 		}
-
-		// ★ 修正：モード(SRT)指定を引数に含めて評価する
+		
+		// 二つのキーフレームの間を補間させる
 		static float EvaluateAxisNew(int32_t currentFrame, const WindowData& window, int mode, int axisIndex, float defaultVal) {
 			// axisIndex -> 0:X, 1:Y, 2:Z
 
@@ -666,6 +720,7 @@ namespace RyoEngine {
 				if (axisIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
 
 				if (include) {
+					// それをコピー
 					for (const auto& k : window.groupedKeyFrames[mode][i]) {
 						activeKeys.push_back(k);
 					}
@@ -674,22 +729,29 @@ namespace RyoEngine {
 
 			if (activeKeys.empty()) return defaultVal;
 
-			// フレーム順にソート
+			// フレーム番号が小さい順にソート
 			std::sort(activeKeys.begin(), activeKeys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
 
 			if (currentFrame <= activeKeys.front().frame) return (axisIndex == 0 ? activeKeys.front().value.x : (axisIndex == 1 ? activeKeys.front().value.y : activeKeys.front().value.z));
 			if (currentFrame >= activeKeys.back().frame)  return (axisIndex == 0 ? activeKeys.back().value.x : (axisIndex == 1 ? activeKeys.back().value.y : activeKeys.back().value.z));
 
 			for (size_t k = 1; k < activeKeys.size(); ++k) {
+				// 現在のフレームが次のキーフレームの位置よりも前にいるかを判定
 				if (currentFrame <= activeKeys[k].frame) {
+					// 現在のフレームが最後に通ったキーフレーム
 					const auto& prevKey = activeKeys[k - 1];
+					// 現在のフレームが次通るキーフレーム
 					const auto& nextKey = activeKeys[k];
 
+					// 最後に通ったキーフレームから次徹キーフレーム間の差分を計算
 					int32_t frameDiff = nextKey.frame - prevKey.frame;
 					if (frameDiff > 0) {
+						// その間において全体の何割にいるのかの進捗率を計算
 						float t = static_cast<float>(currentFrame - prevKey.frame) / static_cast<float>(frameDiff);
+						// 進捗度に応じたイージングの適用
 						float easedT = ApplyEasing(nextKey.easing, t);
 
+						// 補間
 						float pVal = (axisIndex == 0 ? prevKey.value.x : (axisIndex == 1 ? prevKey.value.y : prevKey.value.z));
 						float nVal = (axisIndex == 0 ? nextKey.value.x : (axisIndex == 1 ? nextKey.value.y : nextKey.value.z));
 						return pVal + (nVal - pVal) * easedT;
@@ -700,7 +762,7 @@ namespace RyoEngine {
 			return defaultVal;
 		}
 
-		// ★ 修正：Translate, Rotate, Scale すべてを個別に評価して適用する
+		// モデルにSRTを入れる処理
 		static void UpdateAnimationAnimate(WindowData& window, Impl* impl) {
 			if (impl->m_pTargetModels.empty() || !impl->m_pTargetModels[0].second) return;
 			Model* targetModel = impl->m_pTargetModels[0].second;
@@ -730,9 +792,11 @@ namespace RyoEngine {
 			targetModel->SetScale(finalScale);
 		}
 
+		// 新規作成で作られたウィンドウの描画
 		static void DrawSubWindow(WindowData& window, size_t index, Impl* impl) {
 			std::string window_title = "インスペクタ: " + window.name + "##" + std::to_string(window.id);
 
+			// 選択させる命令があるならウィンドウを選択
 			if (window.request_focus) {
 				ImGui::SetNextWindowFocus();
 				window.request_focus = false;
@@ -754,8 +818,8 @@ namespace RyoEngine {
 			//ImGui::Text("Window ID: %d", window.id);
 			//ImGui::Separator();
 
-			// ★追加：動作モードの切り替えUI
-			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "[ 動作プレビューモード ]");
+			// 動作モードの切り替えUI
+			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "[ 動作モード ]");
 			if (ImGui::RadioButton("編集モード (常時再生)", !window.isGameSyncMode)) {
 				window.isGameSyncMode = false;
 				// モード切り替え時に一度状態をリセット
@@ -771,7 +835,8 @@ namespace RyoEngine {
 				window.currentFrame = 0;
 				window.currentLoopCount = 0;
 			}
-			// ★ ゲーム同期モードの時は、タイムラインの操作を無効化（グレーアウト）する
+
+			// ゲーム同期モードの時は、タイムラインの操作を無効化（グレーアウト）する
 			if (window.isGameSyncMode) {
 				ImGui::TextColored(ImVec4(1.0f, 0.15f, 0.12f, 1.0f), "[ 現在はゲーム同期モードのため一部操作が出来ません ]");
 				ImGui::BeginDisabled();
@@ -781,8 +846,10 @@ namespace RyoEngine {
 			ImGui::Spacing();
 
 			ImGui::PushItemWidth(150);
+			// 現在フレームの操作
 			ImGui::SliderInt("Frame", &window.currentFrame, 0, window.maxFrame);
 			ImGui::SameLine();
+			// 総フレーム数の操作
 			if (ImGui::InputInt("Max Frame", &window.maxFrame)) {
 				if (window.maxFrame < 1) window.maxFrame = 1;
 			}
@@ -802,7 +869,7 @@ namespace RyoEngine {
 				}
 			} else {
 				if (ImGui::Button("> 再生")) {
-					// ★追加：もし指定回数をすべて再生し終えている状態なら、最初からリスタートする
+					// もし指定回数をすべて再生し終えている状態なら、最初からリスタートする
 					if (window.isLoop && window.maxLoopCount > 0 && window.currentLoopCount >= window.maxLoopCount) {
 						window.currentFrame = 0;
 						window.currentLoopCount = 0;
@@ -818,17 +885,17 @@ namespace RyoEngine {
 				window.frameTimer = 0.0f;
 			}
 			if (window.isGameSyncMode) {
-				ImGui::EndDisabled(); // ★ 忘れずに閉じる
+				ImGui::EndDisabled();
 			}
 
 
-			// ★追加：再生ボタンと編集モード（Combo）の間にトリガー設定UIを挟む
+			// 
 			ImGui::Spacing();
 			ImGui::Separator();
 			ImGui::Spacing();
 
 			// ==========================================
-			// 1. 【編集モード】（独立・常時表示）
+			// 1. 【編集モード】
 			// ==========================================
 			const char* transformModeNames[] = { "Translate (位置)", "Rotate (回転)", "Scale (拡縮)" };
 			ImGui::PushItemWidth(200);
@@ -839,7 +906,7 @@ namespace RyoEngine {
 
 
 			// ==========================================
-			// 2. 【タイムライン】（独立・常時表示）
+			// 2. 【タイムライン】
 			// ==========================================
 			DrawTimeline(window);
 
@@ -847,7 +914,7 @@ namespace RyoEngine {
 
 
 			// ==========================================
-			// 3. 【キーフレーム】（新設した折りたたみヘッダー）
+			// 3. 【キーフレーム】
 			// ==========================================
 			if (ImGui::TreeNodeEx("キーフレーム", ImGuiTreeNodeFlags_DefaultOpen)) {
 				DrawKeyFrameButtons(window, impl); // キー挿入対象などのボタン類
@@ -861,7 +928,7 @@ namespace RyoEngine {
 
 
 			// ==========================================
-			// 4. 【アニメーション再生設定】（トリガーからループ設定まで）
+			// 4. 【アニメーション再生設定】
 			// ==========================================
 			if (ImGui::CollapsingHeader("アニメーション再生設定")) {
 				if (!window.isGameSyncMode) {
@@ -870,7 +937,8 @@ namespace RyoEngine {
 				} else {
 					ImGui::BeginDisabled();
 				}
-				
+
+				// --- トリガー開始の設定 ---
 				ImGui::Checkbox("トリガーによる開始を有効化", &window.useTrigger);
 				if (window.useTrigger) {
 					ImGui::Indent();
@@ -896,7 +964,6 @@ namespace RyoEngine {
 				ImGui::Separator();
 
 				// --- 再生継続の設定 ---
-				//ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ 再生継続条件 ]");
 				ImGui::Checkbox("フラグの状態による再生継続を有効化", &window.useKeepRunning);
 				if (window.useKeepRunning) {
 					ImGui::Indent();
@@ -919,8 +986,6 @@ namespace RyoEngine {
 				ImGui::Separator();
 
 				// --- ループ・終了の設定 ---
-				//ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "[ ループ・再生回数設定 ]");
-
 				if (ImGui::Checkbox("ループする", &window.isLoop)) {
 					if (window.isLoop) {
 						window.maxLoopCount = 0;
@@ -956,10 +1021,8 @@ namespace RyoEngine {
 				if (window.isGameSyncMode) {
 					ImGui::EndDisabled();
 				}
-			} // ★ここで「アニメーション再生設定」を閉じる
-			// ==========================================
-			// 最後にサブウィンドウ自体を閉じる
-			// ==========================================
+			}
+
 			ImGui::NewLine();
 			ImGui::End();
 		}
@@ -1127,8 +1190,10 @@ namespace RyoEngine {
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 			auto& window = impl->m_SubWindows[i];
 
+			// トリガー開始の判定
 			Impl::CheckAnimationTrigger(window, impl);
 
+			// ウィンドウが閉じられていても再生
 			if (!window.is_open) {
 				if (window.isPlaying) {
 					window.isPlaying = false;
@@ -1137,8 +1202,9 @@ namespace RyoEngine {
 				}
 				continue;
 			}
-
+			// アニメーション
 			Impl::AdvanceFrame(window, deltaTime);
+			// SRTに反映
 			Impl::UpdateAnimationAnimate(window, impl);
 		}
 
@@ -1152,6 +1218,7 @@ namespace RyoEngine {
 		}
 		ImGui::End();
 
+		// 新規作成で作られたウィンドウたちの描画
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 			if (impl->m_SubWindows[i].is_open) {
 				Impl::DrawSubWindow(impl->m_SubWindows[i], i, impl);
@@ -1275,7 +1342,6 @@ namespace RyoEngine {
 
 	void AnimEdit::DrawUI() {}
 
-	// ★ 修正：JSON形式を [TransformMode][AxisGroup] の入れ子構造に拡張して保存
 	void AnimEdit::SaveSettings(const char* filePath) {
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
@@ -1338,7 +1404,6 @@ namespace RyoEngine {
 		}
 	}
 
-	// ★ 修正：拡張したJSON構造からデータを正しく展開・復元
 	void AnimEdit::LoadSettings(const char* filePath) {
 		std::ifstream file(filePath);
 		if (!file.is_open()) return;

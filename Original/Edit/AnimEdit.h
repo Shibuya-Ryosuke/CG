@@ -25,9 +25,10 @@ namespace RyoEngine {
 		static void LoadSettings(const char* filePath = "resources/json/editor/animationEditor.json");
 
 		static void ModelOperate();
+		// モデルを登録
 		static void SetTargetModel(Model* model, const std::string& name);
 
-		// ★ 追加：外部のboolフラグを名前付きでエディタに登録する関数
+		// フラグを登録
 		static void RegisterTriggerFlag(const std::string& name, bool* ptr);
 #else
 		static void Initialize(){}
