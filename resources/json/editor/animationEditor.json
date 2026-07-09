@@ -37,7 +37,7 @@
                         "val_z": 0.0
                     },
                     {
-                        "easing": 1,
+                        "easing": 5,
                         "frame": 69,
                         "val_x": -15.9423828125,
                         "val_y": -22.429771423339844,
@@ -120,8 +120,16 @@
         "insert_x": true,
         "insert_y": true,
         "insert_z": true,
+        "is_loop": false,
         "is_open": false,
+        "keep_condition": true,
+        "keep_flag_name": "player : holdM",
         "max_frame": 120,
-        "name": "新規ウィンドウ 1"
+        "max_loop_count": 1,
+        "name": "新規ウィンドウ 1",
+        "trigger_condition": true,
+        "trigger_flag_name": "player : toggleA",
+        "use_keep_running": false,
+        "use_trigger": false
     }
 ]

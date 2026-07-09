@@ -90,7 +90,6 @@ namespace RyoEngine {
 							window.currentFrame = window.maxFrame;
 							window.isPlaying = false;
 							window.currentLoopCount = 0;
-							window.lastTriggerState = false;
 							break;
 						} else {
 							window.currentFrame = 0;
@@ -337,12 +336,12 @@ namespace RyoEngine {
 			}
 
 			if (isTriggered) {
-				// ★ 修正：「停止時に0に戻す」がOFF、かつ現在すでに途中まで進んでいるなら0に戻さない
-				//if (window.returnToZeroOnStop || window.currentFrame >= window.maxFrame) {
-				//	window.currentFrame = 0;
-				//	window.frameTimer = 0.0f;
-				//	window.currentLoopCount = 0;
-				//}
+				 // 開始時フラグによる再再生時、ループカウント、フレームを正常化
+				if (window.currentFrame >= window.maxFrame) {
+					window.currentFrame = 0;
+					window.frameTimer = 0.0f;
+					window.currentLoopCount = 0;
+				}
 
 				window.isPlaying = true; // 再生開始（または再開）！
 			}
