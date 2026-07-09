@@ -743,7 +743,7 @@ namespace RyoEngine {
 					// 現在のフレームが次通るキーフレーム
 					const auto& nextKey = activeKeys[k];
 
-					// 最後に通ったキーフレームから次徹キーフレーム間の差分を計算
+					// 最後に通ったキーフレームから次通るキーフレーム間の差分を計算
 					int32_t frameDiff = nextKey.frame - prevKey.frame;
 					if (frameDiff > 0) {
 						// その間において全体の何割にいるのかの進捗率を計算
