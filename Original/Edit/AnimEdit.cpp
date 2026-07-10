@@ -121,19 +121,18 @@ namespace RyoEngine {
 
 			int GetFrameMin() const override { return 0; }
 			int GetFrameMax() const override {
-				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return 60;
-				return m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx].maxFrame;
+				if (!m_pOwnerWindow) return 60; // 所有者ウィンドウがいなければデフォルト値
+				return m_pOwnerWindow->maxFrame; // 自分のウィンドウのフレーム最大値を返す
 			}
 			int GetItemCount() const override { return 3; }
 
 			void Get(int index, int** start, int** end, int* type, unsigned int* color) override {
-				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) {
+				if (!m_pOwnerWindow) {
 					m_ItemStartFrame[index] = 0;
 					m_ItemEndFrame[index] = 60;
 				} else {
-					auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
 					m_ItemStartFrame[index] = 0;
-					m_ItemEndFrame[index] = window.maxFrame;
+					m_ItemEndFrame[index] = m_pOwnerWindow->maxFrame; // 自分のウィンドウを見る
 				}
 
 				if (start) *start = &m_ItemStartFrame[index];
@@ -145,10 +144,10 @@ namespace RyoEngine {
 				}
 			}
 
-			// ★ 修正：現在の編集モード（SRT）に応じてタイムラインのラベルを動的に切り替える
 			const char* GetItemLabel(int index) const override {
-				if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return "X";
-				auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+				// ⭕ m_pImplのチェックではなく、自分を所有するウィンドウ（m_pOwnerWindow）がいるかチェック
+				if (!m_pOwnerWindow) return "X";
+				auto& window = *m_pOwnerWindow; // 選択中ではなく、自分のウィンドウの参照を取る
 
 				if (window.currentTransformMode == static_cast<int>(TransformMode::Translate)) {
 					static const char* labels[] = { "Translate.X", "Translate.Y", "Translate.Z" };
@@ -165,8 +164,9 @@ namespace RyoEngine {
 			ImVec2& GetMin() override { static ImVec2 min(0.0f, -30.0f); return min; }
 			ImVec2& GetMax() override {
 				static ImVec2 max(60.0f, 50.0f);
-				if (m_pImpl && m_pImpl->m_SelectedWindowIdx != -1) {
-					max.x = static_cast<float>(m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx].maxFrame);
+				// ⭕ 自分のウィンドウが存在すれば、そのウィンドウのmaxFrameを適用する
+				if (m_pOwnerWindow) {
+					max.x = static_cast<float>(m_pOwnerWindow->maxFrame);
 				}
 				return max;
 			}
@@ -280,7 +280,7 @@ namespace RyoEngine {
 		};
 
 		// 新規作成で作られたウィンドウたちの情報を格納する可変長配列
-		std::vector<WindowData> m_SubWindows;
+		std::vector<std::unique_ptr<WindowData>> m_SubWindows;
 		// 現在選択しているウィンドウ (-1は未選択を意味)
 		int32_t m_SelectedWindowIdx = -1;
 
@@ -1042,8 +1042,9 @@ namespace RyoEngine {
 
 	// --- 構造体の外側での WindowDelegate のメンバ関数定義 ---
 	size_t AnimEdit::Impl::WindowDelegate::GetPointCount(size_t curveIndex) {
-		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return 0;
-		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+		// ⭕ m_pOwnerWindowのチェックに修正
+		if (!m_pOwnerWindow) return 0;
+		auto& window = *m_pOwnerWindow; // ⭕ 選択中ではなく、自分のウィンドウを参照
 		int mode = window.currentTransformMode;
 
 		size_t count = 0;
@@ -1067,9 +1068,10 @@ namespace RyoEngine {
 	ImVec2* AnimEdit::Impl::WindowDelegate::GetPoints(size_t curveIndex) {
 		static std::vector<ImVec2> pointsCache;
 		pointsCache.clear();
-		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return nullptr;
+		// ⭕ m_pOwnerWindowのチェックに修正
+		if (!m_pOwnerWindow) return nullptr;
 
-		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+		auto& window = *m_pOwnerWindow; // ⭕ 自分のウィンドウを参照
 		int mode = window.currentTransformMode;
 
 		// 該当軸が含まれるグループのキーをキャッシュに集める
@@ -1093,8 +1095,9 @@ namespace RyoEngine {
 	}
 
 	int AnimEdit::Impl::WindowDelegate::EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) {
-		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return pointIndex;
-		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+		// ⭕ m_pOwnerWindowのチェックに修正
+		if (!m_pOwnerWindow) return pointIndex;
+		auto& window = *m_pOwnerWindow; // ⭕ 自分のウィンドウを参照
 		int mode = window.currentTransformMode;
 
 		// ゲーム同期モードのときはキーフレーム操作を無効
@@ -1146,8 +1149,9 @@ namespace RyoEngine {
 	}
 
 	void AnimEdit::Impl::WindowDelegate::AddPoint(size_t curveIndex, ImVec2 value) {
-		if (!m_pImpl || m_pImpl->m_SelectedWindowIdx == -1) return;
-		auto& window = m_pImpl->m_SubWindows[m_pImpl->m_SelectedWindowIdx];
+		// ⭕ m_pOwnerWindowのチェックに修正
+		if (!m_pOwnerWindow) return;
+		auto& window = *m_pOwnerWindow; // ⭕ 自分のウィンドウを参照
 		int mode = window.currentTransformMode;
 
 		// タイムラインの空きをダブルクリックして追加した場合は、現在のチェックボックス選択に応じたグループに追加
@@ -1200,24 +1204,25 @@ namespace RyoEngine {
 		float deltaTime = ImGui::GetIO().DeltaTime;
 
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
-			auto& window = impl->m_SubWindows[i];
+			auto& window = impl->m_SubWindows[i]; // window は std::unique_ptr<WindowData>& になります
+			window->delegate.m_pOwnerWindow = window.get(); // .get() で生ポインタを取得
 
 			// トリガー開始の判定
-			Impl::CheckAnimationTrigger(window, impl);
+			Impl::CheckAnimationTrigger(*window, impl);
 
 			// ウィンドウが閉じられていても再生
-			if (!window.is_open) {
-				if (window.isPlaying) {
-					window.isPlaying = false;
-					window.currentFrame = 0;
-					Impl::UpdateAnimationAnimate(window, impl);
+			if (!window->is_open) {
+				if (window->isPlaying) {
+					window->isPlaying = false;
+					window->currentFrame = 0;
+					Impl::UpdateAnimationAnimate(*window, impl);
 				}
 				continue;
 			}
 			// アニメーション
-			Impl::AdvanceFrame(window, deltaTime);
+			Impl::AdvanceFrame(*window, deltaTime);
 			// SRTに反映
-			Impl::UpdateAnimationAnimate(window, impl);
+			Impl::UpdateAnimationAnimate(*window, impl); // 引数を参照型に合わせるため * を追加
 		}
 
 		ImGui::Begin("Animation Editor");
@@ -1232,8 +1237,12 @@ namespace RyoEngine {
 
 		// 新規作成で作られたウィンドウたちの描画
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
-			if (impl->m_SubWindows[i].is_open) {
-				Impl::DrawSubWindow(impl->m_SubWindows[i], i, impl);
+			auto& window = impl->m_SubWindows[i];
+			window->delegate.m_pOwnerWindow = window.get(); // 描画前にも最新のポインタを再設定
+			if (window->is_open) {
+				ImGui::PushID(window->id);
+				Impl::DrawSubWindow(*window, i, impl); // 引数を参照型に合わせるため * を追加
+				ImGui::PopID();
 			}
 		}
 	}
@@ -1266,7 +1275,6 @@ namespace RyoEngine {
 
 				if (!modelPtr) continue;
 
-				// "NoName" の場合は登録順の番号を振る
 				std::string displayName;
 				if (name == "NoName") {
 					displayName = "Model [" + std::to_string(i) + "]";
@@ -1274,18 +1282,14 @@ namespace RyoEngine {
 					displayName = name;
 				}
 
-				// 現在ループしているモデルが、選択中のモデルと一致するか判定
 				bool isSelected = (impl->m_pTargetModel == modelPtr);
 
-				// 各モデルの一意なIDを保証するために PushID をかける（ModelOperate と同様）
 				ImGui::PushID(static_cast<int>(i));
 
-				// 判定用の displayName を使って選択肢を表示
 				if (ImGui::Selectable(displayName.c_str(), isSelected)) {
-					impl->m_pTargetModel = modelPtr; // 選択されたモデルを保存
+					impl->m_pTargetModel = modelPtr;
 				}
 
-				// 初期フォーカスを設定
 				if (isSelected) {
 					ImGui::SetItemDefaultFocus();
 				}
@@ -1295,15 +1299,14 @@ namespace RyoEngine {
 			ImGui::EndCombo();
 		}
 
+		// 新規作成ボタンの処理
 		if (ImGui::Button("新規作成")) {
-			// 早期リターンだと変な挙動をするためifで囲む
-			// 未選択時はウィンドウを作成しない
 			if (previewName != "未選択") {
 				int32_t allocated_id = 1;
 				while (true) {
 					bool id_exists = false;
 					for (const auto& w : impl->m_SubWindows) {
-						if (w.id == allocated_id) {
+						if (w->id == allocated_id) { // .id から ->id に変更
 							id_exists = true;
 							break;
 						}
@@ -1314,18 +1317,17 @@ namespace RyoEngine {
 
 				std::string name = "新規ウィンドウ " + std::to_string(allocated_id);
 
-				Impl::WindowData newWindow;
-				newWindow.id = allocated_id;
-				newWindow.name = name;
-				newWindow.is_open = true;
-				newWindow.currentTransformMode = 0; // デフォルトで Translate
-				newWindow.currentSelectModel = impl->m_pTargetModel;
+				// ⭕ unique_ptr として新しくインスタンスを生成
+				auto newWindow = std::make_unique<Impl::WindowData>();
+				newWindow->id = allocated_id;
+				newWindow->name = name;
+				newWindow->is_open = true;
+				newWindow->currentTransformMode = 0;
+				newWindow->currentSelectModel = impl->m_pTargetModel;
+				newWindow->delegate.m_pImpl = impl;
 
-				impl->m_SubWindows.push_back(newWindow);
-
-				auto& addedWindow = impl->m_SubWindows.back();
-				addedWindow.delegate.m_pOwnerWindow = &addedWindow;
-				addedWindow.delegate.m_pImpl = impl;
+				// vector に所有権を移動（push_back）
+				impl->m_SubWindows.push_back(std::move(newWindow));
 			}
 		}
 
@@ -1343,9 +1345,10 @@ namespace RyoEngine {
 		if (ImGui::TreeNodeEx("ウィンドウリスト", ImGuiTreeNodeFlags_DefaultOpen)) {
 			std::string preview_text = "ウィンドウを選択";
 			if ((impl->m_SelectedWindowIdx >= 0 && (impl->m_SelectedWindowIdx < (int)impl->m_SubWindows.size()))) {
-				preview_text = impl->m_SubWindows[impl->m_SelectedWindowIdx].name;
+				auto& sel_window = impl->m_SubWindows[impl->m_SelectedWindowIdx];
+				preview_text = sel_window->name; // -> に変更
 
-				if (impl->m_SubWindows[impl->m_SelectedWindowIdx].is_open) {
+				if (sel_window->is_open) { // -> に変更
 					preview_text += " (Opened)";
 				}
 			}
@@ -1353,8 +1356,9 @@ namespace RyoEngine {
 			if (ImGui::BeginCombo("List", preview_text.c_str())) {
 				for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 					bool is_selected = (impl->m_SelectedWindowIdx == (int)i);
-					std::string item_name = impl->m_SubWindows[i].name;
-					if (impl->m_SubWindows[i].is_open) {
+					auto& w = impl->m_SubWindows[i];
+					std::string item_name = w->name; // -> に変更
+					if (w->is_open) { // -> に変更
 						item_name += " (Opened)";
 					}
 
@@ -1372,8 +1376,9 @@ namespace RyoEngine {
 			ImGui::SameLine();
 			if (ImGui::Button("開く")) {
 				if (impl->m_SelectedWindowIdx != -1) {
-					impl->m_SubWindows[impl->m_SelectedWindowIdx].is_open = true;
-					impl->m_SubWindows[impl->m_SelectedWindowIdx].request_focus = true;
+					auto& w = impl->m_SubWindows[impl->m_SelectedWindowIdx];
+					w->is_open = true;       // -> に変更
+					w->request_focus = true; // -> に変更
 					impl->m_SelectedWindowIdx = -1;
 				}
 			}
@@ -1385,7 +1390,7 @@ namespace RyoEngine {
 			}
 
 			if (ImGui::BeginPopupModal("Delete Confirmation", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-				std::string target_name = impl->m_SubWindows[impl->m_SelectedWindowIdx].name;
+				std::string target_name = impl->m_SubWindows[impl->m_SelectedWindowIdx]->name; // -> に変更
 
 				ImGui::Text("%s を削除してよろしいですか？", target_name.c_str());
 				ImGui::Separator();
@@ -1424,30 +1429,30 @@ namespace RyoEngine {
 		// 1. 各ウィンドウの保存
 		for (auto& w : impl->m_SubWindows) {
 			json window_json;
-			window_json["id"] = w.id;
-			window_json["name"] = w.name;
+			window_json["id"] = w->id;                   // . から -> に変更
+			window_json["name"] = w->name;               // . から -> に変更
 			window_json["is_open"] = false;
-			window_json["max_frame"] = w.maxFrame;
-			window_json["current_frame"] = w.currentFrame;
-			window_json["insert_x"] = w.insertX;
-			window_json["insert_y"] = w.insertY;
-			window_json["insert_z"] = w.insertZ;
-			window_json["current_transform_mode"] = w.currentTransformMode;
+			window_json["max_frame"] = w->maxFrame;      // . から -> に変更
+			window_json["current_frame"] = w->currentFrame; // . から -> に変更
+			window_json["insert_x"] = w->insertX;       // . から -> に変更
+			window_json["insert_y"] = w->insertY;       // . から -> に変更
+			window_json["insert_z"] = w->insertZ;       // . から -> に変更
+			window_json["current_transform_mode"] = w->currentTransformMode; // . から -> に変更
 
-			window_json["use_trigger"] = w.useTrigger;
-			window_json["trigger_flag_name"] = w.triggerFlagName;
-			window_json["trigger_condition"] = w.triggerCondition;
+			window_json["use_trigger"] = w->useTrigger;           // . から -> に変更
+			window_json["trigger_flag_name"] = w->triggerFlagName; // . から -> に変更
+			window_json["trigger_condition"] = w->triggerCondition; // . から -> に変更
 
-			window_json["is_loop"] = w.isLoop;
-			window_json["max_loop_count"] = w.maxLoopCount;
+			window_json["is_loop"] = w->isLoop;               // . から -> に変更
+			window_json["max_loop_count"] = w->maxLoopCount; // . から -> に変更
 
-			window_json["use_keep_running"] = w.useKeepRunning;
-			window_json["keep_flag_name"] = w.keepFlagName;
-			window_json["keep_condition"] = w.keepCondition;
+			window_json["use_keep_running"] = w->useKeepRunning; // . から -> に変更
+			window_json["keep_flag_name"] = w->keepFlagName;     // . から -> に変更
+			window_json["keep_condition"] = w->keepCondition;     // . から -> に変更
 
 			// 現在選択されているモデルがあるなら、そのモデル側にこのウィンドウのIDを記憶させる
-			if (w.currentSelectModel != nullptr) {
-				w.currentSelectModel->SetAnimEditID(w.id);
+			if (w->currentSelectModel != nullptr) { // . から -> に変更
+				w->currentSelectModel->SetAnimEditID(w->id); // . から -> に変更
 			}
 
 			json modes_arr = json::array();
@@ -1455,7 +1460,7 @@ namespace RyoEngine {
 				json groups_arr = json::array();
 				for (size_t i = 0; i < static_cast<size_t>(Impl::AxisGroup::MaxGroups); ++i) {
 					json group_json = json::array();
-					for (const auto& k : w.groupedKeyFrames[m][i]) {
+					for (const auto& k : w->groupedKeyFrames[m][i]) { // . から -> に変更
 						json k_json;
 						k_json["frame"] = k.frame;
 						k_json["val_x"] = k.value.x;
@@ -1477,10 +1482,9 @@ namespace RyoEngine {
 		json j_relations = json::array();
 		for (const auto& pair : impl->m_pTargetModels) {
 			Model* model = pair.second;
-			// IDが0(未紐付け)以外のモデルだけを保存対象にする
 			if (model && model->GetAnimEditID() != 0) {
 				json rel;
-				rel["model_name"] = pair.first; // unordered_mapのキー（モデル名）
+				rel["model_name"] = pair.first;
 				rel["anim_edit_id"] = model->GetAnimEditID();
 				j_relations.push_back(rel);
 			}
@@ -1489,7 +1493,7 @@ namespace RyoEngine {
 
 		std::ofstream file(filePath);
 		if (file.is_open()) {
-			file << j_root.dump(4); // j_rootを書き出す
+			file << j_root.dump(4);
 			Logger::LogSuccess("[Animation Editor] Save Successed.");
 		} else {
 			Logger::LogWarning("[Animation Editor] Save failed.");
@@ -1497,114 +1501,93 @@ namespace RyoEngine {
 	}
 
 	void AnimEdit::LoadSettings(const char* filePath) {
-		std::ifstream file(filePath);
-		if (!file.is_open()) return;
-		json j_root;
-		try { file >> j_root; }
-		catch (...) { return; }
+	std::ifstream file(filePath);
+	if (!file.is_open()) return;
+	json j_root;
+	try { file >> j_root; }
+	catch (...) { return; }
 
-		AnimEdit& instance = GetInstance();
-		Impl* impl = instance.m_pImpl;
-		impl->m_SubWindows.clear();
-		impl->m_SelectedWindowIdx = -1;
+	AnimEdit& instance = GetInstance();
+	Impl* impl = instance.m_pImpl;
+	impl->m_SubWindows.clear();
+	impl->m_SelectedWindowIdx = -1;
 
-		// ★1. 【新規】先にモデルのID対応表をロードして、モデル側の animEditID_ を復元する
-		// ※この時点で、プログラム側が生成した m_pTargetModels の中身はすでに準備されている前提です
-		if (j_root.contains("model_relations") && j_root["model_relations"].is_array()) {
-			for (const auto& rel : j_root["model_relations"]) {
-				std::string modelName = rel.value("model_name", "");
-				int32_t savedId = rel.value("anim_edit_id", 0);
+	// ★1. 【新規】先にモデルのID対応表をロードして、モデル側の animEditID_ を復元する
+	if (j_root.contains("model_relations") && j_root["model_relations"].is_array()) {
+		for (const auto& rel : j_root["model_relations"]) {
+			std::string modelName = rel.value("model_name", "");
+			int32_t savedId = rel.value("anim_edit_id", 0);
 
-				// vector 内から名前が一致する pair を探す
-				for (auto& pair : impl->m_pTargetModels) {
-					if (pair.first == modelName && pair.second != nullptr) {
-						pair.second->SetAnimEditID(savedId); // モデル側のIDを復元！
-						break;
-					}
+			for (auto& pair : impl->m_pTargetModels) {
+				if (pair.first == modelName && pair.second != nullptr) {
+					pair.second->SetAnimEditID(savedId);
+					break;
 				}
 			}
 		}
+	}
 
-		int32_t maxWindowId = 0;
+	int32_t maxWindowId = 0;
 
-		// 配列の互換性維持（古いセーブデータはj_root自体が配列だったため、その考慮）
-		json j_windows = j_root.is_array() ? j_root : j_root.value("windows", json::array());
+	json j_windows = j_root.is_array() ? j_root : j_root.value("windows", json::array());
 
-		if (j_windows.is_array()) {
-			for (const auto& item : j_windows) {
-				if (item.contains("id") && item.contains("name")) {
-					Impl::WindowData w;
-					w.id = item["id"].get<int32_t>();
-					w.name = item["name"].get<std::string>();
-					w.is_open = false;
-					w.maxFrame = item.value("max_frame", 60);
-					w.currentFrame = item.value("current_frame", 0);
-					w.insertX = item.value("insert_x", true);
-					w.insertY = item.value("insert_y", true);
-					w.insertZ = item.value("insert_z", true);
-					w.currentTransformMode = item.value("current_transform_mode", 0);
+	if (j_windows.is_array()) {
+		for (const auto& item : j_windows) {
+			if (item.contains("id") && item.contains("name")) {
+				// ⭕ unique_ptr として新しくインスタンスを生成
+				auto w = std::make_unique<Impl::WindowData>();
+				w->id = item["id"].get<int32_t>();
+				w->name = item["name"].get<std::string>();
+				w->is_open = false;
+				w->maxFrame = item.value("max_frame", 60);
+				w->currentFrame = item.value("current_frame", 0);
+				w->insertX = item.value("insert_x", true);
+				w->insertY = item.value("insert_y", true);
+				w->insertZ = item.value("insert_z", true);
+				w->currentTransformMode = item.value("current_transform_mode", 0);
 
-					w.useTrigger = item.value("use_trigger", false);
-					w.triggerFlagName = item.value("trigger_flag_name", "None");
-					w.triggerCondition = item.value("trigger_condition", true);
-					w.lastTriggerState = false;
+				w->useTrigger = item.value("use_trigger", false);
+				w->triggerFlagName = item.value("trigger_flag_name", "None");
+				w->triggerCondition = item.value("trigger_condition", true);
+				w->lastTriggerState = false;
 
-					w.isLoop = item.value("is_loop", true);
-					w.maxLoopCount = item.value("max_loop_count", 1);
-					w.currentLoopCount = 0;
+				w->isLoop = item.value("is_loop", true);
+				w->maxLoopCount = item.value("max_loop_count", 1);
+				w->currentLoopCount = 0;
 
-					w.useKeepRunning = item.value("use_keep_running", false);
-					w.keepFlagName = item.value("keep_flag_name", "None");
-					w.keepCondition = item.value("keep_condition", true);
+				w->useKeepRunning = item.value("use_keep_running", false);
+				w->keepFlagName = item.value("keep_flag_name", "None");
+				w->keepCondition = item.value("keep_condition", true);
 
-					if (w.id > maxWindowId) {
-						maxWindowId = w.id;
+				if (w->id > maxWindowId) {
+					maxWindowId = w->id;
+				}
+
+				w->currentSelectModel = nullptr;
+				for (auto& pair : impl->m_pTargetModels) {
+					Model* model = pair.second;
+					if (model && model->GetAnimEditID() == w->id) {
+						w->currentSelectModel = model;
+						break;
 					}
+				}
 
-					// 上のステップ1でモデル側の ID がすでに復元されているので、ここで正しくポインタが繋がる
-					w.currentSelectModel = nullptr;
-					for (auto& pair : impl->m_pTargetModels) {
-						Model* model = pair.second;
-						if (model && model->GetAnimEditID() == w.id) {
-							w.currentSelectModel = model;
-							break;
-						}
+				// データのクリア
+				for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
+					for (size_t i = 0; i < static_cast<size_t>(Impl::AxisGroup::MaxGroups); ++i) {
+						w->groupedKeyFrames[m][i].clear();
 					}
+				}
 
-					// データのクリア
-					for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
-						for (size_t i = 0; i < static_cast<size_t>(Impl::AxisGroup::MaxGroups); ++i) {
-							w.groupedKeyFrames[m][i].clear();
-						}
-					}
+				if (item.contains("grouped_keyframes_srt") && item["grouped_keyframes_srt"].is_array()) {
+					auto modes_arr = item["grouped_keyframes_srt"];
+					size_t max_m = std::min(modes_arr.size(), static_cast<size_t>(Impl::TransformMode::MaxModes));
 
-					if (item.contains("grouped_keyframes_srt") && item["grouped_keyframes_srt"].is_array()) {
-						auto modes_arr = item["grouped_keyframes_srt"];
-						size_t max_m = std::min(modes_arr.size(), static_cast<size_t>(Impl::TransformMode::MaxModes));
-
-						for (size_t m = 0; m < max_m; ++m) {
-							if (!modes_arr[m].is_array()) continue;
-							auto groups_arr = modes_arr[m];
-							size_t max_g = std::min(groups_arr.size(), static_cast<size_t>(Impl::AxisGroup::MaxGroups));
-
-							for (size_t i = 0; i < max_g; ++i) {
-								if (groups_arr[i].is_array()) {
-									for (const auto& k_item : groups_arr[i]) {
-										Impl::KeyFrame k;
-										k.frame = k_item.value("frame", 0);
-										k.value.x = k_item.value("val_x", 0.0f);
-										k.value.y = k_item.value("val_y", 0.0f);
-										k.value.z = k_item.value("val_z", 0.0f);
-										k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
-										k.group = static_cast<Impl::AxisGroup>(i);
-										w.groupedKeyFrames[m][i].push_back(k);
-									}
-								}
-							}
-						}
-					} else if (item.contains("grouped_keyframes") && item["grouped_keyframes"].is_array()) {
-						auto groups_arr = item["grouped_keyframes"];
+					for (size_t m = 0; m < max_m; ++m) {
+						if (!modes_arr[m].is_array()) continue;
+						auto groups_arr = modes_arr[m];
 						size_t max_g = std::min(groups_arr.size(), static_cast<size_t>(Impl::AxisGroup::MaxGroups));
+
 						for (size_t i = 0; i < max_g; ++i) {
 							if (groups_arr[i].is_array()) {
 								for (const auto& k_item : groups_arr[i]) {
@@ -1615,25 +1598,45 @@ namespace RyoEngine {
 									k.value.z = k_item.value("val_z", 0.0f);
 									k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
 									k.group = static_cast<Impl::AxisGroup>(i);
-									w.groupedKeyFrames[0][i].push_back(k);
+									w->groupedKeyFrames[m][i].push_back(k);
 								}
 							}
 						}
 					}
-
-					impl->m_SubWindows.push_back(w);
+				} else if (item.contains("grouped_keyframes") && item["grouped_keyframes"].is_array()) {
+					auto groups_arr = item["grouped_keyframes"];
+					size_t max_g = std::min(groups_arr.size(), static_cast<size_t>(Impl::AxisGroup::MaxGroups));
+					for (size_t i = 0; i < max_g; ++i) {
+						if (groups_arr[i].is_array()) {
+							for (const auto& k_item : groups_arr[i]) {
+								Impl::KeyFrame k;
+								k.frame = k_item.value("frame", 0);
+								k.value.x = k_item.value("val_x", 0.0f);
+								k.value.y = k_item.value("val_y", 0.0f);
+								k.value.z = k_item.value("val_z", 0.0f);
+								k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
+								k.group = static_cast<Impl::AxisGroup>(i);
+								w->groupedKeyFrames[0][i].push_back(k);
+							}
+						}
+					}
 				}
-			}
 
-			for (auto& w : impl->m_SubWindows) {
-				w.delegate.m_pOwnerWindow = &w;
-				w.delegate.m_pImpl = impl;
+				// 所有権を vector に移動
+				impl->m_SubWindows.push_back(std::move(w));
 			}
 		}
 
-		if (!impl->m_SubWindows.empty()) impl->m_SelectedWindowIdx = 0;
-		Logger::LogSuccess("[Animation Editor] Load Successed.");
+		// ⭕ 所有権移動後に正しい生ポインタ（.get()）をデリゲートに設定する
+		for (auto& w : impl->m_SubWindows) {
+			w->delegate.m_pOwnerWindow = w.get();
+			w->delegate.m_pImpl = impl;
+		}
 	}
+
+	if (!impl->m_SubWindows.empty()) impl->m_SelectedWindowIdx = 0;
+	Logger::LogSuccess("[Animation Editor] Load Successed.");
+}
 
 	void AnimEdit::ModelOperate() {
 		Impl* impl = GetInstance().m_pImpl;

@@ -3,7 +3,7 @@
 using namespace RyoEngine;
 
 void Player::Initialize() {
-	model_ = Model::Create("resources/mirror.obj");
+	model_ = Model::Create("resources/mirror.obj","aaa");
 	model_->SetTex("resources/flower.png");
 
 	AnimEdit::RegisterTriggerFlag("player : toggleA", &toggleA_);

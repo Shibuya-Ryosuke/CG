@@ -14,7 +14,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Player player;
     player.Initialize();
 
-    Model* model = Model::Create("resources/TR.obj");
+    Model* model = Model::Create("resources/TR.obj","bbb");
     model->SetTex("resources/wall.png");
 
     DebugCamera* debugCamera = new DebugCamera();
