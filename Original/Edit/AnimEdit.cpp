@@ -277,6 +277,12 @@ namespace RyoEngine {
 
 			// デリゲートの実体
 			WindowDelegate delegate;
+
+			// ★追加：シーケンサー／カーブエディタの操作中の一時状態
+			// （ドラッグ中・ズーム中・選択中など）をウィンドウごとに独立させるためのもの。
+			// これらを渡さず static のままにすると、全ウィンドウで操作が同期してしまう。
+			ImSequencer::SequencerState sequencerState;
+			ImCurveEdit::EditState curveEditState;
 		};
 
 		// 新規作成で作られたウィンドウたちの情報を格納する可変長配列
@@ -418,7 +424,7 @@ namespace RyoEngine {
 
 					// タイムライン表示
 					ImGui::PushID(window.id);
-					ImSequencer::Sequencer(&window.delegate, &currentFrameItem, nullptr, &selectedItem, &window.firstFrame, sequencerFlags);
+					ImSequencer::Sequencer(&window.delegate, &currentFrameItem, nullptr, &selectedItem, &window.firstFrame, sequencerFlags, window.sequencerState);
 					ImGui::PopID();
 
 					// ゲームモード同期時、システムが進めるフレームに従う
@@ -529,7 +535,7 @@ namespace RyoEngine {
 				ImVec2 clipMax(windowPos.x + windowSize.x - paddingX, windowPos.y + windowSize.y - paddingY);
 
 				// グラフを描画
-				ImCurveEdit::Edit(window.delegate, curveSize, window.id);
+				ImCurveEdit::Edit(window.delegate, curveSize, window.id, window.curveEditState);
 
 				// デリゲートからフレームの最小・最大値を取得
 				float frameMin = static_cast<float>(window.delegate.GetFrameMin());

@@ -26,6 +26,7 @@
 #pragma once
 
 #include <cstddef>
+#include "imgui.h"
 
 struct ImDrawList;
 struct ImRect;
@@ -72,8 +73,31 @@ namespace ImSequencer
        virtual ~SequenceInterface() = default;
    };
 
+   // ウィンドウ（呼び出し元）ごとに独立して保持すべき、
+   // Sequencer() の操作中の一時状態（ドラッグ・パン・ズームなど）。
+   // 以前はこれらが Sequencer() 内の static 変数だったため、
+   // 全ウィンドウで状態が共有されてしまっていた。
+   struct SequencerState
+   {
+      float framePixelWidth = 10.f;
+      float framePixelWidthTarget = 10.f;
+
+      int movingEntry = -1;
+      int movingPos = -1;
+      int movingPart = -1;
+
+      bool MovingScrollBar = false;
+      bool MovingCurrentFrame = false;
+
+      bool panningView = false;
+      ImVec2 panningViewSource = ImVec2(0.f, 0.f);
+      int panningViewFrame = 0;
+
+      bool sizingRBar = false;
+      bool sizingLBar = false;
+   };
 
    // return true if selection is made
-   bool Sequencer(SequenceInterface* sequence, int* currentFrame, bool* expanded, int* selectedEntry, int* firstFrame, int sequenceOptions);
+   bool Sequencer(SequenceInterface* sequence, int* currentFrame, bool* expanded, int* selectedEntry, int* firstFrame, int sequenceOptions, SequencerState& state);
 
 }

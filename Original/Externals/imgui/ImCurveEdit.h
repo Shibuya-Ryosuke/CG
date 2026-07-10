@@ -25,6 +25,8 @@
 //
 #pragma once
 #include <stdint.h>
+#include <set>
+#include <vector>
 #include "imgui.h"
 
 struct ImRect;
@@ -78,5 +80,24 @@ namespace ImCurveEdit
       virtual ~Delegate() = default;
    };
 
-   int Edit(Delegate& delegate, const ImVec2& size, unsigned int id, const ImRect* clippingRect = NULL, ImVector<EditPoint>* selectedPoints = NULL);
+   // ウィンドウ（呼び出し元）ごとに独立して保持すべき、
+   // Edit() の操作中の一時状態（選択・ドラッグ・矩形選択など）。
+   // 以前はこれらが Edit() 内の static 変数だったため、
+   // 全ウィンドウで状態が共有されてしまっていた。
+   struct EditState
+   {
+      bool selectingQuad = false;
+      ImVec2 quadSelection = ImVec2(0.f, 0.f);
+      int overCurve = -1;
+      int movingCurve = -1;
+      bool scrollingV = false;
+      std::set<EditPoint> selection;
+      bool overSelectedPoint = false;
+
+      bool pointsMoved = false;
+      ImVec2 mousePosOrigin = ImVec2(0.f, 0.f);
+      std::vector<ImVec2> originalPoints;
+   };
+
+   int Edit(Delegate& delegate, const ImVec2& size, unsigned int id, EditState& state, const ImRect* clippingRect = NULL, ImVector<EditPoint>* selectedPoints = NULL);
 }

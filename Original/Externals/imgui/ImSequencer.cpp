@@ -55,19 +55,21 @@ namespace ImSequencer
       return clickedBtn;
    }
 
-   bool Sequencer(SequenceInterface* sequence, int* currentFrame, bool* expanded, int* selectedEntry, int* firstFrame, int sequenceOptions)
+   bool Sequencer(SequenceInterface* sequence, int* currentFrame, bool* expanded, int* selectedEntry, int* firstFrame, int sequenceOptions, SequencerState& state)
    {
       bool ret = false;
       ImGuiIO& io = ImGui::GetIO();
       int cx = (int)(io.MousePos.x);
       int cy = (int)(io.MousePos.y);
-      static float framePixelWidth = 10.f;
-      static float framePixelWidthTarget = 10.f;
+      // ↓ 呼び出し元(WindowData)が持つ state を参照する。
+      //   以前は static だったため全ウィンドウで共有されてしまっていた。
+      float& framePixelWidth = state.framePixelWidth;
+      float& framePixelWidthTarget = state.framePixelWidthTarget;
       int legendWidth = 200;
 
-      static int movingEntry = -1;
-      static int movingPos = -1;
-      static int movingPart = -1;
+      int& movingEntry = state.movingEntry;
+      int& movingPos = state.movingPos;
+      int& movingPart = state.movingPart;
       int delEntry = -1;
       int dupEntry = -1;
       int ItemHeight = 20;
@@ -89,8 +91,8 @@ namespace ImSequencer
          controlHeight += int(sequence->GetCustomHeight(i));
       int frameCount = ImMax(sequence->GetFrameMax() - sequence->GetFrameMin(), 1);
 
-      static bool MovingScrollBar = false;
-      static bool MovingCurrentFrame = false;
+      bool& MovingScrollBar = state.MovingScrollBar;
+      bool& MovingCurrentFrame = state.MovingCurrentFrame;
       struct CustomDraw
       {
          int index;
@@ -108,9 +110,9 @@ namespace ImSequencer
 
       ImRect regionRect(canvas_pos, canvas_pos + canvas_size);
 
-      static bool panningView = false;
-      static ImVec2 panningViewSource;
-      static int panningViewFrame;
+      bool& panningView = state.panningView;
+      ImVec2& panningViewSource = state.panningViewSource;
+      int& panningViewFrame = state.panningViewFrame;
       if (ImGui::IsWindowFocused() && io.KeyAlt && io.MouseDown[2])
       {
          if (!panningView)
@@ -542,8 +544,8 @@ namespace ImSequencer
             bool onLeft = barHandleLeft.Contains(io.MousePos);
             bool onRight = barHandleRight.Contains(io.MousePos);
 
-            static bool sizingRBar = false;
-            static bool sizingLBar = false;
+            bool& sizingRBar = state.sizingRBar;
+            bool& sizingLBar = state.sizingLBar;
 
             draw_list->AddRectFilled(barHandleLeft.Min, barHandleLeft.Max, (onLeft || sizingLBar) ? 0xFFAAAAAA : 0xFF666666, 6);
             draw_list->AddRectFilled(barHandleRight.Min, barHandleRight.Max, (onRight || sizingRBar) ? 0xFFAAAAAA : 0xFF666666, 6);
