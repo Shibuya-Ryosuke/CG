@@ -49,7 +49,7 @@ namespace RyoEngine {
         uint32_t GetVertexCount() const { return vertexCount_; }
         D3D12_GPU_VIRTUAL_ADDRESS GetMaterialResourceGVA() const { return materialResource_->GetGPUVirtualAddress(); }
         D3D12_GPU_VIRTUAL_ADDRESS GetLightResourceGVA() const { return lightResource_->GetGPUVirtualAddress(); }
-
+        int32_t GetAnimEditID () { return animEditID_; }
 
         // Setter
         void SetScale(const Vector3& scale) { transform_.scale = scale; }
@@ -60,6 +60,7 @@ namespace RyoEngine {
         void SetTex(uint32_t handle) { textureHandle_ = handle; }
         void SetTex(const std::string& filePath);
         void SetColor(const Vector4& color) { materialData_->color = color; };
+        void SetAnimEditID(uint32_t id) { animEditID_ = id; }
         
     private:
         // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）
@@ -91,5 +92,7 @@ namespace RyoEngine {
         uint32_t textureHandle_ = 0; // メンバ変数として保持
 
         Matrix4x4 worldMatrix_{};
+
+        int32_t animEditID_ = 0;
     };
 }

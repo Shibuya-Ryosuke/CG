@@ -85,7 +85,6 @@ namespace RyoEngine {
         );
         // エディタ初期化 & 読み込み
         AnimEdit::Initialize();
-        AnimEdit::LoadSettings();
 
         // フォント
         fontOutputer_ = new Font();
