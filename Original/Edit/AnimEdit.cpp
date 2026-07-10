@@ -272,6 +272,9 @@ namespace RyoEngine {
 			// 途中で止められたとき0に戻すフラグ
 			//bool returnToZeroOnStop = false;
 
+			// アニメーションが適用される対象モデル
+			Model* currentSelectModel = nullptr;
+
 			// デリゲートの実体
 			WindowDelegate delegate;
 		};
@@ -283,6 +286,9 @@ namespace RyoEngine {
 
 		// 登録されたモデルリスト
 		std::vector<std::pair<std::string, Model*>> m_pTargetModels;
+		// 選択中のモデル
+		Model* m_pTargetModel = nullptr;
+
 		// 登録されたフラグリスト
 		std::vector<std::pair<std::string, bool*>> m_RegisteredFlags; // ★追加：登録フラグのリスト
 		
@@ -1230,33 +1236,91 @@ namespace RyoEngine {
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
 
-		if (ImGui::Button("新規作成")) {
-			int32_t allocated_id = 1;
-			while (true) {
-				bool id_exists = false;
-				for (const auto& w : impl->m_SubWindows) {
-					if (w.id == allocated_id) {
-						id_exists = true;
-						break;
+		// 1. 閉じている時に表示する現在の選択モデル名を取得
+		std::string previewName = "未選択";
+		if (impl->m_pTargetModel) {
+			for (size_t i = 0; i < impl->m_pTargetModels.size(); ++i) {
+				if (impl->m_pTargetModels[i].second == impl->m_pTargetModel) {
+					const std::string& name = impl->m_pTargetModels[i].first;
+					if (name == "NoName") {
+						previewName = "Model [" + std::to_string(i) + "]";
+					} else {
+						previewName = name;
 					}
+					break;
 				}
-				if (!id_exists) break;
-				allocated_id++;
 			}
+		}
 
-			std::string name = "新規ウィンドウ " + std::to_string(allocated_id);
+		// 2. コンボボックスの展開処理
+		if (ImGui::BeginCombo("適用先モデル", previewName.c_str())) {
+			for (size_t i = 0; i < impl->m_pTargetModels.size(); ++i) {
+				Model* modelPtr = impl->m_pTargetModels[i].second;
+				const std::string& name = impl->m_pTargetModels[i].first;
 
-			Impl::WindowData newWindow;
-			newWindow.id = allocated_id;
-			newWindow.name = name;
-			newWindow.is_open = true;
-			newWindow.currentTransformMode = 0; // デフォルトで Translate
+				if (!modelPtr) continue;
 
-			impl->m_SubWindows.push_back(newWindow);
+				// "NoName" の場合は登録順の番号を振る
+				std::string displayName;
+				if (name == "NoName") {
+					displayName = "Model [" + std::to_string(i) + "]";
+				} else {
+					displayName = name;
+				}
 
-			auto& addedWindow = impl->m_SubWindows.back();
-			addedWindow.delegate.m_pOwnerWindow = &addedWindow;
-			addedWindow.delegate.m_pImpl = impl;
+				// 現在ループしているモデルが、選択中のモデルと一致するか判定
+				bool isSelected = (impl->m_pTargetModel == modelPtr);
+
+				// 各モデルの一意なIDを保証するために PushID をかける（ModelOperate と同様）
+				ImGui::PushID(static_cast<int>(i));
+
+				// 判定用の displayName を使って選択肢を表示
+				if (ImGui::Selectable(displayName.c_str(), isSelected)) {
+					impl->m_pTargetModel = modelPtr; // 選択されたモデルを保存
+				}
+
+				// 初期フォーカスを設定
+				if (isSelected) {
+					ImGui::SetItemDefaultFocus();
+				}
+
+				ImGui::PopID();
+			}
+			ImGui::EndCombo();
+		}
+
+		if (ImGui::Button("新規作成")) {
+			// 早期リターンだと変な挙動をするためifで囲む
+			// 未選択時はウィンドウを作成しない
+			if (previewName != "未選択") {
+				int32_t allocated_id = 1;
+				while (true) {
+					bool id_exists = false;
+					for (const auto& w : impl->m_SubWindows) {
+						if (w.id == allocated_id) {
+							id_exists = true;
+							break;
+						}
+					}
+					if (!id_exists) break;
+					allocated_id++;
+				}
+
+				std::string name = "新規ウィンドウ " + std::to_string(allocated_id);
+
+				Impl::WindowData newWindow;
+				newWindow.id = allocated_id;
+				newWindow.name = name;
+				newWindow.is_open = true;
+				newWindow.currentTransformMode = 0; // デフォルトで Translate
+				newWindow.currentSelectModel = impl->m_pTargetModel;
+
+				impl->m_SubWindows.push_back(newWindow);
+
+				auto& addedWindow = impl->m_SubWindows.back();
+				addedWindow.delegate.m_pOwnerWindow = &addedWindow;
+				addedWindow.delegate.m_pImpl = impl;
+			}
 		}
 
 		ImGui::SameLine();

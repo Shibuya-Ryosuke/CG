@@ -13,7 +13,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     Player player;
     player.Initialize();
-   
+
+    Model* model = Model::Create("resources/TR.obj");
+    model->SetTex("resources/wall.png");
+
     DebugCamera* debugCamera = new DebugCamera();
     debugCamera->SetTranslate({debugCamera->GetTranslate().x,debugCamera->GetTranslate().y -2.0f, -100.0f });
 
@@ -30,6 +33,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         debugCamera->Update();
         player.Update(*debugCamera);
+        model->Update(*debugCamera);
       
 
         // ----------------------
@@ -55,6 +59,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         Begin3dDraw();
         
         player.Draw();
+        model->Draw();
         
 
         // 3D終了----------------------------------------------------
@@ -77,7 +82,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         EndFrame();
     }
 
-    
+    delete model;
+
     delete debugCamera;
     // エンジン終了
     RyoEngine::Finalize();
