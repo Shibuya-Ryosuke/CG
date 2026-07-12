@@ -1,7 +1,7 @@
 {
     "windows": [
         {
-            "current_frame": 0,
+            "current_frame": 25,
             "current_transform_mode": 0,
             "grouped_keyframes_srt": [
                 [
@@ -54,11 +54,11 @@
             "insert_x": true,
             "insert_y": false,
             "insert_z": false,
-            "isGameSyncMode": false,
+            "isGameSyncMode": true,
             "is_loop": true,
             "is_open": false,
             "keep_condition": true,
-            "keep_flag_name": "None",
+            "keep_flag_name": "player : holdM",
             "max_frame": 60,
             "max_loop_count": 1,
             "name": "新規ウィンドウ 1",
@@ -120,7 +120,7 @@
             "insert_x": false,
             "insert_y": true,
             "insert_z": false,
-            "isGameSyncMode": false,
+            "isGameSyncMode": true,
             "is_loop": true,
             "is_open": false,
             "keep_condition": true,

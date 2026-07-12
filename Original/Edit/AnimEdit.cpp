@@ -207,9 +207,11 @@ namespace RyoEngine {
 
 			// 再生中かどうか
 			bool isPlaying = false;
+			bool stoping = false;
 			// フレーム再生関連
 			float frameTimer = 0.0f;
 			float fps = 60.0f;
+			bool hasInitializedKeepState = false;
 
 			// チェックボックス用フラグ
 			// キーフレームの軸指定に使用
@@ -348,25 +350,33 @@ namespace RyoEngine {
 				bool* pKeepFlag = FindRegisteredFlag(impl, window.keepFlagName);
 				if (!pKeepFlag) continue;
 
+				// ★ここがポイント：現在の状態をローカル変数に取る
 				bool currentKeepVal = *pKeepFlag;
+
+				// --- モード切替時や初回起動時のガード ---
+				// まだlastKeepStateが記録されていない（＝初期状態）なら、
+				// 現在の値をlastKeepStateに代入して「変化ではない」ことにする
+				if (!window.hasInitializedKeepState) {
+					window.lastKeepState = currentKeepVal;
+					window.hasInitializedKeepState = true;
+				}
 
 				// --- 条件を満たしていない場合（強制停止） ---
 				if (currentKeepVal != window.keepCondition) {
 					if (window.isPlaying) {
 						window.isPlaying = false;
 					}
-					window.lastKeepState = false;
-					window.lastTriggerState = false; // 開始トリガーの判定もリセット
+					// 条件不一致の間は判定をスキップ
 					continue;
 				}
 
-				// --- 条件を満たしている場合：偽→真の一瞬だけ再生「要求」を出す ---
-				// ★ここで直接 isPlaying や m_ActiveAnimationWindowId をいじらない。
-				//   他ウィンドウとの優先度判定・切り替え処理は後段でまとめて行う。
-				if (!window.isPlaying) {
+				// --- 条件を満たしている場合 ---
+				// lastKeepStateがcurrentKeepValと一致している限り、
+				// !isPlaying && !lastKeepState の条件は成立しないので再生されない
+				if (!window.isPlaying && !window.lastKeepState && currentKeepVal) {
 					requests.push_back({ &window });
 				}
-				window.lastKeepState = true;
+				window.lastKeepState = currentKeepVal;
 			}
 
 			// --- 2. メイントリガー(triggerFlagName)の処理 ---
@@ -431,11 +441,15 @@ namespace RyoEngine {
 					}
 				}
 
-				if (winner->currentFrame >= winner->maxFrame) {
-					winner->currentFrame = 0;
-					winner->frameTimer = 0.0f;
-					winner->currentLoopCount = 0;
-				}
+				//if (winner->currentFrame >= winner->maxFrame) {
+				//	winner->currentFrame = 0;
+				//	winner->frameTimer = 0.0f;
+				//	winner->currentLoopCount = 0;
+				//}
+				// 再生時初期化
+				winner->currentFrame = 0;
+				winner->frameTimer = 0.0f;
+				winner->currentLoopCount = 0;
 				winner->isPlaying = true;
 				impl->m_ActiveAnimationWindowId[model] = winner->id;
 			}
