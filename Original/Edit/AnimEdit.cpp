@@ -4,6 +4,7 @@
 #include "../Easing/Easing.h"
 #include <vector>
 #include <string>
+#include <map>
 #include <filesystem>
 #include <fstream> 
 #include <json.hpp>
@@ -248,8 +249,8 @@ namespace RyoEngine {
 			}
 
 			// トリガーによる開始 関係
-			bool useTrigger = false;               // トリガー機能を使うか
-			std::string triggerFlagName = "None";  // 監視するフラグの名前
+			// ★変更：on/offの専用フラグは廃止。triggerFlagName が "None" かどうかだけで判定する。
+			std::string triggerFlagName = "None";  // 監視するフラグの名前（"None"なら自動再生の対象外）
 			bool triggerCondition = true;          // trueのとき開始するか、falseのときか
 			bool lastTriggerState = false;         // 前フレームのフラグ状態
 
@@ -259,8 +260,8 @@ namespace RyoEngine {
 			int32_t currentLoopCount = 0;          // 現在何回目の再生か
 
 			// フラグによる再生継続 関係
-			bool useKeepRunning = false;           // 継続フラグによる再生維持を有効にするか
-			std::string keepFlagName = "None";     // 監視する継続フラグの名前
+			// ★変更：on/offの専用フラグは廃止。keepFlagName が "None" かどうかだけで判定する。
+			std::string keepFlagName = "None";     // 監視する継続フラグの名前（"None"なら無効）
 			bool keepCondition = true;             // trueの間は再生するか、falseの間か
 			bool lastKeepState = false;
 
@@ -274,6 +275,14 @@ namespace RyoEngine {
 
 			// アニメーションが適用される対象モデル
 			Model* currentSelectModel = nullptr;
+			// ★追加：currentSelectModel が指しているモデルの登録名。
+			// Model 側が持つ animEditID は「モデル1つにつきID1つ」しか記憶できないため、
+			// 同じモデルを複数ウィンドウで参照すると、セーブ時に最後に処理した
+			// ウィンドウのIDで上書きされてしまい、ロード時に他のウィンドウが
+			// モデルを再取得できず currentSelectModel が nullptr のままになる。
+			// ウィンドウ側にモデル名を直接持たせて名前で引き直すことで、
+			// 1モデル:Nウィンドウの関係でも正しく復元できるようにする。
+			std::string targetModelName = "";
 
 			// デリゲートの実体
 			WindowDelegate delegate;
@@ -297,99 +306,136 @@ namespace RyoEngine {
 
 		// 登録されたフラグリスト
 		std::vector<std::pair<std::string, bool*>> m_RegisteredFlags; // ★追加：登録フラグのリスト
-		
-		// トリガーによる開始 を監視する関数
-		static void CheckAnimationTrigger(WindowData& window, Impl* impl) {
-			// 編集モードの時は以下処理をスキップ
-			if (!window.isGameSyncMode) {
-				return;
-			}
 
-			// 再生継続フラグチェック
-			// 再生継続が有効かつフラグが選択されているときのみ実行
-			if (window.useKeepRunning && window.keepFlagName != "None") {
-				// 走査結果を入れる箱
-				bool* pKeepFlag = nullptr;
-				// 登録されている管理対象フラグリストから名前が一致するものが出てくるまで走査
-				for (const auto& pair : impl->m_RegisteredFlags) {
-					// 出てきたら箱にフラグを入れ走査を抜ける
-					if (pair.first == window.keepFlagName) {
-						pKeepFlag = pair.second;
-						break;
-					}
-				}
+		// ★変更：「このモデルには今どのウィンドウのアニメーションを適用するか」を記録するマップ。
+		// 同じモデルに複数のウィンドウ（＝複数のアニメーション）が割り当てられていても、
+		// 実際にSRTへ書き込む(反映する)のは ResolveAnimationTriggers() が選んだ1ウィンドウだけにする。
+		std::map<Model*, int32_t> m_ActiveAnimationWindowId;
 
-				// フラグが存在したら
-				if (pKeepFlag) {
-					// 箱に入っているフラグの状態 (t/f) を取り出す
-					bool currentKeepVal = *pKeepFlag;
-
-					// --- 条件を満たしていない場合（強制停止） ---
-					if (currentKeepVal != window.keepCondition) {
-						if (window.isPlaying) {
-							// 停止
-							window.isPlaying = false;
-						}
-						// 状態が変化したことを記録
-						window.lastKeepState = false;
-						window.lastTriggerState = false;
-						return; // 開始トリガーの判定もさせない
-					}
-
-					// --- 条件を満たしている（安全な）場合 ---
-					if (!window.useTrigger && !window.isPlaying) {
-						// 前回は偽だったとき、つまり偽から真になった一瞬だけ再生をオンにする
-						if (!window.lastKeepState) {
-							window.isPlaying = true;
-						}
-					}
-
-					// 条件を満たしている間は true を維持
-					window.lastKeepState = true;
-				}
-			}
-
-			// フラグによる開始 の監視
-			// フラグによる開始がfalse、フラグ名がNoneのいずれかの場合以下処理をスキップ
-			if (!window.useTrigger || window.triggerFlagName == "None") return;
-
-			// 箱を用意
-			bool* pCurrentFlag = nullptr;
-			// 名前一致のフラグが見つかるまで走査
+		// 登録フラグリストから名前で検索するヘルパー
+		static bool* FindRegisteredFlag(Impl* impl, const std::string& name) {
 			for (const auto& pair : impl->m_RegisteredFlags) {
-				// 見つかったら箱に入れる
-				if (pair.first == window.triggerFlagName) {
-					pCurrentFlag = pair.second;
-					break;
+				if (pair.first == name) return pair.second;
+			}
+			return nullptr;
+		}
+
+		// ★変更：全ウィンドウぶんのトリガー状態をまとめて確認し、AnimEdit::Update() を呼ぶだけで
+		// 自動的に「どのアニメーションを再生するか」を決定する。
+		//
+		// ルール：
+		// ・triggerFlagName が "None" のウィンドウは自動再生の対象にしない（トリガー必須）。
+		// ・同じフレームで同じモデルに対し複数ウィンドウが同時にトリガーされた場合、
+		//   ウィンドウ番号(id)が大きい方を優先して再生する。
+		// ・すでに別ウィンドウのアニメーションが再生中のモデルに対して、
+		//   別のトリガーで新たに再生要求が来た場合は、今再生中のものを即座に終了し、
+		//   後からトリガーされた方を再生する。
+		static void ResolveAnimationTriggers(Impl* impl) {
+			// --- 1. 継続フラグ(keepFlagName)の処理 ---
+			// これは「フラグが条件を満たしている間ずっと再生する/止める」だけの機能なので、
+			// 優先度の調停はせず、トリガー判定より先に単独で処理する。
+			for (auto& w : impl->m_SubWindows) {
+				WindowData& window = *w;
+				if (!window.isGameSyncMode) continue;
+				if (window.keepFlagName == "None") continue;
+
+				bool* pKeepFlag = FindRegisteredFlag(impl, window.keepFlagName);
+				if (!pKeepFlag) continue;
+
+				bool currentKeepVal = *pKeepFlag;
+
+				// --- 条件を満たしていない場合（強制停止） ---
+				if (currentKeepVal != window.keepCondition) {
+					if (window.isPlaying) {
+						window.isPlaying = false;
+					}
+					window.lastKeepState = false;
+					window.lastTriggerState = false; // 開始トリガーの判定もリセット
+					continue;
+				}
+
+				// --- 条件を満たしている場合：偽→真の一瞬だけ再生開始 ---
+				if (!window.isPlaying && !window.lastKeepState) {
+					window.isPlaying = true;
+					if (window.currentSelectModel) {
+						impl->m_ActiveAnimationWindowId[window.currentSelectModel] = window.id;
+					}
+				}
+				window.lastKeepState = true;
+			}
+
+			// --- 2. メイントリガー(triggerFlagName)の処理 ---
+			// トリガーが必須なので、"None" のウィンドウはここで除外する。
+			struct TriggeredEntry { WindowData* window; };
+			std::vector<TriggeredEntry> triggered;
+
+			for (auto& w : impl->m_SubWindows) {
+				WindowData& window = *w;
+				if (!window.isGameSyncMode) continue;
+				// ★「トリガー機能がNoneの場合再生をしない」
+				if (window.triggerFlagName == "None") continue;
+
+				bool* pCurrentFlag = FindRegisteredFlag(impl, window.triggerFlagName);
+				if (!pCurrentFlag) continue;
+
+				bool currentVal = *pCurrentFlag;
+				bool isTriggered = false;
+				if (window.triggerCondition) {
+					// falseからtrueになった瞬間
+					if (!window.lastTriggerState && currentVal) isTriggered = true;
+				} else {
+					// trueからfalseになった瞬間
+					if (window.lastTriggerState && !currentVal) isTriggered = true;
+				}
+
+				if (isTriggered) {
+					triggered.push_back({ &window });
+				}
+				window.lastTriggerState = currentVal;
+			}
+
+			if (triggered.empty()) return;
+
+			// --- 3. モデルごとに勝者を決定する ---
+			// 同フレームで同じモデルに対し複数トリガーされていたら、id が大きい方を優先する。
+			std::map<Model*, WindowData*> winners;
+			for (auto& entry : triggered) {
+				Model* model = entry.window->currentSelectModel;
+				if (!model) continue;
+
+				auto it = winners.find(model);
+				if (it == winners.end() || entry.window->id > it->second->id) {
+					winners[model] = entry.window;
 				}
 			}
-			// フラグが存在しなければ以下処理をスキップ
-			if (!pCurrentFlag) return;
 
-			// 箱に入れたフラグのbool状態を格納
-			bool currentVal = *pCurrentFlag;
-			bool isTriggered = false;
-			if (window.triggerCondition == true) {
-				// falseからtrueになった瞬間
-				if (!window.lastTriggerState && currentVal) isTriggered = true;
-			} else {
-				// trueからfalseになった瞬間
-				if (window.lastTriggerState && !currentVal) isTriggered = true;
-			}
+			// --- 4. 勝者を再生開始。今再生中の別ウィンドウがいれば即座に打ち切って切り替える ---
+			for (auto& pair : winners) {
+				Model* model = pair.first;
+				WindowData* winner = pair.second;
 
-			// 開始
-			if (isTriggered) {
-				 // 開始時フラグによる再再生時、ループカウント、フレームを正常化
-				if (window.currentFrame >= window.maxFrame) {
-					window.currentFrame = 0;
-					window.frameTimer = 0.0f;
-					window.currentLoopCount = 0;
+				auto activeIt = impl->m_ActiveAnimationWindowId.find(model);
+				if (activeIt != impl->m_ActiveAnimationWindowId.end() && activeIt->second != winner->id) {
+					for (auto& w : impl->m_SubWindows) {
+						if (w->id == activeIt->second) {
+							// 現在再生されているアニメーションを即座に終了させる
+							w->isPlaying = false;
+							w->currentFrame = 0;
+							w->frameTimer = 0.0f;
+							w->currentLoopCount = 0;
+							break;
+						}
+					}
 				}
 
-				window.isPlaying = true; // 再生開始 (または一時停止からの再開)
+				if (winner->currentFrame >= winner->maxFrame) {
+					winner->currentFrame = 0;
+					winner->frameTimer = 0.0f;
+					winner->currentLoopCount = 0;
+				}
+				winner->isPlaying = true;
+				impl->m_ActiveAnimationWindowId[model] = winner->id;
 			}
-			// 状態の記録
-			window.lastTriggerState = currentVal;
 		}
 
 		// =========================================================================
@@ -780,10 +826,36 @@ namespace RyoEngine {
 			return defaultVal;
 		}
 
+		// このウィンドウが、対象モデルに対して「今SRTを反映してよいウィンドウ」かどうかを判定する。
+		// 同じモデルを複数ウィンドウが参照している場合、ResolveAnimationTriggers() が選んだ
+		// ウィンドウ以外は毎フレームの UpdateAnimationAnimate をスキップし、
+		// モデルへの書き込みが競合しないようにする。
+		static bool IsActiveAnimationWindow(WindowData& window, Impl* impl) {
+			Model* model = window.currentSelectModel;
+			if (!model) return false;
+
+			auto it = impl->m_ActiveAnimationWindowId.find(model);
+			if (it != impl->m_ActiveAnimationWindowId.end()) {
+				return it->second == window.id;
+			}
+
+			// ★まだどのウィンドウもトリガーされていない場合：
+			// このモデルを対象にしているウィンドウが自分だけなら、そのまま適用する（単一運用ならこれで従来通り）。
+			// 複数ある場合はどれかがトリガーされて選ばれるまで、誰も書き込まない（初期競合を避ける）。
+			int32_t sameModelCount = 0;
+			for (auto& w : impl->m_SubWindows) {
+				if (w->currentSelectModel == model) sameModelCount++;
+			}
+			return sameModelCount <= 1;
+		}
+
 		// モデルにSRTを入れる処理
 		static void UpdateAnimationAnimate(WindowData& window, Impl* impl) {
 			if (impl->m_pTargetModels.empty() || !impl->m_pTargetModels[0].second) return;
 			Model* targetModel = window.currentSelectModel;
+			// ★追加：対象モデルが見つからない（再ロード時にリンクできなかった等）場合は
+			// 何もせず抜ける。ここが無いと nullptr を触ってクラッシュする。
+			if (targetModel == nullptr) return;
 
 			// 1. Translate 適用
 			Vector3 currentModelPos = targetModel->GetTranslate();
@@ -957,8 +1029,9 @@ namespace RyoEngine {
 				}
 
 				// --- トリガー開始の設定 ---
-				ImGui::Checkbox("トリガーによる開始を有効化", &window.useTrigger);
-				if (window.useTrigger) {
+				// ★変更：on/off専用チェックボックスは廃止。"None"を選べば無効、それ以外なら有効。
+				ImGui::TextDisabled("トリガー開始（Noneのままだとこのウィンドウは自動再生されません）");
+				{
 					ImGui::Indent();
 					std::string combo_preview = window.triggerFlagName;
 					if (ImGui::BeginCombo("対象フラグ", combo_preview.c_str())) {
@@ -982,8 +1055,9 @@ namespace RyoEngine {
 				ImGui::Separator();
 
 				// --- 再生継続の設定 ---
-				ImGui::Checkbox("フラグの状態による再生継続を有効化", &window.useKeepRunning);
-				if (window.useKeepRunning) {
+				// ★変更：on/off専用チェックボックスは廃止。"None"を選べば無効、それ以外なら有効。
+				ImGui::TextDisabled("再生継続（フラグの状態に応じて再生を維持/強制停止する。任意設定）");
+				{
 					ImGui::Indent();
 					if (ImGui::BeginCombo("対象フラグ##Keep", window.keepFlagName.c_str())) {
 						if (ImGui::Selectable("None", window.keepFlagName == "None")) { window.keepFlagName = "None"; }
@@ -1209,26 +1283,33 @@ namespace RyoEngine {
 
 		float deltaTime = ImGui::GetIO().DeltaTime;
 
+		// ★変更：全ウィンドウぶんのトリガー判定・優先度調停・割り込みをまとめて先に解決する。
+		// AnimEdit::Update() を呼ぶだけで、あとは全自動でアニメーションが選ばれて再生される。
+		Impl::ResolveAnimationTriggers(impl);
+
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 			auto& window = impl->m_SubWindows[i]; // window は std::unique_ptr<WindowData>& になります
 			window->delegate.m_pOwnerWindow = window.get(); // .get() で生ポインタを取得
-
-			// トリガー開始の判定
-			Impl::CheckAnimationTrigger(*window, impl);
 
 			// ウィンドウが閉じられていても再生
 			if (!window->is_open) {
 				if (window->isPlaying) {
 					window->isPlaying = false;
 					window->currentFrame = 0;
-					Impl::UpdateAnimationAnimate(*window, impl);
+					if (Impl::IsActiveAnimationWindow(*window, impl)) {
+						Impl::UpdateAnimationAnimate(*window, impl);
+					}
 				}
 				continue;
 			}
 			// アニメーション
 			Impl::AdvanceFrame(*window, deltaTime);
 			// SRTに反映
-			Impl::UpdateAnimationAnimate(*window, impl); // 引数を参照型に合わせるため * を追加
+			// ★同じモデルを複数ウィンドウで参照している場合、
+			//   「今アクティブなウィンドウ」以外はここで反映をスキップする
+			if (Impl::IsActiveAnimationWindow(*window, impl)) {
+				Impl::UpdateAnimationAnimate(*window, impl); // 引数を参照型に合わせるため * を追加
+			}
 		}
 
 		ImGui::Begin("Animation Editor");
@@ -1330,6 +1411,13 @@ namespace RyoEngine {
 				newWindow->is_open = true;
 				newWindow->currentTransformMode = 0;
 				newWindow->currentSelectModel = impl->m_pTargetModel;
+				// ★追加：モデルへのポインタと同時に、登録名も控えておく（セーブ/ロードで使用）
+				for (auto& pair : impl->m_pTargetModels) {
+					if (pair.second == impl->m_pTargetModel) {
+						newWindow->targetModelName = pair.first;
+						break;
+					}
+				}
 				newWindow->delegate.m_pImpl = impl;
 
 				// vector に所有権を移動（push_back）
@@ -1445,23 +1533,22 @@ namespace RyoEngine {
 			window_json["insert_z"] = w->insertZ;       // . から -> に変更
 			window_json["current_transform_mode"] = w->currentTransformMode; // . から -> に変更
 
-			window_json["use_trigger"] = w->useTrigger;           // . から -> に変更
 			window_json["trigger_flag_name"] = w->triggerFlagName; // . から -> に変更
 			window_json["trigger_condition"] = w->triggerCondition; // . から -> に変更
 
 			window_json["is_loop"] = w->isLoop;               // . から -> に変更
 			window_json["max_loop_count"] = w->maxLoopCount; // . から -> に変更
 
-			window_json["use_keep_running"] = w->useKeepRunning; // . から -> に変更
 			window_json["keep_flag_name"] = w->keepFlagName;     // . から -> に変更
 			window_json["keep_condition"] = w->keepCondition;     // . から -> に変更
 
 			window_json["isGameSyncMode"] = w->isGameSyncMode;
 
-			// 現在選択されているモデルがあるなら、そのモデル側にこのウィンドウのIDを記憶させる
-			if (w->currentSelectModel != nullptr) { // . から -> に変更
-				w->currentSelectModel->SetAnimEditID(w->id); // . から -> に変更
-			}
+			// ★変更：Model 側の animEditID（1モデルにつき1つしか持てない）に頼らず、
+			// ウィンドウ自身が「どのモデル名を対象にしていたか」を直接保存する。
+			// これなら同じモデルを複数ウィンドウで参照していても、
+			// ロード時にそれぞれのウィンドウが正しく同じモデルを引き直せる。
+			window_json["target_model_name"] = w->targetModelName;
 
 			json modes_arr = json::array();
 			for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
@@ -1486,19 +1573,6 @@ namespace RyoEngine {
 		}
 		j_root["windows"] = j_windows;
 
-		// ★2. 【新規】モデル名とIDの対応表を保存する
-		json j_relations = json::array();
-		for (const auto& pair : impl->m_pTargetModels) {
-			Model* model = pair.second;
-			if (model && model->GetAnimEditID() != 0) {
-				json rel;
-				rel["model_name"] = pair.first;
-				rel["anim_edit_id"] = model->GetAnimEditID();
-				j_relations.push_back(rel);
-			}
-		}
-		j_root["model_relations"] = j_relations;
-
 		std::ofstream file(filePath);
 		if (file.is_open()) {
 			file << j_root.dump(4);
@@ -1520,20 +1594,9 @@ namespace RyoEngine {
 	impl->m_SubWindows.clear();
 	impl->m_SelectedWindowIdx = -1;
 
-	// ★1. 【新規】先にモデルのID対応表をロードして、モデル側の animEditID_ を復元する
-	if (j_root.contains("model_relations") && j_root["model_relations"].is_array()) {
-		for (const auto& rel : j_root["model_relations"]) {
-			std::string modelName = rel.value("model_name", "");
-			int32_t savedId = rel.value("anim_edit_id", 0);
-
-			for (auto& pair : impl->m_pTargetModels) {
-				if (pair.first == modelName && pair.second != nullptr) {
-					pair.second->SetAnimEditID(savedId);
-					break;
-				}
-			}
-		}
-	}
+	// ★変更：Model 側の animEditID は「1モデルにつき1つ」しか保持できず、
+	// 同じモデルを複数ウィンドウで参照するケースでは正しく復元できないため廃止。
+	// 各ウィンドウが保存している target_model_name を使って、後段で直接モデルを引き直す。
 
 	int32_t maxWindowId = 0;
 
@@ -1554,7 +1617,6 @@ namespace RyoEngine {
 				w->insertZ = item.value("insert_z", true);
 				w->currentTransformMode = item.value("current_transform_mode", 0);
 
-				w->useTrigger = item.value("use_trigger", false);
 				w->triggerFlagName = item.value("trigger_flag_name", "None");
 				w->triggerCondition = item.value("trigger_condition", true);
 				w->lastTriggerState = false;
@@ -1563,7 +1625,6 @@ namespace RyoEngine {
 				w->maxLoopCount = item.value("max_loop_count", 1);
 				w->currentLoopCount = 0;
 
-				w->useKeepRunning = item.value("use_keep_running", false);
 				w->keepFlagName = item.value("keep_flag_name", "None");
 				w->keepCondition = item.value("keep_condition", true);
 
@@ -1573,11 +1634,13 @@ namespace RyoEngine {
 					maxWindowId = w->id;
 				}
 
+				// ★変更：モデル名で直接引き直す。これなら同じモデルを対象にした
+				// ウィンドウが複数あっても、それぞれが正しく再リンクできる。
+				w->targetModelName = item.value("target_model_name", "");
 				w->currentSelectModel = nullptr;
 				for (auto& pair : impl->m_pTargetModels) {
-					Model* model = pair.second;
-					if (model && model->GetAnimEditID() == w->id) {
-						w->currentSelectModel = model;
+					if (pair.first == w->targetModelName && pair.second != nullptr) {
+						w->currentSelectModel = pair.second;
 						break;
 					}
 				}

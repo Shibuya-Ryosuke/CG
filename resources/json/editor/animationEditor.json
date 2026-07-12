@@ -1,50 +1,10 @@
 {
-    "model_relations": [
-        {
-            "anim_edit_id": 1,
-            "model_name": "aaa"
-        },
-        {
-            "anim_edit_id": 2,
-            "model_name": "bbb"
-        }
-    ],
     "windows": [
         {
             "current_frame": 0,
             "current_transform_mode": 0,
             "grouped_keyframes_srt": [
                 [
-                    [],
-                    [
-                        {
-                            "easing": 4,
-                            "frame": 162,
-                            "val_x": 0.30631256103515625,
-                            "val_y": -7.4298858642578125,
-                            "val_z": -100.8432388305664
-                        }
-                    ],
-                    [],
-                    [
-                        {
-                            "easing": 4,
-                            "frame": 160,
-                            "val_x": -20.830596923828125,
-                            "val_y": -7.4298858642578125,
-                            "val_z": -99.35908508300781
-                        }
-                    ],
-                    [
-                        {
-                            "easing": 5,
-                            "frame": 88,
-                            "val_x": -20.830596923828125,
-                            "val_y": -4.750999450683594,
-                            "val_z": -45.91238021850586
-                        }
-                    ],
-                    [],
                     [],
                     [
                         {
@@ -55,13 +15,19 @@
                             "val_z": 0.0
                         },
                         {
-                            "easing": 3,
-                            "frame": 38,
-                            "val_x": 24.99969482421875,
-                            "val_y": 4.706676483154297,
-                            "val_z": -45.91238021850586
+                            "easing": 5,
+                            "frame": 54,
+                            "val_x": -30.50179100036621,
+                            "val_y": 0.0,
+                            "val_z": 0.0
                         }
-                    ]
+                    ],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
                 ],
                 [
                     [],
@@ -88,81 +54,28 @@
             "insert_x": true,
             "insert_y": false,
             "insert_z": false,
-            "isGameSyncMode": true,
-            "is_loop": false,
+            "isGameSyncMode": false,
+            "is_loop": true,
             "is_open": false,
             "keep_condition": true,
             "keep_flag_name": "None",
-            "max_frame": 200,
+            "max_frame": 60,
             "max_loop_count": 1,
             "name": "新規ウィンドウ 1",
+            "target_model_name": "aaa",
             "trigger_condition": true,
-            "trigger_flag_name": "player : toggleA",
-            "use_keep_running": false,
-            "use_trigger": true
+            "trigger_flag_name": "player : toggleA"
         },
         {
-            "current_frame": 200,
-            "current_transform_mode": 0,
+            "current_frame": 0,
+            "current_transform_mode": 1,
             "grouped_keyframes_srt": [
                 [
                     [],
-                    [
-                        {
-                            "easing": 1,
-                            "frame": 0,
-                            "val_x": 4.300000190734863,
-                            "val_y": 4.706676483154297,
-                            "val_z": -45.91238021850586
-                        },
-                        {
-                            "easing": 5,
-                            "frame": 92,
-                            "val_x": -39.25725555419922,
-                            "val_y": 4.706676483154297,
-                            "val_z": -45.91238021850586
-                        }
-                    ],
                     [],
-                    [
-                        {
-                            "easing": 1,
-                            "frame": 87,
-                            "val_x": 24.99969482421875,
-                            "val_y": 4.706676483154297,
-                            "val_z": -45.91238021850586
-                        },
-                        {
-                            "easing": 3,
-                            "frame": 149,
-                            "val_x": 24.99969482421875,
-                            "val_y": 4.706676483154297,
-                            "val_z": 10.06903076171875
-                        },
-                        {
-                            "easing": 2,
-                            "frame": 180,
-                            "val_x": 24.99969482421875,
-                            "val_y": 4.706676483154297,
-                            "val_z": -53.137245178222656
-                        }
-                    ],
-                    [
-                        {
-                            "easing": 1,
-                            "frame": 107,
-                            "val_x": 24.99969482421875,
-                            "val_y": 4.706676483154297,
-                            "val_z": -45.91238021850586
-                        },
-                        {
-                            "easing": 2,
-                            "frame": 186,
-                            "val_x": 17.569808959960938,
-                            "val_y": -19.068946838378906,
-                            "val_z": -45.91238021850586
-                        }
-                    ],
+                    [],
+                    [],
+                    [],
                     [],
                     [],
                     []
@@ -170,7 +83,22 @@
                 [
                     [],
                     [],
-                    [],
+                    [
+                        {
+                            "easing": 1,
+                            "frame": 0,
+                            "val_x": 0.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 55,
+                            "val_x": 0.0,
+                            "val_y": 43.12818145751953,
+                            "val_z": 0.0
+                        }
+                    ],
                     [],
                     [],
                     [],
@@ -190,20 +118,19 @@
             ],
             "id": 2,
             "insert_x": false,
-            "insert_y": false,
-            "insert_z": true,
+            "insert_y": true,
+            "insert_z": false,
             "isGameSyncMode": false,
-            "is_loop": false,
+            "is_loop": true,
             "is_open": false,
             "keep_condition": true,
             "keep_flag_name": "None",
-            "max_frame": 200,
+            "max_frame": 60,
             "max_loop_count": 1,
             "name": "新規ウィンドウ 2",
+            "target_model_name": "aaa",
             "trigger_condition": true,
-            "trigger_flag_name": "player : toggleA",
-            "use_keep_running": false,
-            "use_trigger": true
+            "trigger_flag_name": "toggleB"
         }
     ]
 }
