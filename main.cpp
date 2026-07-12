@@ -1,4 +1,5 @@
 #include "./Original/RyoEngine.h"
+#include "player/player.h"
 #ifdef _DEBUG
 #include "Original/ImGui/ImGuiAllInclude.h"
 #endif
@@ -10,13 +11,19 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
-    Model* model = Model::Create("resources/mirror.obj");
-    model->SetTex("resources/flower.png");
+    Player player;
+    player.Initialize();
 
-    Model* model2 = Model::Create("resources/TR.obj");
-    model2->SetTex("resources/wall.png");
+    bool toggleB = false;
+    AnimEdit::RegisterTriggerFlag("toggleB", &toggleB);
+
+    Model* model = Model::Create("resources/TR.obj","bbb");
+    model->SetTex("resources/wall.png");
 
     DebugCamera* debugCamera = new DebugCamera();
+    debugCamera->SetTranslate({debugCamera->GetTranslate().x,debugCamera->GetTranslate().y -2.0f, -100.0f });
+
+    AnimEdit::LoadSettings();
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -30,8 +37,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         AnimEdit::Update();
 
         debugCamera->Update();
+        player.Update(*debugCamera);
         model->Update(*debugCamera);
-        model2->Update(*debugCamera);
+        if (Input::TriggerKey(DIK_B)) {
+            toggleB = !toggleB;
+        }
 
         // ----------------------
         // ------ 更新終了 -------
@@ -55,8 +65,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // [3D描画フェーズ]
         Begin3dDraw();
         
+        player.Draw();
         model->Draw();
-        model2->Draw();
+        
 
         // 3D終了----------------------------------------------------
         
@@ -79,6 +90,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     }
 
     delete model;
+
     delete debugCamera;
     // エンジン終了
     RyoEngine::Finalize();
