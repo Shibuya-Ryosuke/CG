@@ -325,15 +325,21 @@ namespace RyoEngine {
 		//
 		// ルール：
 		// ・triggerFlagName が "None" のウィンドウは自動再生の対象にしない（トリガー必須）。
-		// ・同じフレームで同じモデルに対し複数ウィンドウが同時にトリガーされた場合、
+		// ・「継続フラグ(keepFlagName)」による再生開始も、「メイントリガー(triggerFlagName)」による
+		//   再生開始も、区別せず同じ土俵で調停する。片方だけ特別扱い（無条件上書き）はしない。
+		// ・同じフレームで同じモデルに対し複数ウィンドウの再生要求が重なった場合、
 		//   ウィンドウ番号(id)が大きい方を優先して再生する。
 		// ・すでに別ウィンドウのアニメーションが再生中のモデルに対して、
-		//   別のトリガーで新たに再生要求が来た場合は、今再生中のものを即座に終了し、
-		//   後からトリガーされた方を再生する。
+		//   別の要求（トリガーでも継続でもどちらでも）が新たに来た場合は、
+		//   今再生中のものを即座に終了し、後から要求された方を再生する。
 		static void ResolveAnimationTriggers(Impl* impl) {
+			// この関数内では「再生を開始したい」という要求をいったんすべて集めてから、
+			// 最後にモデルごとの調停（優先度判定＋今のアクティブウィンドウの停止）をまとめて行う。
+			// keepFlag経由・trigger経由のどちらの要求も、ここで同じ扱いになる。
+			struct ActivationRequest { WindowData* window; };
+			std::vector<ActivationRequest> requests;
+
 			// --- 1. 継続フラグ(keepFlagName)の処理 ---
-			// これは「フラグが条件を満たしている間ずっと再生する/止める」だけの機能なので、
-			// 優先度の調停はせず、トリガー判定より先に単独で処理する。
 			for (auto& w : impl->m_SubWindows) {
 				WindowData& window = *w;
 				if (!window.isGameSyncMode) continue;
@@ -354,21 +360,17 @@ namespace RyoEngine {
 					continue;
 				}
 
-				// --- 条件を満たしている場合：偽→真の一瞬だけ再生開始 ---
-				if (!window.isPlaying && !window.lastKeepState) {
-					window.isPlaying = true;
-					if (window.currentSelectModel) {
-						impl->m_ActiveAnimationWindowId[window.currentSelectModel] = window.id;
-					}
+				// --- 条件を満たしている場合：偽→真の一瞬だけ再生「要求」を出す ---
+				// ★ここで直接 isPlaying や m_ActiveAnimationWindowId をいじらない。
+				//   他ウィンドウとの優先度判定・切り替え処理は後段でまとめて行う。
+				if (!window.isPlaying) {
+					requests.push_back({ &window });
 				}
 				window.lastKeepState = true;
 			}
 
 			// --- 2. メイントリガー(triggerFlagName)の処理 ---
 			// トリガーが必須なので、"None" のウィンドウはここで除外する。
-			struct TriggeredEntry { WindowData* window; };
-			std::vector<TriggeredEntry> triggered;
-
 			for (auto& w : impl->m_SubWindows) {
 				WindowData& window = *w;
 				if (!window.isGameSyncMode) continue;
@@ -389,23 +391,24 @@ namespace RyoEngine {
 				}
 
 				if (isTriggered) {
-					triggered.push_back({ &window });
+					requests.push_back({ &window });
 				}
 				window.lastTriggerState = currentVal;
 			}
 
-			if (triggered.empty()) return;
+			if (requests.empty()) return;
 
 			// --- 3. モデルごとに勝者を決定する ---
-			// 同フレームで同じモデルに対し複数トリガーされていたら、id が大きい方を優先する。
+			// 同フレームで同じモデルに対し複数の再生要求が重なっていたら、id が大きい方を優先する。
+			// （要求の発生源が keepFlag でも trigger でも区別しない）
 			std::map<Model*, WindowData*> winners;
-			for (auto& entry : triggered) {
-				Model* model = entry.window->currentSelectModel;
+			for (auto& req : requests) {
+				Model* model = req.window->currentSelectModel;
 				if (!model) continue;
 
 				auto it = winners.find(model);
-				if (it == winners.end() || entry.window->id > it->second->id) {
-					winners[model] = entry.window;
+				if (it == winners.end() || req.window->id > it->second->id) {
+					winners[model] = req.window;
 				}
 			}
 
