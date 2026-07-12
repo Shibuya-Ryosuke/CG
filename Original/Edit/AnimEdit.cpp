@@ -1456,6 +1456,8 @@ namespace RyoEngine {
 			window_json["keep_flag_name"] = w->keepFlagName;     // . から -> に変更
 			window_json["keep_condition"] = w->keepCondition;     // . から -> に変更
 
+			window_json["isGameSyncMode"] = w->isGameSyncMode;
+
 			// 現在選択されているモデルがあるなら、そのモデル側にこのウィンドウのIDを記憶させる
 			if (w->currentSelectModel != nullptr) { // . から -> に変更
 				w->currentSelectModel->SetAnimEditID(w->id); // . から -> に変更
@@ -1564,6 +1566,8 @@ namespace RyoEngine {
 				w->useKeepRunning = item.value("use_keep_running", false);
 				w->keepFlagName = item.value("keep_flag_name", "None");
 				w->keepCondition = item.value("keep_condition", true);
+
+				w->isGameSyncMode = item.value("isGameSyncMode", false);
 
 				if (w->id > maxWindowId) {
 					maxWindowId = w->id;

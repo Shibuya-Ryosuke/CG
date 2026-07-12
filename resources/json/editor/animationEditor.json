@@ -11,7 +11,7 @@
     ],
     "windows": [
         {
-            "current_frame": 200,
+            "current_frame": 0,
             "current_transform_mode": 0,
             "grouped_keyframes_srt": [
                 [
@@ -88,6 +88,7 @@
             "insert_x": true,
             "insert_y": false,
             "insert_z": false,
+            "isGameSyncMode": true,
             "is_loop": false,
             "is_open": false,
             "keep_condition": true,
@@ -191,6 +192,7 @@
             "insert_x": false,
             "insert_y": false,
             "insert_z": true,
+            "isGameSyncMode": false,
             "is_loop": false,
             "is_open": false,
             "keep_condition": true,
