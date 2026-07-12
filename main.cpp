@@ -14,6 +14,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Player player;
     player.Initialize();
 
+    bool toggleB = false;
+    AnimEdit::RegisterTriggerFlag("toggleB", &toggleB);
+
     Model* model = Model::Create("resources/TR.obj","bbb");
     model->SetTex("resources/wall.png");
 
@@ -36,7 +39,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         debugCamera->Update();
         player.Update(*debugCamera);
         model->Update(*debugCamera);
-      
+        if (Input::TriggerKey(DIK_B)) {
+            toggleB = !toggleB;
+        }
 
         // ----------------------
         // ------ 更新終了 -------
