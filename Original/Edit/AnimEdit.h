@@ -14,39 +14,32 @@ namespace RyoEngine {
 		AnimEdit(AnimEdit&&) = delete;
 		AnimEdit& operator=(AnimEdit&&) = delete;
 
-#ifdef _DEBUG
+		// ★変更：以下は「実行時コア機能」（トリガー判定・SRT適用・セーブ/ロード・
+		// モデル/フラグ登録）。ImGuiのエディタUIに依存しないため、
+		// デバッグ／リリースどちらのビルドでも実際に動作する。
 		static void Initialize();
 		static void Update();
-
-		static void WindowManager();
-		static void DrawUI();
 
 		static void SaveSettings(const char* filePath = "resources/json/editor/animationEditor.json");
 		static void LoadSettings(const char* filePath = "resources/json/editor/animationEditor.json");
 
-		static void ModelOperate();
 		// モデルを登録
 		static void SetTargetModel(Model* model, const std::string& name);
 
 		// フラグを登録
 		static void RegisterTriggerFlag(const std::string& name, bool* ptr);
-#else
-		static void Initialize(){}
-		static void Update(){}
+
+		// ★以下はエディタUI専用（ImGuiに依存）。デバッグビルドでのみ実体を持つ。
+		// リリースビルドでは何もしない関数として扱われる。
+#ifdef _DEBUG
 		static void WindowManager();
-		static void DrawUI(){}
-
-		static void SaveSettings(const char* filePath = "resources/json/editor/animationEditor.json") { (void)filePath; }
-		static void LoadSettings(const char* filePath = "resources/json/editor/animationEditor.json") { (void)filePath; }
-
-		static void ModelOperate() {};
-
-		static void SetTargetModel(Model* model, const std::string& name) { (void)model; (void)name; }
-
-		// リリースビルド時は何もしない
-		static void RegisterTriggerFlag(const std::string& name, bool* ptr) { (void)name; (void)ptr; }
+		static void DrawUI();
+		static void ModelOperate();
+#else
+		static void WindowManager() {}
+		static void DrawUI() {}
+		static void ModelOperate() {}
 #endif
-
 
 	private:
 		static AnimEdit& GetInstance() {
@@ -57,9 +50,7 @@ namespace RyoEngine {
 		AnimEdit();
 		~AnimEdit();
 
-#ifdef _DEBUG
 		struct Impl;
 		Impl* m_pImpl = nullptr;
-#endif
 	};
 }
