@@ -23,6 +23,9 @@ namespace RyoEngine {
         return t;
     }
 
+    // --- イージング適用関数 ---
+    float ApplyEasing(EasingType type, float t);
+
     //線形補完
     inline float Lerp(float a, float b, float t) {
         return a + (b - a) * t;

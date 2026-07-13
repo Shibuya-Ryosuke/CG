@@ -1,23 +1,29 @@
 {
     "windows": [
         {
-            "current_frame": 25,
             "current_transform_mode": 0,
             "grouped_keyframes_srt": [
                 [
                     [],
                     [
                         {
-                            "easing": 1,
+                            "easing": 5,
                             "frame": 0,
                             "val_x": 0.0,
                             "val_y": 0.0,
                             "val_z": 0.0
                         },
                         {
-                            "easing": 5,
-                            "frame": 54,
-                            "val_x": -30.50179100036621,
+                            "easing": 2,
+                            "frame": 33,
+                            "val_x": -29.459728240966797,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 50,
+                            "val_x": -5.007640838623047,
                             "val_y": 0.0,
                             "val_z": 0.0
                         }
@@ -67,7 +73,6 @@
             "trigger_flag_name": "player : toggleA"
         },
         {
-            "current_frame": 0,
             "current_transform_mode": 1,
             "grouped_keyframes_srt": [
                 [
@@ -85,14 +90,14 @@
                     [],
                     [
                         {
-                            "easing": 1,
+                            "easing": 2,
                             "frame": 0,
                             "val_x": 0.0,
                             "val_y": 0.0,
                             "val_z": 0.0
                         },
                         {
-                            "easing": 1,
+                            "easing": 0,
                             "frame": 55,
                             "val_x": 0.0,
                             "val_y": 43.12818145751953,

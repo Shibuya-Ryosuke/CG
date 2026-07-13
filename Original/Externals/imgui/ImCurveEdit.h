@@ -28,6 +28,7 @@
 #include <set>
 #include <vector>
 #include "imgui.h"
+#include "../../Easing/Easing.h"
 
 struct ImRect;
 
@@ -76,6 +77,9 @@ namespace ImCurveEdit
       // handle undo/redo thru this functions
       virtual void BeginEdit(int /*index*/) {}
       virtual void EndEdit() {}
+
+      // 追加: 指定されたポイントのイージングを取得する
+      virtual RyoEngine::EasingType GetEasing(size_t curveIndex, int pointIndex) const { return RyoEngine::EasingType::Lerp; }
 
       virtual ~Delegate() = default;
    };

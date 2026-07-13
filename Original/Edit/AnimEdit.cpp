@@ -48,32 +48,6 @@ namespace RyoEngine {
 			AxisGroup group = AxisGroup::XYZ;
 		};
 
-		// --- イージング適用関数 ---
-		static float ApplyEasing(EasingType type, float t) {
-			switch (type) {
-			case EasingType::Lerp:          return t;
-			case EasingType::EaseInQuad:    return t * t;
-			case EasingType::EaseOutQuad:   return t * (2.0f - t);
-			case EasingType::EaseInOutQuad: return t < 0.5f ? 2.0f * t * t : -1.0f + (4.0f - 2.0f * t) * t;
-			case EasingType::EaseOutBounce:
-				if (t < (1.0f / 2.75f)) {
-					return 7.5625f * t * t;
-				} else if (t < (2.0f / 2.75f)) {
-					t -= (1.5f / 2.75f);
-					return 7.5625f * t * t + 0.75f;
-				} else if (t < (2.5f / 2.75f)) {
-					t -= (2.25f / 2.75f);
-					return 7.5625f * t * t + 0.9375f;
-				} else {
-					t -= (2.625f / 2.75f);
-					return 7.5625f * t * t + 0.984375f;
-				}
-			case EasingType::None:
-			default:
-				return (t >= 1.0f) ? 1.0f : 0.0f;
-			}
-		}
-
 		struct WindowData;
 
 		// アニメーションのフレーム更新、主に再生管理
@@ -183,6 +157,13 @@ namespace RyoEngine {
 			size_t GetCurveCount() override { return 3; }
 			bool IsVisible(size_t curveIndex) override { static_cast<void>(curveIndex); return true; }
 
+			// ★追加：直線/スムーズ固定ではなく、キーフレームのイージング設定を見た目に反映するため
+			// CurveBezier を返す（ImCurveEdit::Edit() 側で GetEasing() を使って曲線を描く）
+			ImCurveEdit::CurveType GetCurveType(size_t curveIndex) const override {
+				static_cast<void>(curveIndex);
+				return ImCurveEdit::CurveBezier;
+			}
+
 			uint32_t GetCurveColor(size_t curveIndex) override;
 
 			// --- ★ 修正：モード(SRT)の次元を追加して配列サイズを返す ---
@@ -196,6 +177,11 @@ namespace RyoEngine {
 
 			// --- ★ 修正：モード(SRT)の次元を追加して追加処理を行う ---
 			void AddPoint(size_t curveIndex, ImVec2 value) override;
+
+			// ★追加：指定した点(pointIndex)に保存されているイージング種別を返す。
+			// カーブエディタの描画側(ImCurveEdit::Edit)が、この点から次の点までの
+			// 区間をどんな曲線で結ぶかを決めるのに使う。
+			RyoEngine::EasingType GetEasing(size_t curveIndex, int pointIndex) const override;
 		};
 #endif // _DEBUG
 
@@ -720,8 +706,10 @@ namespace RyoEngine {
 						}
 
 						// イージングの選択
+						// ★変更：このキーから「次のキーへ向かう」区間のイージングを表す、という
+						// 一般的な向きに変更したため、ラベルもそれに合わせる。
 						int easingIdx = static_cast<int>(it->easing);
-						if (ImGui::Combo("Easing", &easingIdx, easingNames, IM_ARRAYSIZE(easingNames))) {
+						if (ImGui::Combo("Easing (次のキーへ)", &easingIdx, easingNames, IM_ARRAYSIZE(easingNames))) {
 							it->easing = static_cast<EasingType>(easingIdx);
 						}
 					}
@@ -845,7 +833,9 @@ namespace RyoEngine {
 						// その間において全体の何割にいるのかの進捗率を計算
 						float t = static_cast<float>(currentFrame - prevKey.frame) / static_cast<float>(frameDiff);
 						// 進捗度に応じたイージングの適用
-						float easedT = ApplyEasing(nextKey.easing, t);
+						// ★変更：イージングは「前のキー→今のキー」ではなく「今のキー→次のキー」を
+						// 表す方が一般的なので、区間の始点である prevKey 側の設定を使う。
+						float easedT = ApplyEasing(prevKey.easing, t);
 
 						// 補間
 						float pVal = (axisIndex == 0 ? prevKey.value.x : (axisIndex == 1 ? prevKey.value.y : prevKey.value.z));
@@ -1390,6 +1380,38 @@ namespace RyoEngine {
 			keys.push_back(newKey);
 			std::sort(keys.begin(), keys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
 		}
+	}
+
+	// ★追加：pointIndex番目の点が実際にどのキーフレームなのかを、
+	// GetPoints/EditPoint と同じ「フレーム順に並べ直す」ロジックで特定し、
+	// そのキーフレームに保存されているイージング種別を返す。
+	RyoEngine::EasingType AnimEdit::Impl::WindowDelegate::GetEasing(size_t curveIndex, int pointIndex) const {
+		if (!m_pOwnerWindow) return RyoEngine::EasingType::Lerp;
+		auto& window = *m_pOwnerWindow;
+		int mode = window.currentTransformMode;
+
+		struct KeyRef { AxisGroup group; size_t index; int32_t frame; };
+		std::vector<KeyRef> refs;
+
+		for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
+			AxisGroup g = static_cast<AxisGroup>(i);
+			bool include = false;
+			if (curveIndex == 0) include = (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ);
+			if (curveIndex == 1) include = (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+			if (curveIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+
+			if (include) {
+				for (size_t idx = 0; idx < window.groupedKeyFrames[mode][i].size(); ++idx) {
+					refs.push_back({ g, idx, window.groupedKeyFrames[mode][i][idx].frame });
+				}
+			}
+		}
+		std::sort(refs.begin(), refs.end(), [](const KeyRef& a, const KeyRef& b) { return a.frame < b.frame; });
+
+		if (pointIndex < 0 || pointIndex >= static_cast<int>(refs.size())) return RyoEngine::EasingType::Lerp;
+
+		const auto& targetRef = refs[pointIndex];
+		return window.groupedKeyFrames[mode][static_cast<size_t>(targetRef.group)][targetRef.index].easing;
 	}
 #endif // _DEBUG
 
