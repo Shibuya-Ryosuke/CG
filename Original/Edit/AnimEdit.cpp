@@ -337,7 +337,7 @@ namespace RyoEngine {
 
 		// ★変更：全ウィンドウぶんのトリガー状態をまとめて確認し、AnimEdit::Update() を呼ぶだけで
 		// 自動的に「どのアニメーションを再生するか」を決定する。
-		//
+
 		// ルール：
 		// ・triggerFlagName が "None" のウィンドウは自動再生の対象にしない（トリガー必須）。
 		// ・「継続フラグ(keepFlagName)」による再生開始も、「メイントリガー(triggerFlagName)」による
