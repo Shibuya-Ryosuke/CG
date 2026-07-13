@@ -1519,7 +1519,8 @@ namespace RyoEngine {
 
 		ImGui::Spacing();
 		// ★追加：リストにある全ウィンドウのモードを一括で切り替えるボタン
-		if (ImGui::Button("全ウィンドウを編集モードに切り替え")) {
+		ImGui::Text("全ウィンドウを");
+		if (ImGui::Button("編集モードに切り替え")) {
 			for (auto& w : impl->m_SubWindows) {
 				w->isGameSyncMode = false;
 				// 個別のモード切り替えUIと同様に、状態を初期化しておく
@@ -1527,15 +1528,17 @@ namespace RyoEngine {
 				w->currentFrame = 0;
 				w->currentLoopCount = 0;
 			}
+			Logger::LogSuccess("[AnimEdit]\nSwitch all windows to edit mode.");
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("全ウィンドウをゲーム同期モードに切り替え")) {
+		if (ImGui::Button("ゲーム同期モードに切り替え")) {
 			for (auto& w : impl->m_SubWindows) {
 				w->isGameSyncMode = true;
 				w->isPlaying = false;
 				w->currentFrame = 0;
 				w->currentLoopCount = 0;
 			}
+			Logger::LogSuccess("[AnimEdit]\nSwitch all windows to gameSync mode.");
 		}
 
 		ImGui::Separator();
@@ -1702,9 +1705,9 @@ namespace RyoEngine {
 		std::ofstream file(filePath);
 		if (file.is_open()) {
 			file << j_root.dump(4);
-			Logger::LogSuccess("[Animation Editor] Save Successed.");
+			Logger::LogSuccess("[AnimEdit] Save Successed.");
 		} else {
-			Logger::LogWarning("[Animation Editor] Save failed.");
+			Logger::LogWarning("[AnimEdit] Save failed.");
 		}
 	}
 
