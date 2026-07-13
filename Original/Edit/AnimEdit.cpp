@@ -933,6 +933,78 @@ namespace RyoEngine {
 				return;
 			}
 
+			if (window.isPlaying) {
+				ImGui::BeginDisabled();
+			}
+
+			// 1. ウィンドウ名の変更
+			char nameBuf[256];
+			strncpy_s(nameBuf, sizeof(nameBuf), window.name.c_str(), _TRUNCATE);
+			if (ImGui::InputText("ウィンドウ名", nameBuf, sizeof(nameBuf))) {
+				window.name = nameBuf;
+			}
+
+			// 2. 適用先モデルの変更
+			if (ImGui::BeginCombo("適用先モデル", window.targetModelName.c_str())) {
+				for (auto& pair : impl->m_pTargetModels) {
+					bool isSelected = (window.targetModelName == pair.first);
+					if (ImGui::Selectable(pair.first.c_str(), isSelected)) {
+						window.targetModelName = pair.first;
+						window.currentFrame = 0;
+						window.isPlaying = false;
+						UpdateAnimationAnimate(window, impl);
+						window.currentSelectModel = pair.second; // 実際のポインタを更新
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			// 3. アニメーションのコピー機能
+			static const size_t kInvalidIdx = static_cast<size_t>(-1); // 未選択状態用の定数
+			static size_t copySourceIdx = kInvalidIdx;
+
+			// 選択されている名前の取得（範囲外なら "未選択" を表示）
+			const char* previewName = (copySourceIdx != kInvalidIdx && copySourceIdx < impl->m_SubWindows.size())
+				? impl->m_SubWindows[copySourceIdx]->name.c_str()
+				: "未選択";
+
+			if (ImGui::BeginCombo("コピー元 : ", previewName)) {
+				// ループ変数 i を size_t に統一
+				for (size_t i = 0; i < impl->m_SubWindows.size(); ++i) {
+					if (i == index) continue; // 自分自身はコピー対象外
+
+					if (ImGui::Selectable(impl->m_SubWindows[i]->name.c_str())) {
+						copySourceIdx = i;
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			if (copySourceIdx < (int)impl->m_SubWindows.size()) {
+				WindowData copySource = *impl->m_SubWindows[copySourceIdx];
+				if (ImGui::Button("選択ウィンドウのアニメーションをコピー")) {
+					// 各情報をコピー
+					window.currentFrame = 0;
+					window.firstFrame = copySource.firstFrame;
+					window.maxFrame = copySource.maxFrame;
+					window.triggerFlagName = copySource.triggerFlagName;
+					window.keepFlagName = copySource.keepFlagName;
+					window.isLoop = copySource.isLoop;
+					// キーフレームをコピー (ここを修正)
+					for (size_t mode = 0; mode < static_cast<size_t>(TransformMode::MaxModes); ++mode) {
+						for (size_t axis = 0; axis < static_cast<size_t>(AxisGroup::MaxGroups); ++axis) {
+							// std::vector の代入演算子がメモリ確保から内容のコピーまでを自動で行います
+							window.groupedKeyFrames[mode][axis] = copySource.groupedKeyFrames[mode][axis];
+						}
+					}
+					// 未選択に戻す
+					copySourceIdx = kInvalidIdx;
+				}
+			}
+			if (window.isPlaying) {
+				ImGui::EndDisabled();
+			}
+
 			// ★ここに追加
 			// 編集モードのウィンドウがフォーカスされたら、そのウィンドウを
 			// 「対象モデルへの書き込み権を持つウィンドウ」として登録する。
