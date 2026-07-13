@@ -5,14 +5,20 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <algorithm>
+#include <chrono>
 #include <filesystem>
 #include <fstream> 
 #include <json.hpp>
 
 using json = nlohmann::json;
 
+// ★変更：エディタUI(ImGui)に依存する部分だけをデバッグビルドに限定する。
+// トリガー判定・SRT適用・セーブ/ロード・モデル/フラグ登録などの「実行時コア機能」は
+// リリースビルドでもそのまま動作する（このインクルードだけデバッグ限定にする）。
 #ifdef _DEBUG
 #include "../ImGui/ImGuiAllInclude.h"
+#endif
 
 namespace RyoEngine {
 
@@ -112,6 +118,8 @@ namespace RyoEngine {
 		}
 
 		// --- ImSequencer と ImCurveEdit を統合したデリゲートクラス ---
+		// ★エディタUI専用（ImSequencer/ImCurveEditはImGui前提のライブラリのため）。
+#ifdef _DEBUG
 		struct WindowDelegate : public ImSequencer::SequenceInterface, public ImCurveEdit::Delegate {
 			Impl* m_pImpl = nullptr;
 			WindowData* m_pOwnerWindow = nullptr;
@@ -189,6 +197,7 @@ namespace RyoEngine {
 			// --- ★ 修正：モード(SRT)の次元を追加して追加処理を行う ---
 			void AddPoint(size_t curveIndex, ImVec2 value) override;
 		};
+#endif // _DEBUG
 
 		struct WindowData {
 			// ウィンドウのID、名前
@@ -286,14 +295,18 @@ namespace RyoEngine {
 			// 1モデル:Nウィンドウの関係でも正しく復元できるようにする。
 			std::string targetModelName = "";
 
+			// ★エディタUI専用メンバ。ImGui/ImSequencer/ImCurveEditに依存するため、
+			// リリースビルドでは持たない（実行時のトリガー/SRT適用ロジックは一切これらを使わない）。
+#ifdef _DEBUG
 			// デリゲートの実体
 			WindowDelegate delegate;
 
-			// ★追加：シーケンサー／カーブエディタの操作中の一時状態
+			// シーケンサー／カーブエディタの操作中の一時状態
 			// （ドラッグ中・ズーム中・選択中など）をウィンドウごとに独立させるためのもの。
 			// これらを渡さず static のままにすると、全ウィンドウで操作が同期してしまう。
 			ImSequencer::SequencerState sequencerState;
 			ImCurveEdit::EditState curveEditState;
+#endif // _DEBUG
 		};
 
 		// 新規作成で作られたウィンドウたちの情報を格納する可変長配列
@@ -456,8 +469,9 @@ namespace RyoEngine {
 		}
 
 		// =========================================================================
-		//  UI / アニメーション処理関数
+		//  UI / アニメーション処理関数（エディタUI専用、ImGuiに依存）
 		// =========================================================================
+#ifdef _DEBUG
 		// タイムラインの描画
 		static void DrawTimeline(WindowData& window) {
 			ImGuiIO& io = ImGui::GetIO();
@@ -783,8 +797,9 @@ namespace RyoEngine {
 			}
 			ImGui::EndChild();
 		}
-		
-		// 二つのキーフレームの間を補間させる
+#endif // _DEBUG
+
+		// 二つのキーフレームの間を補間させる（コア機能：SRT適用ロジックが使うため常にコンパイルする）
 		static float EvaluateAxisNew(int32_t currentFrame, const WindowData& window, int mode, int axisIndex, float defaultVal) {
 			// axisIndex -> 0:X, 1:Y, 2:Z
 
@@ -899,7 +914,8 @@ namespace RyoEngine {
 			targetModel->SetScale(finalScale);
 		}
 
-		// 新規作成で作られたウィンドウの描画
+		// 新規作成で作られたウィンドウの描画（エディタUI専用）
+#ifdef _DEBUG
 		static void DrawSubWindow(WindowData& window, size_t index, Impl* impl) {
 			std::string window_title = "インスペクタ: " + window.name + "##" + std::to_string(window.id);
 
@@ -1161,9 +1177,11 @@ namespace RyoEngine {
 			ImGui::NewLine();
 			ImGui::End();
 		}
+#endif // _DEBUG
 	};
 
-	// --- 構造体の外側での WindowDelegate のメンバ関数定義 ---
+	// --- 構造体の外側での WindowDelegate のメンバ関数定義（エディタUI専用） ---
+#ifdef _DEBUG
 	size_t AnimEdit::Impl::WindowDelegate::GetPointCount(size_t curveIndex) {
 		// ⭕ m_pOwnerWindowのチェックに修正
 		if (!m_pOwnerWindow) return 0;
@@ -1296,6 +1314,7 @@ namespace RyoEngine {
 			std::sort(keys.begin(), keys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
 		}
 	}
+#endif // _DEBUG
 
 
 	// =========================================================================
@@ -1324,17 +1343,32 @@ namespace RyoEngine {
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
 
+		// ★変更：deltaTimeの取得元を分離。
+		// デバッグビルドはこれまで通りImGuiのIOから取る。
+		// リリースビルドはImGuiコンテキストに依存しないよう、自前のクロックで計測する。
+#ifdef _DEBUG
 		float deltaTime = ImGui::GetIO().DeltaTime;
+#else
+		static auto s_lastUpdateTime = std::chrono::steady_clock::now();
+		auto s_now = std::chrono::steady_clock::now();
+		float deltaTime = std::chrono::duration<float>(s_now - s_lastUpdateTime).count();
+		s_lastUpdateTime = s_now;
+#endif
 
-		// ★変更：全ウィンドウぶんのトリガー判定・優先度調停・割り込みをまとめて先に解決する。
+		// ★全ウィンドウぶんのトリガー判定・優先度調停・割り込みをまとめて先に解決する。
 		// AnimEdit::Update() を呼ぶだけで、あとは全自動でアニメーションが選ばれて再生される。
+		//
+		// ここから下のアニメーション適用ループは「実行時コア機能」であり、
+		// デバッグ／リリースどちらのビルドでも同じように動作する（ImGuiに依存しない）。
 		Impl::ResolveAnimationTriggers(impl);
 
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 			auto& window = impl->m_SubWindows[i]; // window は std::unique_ptr<WindowData>& になります
+#ifdef _DEBUG
 			window->delegate.m_pOwnerWindow = window.get(); // .get() で生ポインタを取得
+#endif
 
-			// ウィンドウが閉じられたら再生停止
+			// ウィンドウが閉じられたら再生停止（編集モードのみ。ゲーム同期モードはUIの開閉と無関係に動作する）
 			if (!window->is_open) {
 				if (!window->isGameSyncMode) {
 					if (window->isPlaying) {
@@ -1357,6 +1391,8 @@ namespace RyoEngine {
 			}
 		}
 
+		// ★ここから下はエディタUI（ImGui）専用。リリースビルドには一切含まれない。
+#ifdef _DEBUG
 		ImGui::Begin("Animation Editor");
 		{
 			WindowManager();
@@ -1377,8 +1413,10 @@ namespace RyoEngine {
 				ImGui::PopID();
 			}
 		}
+#endif // _DEBUG
 	}
 
+#ifdef _DEBUG
 	void AnimEdit::WindowManager() {
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
@@ -1479,6 +1517,27 @@ namespace RyoEngine {
 			LoadSettings();
 		}
 
+		ImGui::Spacing();
+		// ★追加：リストにある全ウィンドウのモードを一括で切り替えるボタン
+		if (ImGui::Button("全ウィンドウを編集モードに切り替え")) {
+			for (auto& w : impl->m_SubWindows) {
+				w->isGameSyncMode = false;
+				// 個別のモード切り替えUIと同様に、状態を初期化しておく
+				w->isPlaying = false;
+				w->currentFrame = 0;
+				w->currentLoopCount = 0;
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("全ウィンドウをゲーム同期モードに切り替え")) {
+			for (auto& w : impl->m_SubWindows) {
+				w->isGameSyncMode = true;
+				w->isPlaying = false;
+				w->currentFrame = 0;
+				w->currentLoopCount = 0;
+			}
+		}
+
 		ImGui::Separator();
 
 		if (ImGui::TreeNodeEx("ウィンドウリスト", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -1576,6 +1635,7 @@ namespace RyoEngine {
 	}
 
 	void AnimEdit::DrawUI() {}
+#endif // _DEBUG
 
 	void AnimEdit::SaveSettings(const char* filePath) {
 		AnimEdit& instance = GetInstance();
@@ -1695,6 +1755,11 @@ namespace RyoEngine {
 				w->keepCondition = item.value("keep_condition", true);
 
 				w->isGameSyncMode = item.value("isGameSyncMode", false);
+#ifndef _DEBUG
+				// ★追加：リリースビルドにはエディタUIが無く、編集モードで動かす意味が無いため、
+				// 保存内容に関わらず必ずゲーム同期モードで読み込む。
+				w->isGameSyncMode = true;
+#endif
 
 				if (w->id > maxWindowId) {
 					maxWindowId = w->id;
@@ -1766,17 +1831,20 @@ namespace RyoEngine {
 			}
 		}
 
-		// ⭕ 所有権移動後に正しい生ポインタ（.get()）をデリゲートに設定する
+#ifdef _DEBUG
+		// ⭕ 所有権移動後に正しい生ポインタ（.get()）をデリゲートに設定する（エディタUI専用）
 		for (auto& w : impl->m_SubWindows) {
 			w->delegate.m_pOwnerWindow = w.get();
 			w->delegate.m_pImpl = impl;
 		}
+#endif // _DEBUG
 	}
 
 	if (!impl->m_SubWindows.empty()) impl->m_SelectedWindowIdx = 0;
 	Logger::LogSuccess("[Animation Editor] Load Successed.");
 }
 
+#ifdef _DEBUG
 	void AnimEdit::ModelOperate() {
 		Impl* impl = GetInstance().m_pImpl;
 
@@ -1863,6 +1931,7 @@ namespace RyoEngine {
 			ImGui::TreePop();
 		}
 	}
+#endif // _DEBUG
 
 	void AnimEdit::SetTargetModel(Model* model, const std::string& name) {
 		if (model == nullptr) {
@@ -1877,10 +1946,3 @@ namespace RyoEngine {
 		models.push_back(std::make_pair(name, model));
 	}
 }
-
-#else
-namespace RyoEngine {
-	AnimEdit::AnimEdit() = default;
-	AnimEdit::~AnimEdit() = default;
-}
-#endif
