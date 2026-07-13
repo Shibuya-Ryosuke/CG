@@ -934,13 +934,14 @@ namespace RyoEngine {
 			}
 
 			if (window.isPlaying) {
+				ImGui::TextColored(ImVec4(1.0f, 0.15f, 0.12f, 1.0f), "[ 現在は再生中のため操作出来ません ]");
 				ImGui::BeginDisabled();
 			}
 
 			// 1. ウィンドウ名の変更
 			char nameBuf[256];
 			strncpy_s(nameBuf, sizeof(nameBuf), window.name.c_str(), _TRUNCATE);
-			if (ImGui::InputText("ウィンドウ名", nameBuf, sizeof(nameBuf))) {
+			if (ImGui::InputText("アニメーション名", nameBuf, sizeof(nameBuf))) {
 				window.name = nameBuf;
 			}
 
@@ -968,7 +969,7 @@ namespace RyoEngine {
 				? impl->m_SubWindows[copySourceIdx]->name.c_str()
 				: "未選択";
 
-			if (ImGui::BeginCombo("コピー元 : ", previewName)) {
+			if (ImGui::BeginCombo("コピー元", previewName)) {
 				// ループ変数 i を size_t に統一
 				for (size_t i = 0; i < impl->m_SubWindows.size(); ++i) {
 					if (i == index) continue; // 自分自身はコピー対象外
@@ -982,7 +983,7 @@ namespace RyoEngine {
 
 			if (copySourceIdx < (int)impl->m_SubWindows.size()) {
 				WindowData copySource = *impl->m_SubWindows[copySourceIdx];
-				if (ImGui::Button("選択ウィンドウのアニメーションをコピー")) {
+				if (ImGui::Button("選択先のアニメーションをコピー")) {
 					// 各情報をコピー
 					window.currentFrame = 0;
 					window.firstFrame = copySource.firstFrame;
@@ -1038,6 +1039,10 @@ namespace RyoEngine {
 
 			//ImGui::Text("Window ID: %d", window.id);
 			//ImGui::Separator();
+			
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
 
 			// 動作モードの切り替えUI
 			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "[ 動作モード ]");
@@ -1161,7 +1166,7 @@ namespace RyoEngine {
 
 				// --- トリガー開始の設定 ---
 				// ★変更：on/off専用チェックボックスは廃止。"None"を選べば無効、それ以外なら有効。
-				ImGui::TextDisabled("トリガー開始（Noneのままだとこのウィンドウは自動再生されません）");
+				ImGui::Text("トリガー開始設定（Noneのままでは再生されません）");
 				{
 					ImGui::Indent();
 					std::string combo_preview = window.triggerFlagName;
@@ -1187,7 +1192,7 @@ namespace RyoEngine {
 
 				// --- 再生継続の設定 ---
 				// ★変更：on/off専用チェックボックスは廃止。"None"を選べば無効、それ以外なら有効。
-				ImGui::TextDisabled("再生継続（フラグの状態に応じて再生を維持/強制停止する。任意設定）");
+				ImGui::Text("再生継続フラグ（任意設定）");
 				{
 					ImGui::Indent();
 					if (ImGui::BeginCombo("対象フラグ##Keep", window.keepFlagName.c_str())) {
@@ -1557,7 +1562,7 @@ namespace RyoEngine {
 					allocated_id++;
 				}
 
-				std::string name = "新規ウィンドウ " + std::to_string(allocated_id);
+				std::string name = "新規アニメーション " + std::to_string(allocated_id);
 
 				// ⭕ unique_ptr として新しくインスタンスを生成
 				auto newWindow = std::make_unique<Impl::WindowData>();
@@ -1591,7 +1596,7 @@ namespace RyoEngine {
 
 		ImGui::Spacing();
 		// ★追加：リストにある全ウィンドウのモードを一括で切り替えるボタン
-		ImGui::Text("全ウィンドウを");
+		ImGui::Text("全アニメーションを");
 		if (ImGui::Button("編集モードに切り替え")) {
 			for (auto& w : impl->m_SubWindows) {
 				w->isGameSyncMode = false;
@@ -1615,8 +1620,8 @@ namespace RyoEngine {
 
 		ImGui::Separator();
 
-		if (ImGui::TreeNodeEx("ウィンドウリスト", ImGuiTreeNodeFlags_DefaultOpen)) {
-			std::string preview_text = "ウィンドウを選択";
+		if (ImGui::TreeNodeEx("アニメーション管理", ImGuiTreeNodeFlags_DefaultOpen)) {
+			std::string preview_text = "アニメーションを選択";
 			if ((impl->m_SelectedWindowIdx >= 0 && (impl->m_SelectedWindowIdx < (int)impl->m_SubWindows.size()))) {
 				auto& sel_window = impl->m_SubWindows[impl->m_SelectedWindowIdx];
 				preview_text = sel_window->name; // -> に変更
@@ -1626,7 +1631,7 @@ namespace RyoEngine {
 				}
 			}
 
-			if (ImGui::BeginCombo("List", preview_text.c_str())) {
+			if (ImGui::BeginCombo("リスト", preview_text.c_str())) {
 				for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 					bool is_selected = (impl->m_SelectedWindowIdx == (int)i);
 					auto& w = impl->m_SubWindows[i];
@@ -1652,7 +1657,7 @@ namespace RyoEngine {
 					auto& w = impl->m_SubWindows[impl->m_SelectedWindowIdx];
 					w->is_open = true;       // -> に変更
 					w->request_focus = true; // -> に変更
-					impl->m_SelectedWindowIdx = -1;
+					impl->m_SelectedWindowIdx = -1;  // 未選択へ
 				}
 			}
 
@@ -1690,7 +1695,7 @@ namespace RyoEngine {
 
 					// 削除実行
 					impl->m_SubWindows.erase(impl->m_SubWindows.begin() + impl->m_SelectedWindowIdx);
-					impl->m_SelectedWindowIdx = -1;
+					impl->m_SelectedWindowIdx = -1;  // 未選択へ
 
 					ImGui::CloseCurrentPopup();
 				}
@@ -1915,18 +1920,20 @@ namespace RyoEngine {
 #endif // _DEBUG
 	}
 
-	if (!impl->m_SubWindows.empty()) impl->m_SelectedWindowIdx = 0;
 	Logger::LogSuccess("[Animation Editor] Load Successed.");
 }
 
 #ifdef _DEBUG
+    // いつかモデルたちのSRTをデータ上に書き出す時が来たら、
+    // 0フレーム時のSRTをいじれるようにする
+    // 現在は読み取り専用
 	void AnimEdit::ModelOperate() {
 		Impl* impl = GetInstance().m_pImpl;
 
 		ImGui::Spacing();
-		if (ImGui::TreeNodeEx("登録済みオブジェクト", ImGuiTreeNodeFlags_DefaultOpen)) {
+		if (ImGui::TreeNodeEx("登録済モデル (現在は読み取り専用)")) {
 			if (impl->m_pTargetModels.empty()) {
-				ImGui::Text("操作対象オブジェクト: なし");
+				ImGui::Text("モデルが登録されていません");
 			} else {
 				bool isNoNameTreeOpen = false;
 				bool hasCreatedNoNameTree = false;
@@ -1940,12 +1947,13 @@ namespace RyoEngine {
 
 					if (name == "NoName") {
 						if (!hasCreatedNoNameTree) {
-							isNoNameTreeOpen = ImGui::TreeNodeEx("Models", ImGuiTreeNodeFlags_DefaultOpen);
+							isNoNameTreeOpen = ImGui::TreeNodeEx("Models");
 							hasCreatedNoNameTree = true;
 						}
 
 						if (isNoNameTreeOpen) {
-							if (ImGui::TreeNodeEx((std::string("Model [") + std::to_string(i) + "]").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+							if (ImGui::TreeNodeEx((std::string("Model [") + std::to_string(i) + "]").c_str())) {
+								ImGui::BeginDisabled();
 								Vector3 translate = model->GetTranslate();
 								float pos[3] = { translate.x, translate.y, translate.z };
 								if (ImGui::DragFloat3("translate", pos, 0.1f)) {
@@ -1963,7 +1971,7 @@ namespace RyoEngine {
 								if (ImGui::DragFloat3("scale", scl, 0.1f)) {
 									model->SetScale({ scl[0], scl[1], scl[2] });
 								}
-
+								ImGui::EndDisabled();
 								ImGui::TreePop();
 							}
 						}
@@ -1974,7 +1982,8 @@ namespace RyoEngine {
 							hasCreatedNoNameTree = false;
 						}
 
-						if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+						if (ImGui::TreeNodeEx(name.c_str())) {
+							ImGui::BeginDisabled();
 							Vector3 translate = model->GetTranslate();
 							float pos[3] = { translate.x, translate.y, translate.z };
 							if (ImGui::DragFloat3("translate", pos, 0.1f)) {
@@ -1992,7 +2001,7 @@ namespace RyoEngine {
 							if (ImGui::DragFloat3("scale", scl, 0.1f)) {
 								model->SetScale({ scl[0], scl[1], scl[2] });
 							}
-
+							ImGui::EndDisabled();
 							ImGui::TreePop();
 						}
 					}
@@ -2001,6 +2010,21 @@ namespace RyoEngine {
 
 				if (isNoNameTreeOpen) {
 					ImGui::TreePop();
+				}
+			}
+			ImGui::TreePop();
+		}
+
+		ImGui::Spacing();
+		if (ImGui::TreeNodeEx("登録済みアニメーション")) {
+			if (impl->m_SubWindows.empty()) {
+				ImGui::Text("アニメーションが登録されていません");
+			} else {
+				for (size_t i = 0; i < impl->m_SubWindows.size(); ++i) {
+					// unique_ptr なので impl->m_SubWindows[i] でアクセス
+					if (impl->m_SubWindows[i]) {
+						ImGui::Text("%s", impl->m_SubWindows[i]->name.c_str());
+					}
 				}
 			}
 			ImGui::TreePop();
