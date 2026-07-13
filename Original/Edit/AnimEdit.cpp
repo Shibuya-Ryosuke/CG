@@ -917,6 +917,32 @@ namespace RyoEngine {
 				return;
 			}
 
+			// ★ここに追加
+			// 編集モードのウィンドウがフォーカスされたら、そのウィンドウを
+			// 「対象モデルへの書き込み権を持つウィンドウ」として登録する。
+			// ゲーム同期モードはトリガー調停(ResolveAnimationTriggers)が別途管理しているので対象外。
+			if (!window.isGameSyncMode && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+				Model* model = window.currentSelectModel;
+				if (model) {
+					auto it = impl->m_ActiveAnimationWindowId.find(model);
+					if (it == impl->m_ActiveAnimationWindowId.end() || it->second != window.id) {
+						// 直前まで同じモデルを操作していた別ウィンドウがいたら再生を停止し、0フレーム目の情報を入れて元に戻しておく
+						if (it != impl->m_ActiveAnimationWindowId.end()) {
+							for (auto& w : impl->m_SubWindows) {
+								if (w->id == it->second) {
+									w->isPlaying = false;
+									w->currentFrame = 0;
+									w->frameTimer = 0.0f;
+									UpdateAnimationAnimate(*w, impl);
+									break;
+								}
+							}
+						}
+						impl->m_ActiveAnimationWindowId[model] = window.id;
+					}
+				}
+			}
+
 			if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) ||
 				(ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) && ImGui::IsMouseClicked(0))) {
 				impl->m_SelectedWindowIdx = static_cast<int32_t>(index);
@@ -1308,16 +1334,18 @@ namespace RyoEngine {
 			auto& window = impl->m_SubWindows[i]; // window は std::unique_ptr<WindowData>& になります
 			window->delegate.m_pOwnerWindow = window.get(); // .get() で生ポインタを取得
 
-			// ウィンドウが閉じられていても再生
+			// ウィンドウが閉じられたら再生停止
 			if (!window->is_open) {
-				if (window->isPlaying) {
-					window->isPlaying = false;
-					window->currentFrame = 0;
-					if (Impl::IsActiveAnimationWindow(*window, impl)) {
-						Impl::UpdateAnimationAnimate(*window, impl);
+				if (!window->isGameSyncMode) {
+					if (window->isPlaying) {
+						window->isPlaying = false;
+						window->currentFrame = 0;
+						if (Impl::IsActiveAnimationWindow(*window, impl)) {
+							Impl::UpdateAnimationAnimate(*window, impl);
+						}
 					}
+					continue;
 				}
-				continue;
 			}
 			// アニメーション
 			Impl::AdvanceFrame(*window, deltaTime);
@@ -1507,8 +1535,29 @@ namespace RyoEngine {
 				ImGui::Separator();
 
 				if (ImGui::Button("実行", ImVec2(120, 0))) {
+					// --- 削除前のクリーンアップ処理を追加 ---
+					auto& target = impl->m_SubWindows[impl->m_SelectedWindowIdx];
+
+					// もしこのウィンドウが再生中なら停止・リセット・SRT反映を行う
+					// ※ ここはご自身のコードの「再生中」判定フラグに合わせて調整してください
+					if (target->isPlaying) {
+						target->isPlaying = false;
+						target->currentFrame = 0;
+
+						// モデルにSRTを入れる処理
+						// 先ほど型エラーで悩まれていた関数をここで呼ぶのが良さそうです
+						// target->target_model が削除対象ウィンドウのモデルポインタだと仮定
+						if (target->currentSelectModel) {
+							// 修正：引数を適宜調整してください
+							impl->UpdateAnimationAnimate(*target, impl);
+						}
+					}
+					// ------------------------------------
+
+					// 削除実行
 					impl->m_SubWindows.erase(impl->m_SubWindows.begin() + impl->m_SelectedWindowIdx);
 					impl->m_SelectedWindowIdx = -1;
+
 					ImGui::CloseCurrentPopup();
 				}
 
@@ -1544,7 +1593,7 @@ namespace RyoEngine {
 			window_json["name"] = w->name;               // . から -> に変更
 			window_json["is_open"] = false;
 			window_json["max_frame"] = w->maxFrame;      // . から -> に変更
-			window_json["current_frame"] = w->currentFrame; // . から -> に変更
+			//window_json["current_frame"] = w->currentFrame; // . から -> に変更
 			window_json["insert_x"] = w->insertX;       // . から -> に変更
 			window_json["insert_y"] = w->insertY;       // . から -> に変更
 			window_json["insert_z"] = w->insertZ;       // . から -> に変更
@@ -1628,7 +1677,7 @@ namespace RyoEngine {
 				w->name = item["name"].get<std::string>();
 				w->is_open = false;
 				w->maxFrame = item.value("max_frame", 60);
-				w->currentFrame = item.value("current_frame", 0);
+				w->currentFrame = 0;
 				w->insertX = item.value("insert_x", true);
 				w->insertY = item.value("insert_y", true);
 				w->insertZ = item.value("insert_z", true);
