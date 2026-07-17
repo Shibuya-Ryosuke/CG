@@ -76,8 +76,8 @@
             "isGameSyncMode": true,
             "is_loop": true,
             "is_open": false,
-            "keep_condition": true,
-            "keep_flag_name": "enemy : isAlive",
+            "keep_condition": false,
+            "keep_flag_name": "player: hit",
             "max_frame": 80,
             "max_loop_count": 1,
             "name": "プレイヤー通常時アニメーション",
@@ -342,6 +342,79 @@
             "trigger_condition": true,
             "trigger_flag_name": "None",
             "trigger_source_window_id": 3
+        },
+        {
+            "current_transform_mode": 0,
+            "grouped_keyframes_srt": [
+                [
+                    [],
+                    [],
+                    [
+                        {
+                            "easing": 1,
+                            "frame": 0,
+                            "val_x": -4.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 5,
+                            "frame": 15,
+                            "val_x": -4.0,
+                            "val_y": 1.242197036743164,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 45,
+                            "val_x": -4.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        }
+                    ],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                ],
+                [
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                ],
+                [
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                ]
+            ],
+            "id": 5,
+            "insert_x": false,
+            "insert_y": true,
+            "insert_z": false,
+            "isGameSyncMode": true,
+            "is_loop": true,
+            "is_open": false,
+            "keep_condition": true,
+            "keep_flag_name": "None",
+            "max_frame": 50,
+            "max_loop_count": 1,
+            "name": "新規アニメーション 5",
+            "target_model_name": "player",
+            "trigger_condition": true,
+            "trigger_flag_name": "None",
+            "trigger_source_window_id": 4
         }
     ]
 }

@@ -353,18 +353,20 @@ namespace RyoEngine {
 		// ・すでに別ウィンドウのアニメーションが再生中のモデルに対して、
 		//   別の要求（トリガーでも継続でもどちらでも）が新たに来た場合は、
 		//   今再生中のものを即座に終了し、後から要求された方を再生する。
-		static void ResolveAnimationTriggers(Impl* impl) {
-			// この関数内では「再生を開始したい」という要求をいったんすべて集めてから、
-			// 最後にモデルごとの調停（優先度判定＋今のアクティブウィンドウの停止）をまとめて行う。
-			// keepFlag経由・trigger経由のどちらの要求も、ここで同じ扱いになる。
-			struct ActivationRequest { WindowData* window; };
-			std::vector<ActivationRequest> requests;
+		//
+		// ★リファクタ：元々1関数だった判定処理を Step0～4 に分割。
+		// 「状態を読むだけの判定」と「状態を書き換える副作用」を関数単位で分離し、
+		// 早期continue/returnがあっても状態更新もれが起きにくい構造にした。
 
-			// --- 0. 「他アニメーション終了時」トリガーの処理 ---
-			// ★ここでは、まだ今フレームの justEnded 更新（下のstep1/AdvanceFrame）が
-			//   行われる前の状態、つまり「前回のUpdate()時点で終了確定した」ぶんだけを見る。
-			//   フラグトリガーと同時使用不可のため、triggerSourceWindowId が有効な
-			//   ウィンドウは triggerFlagName 側の判定を行わない（step2側でスキップする）。
+		// 再生要求ひとつぶんのデータ（keepFlag経由・trigger経由を区別しない共通表現）
+		struct ActivationRequest { WindowData* window; };
+
+		// --- Step 0. 「他アニメーション終了時」トリガーの処理 ---
+		// ★ここでは、まだ今フレームの justEnded 更新（Step1/AdvanceFrame）が
+		//   行われる前の状態、つまり「前回のUpdate()時点で終了確定した」ぶんだけを見る。
+		//   フラグトリガーと同時使用不可のため、triggerSourceWindowId が有効な
+		//   ウィンドウは triggerFlagName 側の判定を行わない（Step2側でスキップする）。
+		static void CollectChainEndTriggers(Impl* impl, std::vector<ActivationRequest>& requests) {
 			for (auto& w : impl->m_SubWindows) {
 				WindowData& window = *w;
 				if (!window.isGameSyncMode) continue;
@@ -386,8 +388,20 @@ namespace RyoEngine {
 			for (auto& w : impl->m_SubWindows) {
 				w->justEnded = false;
 			}
+		}
 
-			// --- 1. 継続フラグ(keepFlagName)の処理 ---
+		// --- Step 1. 継続フラグ(keepFlagName)の処理 ---
+		//
+		// ★修正点（バグ修正）：
+		// 1) 旧実装は「条件不成立」の間 continue しており、lastKeepState の更新が
+		//    スキップされていた。そのため一度条件が成立すると lastKeepState が
+		//    window.keepCondition の値のまま凍結し、以後エッジ検出ができなくなっていた。
+		//    → 不成立の分岐でも必ず lastKeepState を更新するように修正。
+		// 2) 旧実装は「lastKeepStateがfalse かつ currentKeepValがtrue」というリテラルな
+		//    true/false遷移しか見ておらず、keepCondition==false（Falseの間再生）の設定では
+		//    構造的に一度も発火しなかった。
+		//    → 「条件成立/不成立」という論理値のエッジ（不成立→成立）で判定するように修正。
+		static void EvaluateKeepFlags(Impl* impl, std::vector<ActivationRequest>& requests) {
 			for (auto& w : impl->m_SubWindows) {
 				WindowData& window = *w;
 				if (!window.isGameSyncMode) continue;
@@ -407,29 +421,36 @@ namespace RyoEngine {
 					window.hasInitializedKeepState = true;
 				}
 
+				// 「フラグの生値」ではなく「keepConditionを満たしているかどうか」で
+				// 現在／前回の状態を評価する（true運用・false運用のどちらでも同じロジックで扱える）
+				bool currentSatisfied = (currentKeepVal == window.keepCondition);
+				bool previousSatisfied = (window.lastKeepState == window.keepCondition);
+
 				// --- 条件を満たしていない場合（強制停止） ---
-				if (currentKeepVal != window.keepCondition) {
+				if (!currentSatisfied) {
 					if (window.isPlaying) {
 						window.isPlaying = false;
-						// ★追加：「再生継続条件がfalseになって止められた」ことによる停止。
-						// 「他アニメーション終了」トリガーの監視対象になる（次フレームのstep0で参照される）。
+						// ★「再生継続条件がfalseになって止められた」ことによる停止。
+						// 「他アニメーション終了」トリガーの監視対象になる（次フレームのStep0で参照される）。
 						window.justEnded = true;
 					}
-					// 条件不一致の間は判定をスキップ
+					// ★修正：条件不一致の間も lastKeepState は必ず更新する（次回のエッジ検出のため）
+					window.lastKeepState = currentKeepVal;
 					continue;
 				}
 
 				// --- 条件を満たしている場合 ---
-				// lastKeepStateがcurrentKeepValと一致している限り、
-				// !isPlaying && !lastKeepState の条件は成立しないので再生されない
-				if (!window.isPlaying && !window.lastKeepState && currentKeepVal) {
+				// 「不成立→成立」に切り替わった、かつ現在再生していない時だけ再生要求を出す
+				if (!window.isPlaying && !previousSatisfied) {
 					requests.push_back({ &window });
 				}
 				window.lastKeepState = currentKeepVal;
 			}
+		}
 
-			// --- 2. メイントリガー(triggerFlagName)の処理 ---
-			// トリガーが必須なので、"None" のウィンドウはここで除外する。
+		// --- Step 2. メイントリガー(triggerFlagName)の処理 ---
+		// トリガーが必須なので、"None" のウィンドウはここで除外する。
+		static void EvaluateMainTriggers(Impl* impl, std::vector<ActivationRequest>& requests) {
 			for (auto& w : impl->m_SubWindows) {
 				WindowData& window = *w;
 				if (!window.isGameSyncMode) continue;
@@ -456,12 +477,12 @@ namespace RyoEngine {
 				}
 				window.lastTriggerState = currentVal;
 			}
+		}
 
-			if (requests.empty()) return;
-
-			// --- 3. モデルごとに勝者を決定する ---
-			// 同フレームで同じモデルに対し複数の再生要求が重なっていたら、id が大きい方を優先する。
-			// （要求の発生源が keepFlag でも trigger でも区別しない）
+		// --- Step 3. モデルごとに勝者を決定する ---
+		// 同フレームで同じモデルに対し複数の再生要求が重なっていたら、id が大きい方を優先する。
+		// （要求の発生源が keepFlag でも trigger でも区別しない）
+		static std::map<Model*, WindowData*> ResolveWinners(const std::vector<ActivationRequest>& requests) {
 			std::map<Model*, WindowData*> winners;
 			for (auto& req : requests) {
 				Model* model = req.window->currentSelectModel;
@@ -472,8 +493,11 @@ namespace RyoEngine {
 					winners[model] = req.window;
 				}
 			}
+			return winners;
+		}
 
-			// --- 4. 勝者を再生開始。今再生中の別ウィンドウがいれば即座に打ち切って切り替える ---
+		// --- Step 4. 勝者を再生開始。今再生中の別ウィンドウがいれば即座に打ち切って切り替える ---
+		static void ApplyWinners(Impl* impl, const std::map<Model*, WindowData*>& winners) {
 			for (auto& pair : winners) {
 				Model* model = pair.first;
 				WindowData* winner = pair.second;
@@ -504,6 +528,22 @@ namespace RyoEngine {
 				winner->isPlaying = true;
 				impl->m_ActiveAnimationWindowId[model] = winner->id;
 			}
+		}
+
+		static void ResolveAnimationTriggers(Impl* impl) {
+			// この関数内では「再生を開始したい」という要求をいったんすべて集めてから、
+			// 最後にモデルごとの調停（優先度判定＋今のアクティブウィンドウの停止）をまとめて行う。
+			// keepFlag経由・trigger経由のどちらの要求も、ここで同じ扱いになる。
+			std::vector<ActivationRequest> requests;
+
+			CollectChainEndTriggers(impl, requests);
+			EvaluateKeepFlags(impl, requests);
+			EvaluateMainTriggers(impl, requests);
+
+			if (requests.empty()) return;
+
+			std::map<Model*, WindowData*> winners = ResolveWinners(requests);
+			ApplyWinners(impl, winners);
 		}
 
 		// =========================================================================
@@ -928,6 +968,7 @@ namespace RyoEngine {
 		// モデルにSRTを入れる処理
 		static void UpdateAnimationAnimate(WindowData& window, Impl* impl) {
 			if (impl->m_pTargetModels.empty() || !impl->m_pTargetModels[0].second) return;
+			if (!window.isPlaying && window.isGameSyncMode) return;
 			Model* targetModel = window.currentSelectModel;
 			// ★追加：対象モデルが見つからない（再ロード時にリンクできなかった等）場合は
 			// 何もせず抜ける。ここが無いと nullptr を触ってクラッシュする。

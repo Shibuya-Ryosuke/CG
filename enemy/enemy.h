@@ -9,6 +9,7 @@ public:
 	void Update(RyoEngine::DebugCamera& debugCamera);
 	void Draw();
 
+	RyoEngine::Model* GetModel() { return model_; }
 	bool GetIsAlive() { return isAlive_; }
 	void SetIsAlive(bool alive) { isAlive_ = alive; }
 
