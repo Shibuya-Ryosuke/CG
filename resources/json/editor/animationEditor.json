@@ -337,14 +337,14 @@
             "keep_flag_name": "None",
             "max_frame": 90,
             "max_loop_count": 1,
-            "name": "演出4",
+            "name": "演出3",
             "target_model_name": "enemy",
             "trigger_condition": true,
             "trigger_flag_name": "None",
             "trigger_source_window_id": 3
         },
         {
-            "current_transform_mode": 0,
+            "current_transform_mode": 1,
             "grouped_keyframes_srt": [
                 [
                     [],
@@ -386,7 +386,22 @@
                     [],
                     [],
                     [],
-                    []
+                    [
+                        {
+                            "easing": 1,
+                            "frame": 0,
+                            "val_x": 0.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 50,
+                            "val_x": 0.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        }
+                    ]
                 ],
                 [
                     [],
@@ -400,9 +415,9 @@
                 ]
             ],
             "id": 5,
-            "insert_x": false,
+            "insert_x": true,
             "insert_y": true,
-            "insert_z": false,
+            "insert_z": true,
             "isGameSyncMode": true,
             "is_loop": true,
             "is_open": false,
@@ -410,7 +425,7 @@
             "keep_flag_name": "None",
             "max_frame": 50,
             "max_loop_count": 1,
-            "name": "新規アニメーション 5",
+            "name": "演出4",
             "target_model_name": "player",
             "trigger_condition": true,
             "trigger_flag_name": "None",

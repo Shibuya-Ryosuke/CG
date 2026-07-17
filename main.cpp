@@ -48,12 +48,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         player.Update(*debugCamera);
         if (player.GetModel()->GetTranslate().x >= 0.0f) {
-            //player.GetModel()->SetRotate({ 0.0f,0.0f,0.0f });
             player.SetIsHit(true);
             enemy.SetIsAlive(false);
-        }
-        if (enemy.GetIsAlive()) {
-            //enemy.GetModel()->SetTranslate({ enemy.GetModel()->GetTranslate().x,0.0f,0.0f });
         }
         enemy.Update(*debugCamera);
 
