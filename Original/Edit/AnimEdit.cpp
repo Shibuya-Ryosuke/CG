@@ -82,6 +82,9 @@ namespace RyoEngine {
 							window.currentFrame = window.maxFrame;
 							window.isPlaying = false;
 							window.currentLoopCount = 0;
+							// ★追加：「指定回数の再生終了」による自然停止。
+							// 「他アニメーション終了」トリガーの監視対象になる。
+							window.justEnded = true;
 							break;
 						} else {
 							window.currentFrame = 0;
@@ -251,6 +254,17 @@ namespace RyoEngine {
 			bool triggerCondition = true;          // trueのとき開始するか、falseのときか
 			bool lastTriggerState = false;         // 前フレームのフラグ状態
 
+			// ★追加：「他アニメーション終了時」トリガー 関係
+			// triggerFlagName（フラグトリガー）とは同時使用不可。どちらか一方でのみ再生を開始できる。
+			// triggerSourceWindowId が -1以外の場合、こちらが優先され triggerFlagName 側の判定は行わない。
+			int32_t triggerSourceWindowId = -1;    // 終了を監視する対象ウィンドウのID（-1なら無効）
+
+			// ★追加：このウィンドウ自身が「指定回数の再生終了」または
+			// 「再生継続条件(keepFlagName)がfalseになって止められた」ことで停止した、その瞬間にtrueになる。
+			// ResolveAnimationTriggers() が1フレーム参照した後、必ずfalseにリセットする内部用フラグ。
+			// （手動一時停止や、他アニメーションに割り込まれて止まった場合はtrueにならない）
+			bool justEnded = false;
+
 			// ループ・再生回数指定 関係
 			bool isLoop = true;                    // ループするかどうか
 			int32_t maxLoopCount = 1;              // 指定された再生回数 (1以上で有効、0は無限ループなど)
@@ -308,6 +322,12 @@ namespace RyoEngine {
 		// 登録されたフラグリスト
 		std::vector<std::pair<std::string, bool*>> m_RegisteredFlags; // ★追加：登録フラグのリスト
 
+		// ★追加：「他アニメーション終了」トリガーで繋がったウィンドウ群（グループ）の名前。
+		// キーは各グループに属するウィンドウの中で最小のID（＝そのグループの代表ID）。
+		// グループそのものはウィンドウの trigger 設定から毎回自動検出するが、
+		// 名前だけはユーザーが手動で変更できるようにここに保持しておく。
+		std::map<int32_t, std::string> m_AnimEndGroupNames;
+
 		// ★変更：「このモデルには今どのウィンドウのアニメーションを適用するか」を記録するマップ。
 		// 同じモデルに複数のウィンドウ（＝複数のアニメーション）が割り当てられていても、
 		// 実際にSRTへ書き込む(反映する)のは ResolveAnimationTriggers() が選んだ1ウィンドウだけにする。
@@ -340,6 +360,33 @@ namespace RyoEngine {
 			struct ActivationRequest { WindowData* window; };
 			std::vector<ActivationRequest> requests;
 
+			// --- 0. 「他アニメーション終了時」トリガーの処理 ---
+			// ★ここでは、まだ今フレームの justEnded 更新（下のstep1/AdvanceFrame）が
+			//   行われる前の状態、つまり「前回のUpdate()時点で終了確定した」ぶんだけを見る。
+			//   フラグトリガーと同時使用不可のため、triggerSourceWindowId が有効な
+			//   ウィンドウは triggerFlagName 側の判定を行わない（step2側でスキップする）。
+			for (auto& w : impl->m_SubWindows) {
+				WindowData& window = *w;
+				if (!window.isGameSyncMode) continue;
+				if (window.triggerSourceWindowId == -1) continue;
+
+				WindowData* pSource = nullptr;
+				for (auto& sw : impl->m_SubWindows) {
+					if (sw->id == window.triggerSourceWindowId) { pSource = sw.get(); break; }
+				}
+				if (!pSource) continue; // 参照先が見つからない（削除済みなど）
+
+				if (pSource->justEnded) {
+					requests.push_back({ &window });
+				}
+			}
+
+			// ★参照し終えたら必ずリセットする。これにより「終了」判定は1フレームだけ有効になり、
+			//   次に立つのは対象ウィンドウが次に自然停止したときだけになる。
+			for (auto& w : impl->m_SubWindows) {
+				w->justEnded = false;
+			}
+
 			// --- 1. 継続フラグ(keepFlagName)の処理 ---
 			for (auto& w : impl->m_SubWindows) {
 				WindowData& window = *w;
@@ -364,6 +411,9 @@ namespace RyoEngine {
 				if (currentKeepVal != window.keepCondition) {
 					if (window.isPlaying) {
 						window.isPlaying = false;
+						// ★追加：「再生継続条件がfalseになって止められた」ことによる停止。
+						// 「他アニメーション終了」トリガーの監視対象になる（次フレームのstep0で参照される）。
+						window.justEnded = true;
 					}
 					// 条件不一致の間は判定をスキップ
 					continue;
@@ -383,6 +433,8 @@ namespace RyoEngine {
 			for (auto& w : impl->m_SubWindows) {
 				WindowData& window = *w;
 				if (!window.isGameSyncMode) continue;
+				// ★「他アニメーション終了」トリガー使用中はフラグトリガーを無効にする（同時使用不可）
+				if (window.triggerSourceWindowId != -1) continue;
 				// ★「トリガー機能がNoneの場合再生をしない」
 				if (window.triggerFlagName == "None") continue;
 
@@ -979,6 +1031,7 @@ namespace RyoEngine {
 					window.firstFrame = copySource.firstFrame;
 					window.maxFrame = copySource.maxFrame;
 					window.triggerFlagName = copySource.triggerFlagName;
+					window.triggerSourceWindowId = copySource.triggerSourceWindowId;
 					window.keepFlagName = copySource.keepFlagName;
 					window.isLoop = copySource.isLoop;
 					// キーフレームをコピー (ここを修正)
@@ -1156,24 +1209,77 @@ namespace RyoEngine {
 
 				// --- トリガー開始の設定 ---
 				// ★変更：on/off専用チェックボックスは廃止。"None"を選べば無効、それ以外なら有効。
-				ImGui::Text("トリガー開始設定（Noneのままでは再生されません）");
+				// ★追加：「フラグでトリガー」と「他アニメーション終了でトリガー」は同時使用不可。
+				//   どちらか一方を選ぶと、もう片方は自動的に無効化される。
+				ImGui::Text("トリガー開始設定（いずれか一方のみ有効。両方Noneのままでは再生されません）");
 				{
 					ImGui::Indent();
-					std::string combo_preview = window.triggerFlagName;
-					if (ImGui::BeginCombo("対象フラグ", combo_preview.c_str())) {
-						if (ImGui::Selectable("None", window.triggerFlagName == "None")) { window.triggerFlagName = "None"; }
-						for (const auto& pair : impl->m_RegisteredFlags) {
-							if (ImGui::Selectable(pair.first.c_str(), window.triggerFlagName == pair.first)) {
-								window.triggerFlagName = pair.first;
-								window.lastTriggerState = *pair.second;
+
+					bool useAnimEndTrigger = (window.triggerSourceWindowId != -1);
+
+					if (ImGui::RadioButton("フラグでトリガー", !useAnimEndTrigger)) {
+						// ★他アニメーション終了トリガーを無効化してこちらへ切り替え
+						window.triggerSourceWindowId = -1;
+						useAnimEndTrigger = false;
+					}
+					ImGui::SameLine();
+					if (ImGui::RadioButton("他アニメーション終了でトリガー", useAnimEndTrigger)) {
+						// ★フラグトリガーを無効化してこちらへ切り替え
+						window.triggerFlagName = "None";
+						if (window.triggerSourceWindowId == -1) {
+							// 初回切り替え時は、自分以外の先頭のウィンドウを仮選択しておく
+							for (auto& other : impl->m_SubWindows) {
+								if (other->id != window.id) {
+									window.triggerSourceWindowId = other->id;
+									break;
+								}
 							}
 						}
-						ImGui::EndCombo();
+						useAnimEndTrigger = true;
 					}
-					ImGui::Text("開始条件:"); ImGui::SameLine();
-					if (ImGui::RadioButton("True になったとき", window.triggerCondition == true)) { window.triggerCondition = true; }
-					ImGui::SameLine();
-					if (ImGui::RadioButton("False になったとき", window.triggerCondition == false)) { window.triggerCondition = false; }
+
+					ImGui::Spacing();
+
+					if (!useAnimEndTrigger) {
+						// --- フラグトリガーの設定 ---
+						std::string combo_preview = window.triggerFlagName;
+						if (ImGui::BeginCombo("対象フラグ", combo_preview.c_str())) {
+							if (ImGui::Selectable("None", window.triggerFlagName == "None")) { window.triggerFlagName = "None"; }
+							for (const auto& pair : impl->m_RegisteredFlags) {
+								if (ImGui::Selectable(pair.first.c_str(), window.triggerFlagName == pair.first)) {
+									window.triggerFlagName = pair.first;
+									window.lastTriggerState = *pair.second;
+								}
+							}
+							ImGui::EndCombo();
+						}
+						ImGui::Text("開始条件:"); ImGui::SameLine();
+						if (ImGui::RadioButton("True になったとき", window.triggerCondition == true)) { window.triggerCondition = true; }
+						ImGui::SameLine();
+						if (ImGui::RadioButton("False になったとき", window.triggerCondition == false)) { window.triggerCondition = false; }
+					} else {
+						// --- 他アニメーション終了トリガーの設定 ---
+						std::string sourcePreview = "未選択";
+						for (auto& other : impl->m_SubWindows) {
+							if (other->id == window.triggerSourceWindowId) {
+								sourcePreview = other->name;
+								break;
+							}
+						}
+						if (ImGui::BeginCombo("対象アニメーション", sourcePreview.c_str())) {
+							for (auto& other : impl->m_SubWindows) {
+								if (other->id == window.id) continue; // 自分自身は選択不可
+								bool isSelected = (other->id == window.triggerSourceWindowId);
+								if (ImGui::Selectable(other->name.c_str(), isSelected)) {
+									window.triggerSourceWindowId = other->id;
+								}
+								if (isSelected) ImGui::SetItemDefaultFocus();
+							}
+							ImGui::EndCombo();
+						}
+						ImGui::TextDisabled("(対象アニメーションが「指定回数の再生終了」または");
+						ImGui::TextDisabled(" 「再生継続条件がfalseになって停止」した瞬間にトリガーします)");
+					}
 					ImGui::Unindent();
 				}
 
@@ -1243,6 +1349,137 @@ namespace RyoEngine {
 
 			ImGui::NewLine();
 			ImGui::End();
+		}
+
+		// ★追加：「他アニメーション終了」トリガーで繋がったウィンドウ群を自動検出し、
+		// グループ[i]としてまとめて表示する。グループ名だけは手動で変更できる。
+		//
+		// 例)
+		// グループ1
+		//   AttackAnimation (トリガー: isJumpがtrue)
+		//   MoveAnimation(トリガー: AttackAnimation終了時)
+		//   StopAnimation(トリガー: MoveAnimation終了時)
+		static void DrawAnimEndGroups(Impl* impl) {
+			// --- Union-Find で「終了トリガーの繋がり」を連結成分にまとめる ---
+			std::map<int32_t, int32_t> uf;
+			for (auto& w : impl->m_SubWindows) uf[w->id] = w->id;
+
+			auto find = [&](int32_t x) {
+				while (uf[x] != x) {
+					uf[x] = uf[uf[x]];
+					x = uf[x];
+				}
+				return x;
+			};
+			auto unite = [&](int32_t a, int32_t b) {
+				int32_t ra = find(a);
+				int32_t rb = find(b);
+				if (ra == rb) return;
+				// ★グループの識別を安定させるため、IDが小さい方を根にする
+				if (ra < rb) uf[rb] = ra;
+				else uf[ra] = rb;
+			};
+
+			for (auto& w : impl->m_SubWindows) {
+				if (w->triggerSourceWindowId == -1) continue;
+				if (uf.find(w->triggerSourceWindowId) == uf.end()) continue; // 参照先が存在しない
+				unite(w->id, w->triggerSourceWindowId);
+			}
+
+			// --- 根ごとにメンバーを集める ---
+			std::map<int32_t, std::vector<WindowData*>> groups;
+			for (auto& w : impl->m_SubWindows) {
+				int32_t root = find(w->id);
+				groups[root].push_back(w.get());
+			}
+
+			// --- メンバーが2つ以上（＝実際に終了トリガーで繋がっている）根だけを対象にする ---
+			std::vector<std::pair<int32_t, std::vector<WindowData*>>> validGroups;
+			for (auto& pair : groups) {
+				if (pair.second.size() >= 2) {
+					validGroups.push_back(pair);
+				}
+			}
+
+			if (validGroups.empty()) return;
+
+			if (ImGui::TreeNodeEx("終了トリガー グループ", ImGuiTreeNodeFlags_DefaultOpen)) {
+				std::vector<int32_t> usedCanonicalIds;
+
+				for (auto& group : validGroups) {
+					int32_t canonicalId = group.first;
+					usedCanonicalIds.push_back(canonicalId);
+
+					// ★名前が未登録なら、使われていない最小の番号でデフォルト名を割り当てる
+					if (impl->m_AnimEndGroupNames.find(canonicalId) == impl->m_AnimEndGroupNames.end()) {
+						int32_t n = 1;
+						while (true) {
+							std::string candidate = "グループ" + std::to_string(n);
+							bool used = false;
+							for (auto& np : impl->m_AnimEndGroupNames) {
+								if (np.second == candidate) { used = true; break; }
+							}
+							if (!used) break;
+							n++;
+						}
+						impl->m_AnimEndGroupNames[canonicalId] = "グループ" + std::to_string(n);
+					}
+
+					std::string& groupName = impl->m_AnimEndGroupNames[canonicalId];
+
+					ImGui::PushID(canonicalId);
+
+					// --- グループ名の手動変更 ---
+					char nameBuf[128];
+					strncpy_s(nameBuf, sizeof(nameBuf), groupName.c_str(), _TRUNCATE);
+					ImGui::SetNextItemWidth(200.0f);
+					if (ImGui::InputText("グループ名", nameBuf, sizeof(nameBuf))) {
+						groupName = nameBuf;
+					}
+
+					// --- メンバー一覧をコンボボックスで表示 ---
+					std::string preview = groupName + " のメンバー (" + std::to_string(group.second.size()) + ")";
+					if (ImGui::BeginCombo("メンバー", preview.c_str())) {
+						for (auto* w : group.second) {
+							std::string label = w->name;
+							if (w->triggerSourceWindowId != -1) {
+								std::string sourceName = "?";
+								for (auto& other : impl->m_SubWindows) {
+									if (other->id == w->triggerSourceWindowId) { sourceName = other->name; break; }
+								}
+								label += "  [トリガー: " + sourceName + " 終了時]";
+							} else if (w->triggerFlagName != "None") {
+								label += std::string("  [トリガー: ") + w->triggerFlagName + (w->triggerCondition ? " が true]" : " が false]");
+							} else {
+								label += "  [トリガー: なし]";
+							}
+
+							for (size_t i = 0; i < impl->m_SubWindows.size(); ++i) {
+								if (impl->m_SubWindows[i].get() != w) continue;
+								bool isSelected = (impl->m_SelectedWindowIdx == (int)i);
+								if (ImGui::Selectable(label.c_str(), isSelected)) {
+									impl->m_SelectedWindowIdx = (int)i;
+								}
+								if (isSelected) ImGui::SetItemDefaultFocus();
+								break;
+							}
+						}
+						ImGui::EndCombo();
+					}
+
+					ImGui::PopID();
+					ImGui::Spacing();
+				}
+
+				// ★使われなくなったグループの名前は登録から掃除しておく
+				for (auto it = impl->m_AnimEndGroupNames.begin(); it != impl->m_AnimEndGroupNames.end(); ) {
+					bool stillUsed = std::find(usedCanonicalIds.begin(), usedCanonicalIds.end(), it->first) != usedCanonicalIds.end();
+					if (!stillUsed) it = impl->m_AnimEndGroupNames.erase(it);
+					else ++it;
+				}
+
+				ImGui::TreePop();
+			}
 		}
 #endif // _DEBUG
 	};
@@ -1642,6 +1879,11 @@ namespace RyoEngine {
 
 		ImGui::Separator();
 
+		// ★追加：「他アニメーション終了」トリガーで繋がったアニメーション群をグループとして表示
+		Impl::DrawAnimEndGroups(impl);
+
+		ImGui::Separator();
+
 		if (ImGui::TreeNodeEx("アニメーション管理", ImGuiTreeNodeFlags_DefaultOpen)) {
 			std::string preview_text = "アニメーションを選択";
 			if ((impl->m_SelectedWindowIdx >= 0 && (impl->m_SelectedWindowIdx < (int)impl->m_SubWindows.size()))) {
@@ -1763,6 +2005,7 @@ namespace RyoEngine {
 
 			window_json["trigger_flag_name"] = w->triggerFlagName; // . から -> に変更
 			window_json["trigger_condition"] = w->triggerCondition; // . から -> に変更
+			window_json["trigger_source_window_id"] = w->triggerSourceWindowId; // ★追加：他アニメーション終了トリガー
 
 			window_json["is_loop"] = w->isLoop;               // . から -> に変更
 			window_json["max_loop_count"] = w->maxLoopCount; // . から -> に変更
@@ -1801,6 +2044,16 @@ namespace RyoEngine {
 		}
 		j_root["windows"] = j_windows;
 
+		// ★追加：「他アニメーション終了」トリガーで繋がったグループの手動リネーム名を保存
+		json j_groups = json::array();
+		for (const auto& pair : impl->m_AnimEndGroupNames) {
+			json g;
+			g["canonical_id"] = pair.first;
+			g["name"] = pair.second;
+			j_groups.push_back(g);
+		}
+		j_root["anim_end_groups"] = j_groups;
+
 		std::ofstream file(filePath);
 		if (file.is_open()) {
 			file << j_root.dump(4);
@@ -1821,6 +2074,16 @@ namespace RyoEngine {
 	Impl* impl = instance.m_pImpl;
 	impl->m_SubWindows.clear();
 	impl->m_SelectedWindowIdx = -1;
+
+	// ★追加：「他アニメーション終了」トリガーのグループ名を復元
+	impl->m_AnimEndGroupNames.clear();
+	if (j_root.contains("anim_end_groups") && j_root["anim_end_groups"].is_array()) {
+		for (const auto& g : j_root["anim_end_groups"]) {
+			if (g.contains("canonical_id") && g.contains("name")) {
+				impl->m_AnimEndGroupNames[g["canonical_id"].get<int32_t>()] = g["name"].get<std::string>();
+			}
+		}
+	}
 
 	// ★変更：Model 側の animEditID は「1モデルにつき1つ」しか保持できず、
 	// 同じモデルを複数ウィンドウで参照するケースでは正しく復元できないため廃止。
@@ -1848,6 +2111,9 @@ namespace RyoEngine {
 				w->triggerFlagName = item.value("trigger_flag_name", "None");
 				w->triggerCondition = item.value("trigger_condition", true);
 				w->lastTriggerState = false;
+
+				w->triggerSourceWindowId = item.value("trigger_source_window_id", -1);
+				w->justEnded = false;
 
 				w->isLoop = item.value("is_loop", true);
 				w->maxLoopCount = item.value("max_loop_count", 1);
