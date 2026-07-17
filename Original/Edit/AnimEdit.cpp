@@ -1359,6 +1359,20 @@ namespace RyoEngine {
 		//   AttackAnimation (トリガー: isJumpがtrue)
 		//   MoveAnimation(トリガー: AttackAnimation終了時)
 		//   StopAnimation(トリガー: MoveAnimation終了時)
+
+		// ★追加：グループ内のメンバーを「起点(フラグトリガー/トリガーなし) → 終了トリガーで連鎖する子」の
+		// 順番に並べるための補助関数。同じ階層に複数の子がいても深さ分インデントは増やさない
+		// （呼び出し側で常に同じブレット階層として描画する）。
+		static void CollectChainOrder(WindowData* node, std::map<int32_t, std::vector<WindowData*>>& childrenMap, std::vector<WindowData*>& order) {
+			order.push_back(node);
+			auto it = childrenMap.find(node->id);
+			if (it != childrenMap.end()) {
+				for (auto* child : it->second) {
+					CollectChainOrder(child, childrenMap, order);
+				}
+			}
+		}
+
 		static void DrawAnimEndGroups(Impl* impl) {
 			// --- Union-Find で「終了トリガーの繋がり」を連結成分にまとめる ---
 			std::map<int32_t, int32_t> uf;
@@ -1403,7 +1417,7 @@ namespace RyoEngine {
 
 			if (validGroups.empty()) return;
 
-			if (ImGui::TreeNodeEx("終了トリガー グループ", ImGuiTreeNodeFlags_DefaultOpen)) {
+			if (ImGui::TreeNodeEx("アニメーション終了連鎖グループ", ImGuiTreeNodeFlags_DefaultOpen)) {
 				std::vector<int32_t> usedCanonicalIds;
 
 				for (auto& group : validGroups) {
@@ -1429,30 +1443,59 @@ namespace RyoEngine {
 
 					ImGui::PushID(canonicalId);
 
-					// --- グループ名の手動変更 ---
+					// --- グループ名（ツリーノード） ---
+					bool open = ImGui::TreeNodeEx(groupName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
 					char nameBuf[128];
-					strncpy_s(nameBuf, sizeof(nameBuf), groupName.c_str(), _TRUNCATE);
-					ImGui::SetNextItemWidth(200.0f);
-					if (ImGui::InputText("グループ名", nameBuf, sizeof(nameBuf))) {
-						groupName = nameBuf;
-					}
 
-					// --- メンバー一覧をコンボボックスで表示 ---
-					std::string preview = groupName + " のメンバー (" + std::to_string(group.second.size()) + ")";
-					if (ImGui::BeginCombo("メンバー", preview.c_str())) {
+					if (open) {
+						// その場でリネームできる入力欄
+						strncpy_s(nameBuf, sizeof(nameBuf), groupName.c_str(), _TRUNCATE);
+						ImGui::SetNextItemWidth(150.0f);
+						if (ImGui::InputText("##RenameGroup", nameBuf, sizeof(nameBuf))) {
+							groupName = nameBuf;
+						}
+						ImGui::SameLine();
+						ImGui::TextDisabled("(名前編集)");
+
+						// --- 「終了トリガー」の連鎖順にメンバーを並べる ---
+						std::map<int32_t, std::vector<WindowData*>> childrenMap;
+						std::vector<WindowData*> roots;
 						for (auto* w : group.second) {
+							if (w->triggerSourceWindowId != -1) {
+								childrenMap[w->triggerSourceWindowId].push_back(w);
+							} else {
+								roots.push_back(w);
+							}
+						}
+
+						std::vector<WindowData*> orderedMembers;
+						for (auto* r : roots) {
+							CollectChainOrder(r, childrenMap, orderedMembers);
+						}
+						// フォールバック：循環参照などで漏れたメンバーがいれば末尾に追加しておく
+						for (auto* w : group.second) {
+							if (std::find(orderedMembers.begin(), orderedMembers.end(), w) == orderedMembers.end()) {
+								orderedMembers.push_back(w);
+							}
+						}
+
+						// ★白点(Bullet)の位置は連鎖の深さに関わらず、全メンバー同じ階層で表示する
+						for (auto* w : orderedMembers) {
 							std::string label = w->name;
 							if (w->triggerSourceWindowId != -1) {
 								std::string sourceName = "?";
 								for (auto& other : impl->m_SubWindows) {
 									if (other->id == w->triggerSourceWindowId) { sourceName = other->name; break; }
 								}
-								label += "  [トリガー: " + sourceName + " 終了時]";
+								label += "（トリガー：" + sourceName + " 終了時）";
 							} else if (w->triggerFlagName != "None") {
-								label += std::string("  [トリガー: ") + w->triggerFlagName + (w->triggerCondition ? " が true]" : " が false]");
+								label += std::string("（トリガー：") + w->triggerFlagName + (w->triggerCondition ? " が True）" : " が False）");
 							} else {
-								label += "  [トリガー: なし]";
+								label += "（トリガー：なし）";
 							}
+
+							ImGui::Bullet();
+							ImGui::SameLine();
 
 							for (size_t i = 0; i < impl->m_SubWindows.size(); ++i) {
 								if (impl->m_SubWindows[i].get() != w) continue;
@@ -1460,11 +1503,11 @@ namespace RyoEngine {
 								if (ImGui::Selectable(label.c_str(), isSelected)) {
 									impl->m_SelectedWindowIdx = (int)i;
 								}
-								if (isSelected) ImGui::SetItemDefaultFocus();
 								break;
 							}
 						}
-						ImGui::EndCombo();
+
+						ImGui::TreePop();
 					}
 
 					ImGui::PopID();
