@@ -40,27 +40,28 @@ namespace RyoEngine {
 
 	void DebugCamera::Update() {
 		
-		
-		float wheel = static_cast<float>(Input::GetMouseWheel());
-		if (std::abs(wheel) > 0) {
-			translate_.z += wheel * wheelSpeed_;
-		}
+		if (isAvailable_) {
+			float wheel = static_cast<float>(Input::GetMouseWheel());
+			if (std::abs(wheel) > 0) {
+				translate_.z += wheel * wheelSpeed_;
+			}
 
-		// ホイールクリック時移動操作可能
-		if (Input::IsMousePush(2)) {
-			translate_.x -= static_cast<float>(Input::GetMouseRelX() * moveSpeed_);
-			translate_.y += static_cast<float>(Input::GetMouseRelY() * moveSpeed_);
-		}
+			// ホイールクリック時移動操作可能
+			if (Input::IsMousePush(2)) {
+				translate_.x -= static_cast<float>(Input::GetMouseRelX() * moveSpeed_);
+				translate_.y += static_cast<float>(Input::GetMouseRelY() * moveSpeed_);
+			}
 
-		// 右クリック時回転操作可能
-		if (Input::IsMousePush(1)) {
-			// マウス移動量取得
-			float mouseX = static_cast<float>(Input::GetMouseRelX());
-			float mouseY = static_cast<float>(Input::GetMouseRelY());
+			// 右クリック時回転操作可能
+			if (Input::IsMousePush(1)) {
+				// マウス移動量取得
+				float mouseX = static_cast<float>(Input::GetMouseRelX());
+				float mouseY = static_cast<float>(Input::GetMouseRelY());
 
-			// 回転の更新
-			rotate_.y += mouseX * rotateSpeed_;
-			rotate_.x += mouseY * rotateSpeed_;
+				// 回転の更新
+				rotate_.y += mouseX * rotateSpeed_;
+				rotate_.x += mouseY * rotateSpeed_;
+			}
 		}
 
 

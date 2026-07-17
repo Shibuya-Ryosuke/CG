@@ -22,6 +22,7 @@ namespace RyoEngine {
 		void SetAspectRatio(float aspectRatio) { aspectRatio_ = aspectRatio; }
 		void SetNearZ(float nearZ) { nearZ_ = nearZ; }
 		void SetFarZ(float farZ) { farZ_ = farZ; }
+		void SetAvailable(bool available) { isAvailable_ = available; }
 
 		// Getter
 		Vector3& GetTranslate(){ return translate_; }

@@ -3,20 +3,30 @@
 using namespace RyoEngine;
 
 void Player::Initialize() {
-	model_ = Model::Create("resources/mirror.obj","aaa");
 	model_->SetTex("resources/flower.png");
+	model_->SetTranslate({ -4.0f,0.0f,0.0f });
 
-	AnimEdit::RegisterTriggerFlag("player : toggleA", &toggleA_);
-	AnimEdit::RegisterTriggerFlag("player : holdM", &hold_M_);
+	speed_ = 0.08f;
+	isHit_ = false;
+	isPlay_ = false;
+	AnimEdit::RegisterFlag("player: hit", &isHit_);
+	AnimEdit::RegisterFlag("player: play", &isPlay_);
 }
 
 void Player::Update(RyoEngine::DebugCamera& debugCamera) {
-	if(Input::TriggerKey(DIK_A)) {
-		toggleA_ = !toggleA_;
+	if (!isHit_) {
+		if (Input::PushKey(DIK_D)) {
+			float currentPosX = model_->GetTranslate().x + speed_;
+			model_->SetTranslate({ currentPosX,model_->GetTranslate().y,model_->GetTranslate().z});
+		}
+
+		if (Input::PushKey(DIK_A)) {
+			float currentPosX = model_->GetTranslate().x - speed_;
+			model_->SetTranslate({ currentPosX,model_->GetTranslate().y,model_->GetTranslate().z });
+		}
 	}
-	hold_M_ = true;
-	if (Input::PushKey(DIK_M)) {
-		hold_M_ = false;
+	if (Input::TriggerKey(DIK_SPACE)) {
+		isPlay_ = true;
 	}
 
 	model_->Update(debugCamera);

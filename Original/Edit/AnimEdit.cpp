@@ -553,7 +553,7 @@ namespace RyoEngine {
 		}
 
 		// キーフレーム関係 (ボタン)
-		static void DrawKeyFrameButtons(WindowData& window, Impl* impl) {
+		static void DrawKeyFrameButtons(WindowData& window) {
 			ImGui::Spacing();
 			if (window.isGameSyncMode) {
 				ImGui::BeginDisabled();
@@ -575,11 +575,13 @@ namespace RyoEngine {
 
 				// 現在のモードに応じた値をモデルから取得
 				Vector3 modelVal = { 0.0f, 0.0f, 0.0f };
-				if (!impl->m_pTargetModels.empty() && impl->m_pTargetModels[0].second) {
-					Model* m = impl->m_pTargetModels[0].second;
+				if (window.currentSelectModel) {
+					Model* m = window.currentSelectModel;
 					if (window.currentTransformMode == static_cast<int>(TransformMode::Translate)) modelVal = m->GetTranslate();
 					else if (window.currentTransformMode == static_cast<int>(TransformMode::Rotate)) modelVal = m->GetRotate();
 					else if (window.currentTransformMode == static_cast<int>(TransformMode::Scale)) modelVal = m->GetScale();
+				} else {
+					Logger::LogError("[AnimEdit]\ncurrentSelectModel is nullptr!");
 				}
 
 				// 保存すべきキーフレームリストの参照を取得
@@ -1186,7 +1188,7 @@ namespace RyoEngine {
 			// 3. 【キーフレーム】
 			// ==========================================
 			if (ImGui::TreeNodeEx("キーフレーム", ImGuiTreeNodeFlags_DefaultOpen)) {
-				DrawKeyFrameButtons(window, impl); // キー挿入対象などのボタン類
+				DrawKeyFrameButtons(window); // キー挿入対象などのボタン類
 				DrawCurveEditor(window);           // カーブエディタ
 				DrawValueInspector(window);        // インスペクタ
 				DrawKeyFrameList(window);          // グループ別キーフレーム一覧
@@ -1709,7 +1711,7 @@ namespace RyoEngine {
 
 	void AnimEdit::Initialize() {}
 
-	void AnimEdit::RegisterTriggerFlag(const std::string& name, bool* ptr) {
+	void AnimEdit::RegisterFlag(const std::string& name, bool* ptr) {
 		if (!ptr) return;
 		auto& flags = GetInstance().m_pImpl->m_RegisteredFlags;
 		for (const auto& pair : flags) {
@@ -1916,6 +1918,7 @@ namespace RyoEngine {
 				w->isPlaying = false;
 				w->currentFrame = 0;
 				w->currentLoopCount = 0;
+				// w->isTrigger = false; ってやりたい
 			}
 			Logger::LogSuccess("[AnimEdit]\nSwitch all windows to gameSync mode.");
 		}

@@ -1,33 +1,17 @@
 {
+    "anim_end_groups": [
+        {
+            "canonical_id": 2,
+            "name": "エネミー死亡時アニメーション"
+        }
+    ],
     "windows": [
         {
-            "current_transform_mode": 0,
+            "current_transform_mode": 1,
             "grouped_keyframes_srt": [
                 [
                     [],
-                    [
-                        {
-                            "easing": 5,
-                            "frame": 0,
-                            "val_x": 0.0,
-                            "val_y": 0.0,
-                            "val_z": 0.0
-                        },
-                        {
-                            "easing": 2,
-                            "frame": 33,
-                            "val_x": -29.459728240966797,
-                            "val_y": 0.0,
-                            "val_z": 0.0
-                        },
-                        {
-                            "easing": 1,
-                            "frame": 50,
-                            "val_x": -5.007640838623047,
-                            "val_y": 0.0,
-                            "val_z": 0.0
-                        }
-                    ],
+                    [],
                     [],
                     [],
                     [],
@@ -37,7 +21,36 @@
                 ],
                 [
                     [],
-                    [],
+                    [
+                        {
+                            "easing": 1,
+                            "frame": 0,
+                            "val_x": 0.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 20,
+                            "val_x": 0.4490000009536743,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 60,
+                            "val_x": -0.44938111305236816,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 80,
+                            "val_x": 0.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        }
+                    ],
                     [],
                     [],
                     [],
@@ -64,21 +77,59 @@
             "is_loop": true,
             "is_open": false,
             "keep_condition": true,
-            "keep_flag_name": "player : holdM",
-            "max_frame": 60,
+            "keep_flag_name": "enemy : isAlive",
+            "max_frame": 80,
             "max_loop_count": 1,
-            "name": "新規ウィンドウ 1",
-            "target_model_name": "aaa",
+            "name": "プレイヤー通常時アニメーション",
+            "target_model_name": "player",
             "trigger_condition": true,
-            "trigger_flag_name": "player : toggleA"
+            "trigger_flag_name": "player: play",
+            "trigger_source_window_id": -1
         },
         {
-            "current_transform_mode": 1,
+            "current_transform_mode": 0,
             "grouped_keyframes_srt": [
                 [
                     [],
-                    [],
-                    [],
+                    [
+                        {
+                            "easing": 1,
+                            "frame": 0,
+                            "val_x": 2.0,
+                            "val_y": 2.1575775146484375,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 60,
+                            "val_x": 12.490188598632813,
+                            "val_y": 2.1575775146484375,
+                            "val_z": 0.0
+                        }
+                    ],
+                    [
+                        {
+                            "easing": 3,
+                            "frame": 0,
+                            "val_x": 2.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 5,
+                            "frame": 18,
+                            "val_x": 4.489197254180908,
+                            "val_y": 1.8571577072143555,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 53,
+                            "val_x": 12.490188598632813,
+                            "val_y": -0.32857394218444824,
+                            "val_z": 0.0
+                        }
+                    ],
                     [],
                     [],
                     [],
@@ -88,22 +139,7 @@
                 [
                     [],
                     [],
-                    [
-                        {
-                            "easing": 2,
-                            "frame": 0,
-                            "val_x": 0.0,
-                            "val_y": 0.0,
-                            "val_z": 0.0
-                        },
-                        {
-                            "easing": 0,
-                            "frame": 55,
-                            "val_x": 0.0,
-                            "val_y": 43.12818145751953,
-                            "val_z": 0.0
-                        }
-                    ],
+                    [],
                     [],
                     [],
                     [],
@@ -126,16 +162,186 @@
             "insert_y": true,
             "insert_z": false,
             "isGameSyncMode": true,
-            "is_loop": true,
+            "is_loop": false,
             "is_open": false,
             "keep_condition": true,
             "keep_flag_name": "None",
-            "max_frame": 60,
+            "max_frame": 90,
             "max_loop_count": 1,
-            "name": "新規ウィンドウ 2",
-            "target_model_name": "aaa",
+            "name": "演出1",
+            "target_model_name": "enemy",
+            "trigger_condition": false,
+            "trigger_flag_name": "enemy : isAlive",
+            "trigger_source_window_id": -1
+        },
+        {
+            "current_transform_mode": 0,
+            "grouped_keyframes_srt": [
+                [
+                    [],
+                    [],
+                    [
+                        {
+                            "easing": 1,
+                            "frame": 0,
+                            "val_x": 2.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 3,
+                            "frame": 119,
+                            "val_x": 2.0,
+                            "val_y": 4.117767333984375,
+                            "val_z": 0.0
+                        }
+                    ],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                ],
+                [
+                    [],
+                    [],
+                    [],
+                    [
+                        {
+                            "easing": 2,
+                            "frame": 0,
+                            "val_x": 0.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 120,
+                            "val_x": 0.0,
+                            "val_y": 0.0,
+                            "val_z": 50.27899932861328
+                        }
+                    ],
+                    [],
+                    [],
+                    [],
+                    []
+                ],
+                [
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                ]
+            ],
+            "id": 3,
+            "insert_x": false,
+            "insert_y": true,
+            "insert_z": false,
+            "isGameSyncMode": true,
+            "is_loop": false,
+            "is_open": false,
+            "keep_condition": true,
+            "keep_flag_name": "None",
+            "max_frame": 120,
+            "max_loop_count": 1,
+            "name": "演出2",
+            "target_model_name": "enemy",
             "trigger_condition": true,
-            "trigger_flag_name": "toggleB"
+            "trigger_flag_name": "None",
+            "trigger_source_window_id": 2
+        },
+        {
+            "current_transform_mode": 1,
+            "grouped_keyframes_srt": [
+                [
+                    [],
+                    [],
+                    [
+                        {
+                            "easing": 3,
+                            "frame": 0,
+                            "val_x": 2.0,
+                            "val_y": 4.117988586425781,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 2,
+                            "frame": 27,
+                            "val_x": 0.0,
+                            "val_y": 7.7452392578125,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 89,
+                            "val_x": 2.0,
+                            "val_y": -28.07964515686035,
+                            "val_z": 0.0
+                        }
+                    ],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                ],
+                [
+                    [],
+                    [
+                        {
+                            "easing": 3,
+                            "frame": 0,
+                            "val_x": 0.0,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        },
+                        {
+                            "easing": 1,
+                            "frame": 28,
+                            "val_x": 3.020000457763672,
+                            "val_y": 0.0,
+                            "val_z": 0.0
+                        }
+                    ],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                ],
+                [
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                ]
+            ],
+            "id": 4,
+            "insert_x": true,
+            "insert_y": false,
+            "insert_z": false,
+            "isGameSyncMode": true,
+            "is_loop": false,
+            "is_open": false,
+            "keep_condition": true,
+            "keep_flag_name": "None",
+            "max_frame": 90,
+            "max_loop_count": 1,
+            "name": "演出4",
+            "target_model_name": "enemy",
+            "trigger_condition": true,
+            "trigger_flag_name": "None",
+            "trigger_source_window_id": 3
         }
     ]
 }
