@@ -48,32 +48,6 @@ namespace RyoEngine {
 			AxisGroup group = AxisGroup::XYZ;
 		};
 
-		// --- イージング適用関数 ---
-		static float ApplyEasing(EasingType type, float t) {
-			switch (type) {
-			case EasingType::Lerp:          return t;
-			case EasingType::EaseInQuad:    return t * t;
-			case EasingType::EaseOutQuad:   return t * (2.0f - t);
-			case EasingType::EaseInOutQuad: return t < 0.5f ? 2.0f * t * t : -1.0f + (4.0f - 2.0f * t) * t;
-			case EasingType::EaseOutBounce:
-				if (t < (1.0f / 2.75f)) {
-					return 7.5625f * t * t;
-				} else if (t < (2.0f / 2.75f)) {
-					t -= (1.5f / 2.75f);
-					return 7.5625f * t * t + 0.75f;
-				} else if (t < (2.5f / 2.75f)) {
-					t -= (2.25f / 2.75f);
-					return 7.5625f * t * t + 0.9375f;
-				} else {
-					t -= (2.625f / 2.75f);
-					return 7.5625f * t * t + 0.984375f;
-				}
-			case EasingType::None:
-			default:
-				return (t >= 1.0f) ? 1.0f : 0.0f;
-			}
-		}
-
 		struct WindowData;
 
 		// アニメーションのフレーム更新、主に再生管理
@@ -108,6 +82,9 @@ namespace RyoEngine {
 							window.currentFrame = window.maxFrame;
 							window.isPlaying = false;
 							window.currentLoopCount = 0;
+							// ★追加：「指定回数の再生終了」による自然停止。
+							// 「他アニメーション終了」トリガーの監視対象になる。
+							window.justEnded = true;
 							break;
 						} else {
 							window.currentFrame = 0;
@@ -183,6 +160,13 @@ namespace RyoEngine {
 			size_t GetCurveCount() override { return 3; }
 			bool IsVisible(size_t curveIndex) override { static_cast<void>(curveIndex); return true; }
 
+			// ★追加：直線/スムーズ固定ではなく、キーフレームのイージング設定を見た目に反映するため
+			// CurveBezier を返す（ImCurveEdit::Edit() 側で GetEasing() を使って曲線を描く）
+			ImCurveEdit::CurveType GetCurveType(size_t curveIndex) const override {
+				static_cast<void>(curveIndex);
+				return ImCurveEdit::CurveBezier;
+			}
+
 			uint32_t GetCurveColor(size_t curveIndex) override;
 
 			// --- ★ 修正：モード(SRT)の次元を追加して配列サイズを返す ---
@@ -196,6 +180,11 @@ namespace RyoEngine {
 
 			// --- ★ 修正：モード(SRT)の次元を追加して追加処理を行う ---
 			void AddPoint(size_t curveIndex, ImVec2 value) override;
+
+			// ★追加：指定した点(pointIndex)に保存されているイージング種別を返す。
+			// カーブエディタの描画側(ImCurveEdit::Edit)が、この点から次の点までの
+			// 区間をどんな曲線で結ぶかを決めるのに使う。
+			RyoEngine::EasingType GetEasing(size_t curveIndex, int pointIndex) const override;
 		};
 #endif // _DEBUG
 
@@ -265,6 +254,17 @@ namespace RyoEngine {
 			bool triggerCondition = true;          // trueのとき開始するか、falseのときか
 			bool lastTriggerState = false;         // 前フレームのフラグ状態
 
+			// ★追加：「他アニメーション終了時」トリガー 関係
+			// triggerFlagName（フラグトリガー）とは同時使用不可。どちらか一方でのみ再生を開始できる。
+			// triggerSourceWindowId が -1以外の場合、こちらが優先され triggerFlagName 側の判定は行わない。
+			int32_t triggerSourceWindowId = -1;    // 終了を監視する対象ウィンドウのID（-1なら無効）
+
+			// ★追加：このウィンドウ自身が「指定回数の再生終了」または
+			// 「再生継続条件(keepFlagName)がfalseになって止められた」ことで停止した、その瞬間にtrueになる。
+			// ResolveAnimationTriggers() が1フレーム参照した後、必ずfalseにリセットする内部用フラグ。
+			// （手動一時停止や、他アニメーションに割り込まれて止まった場合はtrueにならない）
+			bool justEnded = false;
+
 			// ループ・再生回数指定 関係
 			bool isLoop = true;                    // ループするかどうか
 			int32_t maxLoopCount = 1;              // 指定された再生回数 (1以上で有効、0は無限ループなど)
@@ -322,6 +322,12 @@ namespace RyoEngine {
 		// 登録されたフラグリスト
 		std::vector<std::pair<std::string, bool*>> m_RegisteredFlags; // ★追加：登録フラグのリスト
 
+		// ★追加：「他アニメーション終了」トリガーで繋がったウィンドウ群（グループ）の名前。
+		// キーは各グループに属するウィンドウの中で最小のID（＝そのグループの代表ID）。
+		// グループそのものはウィンドウの trigger 設定から毎回自動検出するが、
+		// 名前だけはユーザーが手動で変更できるようにここに保持しておく。
+		std::map<int32_t, std::string> m_AnimEndGroupNames;
+
 		// ★変更：「このモデルには今どのウィンドウのアニメーションを適用するか」を記録するマップ。
 		// 同じモデルに複数のウィンドウ（＝複数のアニメーション）が割り当てられていても、
 		// 実際にSRTへ書き込む(反映する)のは ResolveAnimationTriggers() が選んだ1ウィンドウだけにする。
@@ -347,14 +353,55 @@ namespace RyoEngine {
 		// ・すでに別ウィンドウのアニメーションが再生中のモデルに対して、
 		//   別の要求（トリガーでも継続でもどちらでも）が新たに来た場合は、
 		//   今再生中のものを即座に終了し、後から要求された方を再生する。
-		static void ResolveAnimationTriggers(Impl* impl) {
-			// この関数内では「再生を開始したい」という要求をいったんすべて集めてから、
-			// 最後にモデルごとの調停（優先度判定＋今のアクティブウィンドウの停止）をまとめて行う。
-			// keepFlag経由・trigger経由のどちらの要求も、ここで同じ扱いになる。
-			struct ActivationRequest { WindowData* window; };
-			std::vector<ActivationRequest> requests;
+		//
+		// ★リファクタ：元々1関数だった判定処理を Step0～4 に分割。
+		// 「状態を読むだけの判定」と「状態を書き換える副作用」を関数単位で分離し、
+		// 早期continue/returnがあっても状態更新もれが起きにくい構造にした。
 
-			// --- 1. 継続フラグ(keepFlagName)の処理 ---
+		// 再生要求ひとつぶんのデータ（keepFlag経由・trigger経由を区別しない共通表現）
+		struct ActivationRequest { WindowData* window; };
+
+		// --- Step 0. 「他アニメーション終了時」トリガーの処理 ---
+		// ★ここでは、まだ今フレームの justEnded 更新（Step1/AdvanceFrame）が
+		//   行われる前の状態、つまり「前回のUpdate()時点で終了確定した」ぶんだけを見る。
+		//   フラグトリガーと同時使用不可のため、triggerSourceWindowId が有効な
+		//   ウィンドウは triggerFlagName 側の判定を行わない（Step2側でスキップする）。
+		static void CollectChainEndTriggers(Impl* impl, std::vector<ActivationRequest>& requests) {
+			for (auto& w : impl->m_SubWindows) {
+				WindowData& window = *w;
+				if (!window.isGameSyncMode) continue;
+				if (window.triggerSourceWindowId == -1) continue;
+
+				WindowData* pSource = nullptr;
+				for (auto& sw : impl->m_SubWindows) {
+					if (sw->id == window.triggerSourceWindowId) { pSource = sw.get(); break; }
+				}
+				if (!pSource) continue; // 参照先が見つからない（削除済みなど）
+
+				if (pSource->justEnded) {
+					requests.push_back({ &window });
+				}
+			}
+
+			// ★参照し終えたら必ずリセットする。これにより「終了」判定は1フレームだけ有効になり、
+			//   次に立つのは対象ウィンドウが次に自然停止したときだけになる。
+			for (auto& w : impl->m_SubWindows) {
+				w->justEnded = false;
+			}
+		}
+
+		// --- Step 1. 継続フラグ(keepFlagName)の処理 ---
+		//
+		// ★修正点（バグ修正）：
+		// 1) 旧実装は「条件不成立」の間 continue しており、lastKeepState の更新が
+		//    スキップされていた。そのため一度条件が成立すると lastKeepState が
+		//    window.keepCondition の値のまま凍結し、以後エッジ検出ができなくなっていた。
+		//    → 不成立の分岐でも必ず lastKeepState を更新するように修正。
+		// 2) 旧実装は「lastKeepStateがfalse かつ currentKeepValがtrue」というリテラルな
+		//    true/false遷移しか見ておらず、keepCondition==false（Falseの間再生）の設定では
+		//    構造的に一度も発火しなかった。
+		//    → 「条件成立/不成立」という論理値のエッジ（不成立→成立）で判定するように修正。
+		static void EvaluateKeepFlags(Impl* impl, std::vector<ActivationRequest>& requests) {
 			for (auto& w : impl->m_SubWindows) {
 				WindowData& window = *w;
 				if (!window.isGameSyncMode) continue;
@@ -374,29 +421,41 @@ namespace RyoEngine {
 					window.hasInitializedKeepState = true;
 				}
 
+				// 「フラグの生値」ではなく「keepConditionを満たしているかどうか」で
+				// 現在／前回の状態を評価する（true運用・false運用のどちらでも同じロジックで扱える）
+				bool currentSatisfied = (currentKeepVal == window.keepCondition);
+				bool previousSatisfied = (window.lastKeepState == window.keepCondition);
+
 				// --- 条件を満たしていない場合（強制停止） ---
-				if (currentKeepVal != window.keepCondition) {
+				if (!currentSatisfied) {
 					if (window.isPlaying) {
 						window.isPlaying = false;
+						// ★「再生継続条件がfalseになって止められた」ことによる停止。
+						// 「他アニメーション終了」トリガーの監視対象になる（次フレームのStep0で参照される）。
+						window.justEnded = true;
 					}
-					// 条件不一致の間は判定をスキップ
+					// ★修正：条件不一致の間も lastKeepState は必ず更新する（次回のエッジ検出のため）
+					window.lastKeepState = currentKeepVal;
 					continue;
 				}
 
 				// --- 条件を満たしている場合 ---
-				// lastKeepStateがcurrentKeepValと一致している限り、
-				// !isPlaying && !lastKeepState の条件は成立しないので再生されない
-				if (!window.isPlaying && !window.lastKeepState && currentKeepVal) {
+				// 「不成立→成立」に切り替わった、かつ現在再生していない時だけ再生要求を出す
+				if (!window.isPlaying && !previousSatisfied) {
 					requests.push_back({ &window });
 				}
 				window.lastKeepState = currentKeepVal;
 			}
+		}
 
-			// --- 2. メイントリガー(triggerFlagName)の処理 ---
-			// トリガーが必須なので、"None" のウィンドウはここで除外する。
+		// --- Step 2. メイントリガー(triggerFlagName)の処理 ---
+		// トリガーが必須なので、"None" のウィンドウはここで除外する。
+		static void EvaluateMainTriggers(Impl* impl, std::vector<ActivationRequest>& requests) {
 			for (auto& w : impl->m_SubWindows) {
 				WindowData& window = *w;
 				if (!window.isGameSyncMode) continue;
+				// ★「他アニメーション終了」トリガー使用中はフラグトリガーを無効にする（同時使用不可）
+				if (window.triggerSourceWindowId != -1) continue;
 				// ★「トリガー機能がNoneの場合再生をしない」
 				if (window.triggerFlagName == "None") continue;
 
@@ -418,12 +477,12 @@ namespace RyoEngine {
 				}
 				window.lastTriggerState = currentVal;
 			}
+		}
 
-			if (requests.empty()) return;
-
-			// --- 3. モデルごとに勝者を決定する ---
-			// 同フレームで同じモデルに対し複数の再生要求が重なっていたら、id が大きい方を優先する。
-			// （要求の発生源が keepFlag でも trigger でも区別しない）
+		// --- Step 3. モデルごとに勝者を決定する ---
+		// 同フレームで同じモデルに対し複数の再生要求が重なっていたら、id が大きい方を優先する。
+		// （要求の発生源が keepFlag でも trigger でも区別しない）
+		static std::map<Model*, WindowData*> ResolveWinners(const std::vector<ActivationRequest>& requests) {
 			std::map<Model*, WindowData*> winners;
 			for (auto& req : requests) {
 				Model* model = req.window->currentSelectModel;
@@ -434,8 +493,11 @@ namespace RyoEngine {
 					winners[model] = req.window;
 				}
 			}
+			return winners;
+		}
 
-			// --- 4. 勝者を再生開始。今再生中の別ウィンドウがいれば即座に打ち切って切り替える ---
+		// --- Step 4. 勝者を再生開始。今再生中の別ウィンドウがいれば即座に打ち切って切り替える ---
+		static void ApplyWinners(Impl* impl, const std::map<Model*, WindowData*>& winners) {
 			for (auto& pair : winners) {
 				Model* model = pair.first;
 				WindowData* winner = pair.second;
@@ -466,6 +528,22 @@ namespace RyoEngine {
 				winner->isPlaying = true;
 				impl->m_ActiveAnimationWindowId[model] = winner->id;
 			}
+		}
+
+		static void ResolveAnimationTriggers(Impl* impl) {
+			// この関数内では「再生を開始したい」という要求をいったんすべて集めてから、
+			// 最後にモデルごとの調停（優先度判定＋今のアクティブウィンドウの停止）をまとめて行う。
+			// keepFlag経由・trigger経由のどちらの要求も、ここで同じ扱いになる。
+			std::vector<ActivationRequest> requests;
+
+			CollectChainEndTriggers(impl, requests);
+			EvaluateKeepFlags(impl, requests);
+			EvaluateMainTriggers(impl, requests);
+
+			if (requests.empty()) return;
+
+			std::map<Model*, WindowData*> winners = ResolveWinners(requests);
+			ApplyWinners(impl, winners);
 		}
 
 		// =========================================================================
@@ -515,7 +593,7 @@ namespace RyoEngine {
 		}
 
 		// キーフレーム関係 (ボタン)
-		static void DrawKeyFrameButtons(WindowData& window, Impl* impl) {
+		static void DrawKeyFrameButtons(WindowData& window) {
 			ImGui::Spacing();
 			if (window.isGameSyncMode) {
 				ImGui::BeginDisabled();
@@ -537,11 +615,13 @@ namespace RyoEngine {
 
 				// 現在のモードに応じた値をモデルから取得
 				Vector3 modelVal = { 0.0f, 0.0f, 0.0f };
-				if (!impl->m_pTargetModels.empty() && impl->m_pTargetModels[0].second) {
-					Model* m = impl->m_pTargetModels[0].second;
+				if (window.currentSelectModel) {
+					Model* m = window.currentSelectModel;
 					if (window.currentTransformMode == static_cast<int>(TransformMode::Translate)) modelVal = m->GetTranslate();
 					else if (window.currentTransformMode == static_cast<int>(TransformMode::Rotate)) modelVal = m->GetRotate();
 					else if (window.currentTransformMode == static_cast<int>(TransformMode::Scale)) modelVal = m->GetScale();
+				} else {
+					Logger::LogError("[AnimEdit]\ncurrentSelectModel is nullptr!");
 				}
 
 				// 保存すべきキーフレームリストの参照を取得
@@ -720,8 +800,10 @@ namespace RyoEngine {
 						}
 
 						// イージングの選択
+						// ★変更：このキーから「次のキーへ向かう」区間のイージングを表す、という
+						// 一般的な向きに変更したため、ラベルもそれに合わせる。
 						int easingIdx = static_cast<int>(it->easing);
-						if (ImGui::Combo("Easing", &easingIdx, easingNames, IM_ARRAYSIZE(easingNames))) {
+						if (ImGui::Combo("Easing (次のキーへ)", &easingIdx, easingNames, IM_ARRAYSIZE(easingNames))) {
 							it->easing = static_cast<EasingType>(easingIdx);
 						}
 					}
@@ -845,7 +927,9 @@ namespace RyoEngine {
 						// その間において全体の何割にいるのかの進捗率を計算
 						float t = static_cast<float>(currentFrame - prevKey.frame) / static_cast<float>(frameDiff);
 						// 進捗度に応じたイージングの適用
-						float easedT = ApplyEasing(nextKey.easing, t);
+						// ★変更：イージングは「前のキー→今のキー」ではなく「今のキー→次のキー」を
+						// 表す方が一般的なので、区間の始点である prevKey 側の設定を使う。
+						float easedT = ApplyEasing(prevKey.easing, t);
 
 						// 補間
 						float pVal = (axisIndex == 0 ? prevKey.value.x : (axisIndex == 1 ? prevKey.value.y : prevKey.value.z));
@@ -884,6 +968,7 @@ namespace RyoEngine {
 		// モデルにSRTを入れる処理
 		static void UpdateAnimationAnimate(WindowData& window, Impl* impl) {
 			if (impl->m_pTargetModels.empty() || !impl->m_pTargetModels[0].second) return;
+			if (!window.isPlaying && window.isGameSyncMode) return;
 			Model* targetModel = window.currentSelectModel;
 			// ★追加：対象モデルが見つからない（再ロード時にリンクできなかった等）場合は
 			// 何もせず抜ける。ここが無いと nullptr を触ってクラッシュする。
@@ -989,6 +1074,7 @@ namespace RyoEngine {
 					window.firstFrame = copySource.firstFrame;
 					window.maxFrame = copySource.maxFrame;
 					window.triggerFlagName = copySource.triggerFlagName;
+					window.triggerSourceWindowId = copySource.triggerSourceWindowId;
 					window.keepFlagName = copySource.keepFlagName;
 					window.isLoop = copySource.isLoop;
 					// キーフレームをコピー (ここを修正)
@@ -1143,7 +1229,7 @@ namespace RyoEngine {
 			// 3. 【キーフレーム】
 			// ==========================================
 			if (ImGui::TreeNodeEx("キーフレーム", ImGuiTreeNodeFlags_DefaultOpen)) {
-				DrawKeyFrameButtons(window, impl); // キー挿入対象などのボタン類
+				DrawKeyFrameButtons(window); // キー挿入対象などのボタン類
 				DrawCurveEditor(window);           // カーブエディタ
 				DrawValueInspector(window);        // インスペクタ
 				DrawKeyFrameList(window);          // グループ別キーフレーム一覧
@@ -1166,24 +1252,77 @@ namespace RyoEngine {
 
 				// --- トリガー開始の設定 ---
 				// ★変更：on/off専用チェックボックスは廃止。"None"を選べば無効、それ以外なら有効。
-				ImGui::Text("トリガー開始設定（Noneのままでは再生されません）");
+				// ★追加：「フラグでトリガー」と「他アニメーション終了でトリガー」は同時使用不可。
+				//   どちらか一方を選ぶと、もう片方は自動的に無効化される。
+				ImGui::Text("トリガー開始設定（いずれか一方のみ有効。両方Noneのままでは再生されません）");
 				{
 					ImGui::Indent();
-					std::string combo_preview = window.triggerFlagName;
-					if (ImGui::BeginCombo("対象フラグ", combo_preview.c_str())) {
-						if (ImGui::Selectable("None", window.triggerFlagName == "None")) { window.triggerFlagName = "None"; }
-						for (const auto& pair : impl->m_RegisteredFlags) {
-							if (ImGui::Selectable(pair.first.c_str(), window.triggerFlagName == pair.first)) {
-								window.triggerFlagName = pair.first;
-								window.lastTriggerState = *pair.second;
+
+					bool useAnimEndTrigger = (window.triggerSourceWindowId != -1);
+
+					if (ImGui::RadioButton("フラグでトリガー", !useAnimEndTrigger)) {
+						// ★他アニメーション終了トリガーを無効化してこちらへ切り替え
+						window.triggerSourceWindowId = -1;
+						useAnimEndTrigger = false;
+					}
+					ImGui::SameLine();
+					if (ImGui::RadioButton("他アニメーション終了でトリガー", useAnimEndTrigger)) {
+						// ★フラグトリガーを無効化してこちらへ切り替え
+						window.triggerFlagName = "None";
+						if (window.triggerSourceWindowId == -1) {
+							// 初回切り替え時は、自分以外の先頭のウィンドウを仮選択しておく
+							for (auto& other : impl->m_SubWindows) {
+								if (other->id != window.id) {
+									window.triggerSourceWindowId = other->id;
+									break;
+								}
 							}
 						}
-						ImGui::EndCombo();
+						useAnimEndTrigger = true;
 					}
-					ImGui::Text("開始条件:"); ImGui::SameLine();
-					if (ImGui::RadioButton("True になったとき", window.triggerCondition == true)) { window.triggerCondition = true; }
-					ImGui::SameLine();
-					if (ImGui::RadioButton("False になったとき", window.triggerCondition == false)) { window.triggerCondition = false; }
+
+					ImGui::Spacing();
+
+					if (!useAnimEndTrigger) {
+						// --- フラグトリガーの設定 ---
+						std::string combo_preview = window.triggerFlagName;
+						if (ImGui::BeginCombo("対象フラグ", combo_preview.c_str())) {
+							if (ImGui::Selectable("None", window.triggerFlagName == "None")) { window.triggerFlagName = "None"; }
+							for (const auto& pair : impl->m_RegisteredFlags) {
+								if (ImGui::Selectable(pair.first.c_str(), window.triggerFlagName == pair.first)) {
+									window.triggerFlagName = pair.first;
+									window.lastTriggerState = *pair.second;
+								}
+							}
+							ImGui::EndCombo();
+						}
+						ImGui::Text("開始条件:"); ImGui::SameLine();
+						if (ImGui::RadioButton("True になったとき", window.triggerCondition == true)) { window.triggerCondition = true; }
+						ImGui::SameLine();
+						if (ImGui::RadioButton("False になったとき", window.triggerCondition == false)) { window.triggerCondition = false; }
+					} else {
+						// --- 他アニメーション終了トリガーの設定 ---
+						std::string sourcePreview = "未選択";
+						for (auto& other : impl->m_SubWindows) {
+							if (other->id == window.triggerSourceWindowId) {
+								sourcePreview = other->name;
+								break;
+							}
+						}
+						if (ImGui::BeginCombo("対象アニメーション", sourcePreview.c_str())) {
+							for (auto& other : impl->m_SubWindows) {
+								if (other->id == window.id) continue; // 自分自身は選択不可
+								bool isSelected = (other->id == window.triggerSourceWindowId);
+								if (ImGui::Selectable(other->name.c_str(), isSelected)) {
+									window.triggerSourceWindowId = other->id;
+								}
+								if (isSelected) ImGui::SetItemDefaultFocus();
+							}
+							ImGui::EndCombo();
+						}
+						ImGui::TextDisabled("(対象アニメーションが「指定回数の再生終了」または");
+						ImGui::TextDisabled(" 「再生継続条件がfalseになって停止」した瞬間にトリガーします)");
+					}
 					ImGui::Unindent();
 				}
 
@@ -1253,6 +1392,180 @@ namespace RyoEngine {
 
 			ImGui::NewLine();
 			ImGui::End();
+		}
+
+		// ★追加：「他アニメーション終了」トリガーで繋がったウィンドウ群を自動検出し、
+		// グループ[i]としてまとめて表示する。グループ名だけは手動で変更できる。
+		//
+		// 例)
+		// グループ1
+		//   AttackAnimation (トリガー: isJumpがtrue)
+		//   MoveAnimation(トリガー: AttackAnimation終了時)
+		//   StopAnimation(トリガー: MoveAnimation終了時)
+
+		// ★追加：グループ内のメンバーを「起点(フラグトリガー/トリガーなし) → 終了トリガーで連鎖する子」の
+		// 順番に並べるための補助関数。同じ階層に複数の子がいても深さ分インデントは増やさない
+		// （呼び出し側で常に同じブレット階層として描画する）。
+		static void CollectChainOrder(WindowData* node, std::map<int32_t, std::vector<WindowData*>>& childrenMap, std::vector<WindowData*>& order) {
+			order.push_back(node);
+			auto it = childrenMap.find(node->id);
+			if (it != childrenMap.end()) {
+				for (auto* child : it->second) {
+					CollectChainOrder(child, childrenMap, order);
+				}
+			}
+		}
+
+		static void DrawAnimEndGroups(Impl* impl) {
+			// --- Union-Find で「終了トリガーの繋がり」を連結成分にまとめる ---
+			std::map<int32_t, int32_t> uf;
+			for (auto& w : impl->m_SubWindows) uf[w->id] = w->id;
+
+			auto find = [&](int32_t x) {
+				while (uf[x] != x) {
+					uf[x] = uf[uf[x]];
+					x = uf[x];
+				}
+				return x;
+			};
+			auto unite = [&](int32_t a, int32_t b) {
+				int32_t ra = find(a);
+				int32_t rb = find(b);
+				if (ra == rb) return;
+				// ★グループの識別を安定させるため、IDが小さい方を根にする
+				if (ra < rb) uf[rb] = ra;
+				else uf[ra] = rb;
+			};
+
+			for (auto& w : impl->m_SubWindows) {
+				if (w->triggerSourceWindowId == -1) continue;
+				if (uf.find(w->triggerSourceWindowId) == uf.end()) continue; // 参照先が存在しない
+				unite(w->id, w->triggerSourceWindowId);
+			}
+
+			// --- 根ごとにメンバーを集める ---
+			std::map<int32_t, std::vector<WindowData*>> groups;
+			for (auto& w : impl->m_SubWindows) {
+				int32_t root = find(w->id);
+				groups[root].push_back(w.get());
+			}
+
+			// --- メンバーが2つ以上（＝実際に終了トリガーで繋がっている）根だけを対象にする ---
+			std::vector<std::pair<int32_t, std::vector<WindowData*>>> validGroups;
+			for (auto& pair : groups) {
+				if (pair.second.size() >= 2) {
+					validGroups.push_back(pair);
+				}
+			}
+
+			if (validGroups.empty()) return;
+
+			if (ImGui::TreeNodeEx("アニメーション終了連鎖グループ", ImGuiTreeNodeFlags_DefaultOpen)) {
+				std::vector<int32_t> usedCanonicalIds;
+
+				for (auto& group : validGroups) {
+					int32_t canonicalId = group.first;
+					usedCanonicalIds.push_back(canonicalId);
+
+					// ★名前が未登録なら、使われていない最小の番号でデフォルト名を割り当てる
+					if (impl->m_AnimEndGroupNames.find(canonicalId) == impl->m_AnimEndGroupNames.end()) {
+						int32_t n = 1;
+						while (true) {
+							std::string candidate = "グループ" + std::to_string(n);
+							bool used = false;
+							for (auto& np : impl->m_AnimEndGroupNames) {
+								if (np.second == candidate) { used = true; break; }
+							}
+							if (!used) break;
+							n++;
+						}
+						impl->m_AnimEndGroupNames[canonicalId] = "グループ" + std::to_string(n);
+					}
+
+					std::string& groupName = impl->m_AnimEndGroupNames[canonicalId];
+
+					ImGui::PushID(canonicalId);
+
+					// --- グループ名（ツリーノード） ---
+					bool open = ImGui::TreeNodeEx(groupName.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+					char nameBuf[128];
+
+					if (open) {
+						// その場でリネームできる入力欄
+						strncpy_s(nameBuf, sizeof(nameBuf), groupName.c_str(), _TRUNCATE);
+						ImGui::SetNextItemWidth(150.0f);
+						if (ImGui::InputText("##RenameGroup", nameBuf, sizeof(nameBuf))) {
+							groupName = nameBuf;
+						}
+						ImGui::SameLine();
+						ImGui::TextDisabled("(名前編集)");
+
+						// --- 「終了トリガー」の連鎖順にメンバーを並べる ---
+						std::map<int32_t, std::vector<WindowData*>> childrenMap;
+						std::vector<WindowData*> roots;
+						for (auto* w : group.second) {
+							if (w->triggerSourceWindowId != -1) {
+								childrenMap[w->triggerSourceWindowId].push_back(w);
+							} else {
+								roots.push_back(w);
+							}
+						}
+
+						std::vector<WindowData*> orderedMembers;
+						for (auto* r : roots) {
+							CollectChainOrder(r, childrenMap, orderedMembers);
+						}
+						// フォールバック：循環参照などで漏れたメンバーがいれば末尾に追加しておく
+						for (auto* w : group.second) {
+							if (std::find(orderedMembers.begin(), orderedMembers.end(), w) == orderedMembers.end()) {
+								orderedMembers.push_back(w);
+							}
+						}
+
+						// ★白点(Bullet)の位置は連鎖の深さに関わらず、全メンバー同じ階層で表示する
+						for (auto* w : orderedMembers) {
+							std::string label = w->name;
+							if (w->triggerSourceWindowId != -1) {
+								std::string sourceName = "?";
+								for (auto& other : impl->m_SubWindows) {
+									if (other->id == w->triggerSourceWindowId) { sourceName = other->name; break; }
+								}
+								label += "（トリガー：" + sourceName + " 終了時）";
+							} else if (w->triggerFlagName != "None") {
+								label += std::string("（トリガー：") + w->triggerFlagName + (w->triggerCondition ? " が True）" : " が False）");
+							} else {
+								label += "（トリガー：なし）";
+							}
+
+							ImGui::Bullet();
+							ImGui::SameLine();
+
+							for (size_t i = 0; i < impl->m_SubWindows.size(); ++i) {
+								if (impl->m_SubWindows[i].get() != w) continue;
+								bool isSelected = (impl->m_SelectedWindowIdx == (int)i);
+								if (ImGui::Selectable(label.c_str(), isSelected)) {
+									impl->m_SelectedWindowIdx = (int)i;
+								}
+								break;
+							}
+						}
+
+						ImGui::TreePop();
+					}
+
+					ImGui::PopID();
+					ImGui::Spacing();
+				}
+
+				// ★使われなくなったグループの名前は登録から掃除しておく
+				for (auto it = impl->m_AnimEndGroupNames.begin(); it != impl->m_AnimEndGroupNames.end(); ) {
+					bool stillUsed = std::find(usedCanonicalIds.begin(), usedCanonicalIds.end(), it->first) != usedCanonicalIds.end();
+					if (!stillUsed) it = impl->m_AnimEndGroupNames.erase(it);
+					else ++it;
+				}
+
+				ImGui::TreePop();
+			}
 		}
 #endif // _DEBUG
 	};
@@ -1391,6 +1704,38 @@ namespace RyoEngine {
 			std::sort(keys.begin(), keys.end(), [](const KeyFrame& a, const KeyFrame& b) { return a.frame < b.frame; });
 		}
 	}
+
+	// ★追加：pointIndex番目の点が実際にどのキーフレームなのかを、
+	// GetPoints/EditPoint と同じ「フレーム順に並べ直す」ロジックで特定し、
+	// そのキーフレームに保存されているイージング種別を返す。
+	RyoEngine::EasingType AnimEdit::Impl::WindowDelegate::GetEasing(size_t curveIndex, int pointIndex) const {
+		if (!m_pOwnerWindow) return RyoEngine::EasingType::Lerp;
+		auto& window = *m_pOwnerWindow;
+		int mode = window.currentTransformMode;
+
+		struct KeyRef { AxisGroup group; size_t index; int32_t frame; };
+		std::vector<KeyRef> refs;
+
+		for (size_t i = 1; i < static_cast<size_t>(AxisGroup::MaxGroups); ++i) {
+			AxisGroup g = static_cast<AxisGroup>(i);
+			bool include = false;
+			if (curveIndex == 0) include = (g == AxisGroup::X || g == AxisGroup::XY || g == AxisGroup::XZ || g == AxisGroup::XYZ);
+			if (curveIndex == 1) include = (g == AxisGroup::Y || g == AxisGroup::XY || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+			if (curveIndex == 2) include = (g == AxisGroup::Z || g == AxisGroup::XZ || g == AxisGroup::YZ || g == AxisGroup::XYZ);
+
+			if (include) {
+				for (size_t idx = 0; idx < window.groupedKeyFrames[mode][i].size(); ++idx) {
+					refs.push_back({ g, idx, window.groupedKeyFrames[mode][i][idx].frame });
+				}
+			}
+		}
+		std::sort(refs.begin(), refs.end(), [](const KeyRef& a, const KeyRef& b) { return a.frame < b.frame; });
+
+		if (pointIndex < 0 || pointIndex >= static_cast<int>(refs.size())) return RyoEngine::EasingType::Lerp;
+
+		const auto& targetRef = refs[pointIndex];
+		return window.groupedKeyFrames[mode][static_cast<size_t>(targetRef.group)][targetRef.index].easing;
+	}
 #endif // _DEBUG
 
 
@@ -1407,7 +1752,7 @@ namespace RyoEngine {
 
 	void AnimEdit::Initialize() {}
 
-	void AnimEdit::RegisterTriggerFlag(const std::string& name, bool* ptr) {
+	void AnimEdit::RegisterFlag(const std::string& name, bool* ptr) {
 		if (!ptr) return;
 		auto& flags = GetInstance().m_pImpl->m_RegisteredFlags;
 		for (const auto& pair : flags) {
@@ -1614,9 +1959,15 @@ namespace RyoEngine {
 				w->isPlaying = false;
 				w->currentFrame = 0;
 				w->currentLoopCount = 0;
+				// w->isTrigger = false; ってやりたい
 			}
 			Logger::LogSuccess("[AnimEdit]\nSwitch all windows to gameSync mode.");
 		}
+
+		ImGui::Separator();
+
+		// ★追加：「他アニメーション終了」トリガーで繋がったアニメーション群をグループとして表示
+		Impl::DrawAnimEndGroups(impl);
 
 		ImGui::Separator();
 
@@ -1741,6 +2092,7 @@ namespace RyoEngine {
 
 			window_json["trigger_flag_name"] = w->triggerFlagName; // . から -> に変更
 			window_json["trigger_condition"] = w->triggerCondition; // . から -> に変更
+			window_json["trigger_source_window_id"] = w->triggerSourceWindowId; // ★追加：他アニメーション終了トリガー
 
 			window_json["is_loop"] = w->isLoop;               // . から -> に変更
 			window_json["max_loop_count"] = w->maxLoopCount; // . から -> に変更
@@ -1779,6 +2131,16 @@ namespace RyoEngine {
 		}
 		j_root["windows"] = j_windows;
 
+		// ★追加：「他アニメーション終了」トリガーで繋がったグループの手動リネーム名を保存
+		json j_groups = json::array();
+		for (const auto& pair : impl->m_AnimEndGroupNames) {
+			json g;
+			g["canonical_id"] = pair.first;
+			g["name"] = pair.second;
+			j_groups.push_back(g);
+		}
+		j_root["anim_end_groups"] = j_groups;
+
 		std::ofstream file(filePath);
 		if (file.is_open()) {
 			file << j_root.dump(4);
@@ -1799,6 +2161,16 @@ namespace RyoEngine {
 	Impl* impl = instance.m_pImpl;
 	impl->m_SubWindows.clear();
 	impl->m_SelectedWindowIdx = -1;
+
+	// ★追加：「他アニメーション終了」トリガーのグループ名を復元
+	impl->m_AnimEndGroupNames.clear();
+	if (j_root.contains("anim_end_groups") && j_root["anim_end_groups"].is_array()) {
+		for (const auto& g : j_root["anim_end_groups"]) {
+			if (g.contains("canonical_id") && g.contains("name")) {
+				impl->m_AnimEndGroupNames[g["canonical_id"].get<int32_t>()] = g["name"].get<std::string>();
+			}
+		}
+	}
 
 	// ★変更：Model 側の animEditID は「1モデルにつき1つ」しか保持できず、
 	// 同じモデルを複数ウィンドウで参照するケースでは正しく復元できないため廃止。
@@ -1826,6 +2198,9 @@ namespace RyoEngine {
 				w->triggerFlagName = item.value("trigger_flag_name", "None");
 				w->triggerCondition = item.value("trigger_condition", true);
 				w->lastTriggerState = false;
+
+				w->triggerSourceWindowId = item.value("trigger_source_window_id", -1);
+				w->justEnded = false;
 
 				w->isLoop = item.value("is_loop", true);
 				w->maxLoopCount = item.value("max_loop_count", 1);

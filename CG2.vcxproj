@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="enemy\enemy.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Original\2D\Sprite.cpp" />
     <ClCompile Include="Original\2D\SpriteCommon.cpp" />
@@ -102,6 +103,7 @@
     <ClCompile Include="player\player.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="enemy\enemy.h" />
     <ClInclude Include="Original\2D\Sprite.h" />
     <ClInclude Include="Original\2D\SpriteCommon.h" />
     <ClInclude Include="Original\3D\Model.h" />

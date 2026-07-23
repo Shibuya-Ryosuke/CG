@@ -266,6 +266,39 @@ namespace ImCurveEdit
                   draw_list->AddLine(pos1, pos2, curveColor, 1.3f);
                } // substep
             }
+            else if (curveType == CurveBezier)
+            {
+               // ★追加：この区間の開始点(p)に保存されているイージング種別に応じて、
+               // p → p+1 を結ぶ曲線の曲がり方を変える。
+               // （p のイージングが「pから次の点へ向かう区間」を表す、という規約）
+               RyoEngine::EasingType easing = delegate.GetEasing(static_cast<size_t>(c), static_cast<int>(p));
+
+               size_t subStepCount = 20;
+               float step = 1.f / float(subStepCount - 1);
+               for (size_t substep = 0; substep < subStepCount - 1; substep++)
+               {
+                  float t = float(substep) * step;
+                  float t2 = t + step;
+
+                  const ImVec2 sp1 = ImLerp(p1, p2, t);
+                  const ImVec2 sp2 = ImLerp(p1, p2, t2);
+
+                  const float rt1 = RyoEngine::ApplyEasing(easing, t);
+                  const float rt2 = RyoEngine::ApplyEasing(easing, t2);
+
+                  const ImVec2 pos1 = ImVec2(sp1.x, ImLerp(p1.y, p2.y, rt1)) * viewSize + offset;
+                  const ImVec2 pos2 = ImVec2(sp2.x, ImLerp(p1.y, p2.y, rt2)) * viewSize + offset;
+
+                  if (distance(io.MousePos.x, io.MousePos.y, pos1.x, pos1.y, pos2.x, pos2.y) < 8.f && !scrollingV)
+                  {
+                     localOverCurve = int(c);
+                     overCurve = int(c);
+                     overCurveOrPoint = true;
+                  }
+
+                  draw_list->AddLine(pos1, pos2, curveColor, 1.3f);
+               } // substep
+            }
             else if (curveType == CurveDiscrete)
             {
                ImVec2 dp1 = p1 * viewSize + offset;

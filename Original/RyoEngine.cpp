@@ -10,9 +10,13 @@ namespace RyoEngine {
 #ifdef _DEBUG
     namespace {
         Vector2 viewSize_{ 720.0f, 405.0f };
+        bool onTheGameView = false;
     }
     void SetImGuiViewSize(Vector2 viewSize) {
         viewSize_ = viewSize;
+    }
+    bool GetOnTheGameView() {
+        return onTheGameView;
     }
 #else
     void SetImGuiViewSize(Vector2 viewSize) {};
@@ -176,6 +180,11 @@ namespace RyoEngine {
         D3D12_GPU_DESCRIPTOR_HANDLE gameTexHandle = dxCommon_->GetGameTextureGPUHandle();
         ImVec2 viewSize{ viewSize_.x,viewSize_.y };
         ImGui::Image(reinterpret_cast<ImTextureID>(gameTexHandle.ptr), viewSize);
+        if (ImGui::IsItemHovered()) {
+            onTheGameView = true;
+        } else {
+            onTheGameView = false;
+        }
         ImGui::End();
 
         // fps

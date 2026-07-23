@@ -27,7 +27,7 @@ namespace RyoEngine {
 		static void SetTargetModel(Model* model, const std::string& name);
 
 		// フラグを登録
-		static void RegisterTriggerFlag(const std::string& name, bool* ptr);
+		static void RegisterFlag(const std::string& name, bool* ptr);
 
 		// ★以下はエディタUI専用（ImGuiに依存）。デバッグビルドでのみ実体を持つ。
 		// リリースビルドでは何もしない関数として扱われる。
