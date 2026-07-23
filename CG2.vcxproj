@@ -11,7 +11,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="enemy\enemy.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Original\2D\Sprite.cpp" />
     <ClCompile Include="Original\2D\SpriteCommon.cpp" />
@@ -100,10 +99,8 @@
     <ClCompile Include="Original\RyoEngine.cpp" />
     <ClCompile Include="Original\Reflect\ReflectCommon.cpp" />
     <ClCompile Include="Original\Reflect\ReflectModel.cpp" />
-    <ClCompile Include="player\player.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="enemy\enemy.h" />
     <ClInclude Include="Original\2D\Sprite.h" />
     <ClInclude Include="Original\2D\SpriteCommon.h" />
     <ClInclude Include="Original\3D\Model.h" />
@@ -149,7 +146,6 @@
     <ClInclude Include="Original\RyoEngine.h" />
     <ClInclude Include="Original\Reflect\ReflectCommon.h" />
     <ClInclude Include="Original\Reflect\ReflectModel.h" />
-    <ClInclude Include="player\player.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Model\Model.hlsli">
