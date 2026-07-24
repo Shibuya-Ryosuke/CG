@@ -12,10 +12,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     DebugCamera* debugCamera = new DebugCamera();
     debugCamera->SetTranslate({0.0f,1.0f, -40.0f });
 
-    // 使うときだけ
-    // AnimEdit::Initialize();
-    // AnimEdit::LoadSettings();
-
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
@@ -24,8 +20,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // -- 更新処理（Update） --
         // ----------------------
-        
-        // AnimEdit::Update();
 
         debugCamera->SetAvailable(RyoEngine::GetOnTheGameView());
         debugCamera->Update();

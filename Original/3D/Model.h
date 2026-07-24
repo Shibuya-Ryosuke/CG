@@ -20,12 +20,13 @@ namespace RyoEngine {
         void Draw();
 
         /// <summary>
-        /// モデルの作成 (new代わりに使用)
+        /// モデルの作成
         /// </summary>
-        /// <param name="filePath">objファイルまでのファイルパス</param>
+        /// <param name="filePath">objまでのファイルパス</param>
+        /// <param name="registAnimEdit">アニメエディタに登録するか</param>
+        /// <param name="name">登録名</param>
         /// <returns></returns>
-        static Model* Create(const std::string& filePath, const std::string& name = "NoName");
-
+        static Model* Create(const std::string& filePath, bool registAnimEdit = false, const std::string& name = "NoName");
         /// <summary>
         /// モデルの作成 (代入・書き換え時に使用)
         /// </summary>

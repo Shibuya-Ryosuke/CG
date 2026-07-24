@@ -118,13 +118,14 @@ namespace RyoEngine {
         commandList->DrawInstanced(vertexCount_, 1, 0, 0);
     }
 
-    Model* Model::Create(const std::string& filePath, const std::string& name) {
+    Model* Model::Create(const std::string& filePath, bool registAnimEdit = false, const std::string& name = "NoName") {
         Model* instance = new Model();
         instance->Initialize(); // 共通の初期化
         instance->CreateModel(filePath); // モデル読み込みとリソース作成[cite: 17]
         instance->textureHandle_ = TextureManager::GetInstance()->GetWhiteTex();
-        
-        AnimEdit::SetTargetModel(instance, name);
+        if (registAnimEdit) {
+            AnimEdit::SetTargetModel(instance, name);
+        }
 
         return instance;
     }
