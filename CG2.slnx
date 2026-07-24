@@ -5,6 +5,8 @@
   <Folder Name="/ソリューション項目/">
     <File Path=".editorconfig" />
   </Folder>
-  <Project Path="CG2.vcxproj" Id="abf1860e-e9d4-41ff-8782-8801700ca81c" />
+  <Project Path="CG2.vcxproj" Id="abf1860e-e9d4-41ff-8782-8801700ca81c">
+    <BuildDependency Project="Original/Externals/DirectXTex/DirectXTex_Desktop_2022_Win10.vcxproj" />
+  </Project>
   <Project Path="Original/Externals/DirectXTex/DirectXTex_Desktop_2022_Win10.vcxproj" Id="371b9fa9-4c90-4ac6-a123-aced756d6c77" />
 </Solution>
