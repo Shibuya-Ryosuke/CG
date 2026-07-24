@@ -146,6 +146,11 @@ namespace RyoEngine {
 		/// <param name="color">色</param>
 		void SetColor(const Vector4& color) { materialData_->color = color; }
 		/// <summary>
+		/// ランバートのセット
+		/// </summary>
+		/// <param name="mode"></param>
+		void SetLambert(const ShadingMode& mode) { materialData_->shadingMode = mode; }
+		/// <summary>
 		/// テクスチャのセット
 		/// </summary>
 		/// <param name="textureHandle">テクスチャハンドル</param>
