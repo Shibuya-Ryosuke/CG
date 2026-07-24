@@ -118,7 +118,7 @@ namespace RyoEngine {
         commandList->DrawInstanced(vertexCount_, 1, 0, 0);
     }
 
-    Model* Model::Create(const std::string& filePath, bool registAnimEdit = false, const std::string& name = "NoName") {
+    Model* Model::Create(const std::string& filePath, bool registAnimEdit, const std::string& name) {
         Model* instance = new Model();
         instance->Initialize(); // 共通の初期化
         instance->CreateModel(filePath); // モデル読み込みとリソース作成[cite: 17]
