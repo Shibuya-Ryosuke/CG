@@ -83,6 +83,11 @@ namespace RyoEngine {
 		/// <returns>色</returns>
 		const Vector4& GetColor()     const { return materialData_->color; }
 		/// <summary>
+		/// ランバートの取得
+		/// </summary>
+		/// <returns></returns>
+		const ShadingMode& GetLambert() const { return materialData_->shadingMode; }
+		/// <summary>
 		/// ワールド座標の取得
 		/// </summary>
 		/// <returns>ワールド座標</returns>
@@ -165,7 +170,11 @@ namespace RyoEngine {
 		/// 指向性ライトの指定
 		/// </summary>
 		/// <param name="light">指向性ライト構造体</param>
-		void SetDirectionalLight(const DirectionalLight& light) { *lightData_ = light; }
+		void SetDirectionalLight(const DirectionalLight& light) {
+			SetDLColor(light.color);
+			SetDLDirection(light.direction);
+			SetDLIntensity(light.intensity);
+		}
 		/// <summary>
 		/// 指向性ライトの色指定
 		/// </summary>
