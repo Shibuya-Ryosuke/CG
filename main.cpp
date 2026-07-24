@@ -22,6 +22,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     sphere.CreateSphere({ 0.0f,0.0f }, 24);
     sphere.SetTex("resources/uvChecker.png");
 
+    // モデル
+    Model* model = Model::Create("resources/plane.obj");
+    model->SetTex("resources/uvChecker.png");
+    model->SetRotate({ 0.0f,3.0f,0.0f });
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -33,6 +37,53 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // ImGui
         ImGui::Begin("CG2");
+        Transform modelTransform{
+            .scale = model->GetScale(),
+            .rotate = model->GetRotate(),
+            .translate = model->GetTranslate()
+        };
+        DirectionalLight modelDL = model->GetDirectionalLight();
+
+        ImGui::PushID("Model");
+        if (ImGui::CollapsingHeader("plane")) {
+            // SRT
+            if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::DragFloat3("scale", &modelTransform.scale.x, 0.01f, -5.0f, 5.0f);
+                ImGui::DragFloat3("rotate", &modelTransform.rotate.x, 0.01f, -5.0f, 5.0f);
+                ImGui::DragFloat3("translate", &modelTransform.translate.x, 0.01f, -5.0f, 5.0f);
+                ImGui::TreePop();
+            }
+            ImGui::Spacing();
+            // ライト
+            if (ImGui::TreeNodeEx("light", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::DragFloat4("color", &modelDL.color.x, 0.01f, -1.0f, 1.0f);
+                ImGui::DragFloat3("direction", &modelDL.direction.x, 0.01f, -5.0f, 5.0f);
+                ImGui::DragFloat("intensity", &modelDL.intensity, 0.01f, -5.0f, 5.0f);
+                ImGui::TreePop();
+            }
+            ImGui::Spacing();
+            // ランバート
+            if (ImGui::TreeNodeEx("Lambert Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
+                if (ImGui::RadioButton("Lambert", model->GetLambert() == ShadingMode::LAMBERT)) {
+                    model->SetLambert(ShadingMode::LAMBERT);
+                }
+                ImGui::SameLine();
+                if (ImGui::RadioButton("Half Lambert", model->GetLambert() == ShadingMode::HALF_LAMBERT)) {
+                    model->SetLambert(ShadingMode::HALF_LAMBERT);
+                }
+                ImGui::TreePop();
+            }
+        }
+        ImGui::PopID();
+        // セット
+        model->SetTransform(modelTransform);
+        model->SetDirectionalLight(modelDL);
+
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
 
         // 球操作
         Transform sphereTransform{
@@ -123,15 +174,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         ImGui::End();
 
-
-        // カメラ更新
+        // 各種更新
         debugCamera->SetAvailable(RyoEngine::GetOnTheGameView());
         debugCamera->Update();
 
-        // 球更新
+        model->Update(*debugCamera);
+
         sphere.Update(*debugCamera);
 
-        // スプライト更新
         sprite.Update();
         // ----------------------
         // ------ 更新終了 -------
@@ -154,6 +204,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // [3D描画フェーズ]
         Begin3dDraw();
+        model->Draw();
         sphere.Draw();
 
         // 3D終了----------------------------------------------------

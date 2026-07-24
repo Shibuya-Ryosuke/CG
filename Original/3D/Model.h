@@ -40,6 +40,32 @@ namespace RyoEngine {
         const Vector3& GetScale() const { return transform_.scale; }
         const Vector3& GetRotate() const { return transform_.rotate; }
         const Vector3& GetTranslate() const { return transform_.translate; }
+        /// <summary>
+        /// 指向性ライトの取得
+        /// </summary>
+        /// <returns>指向性ライト構造体</returns>
+        const DirectionalLight& GetDirectionalLight() const { return *lightData_; }
+        /// <summary>
+        /// 指向性ライトの色取得
+        /// </summary>
+        /// <returns>色</returns>
+        const Vector4& GetDLColor() const { return lightData_->color; }
+        /// <summary>
+        /// 指向性ライトの向き取得
+        /// </summary>
+        /// <returns>向き</returns>
+        const Vector3& GetDLDirection() const { return lightData_->direction; }
+        /// <summary>
+        /// 指向性ライトの光の強度取得
+        /// </summary>
+        /// <returns>光の強度</returns>
+        float GetDLIntensity() const { return lightData_->intensity; }
+        /// <summary>
+        /// ランバートの取得
+        /// </summary>
+        /// <returns></returns>
+        const ShadingMode& GetLambert() const { return materialData_->shadingMode; }
+
         Vector4& GetColor() const { return materialData_->color; };
         ID3D12Resource* GetMaterialResource() const { return materialResource_.Get();};
         ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
@@ -53,11 +79,40 @@ namespace RyoEngine {
         int32_t GetAnimEditID () { return animEditID_; }
 
         // Setter
+        /// <summary>
+        /// トランスフォームの指定
+        /// </summary>
+        /// <param name="transform">トランスフォーム構造体</param>
+        void SetTransform(const Transform& transform) { transform_ = transform; }
         void SetScale(const Vector3& scale) { transform_.scale = scale; }
         void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
         void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
-        void SetDirectionalLight(const DirectionalLight& light) { *lightData_ = light; }
-        void SetLambertMode(const ShadingMode lambertMode) { materialData_->shadingMode = lambertMode; }
+        /// <summary>
+        /// 指向性ライトの指定
+        /// </summary>
+        /// <param name="light">指向性ライト構造体</param>
+        void SetDirectionalLight(const DirectionalLight& light) {
+            SetDLColor(light.color);
+            SetDLDirection(light.direction);
+            SetDLIntensity(light.intensity);
+        }
+        /// <summary>
+        /// 指向性ライトの色指定
+        /// </summary>
+        /// <param name="color">色</param>
+        void SetDLColor(const Vector4& color) { lightData_->color = color; }
+        /// <summary>
+        /// 指向性ライトの向き指定 (関数内部で正規化が入ります)
+        /// </summary>
+        /// <param name="direction">向き</param>
+        void SetDLDirection(const Vector3& direction) { lightData_->direction = Normalize(direction); }
+        /// <summary>
+        /// 指向性ライトの光の強度指定
+        /// </summary>
+        /// <param name="intensity">光の強度</param>
+        void SetDLIntensity(float intensity) { lightData_->intensity = intensity; }
+        void SetLambert(const ShadingMode lambertMode) { materialData_->shadingMode = lambertMode; }
+
         void SetTex(uint32_t handle) { textureHandle_ = handle; }
         void SetTex(const std::string& filePath);
         void SetColor(const Vector4& color) { materialData_->color = color; };
