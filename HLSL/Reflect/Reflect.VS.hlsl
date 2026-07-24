@@ -1,12 +1,13 @@
-#include "Object3d.hlsli"
+#include "Reflect.hlsli"
 
-struct TransformationMatrix 
+struct TransformationMatrixForReflect 
 {
     float4x4 WVP;
     float4x4 World;
+    float4x4 ReflectVP;
 };
 
-ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
+ConstantBuffer<TransformationMatrixForReflect> gTransformationMatrix : register(b0);
 
 struct VertexShaderInput
 {
@@ -19,7 +20,13 @@ VertexShaderOutput main(VertexShaderInput input)
 {
     VertexShaderOutput output;
     output.position = mul(input.position, gTransformationMatrix.WVP);
+    float4 worldPos = mul(input.position, gTransformationMatrix.World);
+    output.worldPosition = worldPos.xyz;
     output.texcoord = input.texcoord;
     output.normal = normalize(mul(input.normal, (float3x3) gTransformationMatrix.World));
+    
+    // ピクセルシェーダーでの投影サンプリング用に保持
+    output.screenPosition = mul(worldPos, gTransformationMatrix.ReflectVP);
+    
     return output;
 }

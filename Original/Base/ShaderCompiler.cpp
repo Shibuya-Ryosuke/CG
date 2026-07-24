@@ -3,19 +3,21 @@
 #include "Logger.h"
 #include <format>
 #include <cassert>
+#include <filesystem>
 #include <initguid.h> 
 #include <dxcapi.h>
 
 #pragma comment(lib, "dxcompiler.lib")
 
 
-namespace Engine {
+namespace RyoEngine {
     ShaderCompiler* ShaderCompiler::GetInstance() {
         static ShaderCompiler instance;
         return &instance;
     }
 
     void ShaderCompiler::Initialize() {
+        Logger::Log("ShaderCompiler : Initializing...\n");
         // DXCの初期化
         HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils_));
         assert(SUCCEEDED(hr));
@@ -26,26 +28,39 @@ namespace Engine {
         // インクルードを処理するためのハンドラ
         hr = dxcUtils_->CreateDefaultIncludeHandler(&includeHandler_);
         assert(SUCCEEDED(hr));
+        Logger::LogSuccess("ShaderCompiler : Initialized\n");
     }
 
     void ShaderCompiler::Finalize()
     {
+        Logger::Log("ShaderCompiler : Finalizing...\n");
         // 保持しているリソースをすべて解放する
         includeHandler_.Reset();
         dxcCompiler_.Reset();
         dxcUtils_.Reset();
+        Logger::LogSuccess("ShaderComiler : Finalized\n");
     }
 
     Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(const std::wstring& filePath, const wchar_t* profile) {
 
         // 1.hlslファイルを読み込む
-        // これからシェーダーをコンパイルする旨をログに出す
-        Logger::Log(Logger::ConvertString(std::format(L"Begin CompileShader, Path:{}, profile:{}\n", filePath, profile)));
+        Logger::Log(Logger::ConvertString(std::format(L"* Begin CompileShader *\n- path:{}\n- profile:{}\n", filePath, profile)));
+
+        // 【デバッグ用】プログラムが実際に探しに行っている絶対パスをログに出す
+        std::filesystem::path absolutePath = std::filesystem::absolute(filePath);
+        Logger::Log(Logger::ConvertString(std::format(L"Looking for file at: {}\n", absolutePath.wstring())));
+
         // hlslファイルを読み込む
         Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource = nullptr;
         HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+
         // 読めなかったら止める
-        assert(SUCCEEDED(hr));
+        if (FAILED(hr)) {
+            // assertの前に、ファイルが存在するかチェック
+            bool exists = std::filesystem::exists(filePath);
+            Logger::Log(Logger::ConvertString(std::format(L"File exists? : {}\n", exists ? L"TRUE" : L"FALSE")));
+            assert(SUCCEEDED(hr));
+        }
         // 読み込んだファイルの内容を設定する
         DxcBuffer shaderSourceBuffer;
         shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
@@ -89,7 +104,7 @@ namespace Engine {
         hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
         assert(SUCCEEDED(hr));
         // 成功したログを出す
-        Logger::Log(Logger::ConvertString(std::format(L"Compile Succeeded, path:{}, profile{}\n", filePath, profile)));
+        Logger::LogSuccess(Logger::ConvertString(std::format(L"* Compile Succeeded *\n- path:{}\n- profile{}\n", filePath, profile)));
         // 実行用のバイナリを返却
         return shaderBlob;
     }

@@ -10,7 +10,7 @@
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"xinput.lib")
 
-namespace Engine {
+namespace RyoEngine {
 	class Input {
 	public:
 

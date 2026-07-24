@@ -24,7 +24,7 @@ SpritePixelShaderOutput main(SpriteVertexShaderOutput input)
     float4 textureColor = gTexture.Sample(gSampler, transformdUV.xy);
     
    
-    output.color = textureColor;
+    output.color = textureColor * gMaterial.color;
     
     return output;
 }

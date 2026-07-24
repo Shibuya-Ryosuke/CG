@@ -12,7 +12,7 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
 
-namespace Engine {
+namespace RyoEngine {
 
 	LRESULT WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
         #ifdef USE_IMGUI
@@ -40,7 +40,7 @@ namespace Engine {
 	}
 
 	void WinApp::Initialize(const wchar_t* title, int32_t width, int32_t height) {
-		Logger::Log("WinApp: Initializing");
+		Logger::Log("WinApp : Initializing...\n");
 
 		// ウィンドウプロシージャ
 		wc_.lpfnWndProc = WindowProc;
@@ -92,6 +92,7 @@ namespace Engine {
 
 		// ウィンドウを表示する
 		ShowWindow(hwnd_, SW_SHOW);
+		Logger::LogSuccess("WinApp : Initialized\n");
 	}
 
 	bool WinApp::ProcessMessage() {
@@ -107,8 +108,9 @@ namespace Engine {
 	}
 
 	void WinApp::Finalize() {
-		Logger::Log("WinApp: Finalizing");
+		Logger::Log("WinApp : Finalizing...\n");
 		UnregisterClass(wc_.lpszClassName, wc_.hInstance);
+		Logger::LogSuccess("WinApp : Finalized\n");
 	}
 	
 }

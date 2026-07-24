@@ -1,10 +1,10 @@
 #include "DebugCamera.h"
 #include "../Input/Input.h"
 
-namespace Engine {
+namespace RyoEngine {
 	DebugCamera::DebugCamera() {
-		rotation_ = { 0,0,0 };
-		translation_ = { 0,0,-20 };
+		rotate_ = { 0,0,0 };
+		translate_ = { 0,0,-20 };
 
 		fovY_ = 0.45f;
 		aspectRatio_ = 1280.0f / 720.0f;
@@ -21,8 +21,8 @@ namespace Engine {
 	};
 
 	void DebugCamera::Initialize() {
-		rotation_ = { 0,0,0 };
-		translation_ = { 0,0,-20 };
+		rotate_ = { 0,0,0 };
+		translate_ = { 0,0,-20 };
 
 		fovY_ = 0.45f;
 		aspectRatio_ = 1280.0f / 720.0f;
@@ -40,43 +40,38 @@ namespace Engine {
 
 	void DebugCamera::Update() {
 		
-		Vector3 move{};
+		if (isAvailable_) {
+			float wheel = static_cast<float>(Input::GetMouseWheel());
+			if (std::abs(wheel) > 0) {
+				translate_.z += wheel * wheelSpeed_;
+			}
 
-		float wheel = static_cast<float>(Input::GetMouseWheel());
-		if (std::abs(wheel) > 0) {
-			move.z += wheel * wheelSpeed_;
-		}
+			// ホイールクリック時移動操作可能
+			if (Input::IsMousePush(2)) {
+				translate_.x -= static_cast<float>(Input::GetMouseRelX() * moveSpeed_);
+				translate_.y += static_cast<float>(Input::GetMouseRelY() * moveSpeed_);
+			}
 
-		// 左クリック時移動操作可能
-		if (Input::IsMousePush(0)) {
-			move.x -= static_cast<float>(Input::GetMouseRelX() * moveSpeed_);
-			move.y += static_cast<float>(Input::GetMouseRelY() * moveSpeed_);
-		}
+			// 右クリック時回転操作可能
+			if (Input::IsMousePush(1)) {
+				// マウス移動量取得
+				float mouseX = static_cast<float>(Input::GetMouseRelX());
+				float mouseY = static_cast<float>(Input::GetMouseRelY());
 
-		// 右クリック時回転操作可能
-		if (Input::IsMousePush(1)) {
-			// マウス移動量取得
-			float mouseX = static_cast<float>(Input::GetMouseRelX());
-			float mouseY = static_cast<float>(Input::GetMouseRelY());
-
-			// 回転の更新
-			rotation_.y += mouseX * rotateSpeed_;
-			rotation_.x += mouseY * rotateSpeed_;
+				// 回転の更新
+				rotate_.y += mouseX * rotateSpeed_;
+				rotate_.x += mouseY * rotateSpeed_;
+			}
 		}
 
 
 		// 回転行列を作成
-		Matrix4x4 matRot = MakeRotateMatrix(rotation_);
+		Matrix4x4 matRot = MakeRotateMatrix(rotate_);
 
-		// 移動ベクトルをカメラの向きに合わせて変換
-		move = move * matRot;
-
-		// 実際の座標に加算
-		translation_ += move;
 
 
 		// カメラのワールド行列を作成
-		Matrix4x4 worldMatrix =  MakeTranslateMatrix(translation_) * matRot;
+		Matrix4x4 worldMatrix =  MakeTranslateMatrix(translate_) * matRot;
 
 		// ワールド行列の逆行列をビュー行列へ
 		viewMatrix_ = Inverse(worldMatrix);

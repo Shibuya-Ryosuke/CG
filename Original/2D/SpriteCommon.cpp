@@ -5,16 +5,18 @@
 #include "../Graphics/TextureManager.h"
 #include <cassert>
 
-namespace Engine {
+namespace RyoEngine {
     SpriteCommon* SpriteCommon::GetInstance() {
         static SpriteCommon instance;
         return &instance;
     }
 
     void SpriteCommon::Initialize() {
+        Logger::Log("SpriteCommon : Initializing...\n");
         dxCommon_ = DirectXCommon::GetInstance();
         CreateRootSignature();
         CreatePipelineState();
+        Logger::LogSuccess("SpriteCommon : Initialized\n");
     }
 
     void SpriteCommon::BeginDraw() {
@@ -28,6 +30,7 @@ namespace Engine {
     }
 
     void SpriteCommon::Finalize() {
+        Logger::Log("SpriteCommon : Finalizing...\n");
         // グラフィックスパイプラインを解放
         graphicsPipelineState_.Reset();
 
@@ -36,6 +39,7 @@ namespace Engine {
 
         // 保持していた DirectXCommon のポインタをクリア
         dxCommon_ = nullptr;
+        Logger::LogSuccess("SpriteCommon : Finalized\n");
     }
 
     void SpriteCommon::CreateRootSignature() {
@@ -110,8 +114,8 @@ namespace Engine {
         inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
         // シェーダーのコンパイル (Sprite専用のHLSLがある場合はパスを変更してください)
-        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Original/HLSL/Sprite.VS.hlsl", L"vs_6_0");
-        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Original/HLSL/Sprite.PS.hlsl", L"ps_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Sprite/Sprite.VS.hlsl", L"vs_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Sprite/Sprite.PS.hlsl", L"ps_6_0");
 
         // PSO の作成
         D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
@@ -124,8 +128,9 @@ namespace Engine {
 
         // 1. デプスステンシル: 2Dは重なり順で描画するので、奥行き判定を無効化するか、比較を「常に通過」にする
         psoDesc.DepthStencilState.DepthEnable = true; // 有効にするが
-        psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // 書き込まない
-        psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;   // 常に描画
+        psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL; // 深度値を書き込む
+        psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;// 手前のものを描画（同じ深度なら上書き）
+        psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;                    // 深度バッファのフォーマット（環境に合わせてください）
 
         // 2. ラスタライザ: カリングをしない（裏面も見えるようにする）
         psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
@@ -138,8 +143,8 @@ namespace Engine {
         blendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
         blendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
         blendDesc.BlendOp = D3D12_BLEND_OP_ADD;
-        blendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-        blendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+        blendDesc.SrcBlendAlpha = D3D12_BLEND_INV_DEST_ALPHA;
+        blendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
         blendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
 
         // 書き込む RTV の情報 (DirectXCommon の設定に合わせる)[cite: 16]

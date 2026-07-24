@@ -4,7 +4,7 @@
 #include <cassert>
 #include <dxgidebug.h>
 
-namespace Engine {
+namespace RyoEngine {
 	ModelLoader::MaterialData ModelLoader::LoadMaterialTemplateFile(const std::string& filePath) {
 		OutputDebugStringA((filePath + "\n").c_str());
 		MaterialData materialData;  // 構築するMaterialData

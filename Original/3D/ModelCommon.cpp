@@ -1,44 +1,61 @@
-#include "Object3dCommon.h"
+#include "Model.h"
 #include "../Base/Logger.h"
 #include "../Base/DirectXCommon.h"
 #include "../Base/ShaderCompiler.h"
 #include "../Graphics/TextureManager.h"
+#include "ModelCommon.h"
 #include <cassert>
 
-namespace Engine {
-	Object3dCommon* Object3dCommon::GetInstance() {
-		static Object3dCommon instance;
+namespace RyoEngine {
+	ModelCommon* ModelCommon::GetInstance() {
+		static ModelCommon instance;
 		return &instance;
 	}
 
-	void Object3dCommon::Initialize() {
+	void ModelCommon::Initialize() {
+		Logger::Log("ModelCommon : Initializing...\n");
 		dxCommon_ = DirectXCommon::GetInstance();
 		CreateRootSignature();
-		CreatePipelineState();
+		CreateRealPipelineState();
+		CreateReflectPipelineState();
+		Logger::LogSuccess("ModelCommon : Initialized\n");
 	}
 
-	void Object3dCommon::BeginDraw() {
+	void ModelCommon::BeginDraw(DrawType drawType) {
 		auto commandList = dxCommon_->GetCommandList();
 		commandList->SetGraphicsRootSignature(rootSignature_.Get());
-		commandList->SetPipelineState(graphicsPipelineState_.Get());
+
+		switch (drawType) {
+		case DrawType::REAL:
+			commandList->SetPipelineState(realPipelineState_.Get());
+			break;
+
+		case DrawType::REFLECT:
+			commandList->SetPipelineState(reflectPipelineState_.Get());
+			break;
+		}
+
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
 		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	}
 
-	void Object3dCommon::Finalize() {
+	void ModelCommon::Finalize() {
+		Logger::Log("ModelCommon : Finalizing...\n");
 		// グラフィックスパイプラインを解放
-		graphicsPipelineState_.Reset();
+		reflectPipelineState_.Reset();
+		realPipelineState_.Reset();
 
 		// ルートシグネチャを解放
 		rootSignature_.Reset();
 
 		// 保持していた DirectXCommon のポインタをクリア
 		dxCommon_ = nullptr;
+		Logger::LogSuccess("ModelCommon : Finaled\n");
 	}
 
-	void Object3dCommon::CreateRootSignature() {
+	void ModelCommon::CreateRootSignature() {
 		HRESULT hr = S_OK;
 
 		// RootSignature作成
@@ -79,9 +96,9 @@ namespace Engine {
 		// Samplerの設定(一般的な設定)
 		D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 		staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;  // バイリニアフィルタ
-		staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;  // 0~1の範囲外をリピート
-		staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;  // 0~1の範囲外をリピート
+		staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;  // 比較しない
 		staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;  // ありったけのMipmapを使う
 		staticSamplers[0].ShaderRegister = 0;  // レジスタ番号0を使う
@@ -105,7 +122,7 @@ namespace Engine {
 
 	}
 
-	void Object3dCommon::CreatePipelineState() {
+	void ModelCommon::CreateRealPipelineState() {
 		HRESULT hr = S_OK;
 
 		// InputLayout
@@ -157,10 +174,10 @@ namespace Engine {
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
 		// Shaderをコンパイルする
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Original/HLSL/Object3D.VS.hlsl",L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.VS.hlsl",L"vs_6_0");
 		assert(vertexShaderBlob != nullptr);
 
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Original/HLSL/Object3D.PS.hlsl",L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.PS.hlsl",L"ps_6_0");
 		assert(pixelShaderBlob != nullptr);
 
 		// DepthStencilStateの設定
@@ -196,7 +213,102 @@ namespace Engine {
 		graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		// 実際に生成
 		hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
-			IID_PPV_ARGS(&graphicsPipelineState_));
+			IID_PPV_ARGS(&realPipelineState_));
+		assert(SUCCEEDED(hr));
+	}
+
+	void ModelCommon::CreateReflectPipelineState() {
+		HRESULT hr = S_OK;
+
+		// InputLayout
+		D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+		inputElementDescs[0].SemanticName = "POSITION";
+		inputElementDescs[0].SemanticIndex = 0;
+		inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
+		inputElementDescs[1].SemanticName = "TEXCOORD";
+		inputElementDescs[1].SemanticIndex = 0;
+		inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+		inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
+		inputElementDescs[2].SemanticName = "NORMAL";
+		inputElementDescs[2].SemanticIndex = 0;
+		inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
+		D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
+		inputLayoutDesc.pInputElementDescs = inputElementDescs;
+		inputLayoutDesc.NumElements = _countof(inputElementDescs);
+
+		// BlendStateの設定
+		D3D12_BLEND_DESC blendDesc{};
+		// 全ての色要素を書き込む
+		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+		// ブレンドを有効にする。これで透明度をいじったら反映されるようになる
+		blendDesc.RenderTarget[0].BlendEnable = TRUE;
+
+		// --- ここからが半透明合成（アルファブレンディング）の数式設定 ---
+		// ソースの色の混ぜ合わせ方（自分の色 * 自分のアルファ）
+		blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+		// 背景の色の混ぜ合わせ方（背景の色 * (1 - 自分のアルファ)）
+		blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+		// 足し算で合成する
+		blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+
+		// アルファ値自体の合成方法（通常はそのまま残す設定にする）
+		blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+
+		// RasterizerStateの設定
+		D3D12_RASTERIZER_DESC rasterizerDesc{};
+		// 裏面(時計回り)を表示しない
+		rasterizerDesc.CullMode = D3D12_CULL_MODE_FRONT;
+		// 三角形の中を塗りつぶす
+		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+
+		// Shaderをコンパイルする
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.VS.hlsl", L"vs_6_0");
+		assert(vertexShaderBlob != nullptr);
+
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.PS.hlsl", L"ps_6_0");
+		assert(pixelShaderBlob != nullptr);
+
+		// DepthStencilStateの設定
+		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
+		// Depthの機能を有効化する
+		depthStencilDesc.DepthEnable = true;
+		// 書き込みします
+		depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+		// 比較関数はLessEqual。つまり、近ければ描画される
+		depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
+		// PSOを生成
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
+		graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();  // RootSignature
+		graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;  // InputLayOut
+		graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),
+			vertexShaderBlob->GetBufferSize() };  // VertexShader
+		graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),
+			pixelShaderBlob->GetBufferSize() };  // PixelShader
+		graphicsPipelineStateDesc.BlendState = blendDesc;  // BlendDesc
+		graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;  // RasterizerState
+		// 書きこむRTVの情報
+		graphicsPipelineStateDesc.NumRenderTargets = 1;
+		graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		// 利用するトポロジ(形状)のタイプ。三角形
+		graphicsPipelineStateDesc.PrimitiveTopologyType =
+			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		// どのように画面に色を打ち込むかの設定(気にしなくていい)
+		graphicsPipelineStateDesc.SampleDesc.Count = 1;
+		graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+		// DepthStencilの設定
+		graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
+		graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		// 実際に生成
+		hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
+			IID_PPV_ARGS(&reflectPipelineState_));
 		assert(SUCCEEDED(hr));
 	}
 

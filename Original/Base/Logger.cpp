@@ -8,9 +8,12 @@
 
 #pragma comment(lib, "Dbghelp.lib")
 
-namespace Engine {
+namespace RyoEngine {
 
 	std::ofstream Logger::logStream_;
+	
+	std::vector<std::string> Logger::logHistory_;
+	std::mutex Logger::logMutex_;
 
 	void Logger::Initialize() {
 		// クラッシュハンドラ登録
@@ -35,22 +38,17 @@ namespace Engine {
 
 		assert(logStream_.is_open());
 
-		Log("Logger Initialized\n");
+		Log("___Logger Initialized___\n");
 	}
 
 	void Logger::Finalize() {
-		Log("Logger Finalized\n");
+		Log("\n___Logger Finalized___\n");
 		if (logStream_.is_open()) {
 			logStream_.close();
 		}
 	}
 
-	void Logger::Log(const std::string& message) {
-		if (logStream_.is_open()) {
-			logStream_ << message << std::endl;
-		}
-		OutputDebugStringA((message + "\n").c_str());
-	}
+	
 
 	std::string Logger::ConvertString(const std::wstring& str) {
 		if (str.empty()) return std::string();
@@ -92,5 +90,27 @@ namespace Engine {
 		MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle, MiniDumpNormal, &minidumpInformation, nullptr, nullptr);
 		// 他に関連付けられているSEH例外ハンドラがあれば実行。通常はプロセスを終了する
 		return EXCEPTION_EXECUTE_HANDLER;
+	}
+	void Logger::OutputLogMessage(const std::string& message) {
+		// スレッドセーフにするためのロック
+		std::lock_guard<std::mutex> lock(logMutex_);
+
+		if (logStream_.is_open()) {
+			logStream_ << message << std::endl;
+		}
+		OutputDebugStringA((message + "\n").c_str());
+
+		// --- 追加: ImGui用のバッファに蓄積 ---
+		logHistory_.push_back(message);
+
+		// 古いログの削除（パフォーマンス維持のため）
+		if (logHistory_.size() > MAX_LOG_LINES) {
+			logHistory_.erase(logHistory_.begin());
+		}
+	}
+
+	void Logger::Clear() {
+		std::lock_guard<std::mutex> lock(logMutex_);
+		logHistory_.clear();
 	}
 }

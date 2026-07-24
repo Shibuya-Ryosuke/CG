@@ -1,107 +1,80 @@
-#include "./Original/OriginalEngine.h"
+#include "./Original/RyoEngine.h"
 #ifdef _DEBUG
-#include "Original/Externals/imgui/imgui.h"
+#include "Original/ImGui/ImGuiAllInclude.h"
 #endif
 
-using namespace Engine;
+using namespace RyoEngine;
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
-    Engine::Initialize();
+    RyoEngine::Initialize();
 
-    // テクスチャ
-    uint32_t textureHandle = textureManager_->Load("resources/uvChecker.png");
-
-    // 3d
-    Object3d* model = Object3d::Create("resources/axis.obj");
-    model->SetTexture(textureHandle);
-    model->SetReflectionMode(ShadingMode::HALF_LAMBERT);
-
-    // 画像
-    Sprite* sprite = new Sprite();
-    sprite->Initialize(textureHandle, {0.0f,0.0f});
-
-    // 音
-    uint32_t alarm = Audio::LoadAudio("resources/Alarm01.wav");
-    Audio::PlayAudio(alarm, 1.0f);
-
-    // カメラ
-    Camera* camera = new Camera();
-
-    // デバッグカメラ
     DebugCamera* debugCamera = new DebugCamera();
+    debugCamera->SetTranslate({0.0f,1.0f, -40.0f });
 
-
+    // 使うときだけ
+    //AnimEdit::Initialize();
+    //AnimEdit::LoadSettings();
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
-        // --- 更新処理 (Update) ---
-        // 入力受付
-        Input::Update();
+        // フレーム開始
+        NewFrame();
 
-        ImGuiManager::Begin();
-
-#ifdef _DEBUG
-        ImGui::ShowDemoWindow();
+        // ----------------------
+        // -- 更新処理（Update） --
+        // ----------------------
         
-#endif
+        // AnimEdit::Update();
 
-        // Aキーでカメラ切り替え
-        if (Input::TriggerKey(DIK_A)) {
-            debugCamera->ToggleIsAvailable();
-        }
+        debugCamera->SetAvailable(RyoEngine::GetOnTheGameView());
+        debugCamera->Update();
 
-        // カメラの種類によって更新変更
-        if (debugCamera->GetIsAvailable()) {
-            debugCamera->Update();
-            model->Update(*debugCamera);
-        } else {
-            camera->Update();
-            model->Update(*camera);
-        }
-
-        sprite->Update();
-
-
-
-        // --- 描画処理 (Draw) ---
-        GetDxCommon()->PreDraw();
-
-        // [3D描画フェーズ]
-        GetObject3dCommon()->BeginDraw();
-
-        model->Draw();
+        // ----------------------
+        // ------ 更新終了 -------
+        // ----------------------
        
 
+
+        // --------------------------------------------------------------------------------
+        // Reflect
+       
+        
+        // --------------------------------------------------------------------------------
+
+
+
+
+
+        // ----------------------
+        // --- 描画処理 (Draw) ---
+        // ----------------------
+        // [3D描画フェーズ]
+        Begin3dDraw();
+        
+
+        // 3D終了----------------------------------------------------
+        
+
+
         // [2D描画フェーズ]
-        GetSpriteCommon()->BeginDraw();
+        Begin2dDraw();
 
-        // デバッグカメラ時画像を描画しない
-        if (!debugCamera->GetIsAvailable()) {
-            sprite->Draw();
-        }
+        // 2D終了----------------------------------------------------
+        
 
-        ImGuiManager::End(GetDxCommon()->GetCommandList());
 
-        // 画面表示（PostDraw、コマンドリスト実行、スワップチェーン入れ替え）
-        GetDxCommon()->PostDraw();
+        // ----------------------
+        // ------ 描画終了 -------
+        // ----------------------
+
+        // フレーム終了
+        EndFrame();
     }
     
-    // 生ポインタ解放
     delete debugCamera;
-    debugCamera = nullptr;
-
-    delete camera;
-    camera = nullptr;
-
-    delete sprite;
-    sprite = nullptr;
-
-    delete model;
-    model = nullptr;
-
     // エンジン終了
-    Engine::Finalize();
+    RyoEngine::Finalize();
 
     return 0;
 }

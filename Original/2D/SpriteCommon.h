@@ -3,7 +3,7 @@
 #include <wrl.h>
 #include <array>
 
-namespace Engine {
+namespace RyoEngine {
     class DirectXCommon;
 
     class SpriteCommon {
@@ -18,6 +18,7 @@ namespace Engine {
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
         ID3D12PipelineState* GetPipelineState() const { return graphicsPipelineState_.Get(); }
 
+
     private:
         SpriteCommon() = default;
         ~SpriteCommon() = default;
@@ -31,5 +32,6 @@ namespace Engine {
         DirectXCommon* dxCommon_ = nullptr;
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
         Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
+
     };
 }

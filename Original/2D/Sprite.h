@@ -4,36 +4,56 @@
 #include <string>
 #include "../Math/Math.h"
 
-namespace Engine {
+namespace RyoEngine {
+    class DebugCamera;
+
     class Sprite {
     public:
         Sprite();
         ~Sprite();
 
-        void Initialize(uint32_t textureHandle, Vector2 position);
+        void Initialize(uint32_t textureHandle, Vector2 position = { 0.0f,0.0f });
+        void Initialize(const std::string& filePath, Vector2 position = { 0.0f,0.0f });
         void Finalize();
         void Update();
         void Draw();
 
-
         // Getter
-        const Vector2& GetPosition() const { return position_; }
-        float GetRotate() const { return rotation_; }
-        const Vector2& GetSize() const { return size_; }
-        const Transform& GetUVTransform() const { return uvTransformSprite_; }
-
+        const Vector2& GetTranslate() const { return translate_; }
+        const float& GetRotate() const { return rotate_; }
+        const Vector2& GetScale() const { return scale_; }
+        const Vector2& GetUVTranslate() const { return uvTranslate_; }
+        float GetUVRotate() const { return uvRotate_; }
+        const Vector2& GetUVScale() const { return uvScale_; }
+        const Vector2& GetTexSize() const { return texSize_; }
+        const Vector4& GetColor() const { return materialData_->color; };
         // Setter
-        void SetPosition(const Vector2& pos) { position_ = pos; }
-        void SetRotate(float rotation) { rotation_ = rotation; }
-        void SetSize(const Vector2& size) { size_ = size; }
-        void SetUVTransform(const Transform& uvTransform) { uvTransformSprite_ = uvTransform; }
+        void SetTranslate(const Vector2& translate) { translate_ = translate; }
+        void SetRotate(const float rotation) { rotate_ = rotation; }
+        void SetScale(const Vector2& scale) { scale_ = scale; };
+        void SetSRT(const Vector2& scale, float rotate, const Vector2& translate) {
+            scale_ = scale;
+            rotate_ = rotate;
+            translate_ = translate;
+        }
+        void SetUVTranslate(const Vector2& translate) { uvTranslate_ = translate; }
+        void SetUVRotate(float rotate) { uvRotate_ = rotate; }
+        void SetUVScale(const Vector2& scale) { uvScale_ = scale; }
+        void SetUVSRT(const Vector2& scale, float rotate, const Vector2& translate) {
+            uvScale_ = scale;
+            uvRotate_ = rotate;
+            uvTranslate_ = translate;
+        }
+        void SetTexSize(const Vector2& size) { texSize_ = size; }
+        void SetTex(uint32_t textureHandle) { textureHandle_ = textureHandle; };
+        void SetTex(const std::string& filePath);
+        void SetColor(const Vector4& color) {  materialData_->color = color; };
 
     private:
         void CreateVertexResource();
         void CreateIndexResource();
         void CreateMaterialResource();
         void CreateWVPResource();
-
     private:
         // リソース類
         Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
@@ -49,12 +69,18 @@ namespace Engine {
         SpriteMaterial* materialData_ = nullptr;
         Matrix4x4* wvpData_ = nullptr;
 
+        UINT indexCount_ = 0;
 
         // スプライトのステータス
         uint32_t textureHandle_ = 0;
-        Vector2 position_ = { 0.0f, 0.0f };
-        float rotation_ = 0.0f;
-        Vector2 size_ = { 100.0f, 100.0f };
-        Transform uvTransformSprite_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+        Vector2 translate_ = { 0.0f,0.0f };
+        float rotate_ = 0.0f;
+        Vector2 scale_ = { 1.0f,1.0f };
+
+        Vector2 texSize_ = { 1280.0f, 720.0f };
+
+        Vector2 uvTranslate_ = { 0.0f, 0.0f };
+        float uvRotate_ = 0.0f;
+        Vector2 uvScale_ = { 1.0f, 1.0f };
     };
 }

@@ -1,6 +1,6 @@
 #include "Camera.h"
 
-namespace Engine {
+namespace RyoEngine {
     Camera::Camera() {
         // メンバ変数への代入
         rotate_ = { 0.0f, 0.0f, 0.0f };
@@ -26,6 +26,11 @@ namespace Engine {
     }
 
     void Camera::Update() {
+        if (isOverride_) {
+            isOverride_ = false;
+            return;
+        }
+
         // ビュー行列の生成（カメラのワールド行列の逆行列）
         Matrix4x4 cameraMatrix = MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, rotate_, translate_);
         viewMatrix_ = Inverse(cameraMatrix);

@@ -3,7 +3,7 @@
 #include <wrl/client.h>
 #include <vector>
 
-namespace Engine {
+namespace RyoEngine {
 	class Audio {
 	public:
 		// 音声データ

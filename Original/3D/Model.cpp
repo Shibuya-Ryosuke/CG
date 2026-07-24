@@ -1,16 +1,20 @@
-#include "Object3d.h"
+#include "Model.h"
 #include "../Base/DirectXCommon.h"
-#include "Object3dCommon.h"
+#include "Model.h"
 #include "../Graphics/TextureManager.h"
+#include "../Reflect/ReflectCommon.h"
+#include "../Reflect/ReflectModel.h"
+#include "../Edit/AnimEdit.h"
 
-namespace Engine {
+namespace RyoEngine {
 
-    void Object3d::Initialize() {
+    void Model::Initialize() {
         // デフォルト設定などが必要ならここに書く
+        // scale rotate translate
         transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     }
 
-    void Object3d::CreateModel(const std::string& filePath) {
+    void Model::CreateModel(const std::string& filePath) {
         // パスからディレクトリを抽出
         std::string directoryPath = "";
         size_t pos = filePath.find_last_of('/');
@@ -23,9 +27,10 @@ namespace Engine {
 
         // リソース作成
         InternalInitialize(modelData);
+        transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     }
 
-    void Object3d::CreateDirectionalLight() {
+    void Model::CreateDirectionalLight() {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
         // DirectionalLightリソース作成
@@ -36,9 +41,15 @@ namespace Engine {
         lightData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
         lightData_->direction = { 0.0f, -1.0f, 0.0f };
         lightData_->intensity = 1.0f;
+
+        materialData_->shadingMode = ShadingMode::HALF_LAMBERT;
     }
 
-    void Object3d::InternalInitialize(const ModelLoader::ModelData& modelData) {
+    void Model::SetTex(const std::string& filePath) {
+        textureHandle_ = TextureManager::GetInstance()->Load(filePath);
+    }
+
+    void Model::InternalInitialize(const ModelLoader::ModelData& modelData) {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
         // 1. 頂点バッファ作成
@@ -69,39 +80,30 @@ namespace Engine {
         CreateDirectionalLight();
     }
 
-    void Object3d::Update(const Camera& camera) {
+    void Model::Update(const Camera& camera) {
         // ワールド行列の作成
-        Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
+        worldMatrix_ = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
         
         // WVP行列の計算 (World * ViewProjection)
-        Matrix4x4 wvpMatrix = worldMatrix * camera.GetViewProjectionMatrix();
+        Matrix4x4 wvpMatrix = worldMatrix_ * camera.GetViewProjectionMatrix();
 
-        wvpData_->World = worldMatrix;
+        wvpData_->World = worldMatrix_;
         wvpData_->WVP = wvpMatrix;
     }
 
-    void Object3d::Update(const DebugCamera& debugCamera) {
+    void Model::Update(const DebugCamera& debugCamera) {
         // ワールド行列の作成
-        Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 
         // WVP行列の計算 (World * ViewProjection)
-        Matrix4x4 wvpMatrix = worldMatrix * debugCamera.GetViewProjectionMatrix();
+        Matrix4x4 wvpMatrix = worldMatrix_ * debugCamera.GetViewProjectionMatrix();
 
-        wvpData_->World = worldMatrix;
+        wvpData_->World = worldMatrix_;
         wvpData_->WVP = wvpMatrix;
     }
 
-    void Object3d::Draw() {
+    void Model::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        auto common = Object3dCommon::GetInstance();
-
-        // パイプラインとルートシグネチャをセット
-        commandList->SetGraphicsRootSignature(common->GetRootSignature());
-        commandList->SetPipelineState(common->GetPipelineState()); // 追加
-
-       
-        // プリミティブトポロジをセット（三角形リスト）
-        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 重要：これがないと描画されません
 
         // 引数で受け取ったハンドルを使って記述子テーブルをセット
         commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
@@ -116,10 +118,14 @@ namespace Engine {
         commandList->DrawInstanced(vertexCount_, 1, 0, 0);
     }
 
-    Object3d* Object3d::Create(const std::string& filePath) {
-        Object3d* instance = new Object3d();
+    Model* Model::Create(const std::string& filePath, const std::string& name) {
+        Model* instance = new Model();
         instance->Initialize(); // 共通の初期化
         instance->CreateModel(filePath); // モデル読み込みとリソース作成[cite: 17]
+        instance->textureHandle_ = TextureManager::GetInstance()->GetWhiteTex();
+        
+        AnimEdit::SetTargetModel(instance, name);
+
         return instance;
     }
 }

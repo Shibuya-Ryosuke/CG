@@ -1,13 +1,15 @@
 #include "Input.h"
+#include "../Base/Logger.h"
 #include <cassert>
 
-namespace Engine {
+namespace RyoEngine {
 	Input* Input::GetInstance() {
 		static Input instance;
 		return &instance;
 	}
 
 	void Input::Initialize(HINSTANCE hInstance, HWND hwnd) {
+		Logger::Log("Input : Initializing...\n");
 		// インスタンス取得
 		Input* instance = GetInstance();
 
@@ -41,6 +43,8 @@ namespace Engine {
 		// 排他制御レベルセット
 		result = instance->mouse_->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
 		assert(SUCCEEDED(result));
+
+		Logger::LogSuccess("Input : Initialized\n");
 	}
 
 	void Input::Update() {

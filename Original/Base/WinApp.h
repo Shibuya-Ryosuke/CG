@@ -2,7 +2,7 @@
 #include <Windows.h>
 #include <cstdint>
 
-namespace Engine {
+namespace RyoEngine {
 
 	class WinApp {
 	public:

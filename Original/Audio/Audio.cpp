@@ -1,12 +1,12 @@
 #include "Audio.h"
+#include "../Base/Logger.h"
 #include <mfapi.h>
 #include <mfidl.h>  // これがないとエラーになる
 #include <mfreadwrite.h>
 #include <string>
-
 #include <cassert>
 
-namespace Engine {
+namespace RyoEngine {
 	// インスタンス初期化
 	Audio* Audio::instance = nullptr;
 
@@ -25,6 +25,7 @@ namespace Engine {
 	}
 
 	void Audio::Initialize() {
+		Logger::Log("Audio : Initializing...\n");
 		HRESULT hr = S_OK;
 
 		// MF初期化
@@ -41,9 +42,12 @@ namespace Engine {
 		// Mastering Voice作成
 		hr = inst->xAudio2->CreateMasteringVoice(&inst->masterVoice);
 		assert(SUCCEEDED(hr));
+
+		Logger::LogSuccess("Audio : Initialized\n");
 	}
 
 	void Audio::Finalize() {
+		Logger::Log("Audio : Finalizing...\n");
 		// インスタンスを取得
 		Audio* inst = GetInstance();
 
@@ -65,6 +69,7 @@ namespace Engine {
 		}
 		inst->xAudio2.Reset();
 		MFShutdown();
+		Logger::LogSuccess("Audio : Finalized\n");
 	}
 
 	uint32_t Audio::LoadAudio(const char* filename) {

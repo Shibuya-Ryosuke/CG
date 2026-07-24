@@ -2,14 +2,15 @@
 #include "../Base/DirectXCommon.h"
 #include "SpriteCommon.h"
 #include "../Graphics/TextureManager.h"
+#include "../Reflect/ReflectCommon.h"
 
-namespace Engine {
+namespace RyoEngine {
     Sprite::Sprite() {};
     Sprite::~Sprite() {};
 
     void Sprite::Initialize(uint32_t textureHandle, Vector2 position) {
         textureHandle_ = textureHandle;
-        position_ = position;
+        translate_ = position;
         
         // 1. TextureManagerのインスタンスを取得
         TextureManager* textureManager = TextureManager::GetInstance();
@@ -22,8 +23,8 @@ namespace Engine {
         D3D12_RESOURCE_DESC resDesc = resource->GetDesc();
 
         // 4. 画像の元サイズをセット (WidthはUINT64なのでfloatにキャスト)
-        size_.x = static_cast<float>(resDesc.Width);
-        size_.y = static_cast<float>(resDesc.Height);
+        texSize_.x = static_cast<float>(resDesc.Width);
+        texSize_.y = static_cast<float>(resDesc.Height);
 
         CreateVertexResource();
         CreateIndexResource();
@@ -32,10 +33,12 @@ namespace Engine {
 
         // 初期データ書き込み
         // 頂点情報 (0:左下, 1:左上, 2:右下, 3:右上)
-        vertexData_[0].position = { 0.0f, size_.y, 0.0f, 1.0f };
-        vertexData_[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };
-        vertexData_[2].position = { size_.x, size_.y, 0.0f, 1.0f };
-        vertexData_[3].position = { size_.x, 0.0f, 0.0f, 1.0f };
+        float halfWidth = texSize_.x * 0.5f;
+        float halfHeight = texSize_.y * 0.5f;
+        vertexData_[0].position = { -halfWidth,  halfHeight, 0.0f, 1.0f };
+        vertexData_[1].position = { -halfWidth, -halfHeight, 0.0f, 1.0f };
+        vertexData_[2].position = { halfWidth,  halfHeight, 0.0f, 1.0f };
+        vertexData_[3].position = { halfWidth, -halfHeight, 0.0f, 1.0f };
 
         vertexData_[0].texcoord = { 0.0f, 1.0f };
         vertexData_[1].texcoord = { 0.0f, 0.0f };
@@ -45,6 +48,12 @@ namespace Engine {
         // インデックス (main.cppの順序通り)
         indexData_[0] = 0; indexData_[1] = 1; indexData_[2] = 2;
         indexData_[3] = 1; indexData_[4] = 3; indexData_[5] = 2;
+
+        indexCount_ = 6;
+    }
+
+    void Sprite::Initialize(const std::string& filePath, Vector2 position) {
+        Initialize(TextureManager::GetInstance()->Load(filePath), position);
     }
 
     void Sprite::Finalize() {
@@ -72,33 +81,50 @@ namespace Engine {
     }
 
     void Sprite::Update() {
-        // 行列計算
-        Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, rotation_ }, { position_.x, position_.y, 0.0f });
+        // 1. transform_ (Vector2化) から行列を計算するための3Dベクトルを作る
+        Vector3 scale3D = { scale_.x, scale_.y, 1.0f }; // Zは必ず1.0f
+        Vector3 translate3D = { translate_.x, translate_.y, 0.0f };
+
+        // 回転の仕様に合わせて選択してください：
+        // パターンA: transform_.rotate も Vector2 にした場合（2D回転なのでZ軸に入れる）
+        Vector3 rotate3D = { 0.0f, 0.0f, rotate_ };
+        // パターンB: transform_.rotate は Vector3 のまま残した場合
+        // Vector3 rotate3D    = transform_.rotate;
+
+        // スプライト自体のワールド行列を計算
+        Matrix4x4 worldMatrix = MakeAffineMatrix(scale3D, rotate3D, translate3D);
         Matrix4x4 viewMatrix = MakeIdentity4x4();
-        // 正投影行列 (DirectXCommonから画面サイズを取ってくる)
-        Matrix4x4 projectionMatrix = MakeOrthographicMatrix(0.0f, 0.0f, (float)DirectXCommon::GetInstance()->GetBackBufferWidth(), (float)DirectXCommon::GetInstance()->GetBackBufferHeight(), 0.0f, 100.0f);
 
-        Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite_.scale);
-        uvTransformMatrix = uvTransformMatrix * MakeRotateZMatrix(uvTransformSprite_.rotate.z);
-        uvTransformMatrix = uvTransformMatrix * MakeTranslateMatrix(uvTransformSprite_.translate);
+        // 正投影行列 (変更なし)
+        Matrix4x4 projectionMatrix = MakeOrthographicMatrix(
+            0.0f, 0.0f,
+            (float)DirectXCommon::GetInstance()->GetBackBufferWidth(),
+            (float)DirectXCommon::GetInstance()->GetBackBufferHeight(),
+            0.0f, 100.0f
+        );
 
-        materialData_->uvTransform = uvTransformMatrix; // Material構造体に uvTransform を追加しておく
+        // UVの中心 (0.5, 0.5) を原点に持ってくる移動行列
+        Matrix4x4 translateToCenter = MakeTranslateMatrix({ -0.5f, -0.5f, 0.0f });
 
+        // 新しいメンバ変数から各種行列を生成 (Z軸やZ座標は固定値を入れる)
+        Matrix4x4 scaleMat = MakeScaleMatrix({ uvScale_.x, uvScale_.y, 1.0f });
+        Matrix4x4 rotateMat = MakeRotateZMatrix(uvRotate_);
+        Matrix4x4 translateMat = MakeTranslateMatrix({ uvTranslate_.x, uvTranslate_.y, 0.0f });
+
+        // 原点から元の位置 (0.5, 0.5) に戻す移動行列
+        Matrix4x4 translateBack = MakeTranslateMatrix({ 0.5f, 0.5f, 0.0f });
+
+        // 行列を合成 (中心にずらす -> 拡大回転 -> 元に戻す -> UV移動)
+        Matrix4x4 uvTransformMatrix = translateToCenter * scaleMat * rotateMat * translateBack * translateMat;
+
+        // マテリアルとWVPへの書き込み (変更なし)
+        materialData_->uvTransform = uvTransformMatrix;
         *wvpData_ = worldMatrix * viewMatrix * projectionMatrix;
     }
 
     void Sprite::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        auto common = SpriteCommon::GetInstance();
-
-
-        // 1. パイプラインとルートシグネチャをセット
-        commandList->SetGraphicsRootSignature(common->GetRootSignature());
-        commandList->SetPipelineState(common->GetPipelineState());
-
-        // 2. プリミティブトポロジをセット
-        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+        
         // 3. 各種バッファをセット
         commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
         commandList->IASetIndexBuffer(&indexBufferView_);
@@ -109,7 +135,11 @@ namespace Engine {
         commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
 
         // 4. インデックスを使って描画 (6つのインデックスを使用)
-        commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+        commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
+    }
+
+    void Sprite::SetTex(const std::string& filePath) {
+        textureHandle_ = TextureManager::GetInstance()->Load(filePath);
     }
 
     void Sprite::CreateVertexResource() {

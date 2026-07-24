@@ -8,33 +8,60 @@
 #include "../Camera/DebugCamera.h"
 #include "../Light/Light.h"
 
-namespace Engine {
-    class Object3d {
+namespace RyoEngine {
+    class ReflectModel;
+
+    class Model {
     public:
         void Initialize();
         void Update(const Camera& camera);
         void Update(const DebugCamera& debugCamera);
+
         void Draw();
 
-        static Object3d* Create(const std::string& filePath);
+        /// <summary>
+        /// モデルの作成 (new代わりに使用)
+        /// </summary>
+        /// <param name="filePath">objファイルまでのファイルパス</param>
+        /// <returns></returns>
+        static Model* Create(const std::string& filePath, const std::string& name = "NoName");
 
+        /// <summary>
+        /// モデルの作成 (代入・書き換え時に使用)
+        /// </summary>
+        /// <param name="filePath">objファイルまでのファイルパス</param>
         void CreateModel(const std::string& filePath);
 
         void CreateDirectionalLight();
-
+        
+        
         // Getter
         const Vector3& GetScale() const { return transform_.scale; }
         const Vector3& GetRotate() const { return transform_.rotate; }
         const Vector3& GetTranslate() const { return transform_.translate; }
+        Vector4& GetColor() const { return materialData_->color; };
+        ID3D12Resource* GetMaterialResource() const { return materialResource_.Get();};
+        ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
+        ID3D12Resource* GetLightResource() const { return lightResource_.Get(); };
+        Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
+        uint32_t GetTxHandle() const { return textureHandle_; }
+        D3D12_VERTEX_BUFFER_VIEW GetVBV() const { return vertexBufferView_; }
+        uint32_t GetVertexCount() const { return vertexCount_; }
+        D3D12_GPU_VIRTUAL_ADDRESS GetMaterialResourceGVA() const { return materialResource_->GetGPUVirtualAddress(); }
+        D3D12_GPU_VIRTUAL_ADDRESS GetLightResourceGVA() const { return lightResource_->GetGPUVirtualAddress(); }
+        int32_t GetAnimEditID () { return animEditID_; }
 
         // Setter
         void SetScale(const Vector3& scale) { transform_.scale = scale; }
         void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
         void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
         void SetDirectionalLight(const DirectionalLight& light) { *lightData_ = light; }
-        void SetReflectionMode(const ShadingMode reflectionMode) { materialData_->shadingMode = reflectionMode; }
-        void SetTexture(uint32_t handle) { textureHandle_ = handle; }
-
+        void SetLambertMode(const ShadingMode lambertMode) { materialData_->shadingMode = lambertMode; }
+        void SetTex(uint32_t handle) { textureHandle_ = handle; }
+        void SetTex(const std::string& filePath);
+        void SetColor(const Vector4& color) { materialData_->color = color; };
+        void SetAnimEditID(uint32_t id) { animEditID_ = id; }
+        
     private:
         // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）
         void InternalInitialize(const ModelLoader::ModelData& modelData);
@@ -63,5 +90,9 @@ namespace Engine {
         TransformationMatrix* wvpData_ = nullptr;
 
         uint32_t textureHandle_ = 0; // メンバ変数として保持
+
+        Matrix4x4 worldMatrix_{};
+
+        int32_t animEditID_ = 0;
     };
 }

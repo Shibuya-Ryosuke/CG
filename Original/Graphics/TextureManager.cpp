@@ -4,13 +4,14 @@
 #include "../Externals/DirectXTex/d3dx12.h"
 
 
-namespace Engine {
+namespace RyoEngine {
     TextureManager* TextureManager::GetInstance() {
         static TextureManager instance;
         return &instance;
     }
 
     void TextureManager::Initialize() {
+        Logger::Log("TexManager : Initializing...\n");
         device_ = DirectXCommon::GetInstance()->GetDevice();
 
         // 1. ヒープの設定
@@ -25,9 +26,17 @@ namespace Engine {
 
         // 3. 1マス分のサイズを取得しておく（GetGPUHandleで使用するため）
         descriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+        // 0番目のスロットをImGui用に予約
+        textures_.push_back({ nullptr });
+
+        whiteTex = Load("resources/white1x1.png");
+
+        Logger::LogSuccess("Input : Initialized\n");
     }
 
     void TextureManager::Finalize() {
+        Logger::Log("TexManager : Finalizing...\n");
         // 中間リソース解放
         intermediateResources_.clear();
 
@@ -37,8 +46,12 @@ namespace Engine {
         // 重複読み込み防止用のマップをクリア
         filePathMap_.clear();
 
+        // ディスクリプタヒープの開放
+        descriptorHeap_.Reset();
+
         // デバイスポインタを初期化
         device_ = nullptr;
+        Logger::LogSuccess("TexManager : Finalized\n");
     }
 
     uint32_t TextureManager::Load(const std::string& filePath) {
@@ -76,6 +89,32 @@ namespace Engine {
     }
 
 
+    uint32_t TextureManager::RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource) {
+        // 現在のテクスチャ配列の末尾をインデックスとする
+        uint32_t index = static_cast<uint32_t>(textures_.size());
+        assert(index < kMaxTextures);
+
+        Texture texture;
+        texture.resource = resource;
+        textures_.push_back(texture);
+
+        // シェーダーリソースビュー (SRV) の設定
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = resource->GetDesc().Format;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.Texture2D.MipLevels = 1;
+
+        // CPUハンドルを取得してSRVを作成
+        device_->CreateShaderResourceView(
+            resource.Get(),
+            &srvDesc,
+            GetCPUHandle(index)
+        );
+
+        return index;
+    }
+
     DirectX::ScratchImage TextureManager::LoadTexture(const std::string& filePath) {
         // テクスチャファイルを読んでプログラムで使えるようにする
         DirectX::ScratchImage image{};
@@ -85,8 +124,22 @@ namespace Engine {
 
         // ミニマップの作成
         DirectX::ScratchImage mipImages{};
-        hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
-        assert(SUCCEEDED(hr));
+        // 画像の幅か高さが1ピクセルなら、ミップマップを作らずに元の画像をそのまま使う
+        if (image.GetMetadata().width == 1 || image.GetMetadata().height == 1) {
+            // moveで中身をそのまま移動させる
+            mipImages = std::move(image);
+        } else {
+            // 2x2以上の通常画像ならミップマップを生成する
+            hr = DirectX::GenerateMipMaps(
+                image.GetImages(),
+                image.GetImageCount(),
+                image.GetMetadata(),
+                DirectX::TEX_FILTER_SRGB,
+                0,
+                mipImages
+            );
+            assert(SUCCEEDED(hr));
+        }
 
         // ミップマップ付きのデータを返す
         return mipImages;

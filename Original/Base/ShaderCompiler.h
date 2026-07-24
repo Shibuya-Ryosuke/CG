@@ -3,7 +3,7 @@
 #include <wrl.h>
 #include <string>
 
-namespace Engine {
+namespace RyoEngine {
     class ShaderCompiler {
     public:
         static ShaderCompiler* GetInstance();

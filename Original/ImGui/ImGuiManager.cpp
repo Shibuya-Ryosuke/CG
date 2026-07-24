@@ -1,26 +1,20 @@
 #include "ImGuiManager.h"
+#include "../Graphics/TextureManager.h"
+#include "../Base/Logger.h"
 
 #ifdef _DEBUG
-#include "../Externals/imgui/imgui.h"
-#include "../Externals/imgui/imgui_impl_dx12.h"
-#include "../Externals/imgui/imgui_impl_win32.h"
 
-namespace Engine {
+#include "ImGuiAllInclude.h"
+
+
+namespace RyoEngine {
     ImGuiManager* ImGuiManager::GetInstance() {
         static ImGuiManager instance;
         return &instance;
     }
 
     void ImGuiManager::Initialize(HWND hwnd, ID3D12Device* device, int bufferCount, DXGI_FORMAT rtvFormat) {
-        ImGuiManager* instance = GetInstance();
-
-        // 1. SRVヒープの作成
-        D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-        desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        desc.NumDescriptors = 1;
-        desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-        device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(instance->srvHeap_.GetAddressOf()));
-
+        Logger::Log("ImGuiManager : Initializing...\n");
         // 2. ImGuiコンテキスト作成
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -31,32 +25,48 @@ namespace Engine {
             device,
             bufferCount,
             rtvFormat,
-            instance->srvHeap_.Get(),
-            instance->srvHeap_->GetCPUDescriptorHandleForHeapStart(),
-            instance->srvHeap_->GetGPUDescriptorHandleForHeapStart()
+            TextureManager::GetInstance()->GetDescriptorHeap(),
+            TextureManager::GetInstance()->GetCPUHandle(0),
+            TextureManager::GetInstance()->GetGPUHandle(0)
         );
+
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+        ImFontConfig config;
+        config.MergeMode = false;
+
+        const char* ttcPath = "C:\\Windows\\Fonts\\msgothic.ttc";
+
+        ImFont* font = io.Fonts->AddFontFromFileTTF(ttcPath, 13.0f, &config, io.Fonts->GetGlyphRangesJapanese());
+        if (font == nullptr) {
+            std::string errorMsg = "Cannot load the ttc file.\nPath searched for: " + std::string(ttcPath);
+            Logger::LogError(errorMsg);
+        }
+        Logger::LogSuccess("ImGuiManager : Initialized\n");
     }
 
-    void ImGuiManager::Begin() {
+    void ImGuiManager::NewFrame() {
         ImGui_ImplDX12_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
+        ImGui::DockSpaceOverViewport();
+        ImGuizmo::BeginFrame();
     }
 
-    void ImGuiManager::End(ID3D12GraphicsCommandList* commandList) {
-        ImGuiManager* instance = GetInstance();
-
+    void ImGuiManager::EndFrame(ID3D12GraphicsCommandList* commandList) {
         ImGui::Render();
 
         // DescriptorHeapのセット
-        ID3D12DescriptorHeap* heaps[] = { instance->srvHeap_.Get() };
-        commandList->SetDescriptorHeaps(_countof(heaps), heaps);
+        ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap()};
+        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
         // 描画コマンド発行
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
     }
 
     void ImGuiManager::Finalize() {
+        Logger::Log("ImGuiManager : Finalizing...\n");
         ImGuiManager* instance = GetInstance();
 
         ImGui_ImplDX12_Shutdown();
@@ -65,6 +75,7 @@ namespace Engine {
 
         
         instance->srvHeap_.Reset();
+        Logger::LogSuccess("ImGuiManager : Finalized\n");
     }
 }
 #endif

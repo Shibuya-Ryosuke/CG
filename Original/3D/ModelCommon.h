@@ -3,20 +3,25 @@
 #include <wrl.h>
 #include "../Base/DirectXCommon.h"
 
-namespace Engine {
-    class Object3dCommon {
+namespace RyoEngine {
+    class ModelCommon {
     public:
+        enum DrawType {
+            REAL,
+            REFLECT
+        };
+
         /// <summary>
         /// シングルトンインスタンスの取得
         /// </summary>
-        static Object3dCommon* GetInstance();
+        static ModelCommon* GetInstance();
 
         /// <summary>
         /// 初期化
         /// </summary>
         void Initialize();
 
-        void BeginDraw();
+        void BeginDraw(DrawType drawType = DrawType::REAL);
 
         /// <summary>
         /// 終了処理
@@ -25,13 +30,13 @@ namespace Engine {
 
         // --- ゲッター ---
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
-        ID3D12PipelineState* GetPipelineState() const { return graphicsPipelineState_.Get(); }
+        ID3D12PipelineState* GetPipelineState() const { return realPipelineState_.Get(); }
 
     private:
-        Object3dCommon() = default;
-        ~Object3dCommon() = default;
-        Object3dCommon(const Object3dCommon&) = delete;
-        Object3dCommon& operator=(const Object3dCommon&) = delete;
+        ModelCommon() = default;
+        ~ModelCommon() = default;
+        ModelCommon(const ModelCommon&) = delete;
+        ModelCommon& operator=(const ModelCommon&) = delete;
 
         // DirectXCommonのポインタ（初期化時にキャッシュする用）
         DirectXCommon* dxCommon_ = nullptr;
@@ -39,11 +44,15 @@ namespace Engine {
         // ルートシグネチャ
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
         // グラフィックスパイプライン
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> realPipelineState_;
+        // 反射用パイプライン
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> reflectPipelineState_;
 
         // ルートシグネチャー作成
         void CreateRootSignature();
         // パイプライン作成
-        void CreatePipelineState();
+        void CreateRealPipelineState();
+        // 反射用パイプライン生成
+        void CreateReflectPipelineState();
     };
 }

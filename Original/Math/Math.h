@@ -45,6 +45,9 @@ inline Vector3 operator*(const Vector3& v, const Matrix4x4& m) {
 inline float Dot(const Vector3& v1, const Vector3& v2) {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
+inline float Dot(const Vector4& a, const Vector4& b) {
+	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
 /// 長さ(ノルム)
 inline float Length(const Vector3& v) {
 	return std::sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
@@ -445,5 +448,200 @@ inline Matrix4x4 MakeViewportMatrix(float left, float top, float width, float he
 	mat.m[3][2] = minDepth;
 
 	return mat;
+}
+/// 鏡の位置と法線から反射行列（Reflection Matrix）を生成する関数
+inline Matrix4x4 MakeReflectionMatrix(const Vector3& mirrorPos)
+{
+	// 鏡の正面がZ軸を向いている壁鏡専用の反射行列
+	Matrix4x4 m;
+
+	// 1行目：X軸（左右）。鏡写しにするためにマイナスにする
+	m.m[0][0] = 1.0f;
+	m.m[0][1] = 0.0f;
+	m.m[0][2] = 0.0f;
+	m.m[0][3] = 0.0f;
+
+	// 2行目：Y軸（上下）。上下は絶対にひっくり返さないので通常のまま（1.0）
+	m.m[1][0] = 0.0f;
+	m.m[1][1] = 1.0f;
+	m.m[1][2] = 0.0f;
+	m.m[1][3] = 0.0f;
+
+	// 3行目：Z軸（奥行き）。鏡の奥（裏側）へ光線を飛ばすためにマイナスにする
+	m.m[2][0] = 0.0f;
+	m.m[2][1] = 0.0f;
+	m.m[2][2] = -1.0f;
+	m.m[2][3] = 0.0f;
+
+	// 4行目：平行移動成分（Z方向の鏡の位置を基準にして、奥行きを対称に飛ばす）
+	// 鏡のワールドZ座標（mirrorPos.z）の2倍の位置をオフセットとして与えます
+	m.m[3][0] = 0.0f;
+	m.m[3][1] = 0.0f;
+	m.m[3][2] = 2.0f * mirrorPos.z;
+	m.m[3][3] = 1.0f;
+
+	return m;
+}
+/// <summary>
+/// 任意の鏡のワールド行列から、完璧な空間反転を行う反射行列を生成する
+/// </summary>
+/// <param name="mirrorWorldMatrix">鏡オブジェクトの現在のワールド行列</param>
+inline Matrix4x4 MakePlaneReflectionMatrix(const Matrix4x4& mirrorWorldMatrix) {
+	// 1. 鏡の初期の法線（板ポリが最初に正面を向いている軸。通常はZ軸プラス方向: 0, 0, 1）
+	Vector3 localNormal = { 0.0f, 0.0f, 1.0f };
+
+	// 2. 鏡の「回転（傾き）」に合わせて、現在のワールド空間での法線ベクトルに変換する
+	// ※行列の 0～2行目の方向ベクトル成分と内積（トランスフォーム）をとる
+	Vector3 worldNormal{};
+	worldNormal.x = localNormal.x * mirrorWorldMatrix.m[0][0] + localNormal.y * mirrorWorldMatrix.m[1][0] + localNormal.z * mirrorWorldMatrix.m[2][0];
+	worldNormal.y = localNormal.x * mirrorWorldMatrix.m[0][1] + localNormal.y * mirrorWorldMatrix.m[1][1] + localNormal.z * mirrorWorldMatrix.m[2][1];
+	worldNormal.z = localNormal.x * mirrorWorldMatrix.m[0][2] + localNormal.y * mirrorWorldMatrix.m[1][2] + localNormal.z * mirrorWorldMatrix.m[2][2];
+
+	// 法線を正規化（長さを1にする）
+	worldNormal = Normalize(worldNormal);
+
+	// 3. 鏡の現在のワールド位置（4行目の平行移動成分から取得）
+	Vector3 mirrorPosition = {
+		mirrorWorldMatrix.m[3][0],
+		mirrorWorldMatrix.m[3][1],
+		mirrorWorldMatrix.m[3][2]
+	};
+
+	// 4. 平面方程式 ax + by + cz + d = 0 の d 成分（原点からの距離）を計算
+	// d = -(法線 と 平面上の点 の内積)
+	float d = -Dot(worldNormal, mirrorPosition);
+
+	// 5. 任意の平面に対する反射行列の組み立て（3D幾何学の公式）
+	Matrix4x4 result{};
+	float a = worldNormal.x;
+	float b = worldNormal.y;
+	float c = worldNormal.z;
+
+	result.m[0][0] = 1.0f - 2.0f * a * a;
+	result.m[0][1] = -2.0f * a * b;
+	result.m[0][2] = -2.0f * a * c;
+	result.m[0][3] = 0.0f;
+
+	result.m[1][0] = -2.0f * b * a;
+	result.m[1][1] = 1.0f - 2.0f * b * b;
+	result.m[1][2] = -2.0f * b * c;
+	result.m[1][3] = 0.0f;
+
+	result.m[2][0] = -2.0f * c * a;
+	result.m[2][1] = -2.0f * c * b;
+	result.m[2][2] = 1.0f - 2.0f * c * c;
+	result.m[2][3] = 0.0f;
+
+	// 平行移動成分に距離 d を反映
+	result.m[3][0] = -2.0f * a * d;
+	result.m[3][1] = -2.0f * b * d;
+	result.m[3][2] = -2.0f * c * d;
+	result.m[3][3] = 1.0f;
+
+	return result;
+}
+
+// 符号を返す補助関数
+inline float Sgn(float a) {
+	if (a > 0.0f) return 1.0f;
+	if (a < 0.0f) return -1.0f;
+	return 0.0f;
+}
+
+inline Matrix4x4 CalculateObliqueMatrix(
+	const Matrix4x4& projection,
+	const Matrix4x4& view,
+	const Vector3& mirrorNormal,
+	const Vector3& mirrorPos)
+{
+	// 1. ワールド空間の平面方程式 (Ax + By + Cz + D = 0)
+	// 法線と、平面上の点から D 成分（平行移動分）を計算
+	Vector3 n = Normalize(mirrorNormal);
+	float d = -Dot(n, mirrorPos);
+	Vector4 worldPlane = { n.x, n.y, n.z, d };
+
+	// 2. ビュー行列の逆行列を使って、平面をカメラ空間へ変換
+	Matrix4x4 viewInv = Inverse(view);
+
+	Vector4 cameraSpacePlane;
+	// 【修正の核心】
+	// C++側の行列の掛け算規則（Row-major）に完全に準拠させ、
+	// 逆行列の「行」と平面ベクトルのドット積によって、正しいカメラ空間の平面を導出します。
+	cameraSpacePlane.x = viewInv.m[0][0] * worldPlane.x + viewInv.m[1][0] * worldPlane.y + viewInv.m[2][0] * worldPlane.z + viewInv.m[3][0] * worldPlane.w;
+	cameraSpacePlane.y = viewInv.m[0][1] * worldPlane.x + viewInv.m[1][1] * worldPlane.y + viewInv.m[2][1] * worldPlane.z + viewInv.m[3][1] * worldPlane.w;
+	cameraSpacePlane.z = viewInv.m[0][2] * worldPlane.x + viewInv.m[1][2] * worldPlane.y + viewInv.m[2][2] * worldPlane.z + viewInv.m[3][2] * worldPlane.w;
+	cameraSpacePlane.w = viewInv.m[0][3] * worldPlane.x + viewInv.m[1][3] * worldPlane.y + viewInv.m[2][3] * worldPlane.z + viewInv.m[3][3] * worldPlane.w;
+
+	// 鏡の裏側をカリングしないための符号調整（お使いのプロジェクション行列の性質上、ここは < 0.0f になります）
+	if (cameraSpacePlane.w < 0.0f) {
+		cameraSpacePlane.x = -cameraSpacePlane.x;
+		cameraSpacePlane.y = -cameraSpacePlane.y;
+		cameraSpacePlane.z = -cameraSpacePlane.z;
+		cameraSpacePlane.w = -cameraSpacePlane.w;
+	}
+
+	// 3. Lengyelのアルゴリズム
+	Matrix4x4 obliqueProj = projection;
+
+	// クリップ空間のコーナー点 q の計算
+	// シェーダー側での反転を見越し、projection の「3列目」の成分を使って計算します
+	Vector4 q;
+	q.x = (Sgn(cameraSpacePlane.x) + projection.m[2][0]) / projection.m[0][0];
+	q.y = (Sgn(cameraSpacePlane.y) + projection.m[2][1]) / projection.m[1][1];
+	q.z = 1.0f;
+
+	// projection.m[3][2] に入っている平行移動成分（負の値）を使って W をスケーリング
+	q.w = (1.0f - projection.m[2][3]) / -projection.m[3][2];
+
+	// スケーリング係数 c
+	float c = 2.0f / Dot(cameraSpacePlane, q);
+
+	// 【重要】シェーダー側で正しく「3行目」にトランスポーズされるよう、
+	// C++コード上では「3列目（m[x][2]）」に対して安全に上書きを行います。
+	obliqueProj.m[0][2] = cameraSpacePlane.x * c;
+	obliqueProj.m[1][2] = cameraSpacePlane.y * c;
+	obliqueProj.m[2][2] = cameraSpacePlane.z * c + 1.0f;
+	obliqueProj.m[3][2] = cameraSpacePlane.w * c;
+
+	return obliqueProj;
+}
+// 座標(Vector3)を4x4行列で変換する関数
+inline Vector3 TransformPoint(const Vector3& p, const Matrix4x4& m) {
+	float w = p.x * m.m[0][3] + p.y * m.m[1][3] + p.z * m.m[2][3] + m.m[3][3];
+	return {
+		(p.x * m.m[0][0] + p.y * m.m[1][0] + p.z * m.m[2][0] + m.m[3][0]) / w,
+		(p.x * m.m[0][1] + p.y * m.m[1][1] + p.z * m.m[2][1] + m.m[3][1]) / w,
+		(p.x * m.m[0][2] + p.y * m.m[1][2] + p.z * m.m[2][2] + m.m[3][2]) / w
+	};
+}
+
+// 位置、注視点、上方向からビュー行列（左手系）を作成する関数
+inline Matrix4x4 MakeLookAtMatrix(const Vector3& eye, const Vector3& target, const Vector3& up) {
+	Vector3 zAxis = Normalize({ target.x - eye.x, target.y - eye.y, target.z - eye.z });
+
+	// 外積 (up x zAxis)
+	Vector3 xAxis = Normalize({
+		up.y * zAxis.z - up.z * zAxis.y,
+		up.z * zAxis.x - up.x * zAxis.z,
+		up.x * zAxis.y - up.y * zAxis.x
+		});
+
+	// 外積 (zAxis x xAxis)
+	Vector3 yAxis = {
+		zAxis.y * xAxis.z - zAxis.z * xAxis.y,
+		zAxis.z * xAxis.x - zAxis.x * xAxis.z,
+		zAxis.x * xAxis.y - zAxis.y * xAxis.x
+	};
+
+	Matrix4x4 result{};
+	result.m[0][0] = xAxis.x;   result.m[0][1] = yAxis.x;   result.m[0][2] = zAxis.x;   result.m[0][3] = 0.0f;
+	result.m[1][0] = xAxis.y;   result.m[1][1] = yAxis.y;   result.m[1][2] = zAxis.y;   result.m[1][3] = 0.0f;
+	result.m[2][0] = xAxis.z;   result.m[2][1] = yAxis.z;   result.m[2][2] = zAxis.z;   result.m[2][3] = 0.0f;
+	result.m[3][0] = -Dot(xAxis, eye);
+	result.m[3][1] = -Dot(yAxis, eye);
+	result.m[3][2] = -Dot(zAxis, eye);
+	result.m[3][3] = 1.0f;
+
+	return result;
 }
 //=================================================================================================

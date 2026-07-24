@@ -13,8 +13,23 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="imgui">
-      <UniqueIdentifier>{c43e52f0-1632-41a7-a02c-5071b91d0702}</UniqueIdentifier>
+    <Filter Include="リソース ファイル\HLSL">
+      <UniqueIdentifier>{f9a25521-3498-4266-b3c9-e67c94f817a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\HLSL\Sprite">
+      <UniqueIdentifier>{49bb948b-afed-4b17-b0cd-3ec18adff378}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\HLSL\Reflect">
+      <UniqueIdentifier>{7c1b1358-122b-4f68-adc1-9be6b0a36c4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\HLSL\Model">
+      <UniqueIdentifier>{11f21ad4-adfd-4df1-b2a0-b64fbfdcd0dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Externals">
+      <UniqueIdentifier>{2072f028-1924-4696-a6a7-4be793480c22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Externals\imgui">
+      <UniqueIdentifier>{f8e73db1-1900-4825-8904-3a2c1c51d53c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,37 +51,16 @@
     <ClCompile Include="Original\Base\DirectXCommon.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_demo.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_draw.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_impl_dx12.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_impl_win32.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_tables.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_widgets.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
     <ClCompile Include="Original\Base\ShaderCompiler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Graphics\TextureManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\3D\Object3dCommon.cpp">
+    <ClCompile Include="Original\3D\ModelCommon.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\3D\Object3d.cpp">
+    <ClCompile Include="Original\3D\Model.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Camera\Camera.cpp">
@@ -78,7 +72,7 @@
     <ClCompile Include="Original\2D\SpriteCommon.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\OriginalEngine.cpp">
+    <ClCompile Include="Original\RyoEngine.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Input\Input.cpp">
@@ -90,16 +84,63 @@
     <ClCompile Include="Original\ImGui\ImGuiManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Original\HLSL\Object3d.PS.hlsl" />
-    <FxCompile Include="Original\HLSL\Object3d.VS.hlsl" />
-    <FxCompile Include="Original\HLSL\Sprite.VS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
-    <FxCompile Include="Original\HLSL\Sprite.PS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </FxCompile>
+    <ClCompile Include="Original\Reflect\ReflectCommon.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Reflect\ReflectModel.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\imgui.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\imgui_demo.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\imgui_draw.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\imgui_impl_dx12.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\imgui_impl_win32.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\imgui_tables.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\imgui_widgets.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Mesh\Mesh.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Base\Font.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\GraphEditor.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImCurveEdit.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImGradient.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImGuizmo.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImSequencer.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Externals\imgui\ImVectorEditor.cpp">
+      <Filter>Externals\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Edit\AnimEdit.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Easing\Easing.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">
@@ -138,37 +179,13 @@
     <ClInclude Include="Original\Base\ShaderCompiler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imconfig.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imgui.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imgui_impl_dx12.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imgui_impl_win32.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imgui_internal.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imstb_rectpack.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imstb_textedit.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imstb_truetype.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
     <ClInclude Include="Original\Graphics\TextureManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\3D\Object3dCommon.h">
+    <ClInclude Include="Original\3D\ModelCommon.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\3D\Object3d.h">
+    <ClInclude Include="Original\3D\Model.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Camera\Camera.h">
@@ -180,7 +197,7 @@
     <ClInclude Include="Original\2D\SpriteCommon.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\OriginalEngine.h">
+    <ClInclude Include="Original\RyoEngine.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Input\Input.h">
@@ -192,13 +209,85 @@
     <ClInclude Include="Original\ImGui\ImGuiManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Original\Reflect\ReflectCommon.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Reflect\ReflectModel.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\imconfig.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\imgui.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\imgui_impl_dx12.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\imgui_impl_win32.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\imgui_internal.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\imstb_rectpack.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\imstb_textedit.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\imstb_truetype.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Mesh\Mesh.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Base\Font.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\GraphEditor.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImCurveEdit.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImGradient.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImGuizmo.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImLightRig.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImSequencer.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImVectorEditor.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Externals\imgui\ImZoomSlider.h">
+      <Filter>Externals\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\ImGui\ImGuiAllInclude.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Edit\AnimEdit.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Easing\Easing.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Original\HLSL\Object3d.hlsli">
-      <Filter>リソース ファイル</Filter>
+    <None Include="HLSL\Sprite\Sprite.hlsli">
+      <Filter>リソース ファイル\HLSL\Sprite</Filter>
     </None>
-    <None Include="Original\HLSL\Sprite.hlsli">
-      <Filter>リソース ファイル</Filter>
+    <None Include="HLSL\Reflect\Reflect.hlsli">
+      <Filter>リソース ファイル\HLSL\Reflect</Filter>
+    </None>
+    <None Include="HLSL\Model\Model.hlsli">
+      <Filter>リソース ファイル\HLSL\Model</Filter>
     </None>
     <None Include="Original\HLSL\Reflect\Reflect.hlsli">
       <Filter>リソース ファイル</Filter>
@@ -211,8 +300,23 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Original\Externals\imgui\LICENSE.txt">
-      <Filter>imgui</Filter>
-    </Text>
+    <FxCompile Include="HLSL\Sprite\Sprite.PS.hlsl">
+      <Filter>リソース ファイル\HLSL\Sprite</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Sprite\Sprite.VS.hlsl">
+      <Filter>リソース ファイル\HLSL\Sprite</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Reflect\Reflect.PS.hlsl">
+      <Filter>リソース ファイル\HLSL\Reflect</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Reflect\Reflect.VS.hlsl">
+      <Filter>リソース ファイル\HLSL\Reflect</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Model\Model.PS.hlsl">
+      <Filter>リソース ファイル\HLSL\Model</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Model\Model.VS.hlsl">
+      <Filter>リソース ファイル\HLSL\Model</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
