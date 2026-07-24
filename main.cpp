@@ -13,8 +13,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     debugCamera->SetTranslate({0.0f,1.0f, -40.0f });
 
     // 使うときだけ
-    //AnimEdit::Initialize();
-    //AnimEdit::LoadSettings();
+    // AnimEdit::Initialize();
+    // AnimEdit::LoadSettings();
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
