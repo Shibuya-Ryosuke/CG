@@ -23,9 +23,22 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     sphere.SetTex("resources/uvChecker.png");
 
     // モデル
-    Model* model = Model::Create("resources/plane.obj");
-    model->SetTex("resources/uvChecker.png");
-    model->SetRotate({ 0.0f,3.0f,0.0f });
+    // 平面
+    Model* plane = Model::Create("resources/plane.obj");
+    plane->SetTex("resources/uvChecker.png");
+    plane->SetRotate({ 0.0f,3.0f,0.0f });
+    plane->SetTranslate({ 5.0f,0.0f,0.0f });
+    // ティーポット
+    Model* teapot = Model::Create("resources/teapot.obj");
+    teapot->SetTex("resources/checkerBoard.png");
+    teapot->SetTranslate({ 10.0f,0.0f,0.0f });
+    // ウサギ
+    Model* bunny = Model::Create("resources/bunny.obj");
+    bunny->SetTex("resources/uvChecker.png");
+    bunny->SetTranslate({ 15.0f,0.0f,0.0f });
+
+    // 音
+    uint32_t se = Audio::GetInstance()->LoadAudio("resources/Alarm01.wav");
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -38,11 +51,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ImGui
         ImGui::Begin("CG2");
         Transform modelTransform{
-            .scale = model->GetScale(),
-            .rotate = model->GetRotate(),
-            .translate = model->GetTranslate()
+            .scale = plane->GetScale(),
+            .rotate = plane->GetRotate(),
+            .translate = plane->GetTranslate()
         };
-        DirectionalLight modelDL = model->GetDirectionalLight();
+        DirectionalLight modelDL = plane->GetDirectionalLight();
 
         ImGui::PushID("Model");
         if (ImGui::CollapsingHeader("plane")) {
@@ -64,20 +77,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             ImGui::Spacing();
             // ランバート
             if (ImGui::TreeNodeEx("Lambert Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
-                if (ImGui::RadioButton("Lambert", model->GetLambert() == ShadingMode::LAMBERT)) {
-                    model->SetLambert(ShadingMode::LAMBERT);
+                if (ImGui::RadioButton("Lambert", plane->GetLambert() == ShadingMode::LAMBERT)) {
+                    plane->SetLambert(ShadingMode::LAMBERT);
                 }
                 ImGui::SameLine();
-                if (ImGui::RadioButton("Half Lambert", model->GetLambert() == ShadingMode::HALF_LAMBERT)) {
-                    model->SetLambert(ShadingMode::HALF_LAMBERT);
+                if (ImGui::RadioButton("Half Lambert", plane->GetLambert() == ShadingMode::HALF_LAMBERT)) {
+                    plane->SetLambert(ShadingMode::HALF_LAMBERT);
                 }
                 ImGui::TreePop();
             }
         }
         ImGui::PopID();
         // セット
-        model->SetTransform(modelTransform);
-        model->SetDirectionalLight(modelDL);
+        plane->SetTransform(modelTransform);
+        plane->SetDirectionalLight(modelDL);
 
 
         ImGui::Spacing();
@@ -172,15 +185,26 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         sprite.SetUVRotate(uvR);
         sprite.SetUVTranslate(uvT);
 
+
+        // オーディオ
+        if (ImGui::Button("audio")) {
+            Audio::GetInstance()->PlayAudio(se, 0.5f);
+        }
         ImGui::End();
+
+        // ゲームパッド操作
+        if (Input::GetJoystickTrigger(XINPUT_GAMEPAD_B)) {
+            Audio::GetInstance()->PlayAudio(se, 0.5f);
+        }
 
         // 各種更新
         debugCamera->SetAvailable(RyoEngine::GetOnTheGameView());
         debugCamera->Update();
 
-        model->Update(*debugCamera);
-
+        plane->Update(*debugCamera);
         sphere.Update(*debugCamera);
+        teapot->Update(*debugCamera);
+        bunny->Update(*debugCamera);
 
         sprite.Update();
         // ----------------------
@@ -204,8 +228,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // [3D描画フェーズ]
         Begin3dDraw();
-        model->Draw();
+        plane->Draw();
         sphere.Draw();
+        teapot->Draw();
+        bunny->Draw();
 
         // 3D終了----------------------------------------------------
         
