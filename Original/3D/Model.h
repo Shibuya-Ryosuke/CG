@@ -27,6 +27,9 @@ namespace RyoEngine {
 
             // テクスチャ
             uint32_t textureHandle = 0;
+
+            // 元となったmtlのマテリアル名 (newmtl名。名前引きのために保持)
+            std::string materialName;
         };
 
         void Initialize();
@@ -54,6 +57,25 @@ namespace RyoEngine {
 
         // メッシュ数の取得 (マルチメッシュ対応)
         size_t GetMeshCount() const { return meshes_.size(); }
+
+        /// <summary>
+        /// mtlのマテリアル名からメッシュのインデックスを検索する
+        /// </summary>
+        /// <param name="materialName">newmtlで定義された名前</param>
+        /// <returns>見つからなければ -1</returns>
+        int32_t GetMeshIndexByName(const std::string& materialName) const {
+            for (size_t i = 0; i < meshes_.size(); ++i) {
+                if (meshes_[i].materialName == materialName) {
+                    return static_cast<int32_t>(i);
+                }
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// メッシュが参照しているmtlのマテリアル名を取得する
+        /// </summary>
+        const std::string& GetMaterialName(size_t meshIndex = 0) const { return meshes_[meshIndex].materialName; }
 
         // Getter
         const Vector3& GetScale() const { return transform_.scale; }
@@ -158,6 +180,27 @@ namespace RyoEngine {
         /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
         void SetColor(const Vector4& color, int32_t meshIndex = -1);
 
+        void SetUVTranslate(const Vector2& translate) { uvTranslate_ = translate; }
+        void SetUVRotate(float rotate) { uvRotate_ = rotate; }
+        void SetUVScale(const Vector2& scale) { uvScale_ = scale; }
+        void SetUVSRT(const Vector2& scale, float rotate, const Vector2& translate) {
+            uvScale_ = scale;
+            uvRotate_ = rotate;
+            uvTranslate_ = translate;
+        }
+
+        
+        // マルチマテリアル版
+        ShadingMode GetLambertByName(const std::string& materialName) const;
+        Vector4 GetColorByName(const std::string& materialName) const;
+
+        void SetLambertByName(const ShadingMode lambertMode, const std::string& materialName);
+        void SetTexByName(uint32_t handle, const std::string& materialName);
+        void SetTexByName(const std::string& filePath, const std::string& materialName);
+        void SetColorByName(const Vector4& color, const std::string& materialName);
+
+
+        // アニメエディタに登録する番号
         void SetAnimEditID(uint32_t id) { animEditID_ = id; }
 
     private:
@@ -165,6 +208,7 @@ namespace RyoEngine {
         void InternalInitialize(const ModelLoader::ModelData& modelData);
 
         Transform transform_{};
+        Transform uvTransform_{};
 
         // メッシュ配列 (マルチメッシュ/マルチマテリアル対応)
         std::vector<MeshResource> meshes_;
@@ -178,6 +222,10 @@ namespace RyoEngine {
         TransformationMatrix* wvpData_ = nullptr;
 
         Matrix4x4 worldMatrix_{};
+
+        Vector2 uvTranslate_ = { 0.0f, 0.0f };
+        float uvRotate_ = 0.0f;
+        Vector2 uvScale_ = { 1.0f, 1.0f };
 
         int32_t animEditID_ = 0;
     };

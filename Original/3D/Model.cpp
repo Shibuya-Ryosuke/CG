@@ -75,6 +75,51 @@ namespace RyoEngine {
         }
     }
 
+    ShadingMode Model::GetLambertByName(const std::string& materialName) const {
+        int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) {
+            return GetLambert(index);
+        }
+        // 見つからない場合のデフォルト値やエラーハンドリング
+        return {}; // または適切なデフォルトの ShadingMode
+    }
+
+    Vector4 Model::GetColorByName(const std::string& materialName) const {
+        int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) {
+            return GetColor(index);
+        }
+        return Vector4(0, 0, 0, 0); // デフォルトカラー
+    }
+
+    void Model::SetLambertByName(const ShadingMode lambertMode, const std::string& materialName) {
+        int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) {
+            SetLambert(lambertMode, index);
+        }
+    }
+
+    void Model::SetTexByName(uint32_t handle, const std::string& materialName) {
+        int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) {
+            SetTex(handle, index);
+        }
+    }
+
+    void Model::SetTexByName(const std::string& filePath, const std::string& materialName) {
+        int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) {
+            SetTex(filePath, index);
+        }
+    }
+
+    void Model::SetColorByName(const Vector4& color, const std::string& materialName) {
+        int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) {
+            SetColor(color, index);
+        }
+    }
+
     void Model::InternalInitialize(const ModelLoader::ModelData& modelData) {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
@@ -104,9 +149,14 @@ namespace RyoEngine {
             mesh.materialData->uvTransform = MakeIdentity4x4();
 
             // 3. テクスチャ (メッシュが参照するマテリアルのmap_Kdから読み込む。無ければ白テクスチャ)
-            if (srcMesh.materialIndex < modelData.materials.size() &&
-                !modelData.materials[srcMesh.materialIndex].textureFilePath.empty()) {
-                mesh.textureHandle = TextureManager::GetInstance()->Load(modelData.materials[srcMesh.materialIndex].textureFilePath);
+            //    あわせて、あとで名前引きできるようにmtlのマテリアル名も控えておく
+            if (srcMesh.materialIndex < modelData.materials.size()) {
+                mesh.materialName = modelData.materials[srcMesh.materialIndex].name;
+                if (!modelData.materials[srcMesh.materialIndex].textureFilePath.empty()) {
+                    mesh.textureHandle = TextureManager::GetInstance()->Load(modelData.materials[srcMesh.materialIndex].textureFilePath);
+                } else {
+                    mesh.textureHandle = TextureManager::GetInstance()->GetWhiteTex();
+                }
             } else {
                 mesh.textureHandle = TextureManager::GetInstance()->GetWhiteTex();
             }

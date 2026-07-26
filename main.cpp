@@ -26,7 +26,7 @@ void ModelOperate(Model* model,const char* id) {
         ImGui::Spacing();
         // ライト
         if (ImGui::TreeNodeEx("light", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::DragFloat4("color", &dl.color.x, 0.01f, -1.0f, 1.0f);
+            ImGui::ColorEdit4("color", &dl.color.x);
             ImGui::DragFloat3("direction", &dl.direction.x, 0.01f, -5.0f, 5.0f);
             ImGui::DragFloat("intensity", &dl.intensity, 0.01f, -5.0f, 5.0f);
             ImGui::TreePop();
@@ -48,21 +48,81 @@ void ModelOperate(Model* model,const char* id) {
     // セット
     model->SetTransform(transform);
     model->SetDirectionalLight(dl);
+}
 
+void Space() {
     // 余白
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
+}
+// 対象の enum class
+enum class State {
+    sphere_plane,
+    sprite,
+    teapot,
+    bunny,
+    multi_mesh,
+    multi_material,
+};
+
+const char* GetStateName(State state) {
+    switch (state) {
+    case State::sphere_plane:   return "Sphere Plane";
+    case State::sprite:         return "Sprite";
+    case State::teapot:         return "Teapot";
+    case State::bunny:          return "Bunny";
+    case State::multi_mesh:     return "Multi Mesh";
+    case State::multi_material: return "Multi Material";
+    }
+    return "Unknown";
+}
+
+void RenderStateCombo(State& currentState) {
+    const char* items[] = {
+        "Sphere Plane",
+        "Sprite",
+        "Teapot",
+        "Bunny",
+        "Multi Mesh",
+        "Multi Material"
+    };
+
+    // 現在の enum を int のインデックスに変換
+    int currentItemIndex = static_cast<int>(currentState);
+
+    // コンボボックスの描画
+    if (ImGui::BeginCombo("State", items[currentItemIndex])) {
+        for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
+            bool isSelected = (currentItemIndex == i);
+
+            if (ImGui::Selectable(items[i], isSelected)) {
+                currentItemIndex = i;
+                currentState = static_cast<State>(i); // 選択されたら enum を更新
+            }
+
+            // 初期フォーカスを現在の選択項目に合わせる
+            if (isSelected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
 }
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
+    // 正面を向かせる定数
+    const float kRotateY = 3.18f;
+
+    // 状態
+    State state = State::sphere_plane;
+
     // カメラ
     DebugCamera* debugCamera = new DebugCamera();
-    debugCamera->SetTranslate({ -11.370f,1.3f,-28.4f });
-    debugCamera->SetRotate({ -0.02f,3.315f,0.0f });
+    debugCamera->SetTranslate({ 0.0f,0.3f,-9.2f });
 
     // 画像
     uint32_t uvTex = LoadTex("resources/uvChecker.png");
@@ -75,28 +135,34 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // 球
     Mesh sphere;
     sphere.CreateSphere({ 0.0f,0.0f }, 24);
+    sphere.SetTranslate({ -1.7f,0.0f,0.0f });
     sphere.SetTex(uvTex);
 
     // モデル
     // 平面
     Model* plane = Model::Create("resources/plane.obj");
-    plane->SetTex(uvTex);
-    plane->SetTranslate({ 5.0f,0.0f,0.0f });
+    plane->SetTranslate({ 1.7f,0.0f,0.0f });
+    plane->SetRotate({ 0.0f,kRotateY,0.0f });
     // ティーポット
     Model* teapot = Model::Create("resources/teapot.obj");
-    teapot->SetTex(uvTex);
-    teapot->SetTranslate({ 10.0f,0.0f,0.0f });
+    teapot->SetRotate({ 0.0f,kRotateY,0.0f });
     // ウサギ
     Model* bunny = Model::Create("resources/bunny.obj");
-    bunny->SetTex(uvTex);
-    bunny->SetTranslate({ 15.0f,0.0f,0.0f });
+    bunny->SetRotate({ 0.0f,kRotateY,0.0f });
     // マルチメッシュ
-    Model* multi = Model::Create("resources/multiMesh.obj");
-    multi->SetTranslate({ 20.0f,0.0f,0.0f });
-
+    Model* multiMesh = Model::Create("resources/multiMesh.obj");
+    multiMesh->SetRotate({ 0.0f,kRotateY,0.0f });
+    // マルチマテリアル
+    Model* multiMaterial = Model::Create("resources/multiMaterial.obj");
+    multiMaterial->SetRotate({ 0.0f,kRotateY,0.0f });
     // 音
     uint32_t se = Audio::GetInstance()->LoadAudio("resources/Alarm01.wav");
 
+
+
+    
+    multiMaterial->SetTexByName("resources/flower.png", "Material");
+    
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
@@ -105,35 +171,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // -- 更新処理（Update） --
         // ----------------------
-        // ImGui
-        ImGui::Begin("CG2");
-
-        // カメラ操作
-        Transform cameraTransform{
-            .scale = 0.0f,
-            .rotate = debugCamera->GetRotate(),
-            .translate = debugCamera->GetTranslate()
-        };
-        ImGui::PushID("camera");
-        if(ImGui::CollapsingHeader("camera")) {
-            ImGui::DragFloat3("rotate", &cameraTransform.rotate.x, 0.01f, -5.0f, 5.0f);
-            ImGui::DragFloat3("translate", &cameraTransform.translate.x, 0.01f, -5.0f, 5.0f);
-        }
-        ImGui::PopID();
-        // セット
-        debugCamera->SetRotate(cameraTransform.rotate);
-        debugCamera->SetTranslate(cameraTransform.translate);
-
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-
-        // モデル(今は平面)
-        ModelOperate(plane, "model");
-
-
+        
+        // switchの外でやる必要あり
         // 球操作
         Transform sphereTransform{
             .scale = sphere.GetScale(),
@@ -142,47 +181,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         };
         DirectionalLight sphereDL = sphere.GetDirectionalLight();
 
-        ImGui::PushID("sphere");
-        if(ImGui::CollapsingHeader("sphere")) {
-            // SRT
-            if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::DragFloat3("scale", &sphereTransform.scale.x, 0.01f, -5.0f, 5.0f);
-                ImGui::DragFloat3("rotate", &sphereTransform.rotate.x, 0.01f, -5.0f, 5.0f);
-                ImGui::DragFloat3("translate", &sphereTransform.translate.x, 0.01f, -5.0f, 5.0f);
-                ImGui::TreePop();
-            }
-            ImGui::Spacing();
-            // ライト
-            if (ImGui::TreeNodeEx("light", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::DragFloat4("color", &sphereDL.color.x, 0.01f, -1.0f, 1.0f);
-                ImGui::DragFloat3("direction", &sphereDL.direction.x, 0.01f, -5.0f, 5.0f);
-                ImGui::DragFloat("intensity", &sphereDL.intensity, 0.01f, -5.0f, 5.0f);
-                ImGui::TreePop();
-            }
-            ImGui::Spacing();
-            // ランバート
-            if (ImGui::TreeNodeEx("Lambert Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
-                if (ImGui::RadioButton("Lambert", sphere.GetLambert() == ShadingMode::LAMBERT)) {
-                    sphere.SetLambert(ShadingMode::LAMBERT);
-                }
-                ImGui::SameLine();
-                if (ImGui::RadioButton("Half Lambert", sphere.GetLambert() == ShadingMode::HALF_LAMBERT)) {
-                    sphere.SetLambert(ShadingMode::HALF_LAMBERT);
-                }
-                ImGui::TreePop();
-            }
-        }
-        ImGui::PopID();
-        // セット
-        sphere.SetTransform(sphereTransform);
-        sphere.SetDirectionalLight(sphereDL);
-
-
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-
-
         // スプライト操作
         Vector2 spriteS = sprite.GetScale();
         float spriteR = sprite.GetRotate();
@@ -190,59 +188,16 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         Vector2 uvS = sprite.GetUVScale();
         float uvR = sprite.GetUVRotate();
         Vector2 uvT = sprite.GetUVTranslate();
-        if (ImGui::CollapsingHeader("sprite")) {
-            // SRT
-            ImGui::PushID("sprite");
-            if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::DragFloat2("scale", &spriteS.x, 0.01f, -5.0f, 5.0f);
-                ImGui::DragFloat("rotate", &spriteR, 0.01f, -5.0f, 5.0f);
-                ImGui::DragFloat2("translate", &spriteT.x, 1.0f, 0.0f, -1280.0f);
-                ImGui::TreePop();
-            }
-            ImGui::Spacing();
-            ImGui::PopID();
-
-            //uv
-            ImGui::PushID("uv");
-            if (ImGui::TreeNodeEx("uv", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::DragFloat2("scale", &uvS.x, 0.01f, -5.0f, 5.0f);
-                ImGui::DragFloat("rotate", &uvR, 0.01f, -5.0f, 5.0f);
-                ImGui::DragFloat2("translate", &uvT.x, 0.01f, -5.0f, 5.0f);
-                ImGui::TreePop();
-            }
-            ImGui::Spacing();
-            ImGui::PopID();
-        }
-        // セット
-        sprite.SetScale(spriteS);
-        sprite.SetRotate(spriteR);
-        sprite.SetTranslate(spriteT);
-        sprite.SetUVScale(uvS);
-        sprite.SetUVRotate(uvR);
-        sprite.SetUVTranslate(uvT);
 
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
 
+        // ImGui
+        ImGui::Begin("CG2");
 
-        // ティーポット
-        ModelOperate(teapot, "teapot");
-        // ウサギ
-        ModelOperate(bunny, "bunny");
-        // マルチメッシュ
-        ModelOperate(multi, "multi");
-
-        // オーディオ
-        if (ImGui::Button("audio")) {
-            Audio::GetInstance()->PlayAudio(se, 0.5f);
-        }
         // リセット
         if (ImGui::Button("Initialize")) {
             // カメラ
-            debugCamera->SetTranslate({ -11.370f,1.3f,-28.4f });
-            debugCamera->SetRotate({ -0.02f,3.315f,0.0f });
+            debugCamera->SetTranslate({ 0.0f,0.3f,-9.2f });
 
             // スプライト
             sprite.SetScale({ 1.0f,1.0f });
@@ -261,20 +216,156 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             // モデル
             // 平面
             plane->SetScale({ 1.0f,1.0f,1.0f });
-            plane->SetRotate({ 0.0f,0.0f,0.0f });
-            plane->SetTranslate({ 5.0f,0.0f,0.0f });
+            plane->SetRotate({ 0.0f,kRotateY,0.0f });
+            plane->SetTranslate({ 4.0f,0.0f,0.0f });
             // ティーポット
             teapot->SetScale({ 1.0f,1.0f,1.0f });
-            teapot->SetRotate({ 0.0f,0.0f,0.0f });
-            teapot->SetTranslate({ 10.0f,0.0f,0.0f });
+            teapot->SetRotate({ 0.0f,kRotateY,0.0f });
+            teapot->SetTranslate({ 0.0f,0.0f,0.0f });
             // ウサギ
             bunny->SetScale({ 1.0f,1.0f,1.0f });
-            bunny->SetRotate({ 0.0f,0.0f,0.0f });
-            bunny->SetTranslate({ 15.0f,0.0f,0.0f });
+            bunny->SetRotate({ 0.0f,kRotateY,0.0f });
+            bunny->SetTranslate({ 0.0f,0.0f,0.0f });
             // マルチメッシュ
-            multi->SetScale({ 1.0f,1.0f,1.0f });
-            multi->SetRotate({ 0.0f,0.0f,0.0f });
-            multi->SetTranslate({ 20.0f,0.0f,0.0f });
+            multiMesh->SetScale({ 1.0f,1.0f,1.0f });
+            multiMesh->SetRotate({ 0.0f,kRotateY,0.0f });
+            multiMesh->SetTranslate({ 0.0f,0.0f,0.0f });
+        }
+
+        ImGui::SameLine();
+        // オーディオ
+        if (ImGui::Button("audio")) {
+            Audio::GetInstance()->PlayAudio(se, 0.5f);
+        }
+
+        // カメラ操作
+        Transform cameraTransform{
+            .scale = 0.0f,
+            .rotate = debugCamera->GetRotate(),
+            .translate = debugCamera->GetTranslate()
+        };
+        ImGui::PushID("camera");
+        if (ImGui::CollapsingHeader("camera")) {
+            ImGui::DragFloat3("rotate", &cameraTransform.rotate.x, 0.01f, -5.0f, 5.0f);
+            ImGui::DragFloat3("translate", &cameraTransform.translate.x, 0.01f, -5.0f, 5.0f);
+        }
+        ImGui::PopID();
+        // セット
+        debugCamera->SetRotate(cameraTransform.rotate);
+        debugCamera->SetTranslate(cameraTransform.translate);
+        Space();
+
+
+        // コンボで変更
+        RenderStateCombo(state);
+        ImGui::Spacing();
+
+
+        switch (state) {
+        case State::sphere_plane:
+            // モデル(今は平面)
+            ModelOperate(plane, "plane");
+
+            // 球
+            ImGui::PushID("sphere");
+            if (ImGui::CollapsingHeader("sphere")) {
+                // SRT
+                if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::DragFloat3("scale", &sphereTransform.scale.x, 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat3("rotate", &sphereTransform.rotate.x, 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat3("translate", &sphereTransform.translate.x, 0.01f, -5.0f, 5.0f);
+                    ImGui::TreePop();
+                }
+                ImGui::Spacing();
+                // ライト
+                if (ImGui::TreeNodeEx("light", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::ColorEdit4("color", &sphereDL.color.x);
+                    ImGui::DragFloat3("direction", &sphereDL.direction.x, 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat("intensity", &sphereDL.intensity, 0.01f, -5.0f, 5.0f);
+                    ImGui::TreePop();
+                }
+                ImGui::Spacing();
+                // ランバート
+                if (ImGui::TreeNodeEx("Lambert Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    if (ImGui::RadioButton("Lambert", sphere.GetLambert() == ShadingMode::LAMBERT)) {
+                        sphere.SetLambert(ShadingMode::LAMBERT);
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::RadioButton("Half Lambert", sphere.GetLambert() == ShadingMode::HALF_LAMBERT)) {
+                        sphere.SetLambert(ShadingMode::HALF_LAMBERT);
+                    }
+                    ImGui::TreePop();
+                }
+            }
+            ImGui::PopID();
+            // セット
+            sphere.SetTransform(sphereTransform);
+            sphere.SetDirectionalLight(sphereDL);
+            Space();
+            break;
+
+
+
+        case State::sprite:
+            if (ImGui::CollapsingHeader("sprite")) {
+                // SRT
+                ImGui::PushID("sprite");
+                if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::DragFloat2("scale", &spriteS.x, 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat("rotate", &spriteR, 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat2("translate", &spriteT.x, 1.0f, 0.0f, -1280.0f);
+                    ImGui::TreePop();
+                }
+                ImGui::Spacing();
+                ImGui::PopID();
+
+                //uv
+                ImGui::PushID("uv");
+                if (ImGui::TreeNodeEx("uv", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::DragFloat2("scale", &uvS.x, 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat("rotate", &uvR, 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat2("translate", &uvT.x, 0.01f, -5.0f, 5.0f);
+                    ImGui::TreePop();
+                }
+                ImGui::Spacing();
+                ImGui::PopID();
+            }
+            // セット
+            sprite.SetScale(spriteS);
+            sprite.SetRotate(spriteR);
+            sprite.SetTranslate(spriteT);
+            sprite.SetUVScale(uvS);
+            sprite.SetUVRotate(uvR);
+            sprite.SetUVTranslate(uvT);
+            Space();
+            break;
+
+
+
+        case State::teapot:
+            // ティーポット
+            ModelOperate(teapot, "teapot");
+            Space();
+            break;
+
+        case State::bunny:
+            // ウサギ
+            ModelOperate(bunny, "bunny");
+            Space();
+            break;
+
+        case State::multi_mesh:
+            // マルチメッシュ
+            ModelOperate(multiMesh, "multiMesh");
+            Space();
+            break;
+
+        case State::multi_material:
+            // マルチマテリアル
+            ModelOperate(multiMaterial, "multiMaterial");
+
+            Space();
+            break;
         }
         ImGui::End();
 
@@ -283,17 +374,37 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             Audio::GetInstance()->PlayAudio(se, 0.5f);
         }
 
+
         // 各種更新
         debugCamera->SetAvailable(RyoEngine::GetOnTheGameView());
         debugCamera->Update();
 
-        plane->Update(*debugCamera);
-        sphere.Update(*debugCamera);
-        teapot->Update(*debugCamera);
-        bunny->Update(*debugCamera);
-        multi->Update(*debugCamera);
+        switch (state) {
+        case State::sphere_plane:
+            plane->Update(*debugCamera);
+            sphere.Update(*debugCamera);
+            break;
 
-        sprite.Update();
+        case State::sprite:
+            sprite.Update();
+            break;
+
+        case State::teapot:
+            teapot->Update(*debugCamera);
+            break;
+
+        case State::bunny:
+            bunny->Update(*debugCamera);
+            break;
+
+        case State::multi_mesh:
+            multiMesh->Update(*debugCamera);
+            break;
+
+        case State::multi_material:
+            multiMaterial->Update(*debugCamera);
+            break;
+        }
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------
@@ -315,11 +426,31 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // [3D描画フェーズ]
         Begin3dDraw();
-        plane->Draw();
-        sphere.Draw();
-        teapot->Draw();
-        bunny->Draw();
-        multi->Draw();
+        switch (state) {
+        case State::sphere_plane:
+            plane->Draw();
+            sphere.Draw();
+            break;
+
+        case State::sprite:
+            break;
+
+        case State::teapot:
+            teapot->Draw();
+            break;
+
+        case State::bunny:
+            bunny->Draw();
+            break;
+
+        case State::multi_mesh:
+            multiMesh->Draw();
+            break;
+
+        case State::multi_material:
+            multiMaterial->Draw();
+            break;
+        }
 
         // 3D終了----------------------------------------------------
         
@@ -327,7 +458,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // [2D描画フェーズ]
         Begin2dDraw();
-        sprite.Draw();
+        if (state == State::sprite) {
+            sprite.Draw();
+        }
 
         // 2D終了----------------------------------------------------
         
