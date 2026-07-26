@@ -2,6 +2,7 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <string>
+#include <vector>
 #include "../Math/Math.h"
 #include "../Loader/ModelLoader.h"
 #include "../Camera/Camera.h"
@@ -13,6 +14,21 @@ namespace RyoEngine {
 
     class Model {
     public:
+        // メッシュ単位で保持するリソース (頂点・マテリアル・テクスチャ)
+        struct MeshResource {
+            // 頂点バッファ
+            Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;
+            D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+            uint32_t vertexCount = 0;
+
+            // マテリアル
+            Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
+            Material* materialData = nullptr;
+
+            // テクスチャ
+            uint32_t textureHandle = 0;
+        };
+
         void Initialize();
         void Update(const Camera& camera);
         void Update(const DebugCamera& debugCamera);
@@ -34,8 +50,11 @@ namespace RyoEngine {
         void CreateModel(const std::string& filePath);
 
         void CreateDirectionalLight();
-        
-        
+
+
+        // メッシュ数の取得 (マルチメッシュ対応)
+        size_t GetMeshCount() const { return meshes_.size(); }
+
         // Getter
         const Vector3& GetScale() const { return transform_.scale; }
         const Vector3& GetRotate() const { return transform_.rotate; }
@@ -60,22 +79,26 @@ namespace RyoEngine {
         /// </summary>
         /// <returns>光の強度</returns>
         float GetDLIntensity() const { return lightData_->intensity; }
+
+        // --- 以下、マテリアル/テクスチャ/頂点関連は meshIndex 指定版 ---
+        // 既存コード互換のため meshIndex 省略時は 0番目 (先頭メッシュ) を対象にする
+
         /// <summary>
         /// ランバートの取得
         /// </summary>
-        /// <returns></returns>
-        const ShadingMode& GetLambert() const { return materialData_->shadingMode; }
+        const ShadingMode& GetLambert(size_t meshIndex = 0) const { return meshes_[meshIndex].materialData->shadingMode; }
 
-        Vector4& GetColor() const { return materialData_->color; };
-        ID3D12Resource* GetMaterialResource() const { return materialResource_.Get();};
+        Vector4& GetColor(size_t meshIndex = 0) const { return meshes_[meshIndex].materialData->color; };
+        ID3D12Resource* GetMaterialResource(size_t meshIndex = 0) const { return meshes_[meshIndex].materialResource.Get(); };
+        uint32_t GetTxHandle(size_t meshIndex = 0) const { return meshes_[meshIndex].textureHandle; }
+        D3D12_VERTEX_BUFFER_VIEW GetVBV(size_t meshIndex = 0) const { return meshes_[meshIndex].vertexBufferView; }
+        uint32_t GetVertexCount(size_t meshIndex = 0) const { return meshes_[meshIndex].vertexCount; }
+        D3D12_GPU_VIRTUAL_ADDRESS GetMaterialResourceGVA(size_t meshIndex = 0) const { return meshes_[meshIndex].materialResource->GetGPUVirtualAddress(); }
+
         ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
         ID3D12Resource* GetLightResource() const { return lightResource_.Get(); };
-        Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
-        uint32_t GetTxHandle() const { return textureHandle_; }
-        D3D12_VERTEX_BUFFER_VIEW GetVBV() const { return vertexBufferView_; }
-        uint32_t GetVertexCount() const { return vertexCount_; }
-        D3D12_GPU_VIRTUAL_ADDRESS GetMaterialResourceGVA() const { return materialResource_->GetGPUVirtualAddress(); }
         D3D12_GPU_VIRTUAL_ADDRESS GetLightResourceGVA() const { return lightResource_->GetGPUVirtualAddress(); }
+        Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
         int32_t GetAnimEditID () { return animEditID_; }
 
         // Setter
@@ -111,41 +134,48 @@ namespace RyoEngine {
         /// </summary>
         /// <param name="intensity">光の強度</param>
         void SetDLIntensity(float intensity) { lightData_->intensity = intensity; }
-        void SetLambert(const ShadingMode lambertMode) { materialData_->shadingMode = lambertMode; }
 
-        void SetTex(uint32_t handle) { textureHandle_ = handle; }
-        void SetTex(const std::string& filePath);
-        void SetColor(const Vector4& color) { materialData_->color = color; };
+        /// <summary>
+        /// シェーディングモードの指定
+        /// </summary>
+        /// <param name="lambertMode">モード</param>
+        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
+        void SetLambert(const ShadingMode lambertMode, int32_t meshIndex = -1);
+
+        /// <summary>
+        /// テクスチャの指定 (ハンドル)
+        /// </summary>
+        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
+        void SetTex(uint32_t handle, int32_t meshIndex = -1);
+        /// <summary>
+        /// テクスチャの指定 (ファイルパス)
+        /// </summary>
+        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
+        void SetTex(const std::string& filePath, int32_t meshIndex = -1);
+        /// <summary>
+        /// 色の指定
+        /// </summary>
+        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
+        void SetColor(const Vector4& color, int32_t meshIndex = -1);
+
         void SetAnimEditID(uint32_t id) { animEditID_ = id; }
-        
+
     private:
         // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）
         void InternalInitialize(const ModelLoader::ModelData& modelData);
 
         Transform transform_{};
 
-        // 頂点バッファ
-        Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
-        D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
-        uint32_t vertexCount_ = 0;
+        // メッシュ配列 (マルチメッシュ/マルチマテリアル対応)
+        std::vector<MeshResource> meshes_;
 
-        // インデックスバッファ (Obj読み込みなら必須)
-        Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_;
-        D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
-
-        // マテリアル用
-        Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
-        Material* materialData_ = nullptr;
-
-        // ライト
+        // ライト (モデル全体で共有)
         Microsoft::WRL::ComPtr<ID3D12Resource> lightResource_;
         DirectionalLight* lightData_ = nullptr;
 
-        // 座標変換行列（WVP）用
+        // 座標変換行列（WVP）用 (モデル全体で共有)
         Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_;
         TransformationMatrix* wvpData_ = nullptr;
-
-        uint32_t textureHandle_ = 0; // メンバ変数として保持
 
         Matrix4x4 worldMatrix_{};
 

@@ -5,37 +5,94 @@
 
 using namespace RyoEngine;
 
+void ModelOperate(Model* model,const char* id) {
+    // モデル
+    Transform transform{
+        .scale = model->GetScale(),
+        .rotate = model->GetRotate(),
+        .translate = model->GetTranslate()
+    };
+    DirectionalLight dl = model->GetDirectionalLight();
+
+    ImGui::PushID(id);
+    if (ImGui::CollapsingHeader(id)) {
+        // SRT
+        if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::DragFloat3("scale", &transform.scale.x, 0.01f, -5.0f, 5.0f);
+            ImGui::DragFloat3("rotate", &transform.rotate.x, 0.01f, -5.0f, 5.0f);
+            ImGui::DragFloat3("translate", &transform.translate.x, 0.01f, -50.0f, 50.0f);
+            ImGui::TreePop();
+        }
+        ImGui::Spacing();
+        // ライト
+        if (ImGui::TreeNodeEx("light", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::DragFloat4("color", &dl.color.x, 0.01f, -1.0f, 1.0f);
+            ImGui::DragFloat3("direction", &dl.direction.x, 0.01f, -5.0f, 5.0f);
+            ImGui::DragFloat("intensity", &dl.intensity, 0.01f, -5.0f, 5.0f);
+            ImGui::TreePop();
+        }
+        ImGui::Spacing();
+        // ランバート
+        if (ImGui::TreeNodeEx("Lambert Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::RadioButton("Lambert", model->GetLambert() == ShadingMode::LAMBERT)) {
+                model->SetLambert(ShadingMode::LAMBERT);
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Half Lambert", model->GetLambert() == ShadingMode::HALF_LAMBERT)) {
+                model->SetLambert(ShadingMode::HALF_LAMBERT);
+            }
+            ImGui::TreePop();
+        }
+    }
+    ImGui::PopID();
+    // セット
+    model->SetTransform(transform);
+    model->SetDirectionalLight(dl);
+
+    // 余白
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+}
+
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
     // カメラ
     DebugCamera* debugCamera = new DebugCamera();
+    debugCamera->SetTranslate({ -11.370f,1.3f,-28.4f });
+    debugCamera->SetRotate({ -0.02f,3.315f,0.0f });
+
+    // 画像
+    uint32_t uvTex = LoadTex("resources/uvChecker.png");
 
     // スプライト
     Sprite sprite;
-    sprite.Initialize("resources/uvChecker.png");
+    sprite.Initialize(uvTex);
     sprite.SetTranslate({ sprite.GetTexSize().x / 2.0f,sprite.GetTexSize().y / 2.0f });
 
     // 球
     Mesh sphere;
     sphere.CreateSphere({ 0.0f,0.0f }, 24);
-    sphere.SetTex("resources/uvChecker.png");
+    sphere.SetTex(uvTex);
 
     // モデル
     // 平面
     Model* plane = Model::Create("resources/plane.obj");
-    plane->SetTex("resources/uvChecker.png");
-    plane->SetRotate({ 0.0f,3.0f,0.0f });
+    plane->SetTex(uvTex);
     plane->SetTranslate({ 5.0f,0.0f,0.0f });
     // ティーポット
     Model* teapot = Model::Create("resources/teapot.obj");
-    teapot->SetTex("resources/checkerBoard.png");
+    teapot->SetTex(uvTex);
     teapot->SetTranslate({ 10.0f,0.0f,0.0f });
     // ウサギ
     Model* bunny = Model::Create("resources/bunny.obj");
-    bunny->SetTex("resources/uvChecker.png");
+    bunny->SetTex(uvTex);
     bunny->SetTranslate({ 15.0f,0.0f,0.0f });
+    // マルチメッシュ
+    Model* multi = Model::Create("resources/multiMesh.obj");
+    multi->SetTranslate({ 20.0f,0.0f,0.0f });
 
     // 音
     uint32_t se = Audio::GetInstance()->LoadAudio("resources/Alarm01.wav");
@@ -50,52 +107,31 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // ImGui
         ImGui::Begin("CG2");
-        Transform modelTransform{
-            .scale = plane->GetScale(),
-            .rotate = plane->GetRotate(),
-            .translate = plane->GetTranslate()
-        };
-        DirectionalLight modelDL = plane->GetDirectionalLight();
 
-        ImGui::PushID("Model");
-        if (ImGui::CollapsingHeader("plane")) {
-            // SRT
-            if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::DragFloat3("scale", &modelTransform.scale.x, 0.01f, -5.0f, 5.0f);
-                ImGui::DragFloat3("rotate", &modelTransform.rotate.x, 0.01f, -5.0f, 5.0f);
-                ImGui::DragFloat3("translate", &modelTransform.translate.x, 0.01f, -5.0f, 5.0f);
-                ImGui::TreePop();
-            }
-            ImGui::Spacing();
-            // ライト
-            if (ImGui::TreeNodeEx("light", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::DragFloat4("color", &modelDL.color.x, 0.01f, -1.0f, 1.0f);
-                ImGui::DragFloat3("direction", &modelDL.direction.x, 0.01f, -5.0f, 5.0f);
-                ImGui::DragFloat("intensity", &modelDL.intensity, 0.01f, -5.0f, 5.0f);
-                ImGui::TreePop();
-            }
-            ImGui::Spacing();
-            // ランバート
-            if (ImGui::TreeNodeEx("Lambert Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
-                if (ImGui::RadioButton("Lambert", plane->GetLambert() == ShadingMode::LAMBERT)) {
-                    plane->SetLambert(ShadingMode::LAMBERT);
-                }
-                ImGui::SameLine();
-                if (ImGui::RadioButton("Half Lambert", plane->GetLambert() == ShadingMode::HALF_LAMBERT)) {
-                    plane->SetLambert(ShadingMode::HALF_LAMBERT);
-                }
-                ImGui::TreePop();
-            }
+        // カメラ操作
+        Transform cameraTransform{
+            .scale = 0.0f,
+            .rotate = debugCamera->GetRotate(),
+            .translate = debugCamera->GetTranslate()
+        };
+        ImGui::PushID("camera");
+        if(ImGui::CollapsingHeader("camera")) {
+            ImGui::DragFloat3("rotate", &cameraTransform.rotate.x, 0.01f, -5.0f, 5.0f);
+            ImGui::DragFloat3("translate", &cameraTransform.translate.x, 0.01f, -5.0f, 5.0f);
         }
         ImGui::PopID();
         // セット
-        plane->SetTransform(modelTransform);
-        plane->SetDirectionalLight(modelDL);
+        debugCamera->SetRotate(cameraTransform.rotate);
+        debugCamera->SetTranslate(cameraTransform.translate);
 
 
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
+
+
+        // モデル(今は平面)
+        ModelOperate(plane, "model");
 
 
         // 球操作
@@ -186,9 +222,59 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         sprite.SetUVTranslate(uvT);
 
 
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+
+        // ティーポット
+        ModelOperate(teapot, "teapot");
+        // ウサギ
+        ModelOperate(bunny, "bunny");
+        // マルチメッシュ
+        ModelOperate(multi, "multi");
+
         // オーディオ
         if (ImGui::Button("audio")) {
             Audio::GetInstance()->PlayAudio(se, 0.5f);
+        }
+        // リセット
+        if (ImGui::Button("Initialize")) {
+            // カメラ
+            debugCamera->SetTranslate({ -11.370f,1.3f,-28.4f });
+            debugCamera->SetRotate({ -0.02f,3.315f,0.0f });
+
+            // スプライト
+            sprite.SetScale({ 1.0f,1.0f });
+            sprite.SetRotate(0.0f);
+            sprite.SetTranslate({ sprite.GetTexSize().x / 2.0f,sprite.GetTexSize().y / 2.0f });
+            // uv
+            sprite.SetScale({ 1.0f,1.0f });
+            sprite.SetUVRotate(0.0f);
+            sprite.SetTranslate({ 0.0f,0.0f });
+
+            // 球
+            sphere.SetScale({ 1.0f,1.0f,1.0f });
+            sphere.SetRotate({ 0.0f,0.0f,0.0f });
+            sphere.SetTranslate({ 0.0f,0.0f,0.0f });
+
+            // モデル
+            // 平面
+            plane->SetScale({ 1.0f,1.0f,1.0f });
+            plane->SetRotate({ 0.0f,0.0f,0.0f });
+            plane->SetTranslate({ 5.0f,0.0f,0.0f });
+            // ティーポット
+            teapot->SetScale({ 1.0f,1.0f,1.0f });
+            teapot->SetRotate({ 0.0f,0.0f,0.0f });
+            teapot->SetTranslate({ 10.0f,0.0f,0.0f });
+            // ウサギ
+            bunny->SetScale({ 1.0f,1.0f,1.0f });
+            bunny->SetRotate({ 0.0f,0.0f,0.0f });
+            bunny->SetTranslate({ 15.0f,0.0f,0.0f });
+            // マルチメッシュ
+            multi->SetScale({ 1.0f,1.0f,1.0f });
+            multi->SetRotate({ 0.0f,0.0f,0.0f });
+            multi->SetTranslate({ 20.0f,0.0f,0.0f });
         }
         ImGui::End();
 
@@ -205,6 +291,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         sphere.Update(*debugCamera);
         teapot->Update(*debugCamera);
         bunny->Update(*debugCamera);
+        multi->Update(*debugCamera);
 
         sprite.Update();
         // ----------------------
@@ -232,6 +319,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         sphere.Draw();
         teapot->Draw();
         bunny->Draw();
+        multi->Draw();
 
         // 3D終了----------------------------------------------------
         
