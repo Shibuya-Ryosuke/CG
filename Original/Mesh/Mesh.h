@@ -88,6 +88,18 @@ namespace RyoEngine {
 		/// <returns></returns>
 		const ShadingMode& GetLambert() const { return materialData_->shadingMode; }
 		/// <summary>
+		/// UVスケールの取得
+		/// </summary>
+		const Vector2& GetUVScale() const { return uvScale_; }
+		/// <summary>
+		/// UV回転の取得
+		/// </summary>
+		float GetUVRotate() const { return uvRotate_; }
+		/// <summary>
+		/// UV平行移動の取得
+		/// </summary>
+		const Vector2& GetUVTranslate() const { return uvTranslate_; }
+		/// <summary>
 		/// ワールド座標の取得
 		/// </summary>
 		/// <returns>ワールド座標</returns>
@@ -156,6 +168,27 @@ namespace RyoEngine {
 		/// <param name="mode"></param>
 		void SetLambert(const ShadingMode& mode) { materialData_->shadingMode = mode; }
 		/// <summary>
+		/// UVスケールの指定
+		/// </summary>
+		void SetUVScale(const Vector2& scale) { uvScale_ = scale; UpdateUVTransform(); }
+		/// <summary>
+		/// UV回転の指定 (Z軸回転)
+		/// </summary>
+		void SetUVRotate(float rotate) { uvRotate_ = rotate; UpdateUVTransform(); }
+		/// <summary>
+		/// UV平行移動の指定
+		/// </summary>
+		void SetUVTranslate(const Vector2& translate) { uvTranslate_ = translate; UpdateUVTransform(); }
+		/// <summary>
+		/// UVのSRTをまとめて指定
+		/// </summary>
+		void SetUVSRT(const Vector2& scale, float rotate, const Vector2& translate) {
+			uvScale_ = scale;
+			uvRotate_ = rotate;
+			uvTranslate_ = translate;
+			UpdateUVTransform();
+		}
+		/// <summary>
 		/// テクスチャのセット
 		/// </summary>
 		/// <param name="textureHandle">テクスチャハンドル</param>
@@ -197,6 +230,9 @@ namespace RyoEngine {
 		void CreateWVPResource();
 		void CreateDirectionalLight();
 
+		// uvScale_/uvRotate_/uvTranslate_から、materialData_->uvTransformを再計算して書き込む
+		void UpdateUVTransform();
+
 	private:
 		// GPUリソース類（オブジェクトごとに固有の実体として持つ）
 		Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
@@ -219,6 +255,11 @@ namespace RyoEngine {
 		uint32_t textureHandle_ = 0;
 		// 個別のステータス（実体）
 		Transform transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+		// UVのSRT
+		Vector2 uvScale_ = { 1.0f, 1.0f };
+		float uvRotate_ = 0.0f;
+		Vector2 uvTranslate_ = { 0.0f, 0.0f };
 
 		Matrix4x4 worldMatrix_{};
 	};

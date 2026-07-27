@@ -13,6 +13,10 @@ void ModelOperate(Model* model,const char* id) {
         .translate = model->GetTranslate()
     };
     DirectionalLight dl = model->GetDirectionalLight();
+    Vector4 color = model->GetColor();
+    Vector2 uvT = model->GetUVTranslate();
+    float uvR = model->GetUVRotate();
+    Vector2 uvS = model->GetUVScale();
 
     ImGui::PushID(id);
     if (ImGui::CollapsingHeader(id)) {
@@ -32,8 +36,18 @@ void ModelOperate(Model* model,const char* id) {
             ImGui::TreePop();
         }
         ImGui::Spacing();
-        // ランバート
-        if (ImGui::TreeNodeEx("Lambert Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
+       
+        // マテリアル
+        if (ImGui::TreeNodeEx("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // uv
+            ImGui::DragFloat2("UV Translate", &uvT.x, 0.01f, -50.0f, 50.0f);
+            ImGui::DragFloat("UV Rotate", &uvR, 0.01f, -50.0f, 50.0f);
+            ImGui::DragFloat2("UV Scale", &uvS.x, 0.01f, -10.0f, 10.0f);
+            ImGui::Spacing();
+            // マテリアル自体の色
+            ImGui::ColorEdit4("Material Color", &color.x);
+            ImGui::Spacing();
+            // ランバート
             if (ImGui::RadioButton("Lambert", model->GetLambert() == ShadingMode::LAMBERT)) {
                 model->SetLambert(ShadingMode::LAMBERT);
             }
@@ -48,6 +62,8 @@ void ModelOperate(Model* model,const char* id) {
     // セット
     model->SetTransform(transform);
     model->SetDirectionalLight(dl);
+    model->SetUVSRT(uvS, uvR, uvT);
+    model->SetColor(color);
 }
 
 void Space() {
@@ -180,16 +196,44 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             .translate = sphere.GetTranslate()
         };
         DirectionalLight sphereDL = sphere.GetDirectionalLight();
+        // uv
+        Vector2 sphereUVS = sphere.GetUVScale();
+        float sphereUVR = sphere.GetUVRotate();
+        Vector2 sphereUVT = sphere.GetUVTranslate();
+        // color
+        Vector4 sphereColor = sphere.GetColor();
 
         // スプライト操作
         Vector2 spriteS = sprite.GetScale();
         float spriteR = sprite.GetRotate();
         Vector2 spriteT = sprite.GetTranslate();
+        // uv
         Vector2 uvS = sprite.GetUVScale();
         float uvR = sprite.GetUVRotate();
         Vector2 uvT = sprite.GetUVTranslate();
+        // color
+        Vector4 spriteColor = sprite.GetColor();
 
+        // マルチマテリアル
+        // モデル
+        Transform multiMaterialTransform{
+            .scale = multiMaterial->GetScale(),
+            .rotate = multiMaterial->GetRotate(),
+            .translate = multiMaterial->GetTranslate()
+        };
+        DirectionalLight multiMaterialDL = multiMaterial->GetDirectionalLight();
+        // color
+        Vector4 multiMaterialColor1 = multiMaterial->GetColorByName("Material");
+        Vector4 multiMaterialColor2 = multiMaterial->GetColorByName("Material.001");
+        
+        // uv
+        Vector2 uvT1 = multiMaterial->GetUVTranslate(multiMaterial->GetMeshIndexByName("Material"));
+        float uvR1 = multiMaterial->GetUVRotate(multiMaterial->GetMeshIndexByName("Material"));
+        Vector2 uvS1 = multiMaterial->GetUVScale(multiMaterial->GetMeshIndexByName("Material"));
 
+        Vector2 uvT2 = multiMaterial->GetUVTranslate(multiMaterial->GetMeshIndexByName("Material.001"));
+        float uvR2 = multiMaterial->GetUVRotate(multiMaterial->GetMeshIndexByName("Material.001"));
+        Vector2 uvS2 = multiMaterial->GetUVScale(multiMaterial->GetMeshIndexByName("Material.001"));
 
         // ImGui
         ImGui::Begin("CG2");
@@ -285,8 +329,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
                     ImGui::TreePop();
                 }
                 ImGui::Spacing();
-                // ランバート
-                if (ImGui::TreeNodeEx("Lambert Mode", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+                // マテリアル
+                if (ImGui::TreeNodeEx("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    // uv
+                    ImGui::DragFloat2("UV Scale", &sphereUVS.x, 0.01f, -10.0f, 10.0f);
+                    ImGui::DragFloat("UV Rotate", &sphereUVR, 0.01f, -50.0f, 50.0f);
+                    ImGui::DragFloat2("UV Translate", &sphereUVT.x, 0.01f, -50.0f, 50.0f);
+                    ImGui::Spacing();
+                    // マテリアル自体の色
+                    ImGui::ColorEdit4("Material Color", &sphereColor.x);
+                    ImGui::Spacing();
+                    // ランバート
                     if (ImGui::RadioButton("Lambert", sphere.GetLambert() == ShadingMode::LAMBERT)) {
                         sphere.SetLambert(ShadingMode::LAMBERT);
                     }
@@ -301,15 +355,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             // セット
             sphere.SetTransform(sphereTransform);
             sphere.SetDirectionalLight(sphereDL);
+            sphere.SetUVSRT(sphereUVS, sphereUVR, sphereUVT);
+            sphere.SetColor(sphereColor);
             Space();
             break;
 
 
 
         case State::sprite:
+            ImGui::PushID("sprite");
             if (ImGui::CollapsingHeader("sprite")) {
                 // SRT
-                ImGui::PushID("sprite");
                 if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
                     ImGui::DragFloat2("scale", &spriteS.x, 0.01f, -5.0f, 5.0f);
                     ImGui::DragFloat("rotate", &spriteR, 0.01f, -5.0f, 5.0f);
@@ -317,26 +373,29 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
                     ImGui::TreePop();
                 }
                 ImGui::Spacing();
-                ImGui::PopID();
 
-                //uv
-                ImGui::PushID("uv");
-                if (ImGui::TreeNodeEx("uv", ImGuiTreeNodeFlags_DefaultOpen)) {
-                    ImGui::DragFloat2("scale", &uvS.x, 0.01f, -5.0f, 5.0f);
-                    ImGui::DragFloat("rotate", &uvR, 0.01f, -5.0f, 5.0f);
-                    ImGui::DragFloat2("translate", &uvT.x, 0.01f, -5.0f, 5.0f);
+                // マテリアル
+                if (ImGui::TreeNodeEx("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    // uv
+                    if (ImGui::TreeNodeEx("uv", ImGuiTreeNodeFlags_DefaultOpen)) {
+                        ImGui::DragFloat2("scale", &uvS.x, 0.01f, -5.0f, 5.0f);
+                        ImGui::DragFloat("rotate", &uvR, 0.01f, -5.0f, 5.0f);
+                        ImGui::DragFloat2("translate", &uvT.x, 0.01f, -5.0f, 5.0f);
+                        ImGui::TreePop();
+                    }
+                    // マテリアル自体の色
+                    ImGui::ColorEdit4("Material Color", &spriteColor.x);
+                    ImGui::Spacing();
                     ImGui::TreePop();
                 }
-                ImGui::Spacing();
-                ImGui::PopID();
             }
+            ImGui::PopID();
             // セット
             sprite.SetScale(spriteS);
             sprite.SetRotate(spriteR);
             sprite.SetTranslate(spriteT);
-            sprite.SetUVScale(uvS);
-            sprite.SetUVRotate(uvR);
-            sprite.SetUVTranslate(uvT);
+            sprite.SetUVSRT(uvS, uvR, uvT);
+            sprite.SetColor(spriteColor);
             Space();
             break;
 
@@ -362,8 +421,81 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         case State::multi_material:
             // マルチマテリアル
-            ModelOperate(multiMaterial, "multiMaterial");
+            if (ImGui::CollapsingHeader("multiMaterial")) {
+                ImGui::PushID("multiMaterial");
+                // SRT
+                if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::DragFloat3("scale", &multiMaterialTransform.scale.x, 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat3("rotate", &multiMaterialTransform.rotate.x, 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat3("translate", &multiMaterialTransform.translate.x, 0.01f, -50.0f, 50.0f);
+                    ImGui::TreePop();
+                }
+                ImGui::Spacing();
+                // ライト
+                if (ImGui::TreeNodeEx("light", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::ColorEdit4("color", &multiMaterialDL.color.x);
+                    ImGui::DragFloat3("direction", &multiMaterialDL.direction.x, 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat("intensity", &multiMaterialDL.intensity, 0.01f, -5.0f, 5.0f);
+                    ImGui::TreePop();
+                }
+                ImGui::Spacing();
+                ImGui::PopID();
 
+                ImGui::PushID("Cube_multi");
+                // マテリアル
+                if (ImGui::TreeNodeEx("UV & Color", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::DragFloat2("UV Translate", &uvT1.x, 0.01f, -50.0f, 50.0f);
+                    ImGui::DragFloat("UV Rotate", &uvR1, 0.01f, -50.0f, 50.0f);
+                    ImGui::DragFloat2("UV Scale", &uvS1.x, 0.01f, -10.0f, 10.0f);
+                    ImGui::Spacing();
+                    // マテリアル自体の色
+                    ImGui::ColorEdit4("Material Color", &multiMaterialColor1.x);
+                    ImGui::Spacing();
+                    // ランバート
+                    if (ImGui::RadioButton("Lambert", multiMaterial->GetLambertByName("Material") == ShadingMode::LAMBERT)) {
+                        multiMaterial->SetLambertByName(ShadingMode::LAMBERT,"Material");
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::RadioButton("Half Lambert", multiMaterial->GetLambertByName("Material") == ShadingMode::HALF_LAMBERT)) {
+                        multiMaterial->SetLambertByName(ShadingMode::HALF_LAMBERT, "Material");
+                    }
+                    ImGui::TreePop();
+                }
+                ImGui::PopID();
+
+                ImGui::PushID("Plane_multi");
+                // マテリアル
+                if (ImGui::TreeNodeEx("UV & Color", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::DragFloat2("UV Translate", &uvT2.x, 0.01f, -50.0f, 50.0f);
+                    ImGui::DragFloat("UV Rotate", &uvR2, 0.01f, -50.0f, 50.0f);
+                    ImGui::DragFloat2("UV Scale", &uvS2.x, 0.01f, -10.0f, 10.0f);
+                    ImGui::Spacing();
+                    // マテリアル自体の色
+                    ImGui::ColorEdit4("Material Color", &multiMaterialColor2.x);
+                    ImGui::Spacing();
+                    // ランバート
+                    if (ImGui::RadioButton("Lambert", multiMaterial->GetLambertByName("Material.001") == ShadingMode::LAMBERT)) {
+                        multiMaterial->SetLambertByName(ShadingMode::LAMBERT, "Material.001");
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::RadioButton("Half Lambert", multiMaterial->GetLambertByName("Material.001") == ShadingMode::HALF_LAMBERT)) {
+                        multiMaterial->SetLambertByName(ShadingMode::HALF_LAMBERT, "Material.001");
+                    }
+                    ImGui::TreePop();
+                }
+                ImGui::PopID();
+            }
+            // セット
+            multiMaterial->SetTransform(multiMaterialTransform);
+            multiMaterial->SetDirectionalLight(multiMaterialDL);
+            // cube
+            multiMaterial->SetUVScale(uvS1, multiMaterial->GetMeshIndexByName("Material"));
+            multiMaterial->SetUVRotate(uvR1, multiMaterial->GetMeshIndexByName("Material"));
+            multiMaterial->SetUVTranslate(uvT1, multiMaterial->GetMeshIndexByName("Material"));
+            // plane
+            multiMaterial->SetUVScale(uvS2, multiMaterial->GetMeshIndexByName("Material.001"));
+            multiMaterial->SetUVRotate(uvR2, multiMaterial->GetMeshIndexByName("Material.001"));
+            multiMaterial->SetUVTranslate(uvT2, multiMaterial->GetMeshIndexByName("Material.001"));
             Space();
             break;
         }

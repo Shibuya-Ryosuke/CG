@@ -116,7 +116,16 @@ namespace RyoEngine {
         materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
         materialData_->enableLighting = 1;
         materialData_->shadingMode = ShadingMode::HALF_LAMBERT;
-        materialData_->uvTransform = MakeIdentity4x4();
+        UpdateUVTransform(); // uvScale_(1,1)/uvRotate_(0)/uvTranslate_(0,0)から単位行列相当が入る
+    }
+
+    void Mesh::UpdateUVTransform() {
+        // UV用のSRT行列を作成してmaterialDataへ書き込む (Upload Heapへ常時Mapされているのでそのまま反映される)
+        materialData_->uvTransform = MakeAffineMatrix(
+            { uvScale_.x, uvScale_.y, 1.0f },
+            { 0.0f, 0.0f, uvRotate_ },
+            { uvTranslate_.x, uvTranslate_.y, 0.0f }
+        );
     }
 
     void Mesh::CreateWVPResource() {

@@ -108,7 +108,7 @@ namespace RyoEngine {
         // Sampler設定
         D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;  // 引き延ばす
         staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
         staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 

@@ -120,6 +120,96 @@ namespace RyoEngine {
         }
     }
 
+    void Model::UpdateUVTransform(MeshResource& mesh) {
+        // UV用のSRT行列を作成してmaterialDataへ書き込む (materialDataはUpload Heapへ常時Mapされているので、
+        // ここで代入した時点でGPU側の値もそのまま更新される)
+        mesh.materialData->uvTransform = MakeAffineMatrix(
+            { mesh.uvScale.x, mesh.uvScale.y, 1.0f },
+            { 0.0f, 0.0f, mesh.uvRotate },
+            { mesh.uvTranslate.x, mesh.uvTranslate.y, 0.0f }
+        );
+    }
+
+    void Model::SetUVScale(const Vector2& scale, int32_t meshIndex) {
+        if (meshIndex < 0) {
+            for (auto& mesh : meshes_) {
+                mesh.uvScale = scale;
+                UpdateUVTransform(mesh);
+            }
+        } else {
+            meshes_[meshIndex].uvScale = scale;
+            UpdateUVTransform(meshes_[meshIndex]);
+        }
+    }
+
+    void Model::SetUVRotate(float rotate, int32_t meshIndex) {
+        if (meshIndex < 0) {
+            for (auto& mesh : meshes_) {
+                mesh.uvRotate = rotate;
+                UpdateUVTransform(mesh);
+            }
+        } else {
+            meshes_[meshIndex].uvRotate = rotate;
+            UpdateUVTransform(meshes_[meshIndex]);
+        }
+    }
+
+    void Model::SetUVTranslate(const Vector2& translate, int32_t meshIndex) {
+        if (meshIndex < 0) {
+            for (auto& mesh : meshes_) {
+                mesh.uvTranslate = translate;
+                UpdateUVTransform(mesh);
+            }
+        } else {
+            meshes_[meshIndex].uvTranslate = translate;
+            UpdateUVTransform(meshes_[meshIndex]);
+        }
+    }
+
+    void Model::SetUVSRT(const Vector2& scale, float rotate, const Vector2& translate, int32_t meshIndex) {
+        if (meshIndex < 0) {
+            for (auto& mesh : meshes_) {
+                mesh.uvScale = scale;
+                mesh.uvRotate = rotate;
+                mesh.uvTranslate = translate;
+                UpdateUVTransform(mesh);
+            }
+        } else {
+            meshes_[meshIndex].uvScale = scale;
+            meshes_[meshIndex].uvRotate = rotate;
+            meshes_[meshIndex].uvTranslate = translate;
+            UpdateUVTransform(meshes_[meshIndex]);
+        }
+    }
+
+    void Model::SetUVScaleByName(const Vector2& scale, const std::string& materialName) {
+        int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) {
+            SetUVScale(scale, index);
+        }
+    }
+
+    void Model::SetUVRotateByName(float rotate, const std::string& materialName) {
+        int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) {
+            SetUVRotate(rotate, index);
+        }
+    }
+
+    void Model::SetUVTranslateByName(const Vector2& translate, const std::string& materialName) {
+        int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) {
+            SetUVTranslate(translate, index);
+        }
+    }
+
+    void Model::SetUVSRTByName(const Vector2& scale, float rotate, const Vector2& translate, const std::string& materialName) {
+        int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) {
+            SetUVSRT(scale, rotate, translate, index);
+        }
+    }
+
     void Model::InternalInitialize(const ModelLoader::ModelData& modelData) {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
@@ -146,7 +236,7 @@ namespace RyoEngine {
             mesh.materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
             mesh.materialData->enableLighting = 1;
             mesh.materialData->shadingMode = ShadingMode::LAMBERT;
-            mesh.materialData->uvTransform = MakeIdentity4x4();
+            UpdateUVTransform(mesh); // uvScale(1,1)/uvRotate(0)/uvTranslate(0,0)のデフォルト値から単位行列相当が入る
 
             // 3. テクスチャ (メッシュが参照するマテリアルのmap_Kdから読み込む。無ければ白テクスチャ)
             //    あわせて、あとで名前引きできるようにmtlのマテリアル名も控えておく

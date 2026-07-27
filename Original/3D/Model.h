@@ -30,6 +30,11 @@ namespace RyoEngine {
 
             // 元となったmtlのマテリアル名 (newmtl名。名前引きのために保持)
             std::string materialName;
+
+            // UVのSRT (メッシュ=マテリアルごとに個別に持つ。ここからmaterialData->uvTransformを計算する)
+            Vector2 uvScale = { 1.0f, 1.0f };
+            float uvRotate = 0.0f;
+            Vector2 uvTranslate = { 0.0f, 0.0f };
         };
 
         void Initialize();
@@ -180,17 +185,33 @@ namespace RyoEngine {
         /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
         void SetColor(const Vector4& color, int32_t meshIndex = -1);
 
-        void SetUVTranslate(const Vector2& translate) { uvTranslate_ = translate; }
-        void SetUVRotate(float rotate) { uvRotate_ = rotate; }
-        void SetUVScale(const Vector2& scale) { uvScale_ = scale; }
-        void SetUVSRT(const Vector2& scale, float rotate, const Vector2& translate) {
-            uvScale_ = scale;
-            uvRotate_ = rotate;
-            uvTranslate_ = translate;
-        }
+        /// <summary>
+        /// UVのスケール指定
+        /// </summary>
+        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
+        void SetUVScale(const Vector2& scale, int32_t meshIndex = -1);
+        /// <summary>
+        /// UVの回転指定 (Z軸回転)
+        /// </summary>
+        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
+        void SetUVRotate(float rotate, int32_t meshIndex = -1);
+        /// <summary>
+        /// UVの平行移動指定
+        /// </summary>
+        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
+        void SetUVTranslate(const Vector2& translate, int32_t meshIndex = -1);
+        /// <summary>
+        /// UVのSRTをまとめて指定
+        /// </summary>
+        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
+        void SetUVSRT(const Vector2& scale, float rotate, const Vector2& translate, int32_t meshIndex = -1);
+
+        Vector2 GetUVScale(size_t meshIndex = 0) const { return meshes_[meshIndex].uvScale; }
+        float GetUVRotate(size_t meshIndex = 0) const { return meshes_[meshIndex].uvRotate; }
+        Vector2 GetUVTranslate(size_t meshIndex = 0) const { return meshes_[meshIndex].uvTranslate; }
 
         
-        // マルチマテリアル版
+        // マルチマテリアル版 (名前指定)
         ShadingMode GetLambertByName(const std::string& materialName) const;
         Vector4 GetColorByName(const std::string& materialName) const;
 
@@ -198,6 +219,11 @@ namespace RyoEngine {
         void SetTexByName(uint32_t handle, const std::string& materialName);
         void SetTexByName(const std::string& filePath, const std::string& materialName);
         void SetColorByName(const Vector4& color, const std::string& materialName);
+
+        void SetUVScaleByName(const Vector2& scale, const std::string& materialName);
+        void SetUVRotateByName(float rotate, const std::string& materialName);
+        void SetUVTranslateByName(const Vector2& translate, const std::string& materialName);
+        void SetUVSRTByName(const Vector2& scale, float rotate, const Vector2& translate, const std::string& materialName);
 
 
         // アニメエディタに登録する番号
@@ -207,8 +233,10 @@ namespace RyoEngine {
         // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）
         void InternalInitialize(const ModelLoader::ModelData& modelData);
 
+        // 指定メッシュのuvScale/uvRotate/uvTranslateから、materialData->uvTransformを再計算して書き込む
+        void UpdateUVTransform(MeshResource& mesh);
+
         Transform transform_{};
-        Transform uvTransform_{};
 
         // メッシュ配列 (マルチメッシュ/マルチマテリアル対応)
         std::vector<MeshResource> meshes_;
@@ -222,10 +250,6 @@ namespace RyoEngine {
         TransformationMatrix* wvpData_ = nullptr;
 
         Matrix4x4 worldMatrix_{};
-
-        Vector2 uvTranslate_ = { 0.0f, 0.0f };
-        float uvRotate_ = 0.0f;
-        Vector2 uvScale_ = { 1.0f, 1.0f };
 
         int32_t animEditID_ = 0;
     };
