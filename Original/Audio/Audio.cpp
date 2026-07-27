@@ -51,16 +51,24 @@ namespace RyoEngine {
 		// インスタンスを取得
 		Audio* inst = GetInstance();
 
-		// 各音声が持ってるボイスを解放
-		for (auto& data : inst->soundDatas) {
+		// BGMが持ってるボイスを解放
+		for (auto& data : inst->bgmDatas) {
 			if (data.pSourceVoice) {
 				data.pSourceVoice->DestroyVoice();
 				data.pSourceVoice = nullptr;
 			}
 		}
+		inst->bgmDatas.clear();
 
-		// vectorをクリア
-		inst->soundDatas.clear();
+		// 再生中のSEボイスを全て解放
+		for (auto& playing : inst->playingSEs) {
+			if (playing.pSourceVoice) {
+				playing.pSourceVoice->DestroyVoice();
+			}
+			delete playing.pCallback;
+		}
+		inst->playingSEs.clear();
+		inst->seDatas.clear();
 
 		// XAudio2やMF終了
 		if (inst->masterVoice) {
@@ -72,9 +80,23 @@ namespace RyoEngine {
 		Logger::LogSuccess("Audio : Finalized\n");
 	}
 
-	uint32_t Audio::LoadAudio(const char* filename) {
-		// インスタンス取得
-		Audio* inst = GetInstance();
+	void Audio::Update() {
+		GetInstance()->CleanupFinishedSE();
+	}
+
+	void Audio::CleanupFinishedSE() {
+		for (auto it = playingSEs.begin(); it != playingSEs.end(); ) {
+			if (it->pCallback->isFinished) {
+				it->pSourceVoice->DestroyVoice();
+				delete it->pCallback;
+				it = playingSEs.erase(it);
+			} else {
+				++it;
+			}
+		}
+	}
+
+	Audio::SoundData Audio::LoadWaveFile(const char* filename) {
 		HRESULT hr = S_OK;
 
 		// char*からwchar_t*へ変換
@@ -111,7 +133,6 @@ namespace RyoEngine {
 		CoTaskMemFree(pWfex);  // 構造体コピー後解放
 
 		// データの読み込みループ
-		std::vector<BYTE> audioData;
 		while (true) {
 			DWORD dwFlags = 0;
 			Microsoft::WRL::ComPtr<IMFSample> pSample;
@@ -130,9 +151,8 @@ namespace RyoEngine {
 				// バッファをロックし、生データのポインタを取得
 				pBuffer->Lock(&pRawData, nullptr, &currentLength);
 
-				// audioDataベクトルに読み込んだサイズ分を一気にコピーして展開
+				// 読み込んだサイズ分を一気にコピーして展開
 				if (currentLength > 0) {
-					// 直接メンバ変数のvectorへ追加
 					soundData.buffer.insert(soundData.buffer.end(), pRawData, pRawData + currentLength);
 				}
 
@@ -141,29 +161,43 @@ namespace RyoEngine {
 			}
 		}
 
-		// soundDatasに保存
-		inst->soundDatas.push_back(soundData);
-
-		// 保存した場所のインデックスを返す
-		return static_cast<uint32_t>(inst->soundDatas.size() - 1);
+		return soundData;
 	}
 
-	void Audio::PlayAudio(uint32_t handle, float volume, bool loop) {
+	uint32_t Audio::LoadBGM(const char* filename) {
+		Audio* inst = GetInstance();
+
+		BGMData data;
+		data.sound = LoadWaveFile(filename);
+		inst->bgmDatas.push_back(std::move(data));
+
+		return static_cast<uint32_t>(inst->bgmDatas.size() - 1);
+	}
+
+	uint32_t Audio::LoadSE(const char* filename) {
+		Audio* inst = GetInstance();
+
+		inst->seDatas.push_back(LoadWaveFile(filename));
+
+		return static_cast<uint32_t>(inst->seDatas.size() - 1);
+	}
+
+	void Audio::PlayBGM(uint32_t handle, float volume, bool loop) {
 		// インスタンス取得
 		Audio* inst = GetInstance();
 		HRESULT hr = S_OK;
 
 		// ハンドルが有効かチェック
-		if (handle >= static_cast<uint32_t>(inst->soundDatas.size())) {
+		if (handle >= static_cast<uint32_t>(inst->bgmDatas.size())) {
 			return;
 		}
 
 		// データを取り出す
-		SoundData& data = inst->soundDatas[static_cast<size_t>(handle)];
+		BGMData& data = inst->bgmDatas[static_cast<size_t>(handle)];
 
 		// SourceVoiceがなければ作成
 		if (data.pSourceVoice == nullptr) {
-			hr = inst->xAudio2->CreateSourceVoice(&data.pSourceVoice, &data.wfex);
+			hr = inst->xAudio2->CreateSourceVoice(&data.pSourceVoice, &data.sound.wfex);
 			assert(SUCCEEDED(hr));
 		}
 
@@ -172,21 +206,15 @@ namespace RyoEngine {
 
 		// 再生する波形データの設定
 		XAUDIO2_BUFFER buf{};
-		buf.pAudioData = data.buffer.data();
-		buf.AudioBytes = static_cast<UINT32>(data.buffer.size());
+		buf.pAudioData = data.sound.buffer.data();
+		buf.AudioBytes = static_cast<UINT32>(data.sound.buffer.size());
 		buf.Flags = XAUDIO2_END_OF_STREAM;
-
-		// ループの設定
-		if (loop) {
-			buf.LoopCount = XAUDIO2_LOOP_INFINITE;  // 無限ループ(INFINITEなので)
-		} else {
-			buf.LoopCount = 0;  // ループ無し
-		}
+		buf.LoopCount = loop ? XAUDIO2_LOOP_INFINITE : 0;
 
 		// 再生
 		// 最初から鳴らしなおす
 		// (BGMはシーン遷移時か、シーンの1f目でだけ呼んでおかないと、毎フレーム最初の音しかならなくなってしまう。
-		// 効果音は呼ばれるたびに最初から再生してくれるため、1周鳴っていなくても最初からにしてくれる)
+		// BGMは1データ=1SourceVoiceなので、重ねて鳴らすことはできない)
 		data.pSourceVoice->Stop();
 		data.pSourceVoice->FlushSourceBuffers();
 
@@ -195,6 +223,64 @@ namespace RyoEngine {
 
 		hr = data.pSourceVoice->Start();
 		assert(SUCCEEDED(hr));
+	}
+
+	void Audio::SetBGMVolume(uint32_t handle, float volume) {
+		Audio* inst = GetInstance();
+
+		if (handle >= static_cast<uint32_t>(inst->bgmDatas.size())) {
+			return;
+		}
+
+		BGMData& data = inst->bgmDatas[static_cast<size_t>(handle)];
+		if (data.pSourceVoice) {
+			data.pSourceVoice->SetVolume(volume);
+		}
+	}
+
+	void Audio::PlaySE(uint32_t handle, float volume) {
+		// インスタンス取得
+		Audio* inst = GetInstance();
+		HRESULT hr = S_OK;
+
+		// ハンドルが有効かチェック
+		if (handle >= static_cast<uint32_t>(inst->seDatas.size())) {
+			return;
+		}
+
+		// 再生完了済みのボイスを先に片付ける
+		inst->CleanupFinishedSE();
+
+		SoundData& sound = inst->seDatas[static_cast<size_t>(handle)];
+
+		// 呼ぶたびに新しいSourceVoiceを作成するため、同じSEを重ねて再生できる
+		PlayingSE playing;
+		playing.pCallback = new SEVoiceCallback();
+
+		hr = inst->xAudio2->CreateSourceVoice(
+			&playing.pSourceVoice,
+			&sound.wfex,
+			0,
+			XAUDIO2_DEFAULT_FREQ_RATIO,
+			playing.pCallback);
+		assert(SUCCEEDED(hr));
+
+		// 音量設定
+		playing.pSourceVoice->SetVolume(volume);
+
+		// 再生する波形データの設定
+		XAUDIO2_BUFFER buf{};
+		buf.pAudioData = sound.buffer.data();
+		buf.AudioBytes = static_cast<UINT32>(sound.buffer.size());
+		buf.Flags = XAUDIO2_END_OF_STREAM;
+		
+		hr = playing.pSourceVoice->SubmitSourceBuffer(&buf);
+		assert(SUCCEEDED(hr));
+
+		hr = playing.pSourceVoice->Start();
+		assert(SUCCEEDED(hr));
+
+		inst->playingSEs.push_back(playing);
 	}
 
 }

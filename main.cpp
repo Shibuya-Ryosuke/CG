@@ -172,7 +172,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Model* multiMaterial = Model::Create("resources/multiMaterial.obj");
     multiMaterial->SetRotate({ 0.0f,kRotateY,0.0f });
     // 音
-    uint32_t se = Audio::GetInstance()->LoadAudio("resources/Alarm01.wav");
+    uint32_t se = Audio::GetInstance()->LoadSE("resources/Alarm01.wav");
 
 
 
@@ -284,7 +284,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         ImGui::SameLine();
         // オーディオ
         if (ImGui::Button("play audio")) {
-            Audio::GetInstance()->PlayAudio(se, 0.5f);
+            Audio::GetInstance()->PlaySE(se, 0.5f);
         }
 
         // カメラ操作
@@ -510,7 +510,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         // ゲームパッド操作
         if (Input::GetJoystickTrigger(XINPUT_GAMEPAD_B)) {
-            Audio::GetInstance()->PlayAudio(se, 0.5f);
+            Audio::GetInstance()->PlaySE(se, 0.5f);
         }
 
 
