@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AL3-03\AxisIndicator\AxisIndicator.cpp" />
+    <ClCompile Include="AL3-03\EnemyBullet\EnemyBullet.cpp" />
     <ClCompile Include="AL3-03\Enemy\Enemy.cpp" />
     <ClCompile Include="AL3-03\GameScene.cpp" />
     <ClCompile Include="AL3-03\PlayerBullet\PlayerBullet.cpp" />
@@ -61,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AL3-03\AxisIndicator\AxisIndicator.h" />
+    <ClInclude Include="AL3-03\EnemyBullet\EnemyBullet.h" />
     <ClInclude Include="AL3-03\Enemy\Enemy.h" />
     <ClInclude Include="AL3-03\Enemy\EnemyState.h" />
     <ClInclude Include="AL3-03\GameScene.h" />

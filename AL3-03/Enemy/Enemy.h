@@ -1,5 +1,6 @@
 #pragma once
 #include "../../Original/RyoEngine.h"
+#include "../EnemyBullet/EnemyBullet.h"
 
 class IEnemyState;
 
@@ -20,6 +21,12 @@ public:
 	void ChangeState(IEnemyState* newState);
 
 	void MoveTranslate(const Vector3& translation); // 移動させる
+	
+	/// <summary>
+	/// 弾発射
+	/// </summary>
+	void Fire();
+	
 	float GetPositionZ() const;                     // Z座標を取得する
 	Vector3 GetVelocity() const { return velocity_; }
 	float GetApproachSpeedRate() const { return kApproachSpeedRate_; }
@@ -44,4 +51,7 @@ private:
 
 	// 速度
 	Vector3 velocity_{};
+
+	// 弾
+	std::list<EnemyBullet*> bullets_;
 };
