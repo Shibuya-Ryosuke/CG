@@ -40,15 +40,20 @@ PixelShaderOutput main(VertexShaderOutput input)
         switch (gMaterial.shadingMode)
         {
             case 0:
-             // Lambert
-            cos = saturate(dot(normalize(input.normal), -gDirectionLight.direction));
+        // None
+                cos = 1.0f;
                 break;
-            
+
             case 1:
-             // Half Lambert
-             float NdotL = dot(normalize(input.normal), -gDirectionLight.direction);
+        // Lambert
+                cos = saturate(dot(normalize(input.normal), -gDirectionLight.direction));
+                break;
+
+            case 2:
+        // Half Lambert
+                float NdotL = dot(normalize(input.normal), -gDirectionLight.direction);
                 cos = pow(NdotL * 0.5f + 0.5f, 2.0f);
-             break;
+                break;
         }
         
         output.color.rgb = gMaterial.color.rgb * textureColor.rgb * gDirectionLight.color.rgb * cos * gDirectionLight.intensity;

@@ -5,6 +5,7 @@
 #include <numbers>
 
 enum class ShadingMode : int32_t {
+    NONE,
 	LAMBERT,
 	HALF_LAMBERT
 };

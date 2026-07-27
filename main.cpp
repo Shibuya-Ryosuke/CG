@@ -48,6 +48,10 @@ void ModelOperate(Model* model,const char* id) {
             ImGui::ColorEdit4("Material Color", &color.x);
             ImGui::Spacing();
             // ランバート
+            if (ImGui::RadioButton("None", model->GetLambert() == ShadingMode::NONE)) {
+                model->SetLambert(ShadingMode::NONE);
+            }
+            ImGui::SameLine();
             if (ImGui::RadioButton("Lambert", model->GetLambert() == ShadingMode::LAMBERT)) {
                 model->SetLambert(ShadingMode::LAMBERT);
             }
@@ -346,6 +350,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
                     ImGui::ColorEdit4("Material Color", &sphereColor.x);
                     ImGui::Spacing();
                     // ランバート
+                    if (ImGui::RadioButton("None", sphere.GetLambert() == ShadingMode::NONE)) {
+                        sphere.SetLambert(ShadingMode::NONE);
+                    }
+                    ImGui::SameLine();
                     if (ImGui::RadioButton("Lambert", sphere.GetLambert() == ShadingMode::LAMBERT)) {
                         sphere.SetLambert(ShadingMode::LAMBERT);
                     }
@@ -457,6 +465,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
                     ImGui::ColorEdit4("Material Color", &multiMaterialColor1.x);
                     ImGui::Spacing();
                     // ランバート
+                    if (ImGui::RadioButton("None", multiMaterial->GetLambertByName("Material") == ShadingMode::NONE)) {
+                        multiMaterial->SetLambertByName(ShadingMode::NONE, "Material");
+                    }
+                    ImGui::SameLine();
                     if (ImGui::RadioButton("Lambert", multiMaterial->GetLambertByName("Material") == ShadingMode::LAMBERT)) {
                         multiMaterial->SetLambertByName(ShadingMode::LAMBERT,"Material");
                     }
@@ -479,6 +491,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
                     ImGui::ColorEdit4("Material Color", &multiMaterialColor2.x);
                     ImGui::Spacing();
                     // ランバート
+                    if (ImGui::RadioButton("None", multiMaterial->GetLambertByName("Material.001") == ShadingMode::NONE)) {
+                        multiMaterial->SetLambertByName(ShadingMode::NONE,"Material.001");
+                    }
+                    ImGui::SameLine();
                     if (ImGui::RadioButton("Lambert", multiMaterial->GetLambertByName("Material.001") == ShadingMode::LAMBERT)) {
                         multiMaterial->SetLambertByName(ShadingMode::LAMBERT, "Material.001");
                     }
