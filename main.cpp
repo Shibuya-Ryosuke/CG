@@ -239,46 +239,51 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         ImGui::Begin("CG2");
 
         // リセット
-        if (ImGui::Button("Initialize")) {
-            // カメラ
-            debugCamera->SetTranslate({ 0.0f,0.3f,-9.2f });
+        //if (ImGui::Button("SRT Initialize")) {
+        //    // カメラ
+        //    debugCamera->SetTranslate({ 0.0f,0.3f,-9.2f });
 
-            // スプライト
-            sprite.SetScale({ 1.0f,1.0f });
-            sprite.SetRotate(0.0f);
-            sprite.SetTranslate({ sprite.GetTexSize().x / 2.0f,sprite.GetTexSize().y / 2.0f });
-            // uv
-            sprite.SetScale({ 1.0f,1.0f });
-            sprite.SetUVRotate(0.0f);
-            sprite.SetTranslate({ 0.0f,0.0f });
+        //    // スプライト
+        //    sprite.SetScale({ 1.0f,1.0f });
+        //    sprite.SetRotate(0.0f);
+        //    sprite.SetTranslate({ sprite.GetTexSize().x / 2.0f,sprite.GetTexSize().y / 2.0f });
+        //    // uv
+        //    sprite.SetScale({ 1.0f,1.0f });
+        //    sprite.SetUVRotate(0.0f);
+        //    sprite.SetTranslate({ 0.0f,0.0f });
 
-            // 球
-            sphere.SetScale({ 1.0f,1.0f,1.0f });
-            sphere.SetRotate({ 0.0f,0.0f,0.0f });
-            sphere.SetTranslate({ 0.0f,0.0f,0.0f });
+        //    // 球
+        //    sphere.SetScale({ 1.0f,1.0f,1.0f });
+        //    sphere.SetRotate({ 0.0f,0.0f,0.0f });
+        //    sphere.SetTranslate({ 0.0f,0.0f,0.0f });
+        //    // 
 
-            // モデル
-            // 平面
-            plane->SetScale({ 1.0f,1.0f,1.0f });
-            plane->SetRotate({ 0.0f,kRotateY,0.0f });
-            plane->SetTranslate({ 4.0f,0.0f,0.0f });
-            // ティーポット
-            teapot->SetScale({ 1.0f,1.0f,1.0f });
-            teapot->SetRotate({ 0.0f,kRotateY,0.0f });
-            teapot->SetTranslate({ 0.0f,0.0f,0.0f });
-            // ウサギ
-            bunny->SetScale({ 1.0f,1.0f,1.0f });
-            bunny->SetRotate({ 0.0f,kRotateY,0.0f });
-            bunny->SetTranslate({ 0.0f,0.0f,0.0f });
-            // マルチメッシュ
-            multiMesh->SetScale({ 1.0f,1.0f,1.0f });
-            multiMesh->SetRotate({ 0.0f,kRotateY,0.0f });
-            multiMesh->SetTranslate({ 0.0f,0.0f,0.0f });
-        }
+        //    // モデル
+        //    // 平面
+        //    plane->SetScale({ 1.0f,1.0f,1.0f });
+        //    plane->SetRotate({ 0.0f,kRotateY,0.0f });
+        //    plane->SetTranslate({ 4.0f,0.0f,0.0f });
+        //    // ティーポット
+        //    teapot->SetScale({ 1.0f,1.0f,1.0f });
+        //    teapot->SetRotate({ 0.0f,kRotateY,0.0f });
+        //    teapot->SetTranslate({ 0.0f,0.0f,0.0f });
+        //    // ウサギ
+        //    bunny->SetScale({ 1.0f,1.0f,1.0f });
+        //    bunny->SetRotate({ 0.0f,kRotateY,0.0f });
+        //    bunny->SetTranslate({ 0.0f,0.0f,0.0f });
+        //    // マルチメッシュ
+        //    multiMesh->SetScale({ 1.0f,1.0f,1.0f });
+        //    multiMesh->SetRotate({ 0.0f,kRotateY,0.0f });
+        //    multiMesh->SetTranslate({ 0.0f,0.0f,0.0f });
+        //    // マルチマテリアル
+        //    multiMaterial->SetScale({ 1.0f,1.0f,1.0f });
+        //    multiMaterial->SetRotate({ 0.0f,kRotateY,0.0f });
+        //    multiMaterial->SetTranslate({ 0.0f,0.0f,0.0f });
+        //}
 
         ImGui::SameLine();
         // オーディオ
-        if (ImGui::Button("audio")) {
+        if (ImGui::Button("play audio")) {
             Audio::GetInstance()->PlayAudio(se, 0.5f);
         }
 
@@ -492,10 +497,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             multiMaterial->SetUVScale(uvS1, multiMaterial->GetMeshIndexByName("Material"));
             multiMaterial->SetUVRotate(uvR1, multiMaterial->GetMeshIndexByName("Material"));
             multiMaterial->SetUVTranslate(uvT1, multiMaterial->GetMeshIndexByName("Material"));
+            multiMaterial->SetColorByName(multiMaterialColor1, "Material");
             // plane
             multiMaterial->SetUVScale(uvS2, multiMaterial->GetMeshIndexByName("Material.001"));
             multiMaterial->SetUVRotate(uvR2, multiMaterial->GetMeshIndexByName("Material.001"));
             multiMaterial->SetUVTranslate(uvT2, multiMaterial->GetMeshIndexByName("Material.001"));
+            multiMaterial->SetColorByName(multiMaterialColor2, "Material.001");
             Space();
             break;
         }
