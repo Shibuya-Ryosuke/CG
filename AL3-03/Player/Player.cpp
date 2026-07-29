@@ -76,9 +76,11 @@ void Player::Translate() {
 	Vector3 translate = model_->GetTranslate();
 
 	// Imgui
+#ifdef _DEBUG
 	ImGui::Begin("player");
 	ImGui::DragFloat3("translate", &translate.x, 0.1f, -1000.0f, 1000.0f);
 	ImGui::End();
+#endif
 
 	// キャラクターの移動ベクトル
 	Vector3 move{};
