@@ -147,7 +147,7 @@ namespace RyoEngine {
             smoothedFps_ = (smoothedFps_ * 0.9f) + (fps_ * 0.1f);
         }
 
-        // 念のためゼロ除算（クラッシュ）防止
+        // 念のためゼロ除算防止
         if (deltaTime_ > 0.0f) {
             fps_ = 1.0f / deltaTime_;
             // 毎フレーム数値がガタガタ動くと見づらいので、10%ずつ近づけて滑らかにする（お好みで）
