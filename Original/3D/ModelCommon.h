@@ -8,7 +8,9 @@ namespace RyoEngine {
     public:
         enum DrawType {
             REAL,
-            REFLECT
+            REFLECT,
+            NO_UV,          // UVを持たないメッシュ用 (通常描画)
+            REFLECT_NO_UV,  // UVを持たないメッシュ用 (鏡面反射描画)
         };
 
         /// <summary>
@@ -32,6 +34,19 @@ namespace RyoEngine {
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
         ID3D12PipelineState* GetPipelineState() const { return realPipelineState_.Get(); }
 
+        /// <summary>
+        /// DrawTypeを指定してPSOを取得する (メッシュ単位でPSOを切り替えたい場合に使用)
+        /// </summary>
+        ID3D12PipelineState* GetPipelineState(DrawType drawType) const {
+            switch (drawType) {
+            case DrawType::REAL:          return realPipelineState_.Get();
+            case DrawType::REFLECT:       return reflectPipelineState_.Get();
+            case DrawType::NO_UV:         return noUVPipelineState_.Get();
+            case DrawType::REFLECT_NO_UV: return reflectNoUVPipelineState_.Get();
+            }
+            return realPipelineState_.Get();
+        }
+
     private:
         ModelCommon() = default;
         ~ModelCommon() = default;
@@ -41,12 +56,16 @@ namespace RyoEngine {
         // DirectXCommonのポインタ（初期化時にキャッシュする用）
         DirectXCommon* dxCommon_ = nullptr;
 
-        // ルートシグネチャ
+        // ルートシグネチャ (UV有無・反射有無の全PSOで共通のものを使い回す)
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
         // グラフィックスパイプライン
         Microsoft::WRL::ComPtr<ID3D12PipelineState> realPipelineState_;
         // 反射用パイプライン
         Microsoft::WRL::ComPtr<ID3D12PipelineState> reflectPipelineState_;
+        // UVを持たないメッシュ用パイプライン (通常描画)
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> noUVPipelineState_;
+        // UVを持たないメッシュ用パイプライン (反射描画)
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> reflectNoUVPipelineState_;
 
         // ルートシグネチャー作成
         void CreateRootSignature();
@@ -54,5 +73,9 @@ namespace RyoEngine {
         void CreateRealPipelineState();
         // 反射用パイプライン生成
         void CreateReflectPipelineState();
+        // UVを持たないメッシュ用パイプライン生成 (通常描画)
+        void CreateNoUVPipelineState();
+        // UVを持たないメッシュ用パイプライン生成 (反射描画)
+        void CreateReflectNoUVPipelineState();
     };
 }

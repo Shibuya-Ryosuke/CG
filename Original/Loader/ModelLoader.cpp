@@ -92,29 +92,49 @@ namespace RyoEngine {
 				normals.push_back(normal);
 			} else if (identifier == "f") {
 				VertexData triangle[3]{};
+				// この面(f)がUV(vt)インデックスを持たない頂点を1つでも含んでいたか
+				// (Blender等でUV展開せずに書き出すと "f v//vn" のようにvtインデックスが空になる)
+				bool faceHasUV = true;
+
 				// 面は三角形限定。その他は未対応
 				for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
 					std::string vertexDefinition;
 					s >> vertexDefinition;
 					// 頂点の要素へのIndexは「位置/UV/法線」で格納されているので、分解してIndexを取得する
+					// "v/vt/vn" だけでなく "v//vn" (vt省略) にも対応するため、
+					// 各要素はまず文字列のまま取り出し、空文字列かどうかで判定してからstoiする。
 					std::istringstream v(vertexDefinition);
-					uint32_t elementIndices[3];
+					std::string indexStrs[3];
 					for (int32_t element = 0; element < 3; ++element) {
-						std::string index;
-						std::getline(v, index, '/');  // 「/」区切りでインデックスを読んでいく
-						elementIndices[element] = static_cast<uint32_t>(std::stoi(index));
+						std::getline(v, indexStrs[element], '/');  // 「/」区切りでインデックス文字列を読んでいく
 					}
-					// 要素へのIndexから、実際の要素の値を取得して、頂点を構築する
-					Vector4 position = positions[elementIndices[0] - 1];
-					Vector2 texcoord = texcoords[elementIndices[1] - 1];
-					Vector3 normal = normals[elementIndices[2] - 1];
+
+					// 位置 (必須)
+					Vector4 position = positions[static_cast<size_t>(std::stoi(indexStrs[0])) - 1];
+
+					// UV (省略されている場合がある。省略時は(0,0)を入れ、faceHasUVをfalseにする)
+					Vector2 texcoord = { 0.0f, 0.0f };
+					if (!indexStrs[1].empty()) {
+						texcoord = texcoords[static_cast<size_t>(std::stoi(indexStrs[1])) - 1];
+						texcoord.y = 1.0f - texcoord.y;
+					} else {
+						faceHasUV = false;
+					}
+
+					// 法線 (必須)
+					Vector3 normal = normals[static_cast<size_t>(std::stoi(indexStrs[2])) - 1];
+
 					position.x *= -1.0f;
 					normal.x *= -1.0f;
-					texcoord.y = 1.0f - texcoord.y;
+
 					triangle[faceVertex] = { position,texcoord,normal };
 				}
+
 				// 現在アクティブなメッシュ(末尾)に、頂点を逆順で登録することで、周り順を逆にする
 				MeshData& currentMesh = modelData.meshes.back();
+				if (!faceHasUV) {
+					currentMesh.hasUV = false;
+				}
 				currentMesh.vertices.push_back(triangle[2]);
 				currentMesh.vertices.push_back(triangle[1]);
 				currentMesh.vertices.push_back(triangle[0]);

@@ -84,6 +84,7 @@ enum class State {
     bunny,
     multi_mesh,
     multi_material,
+    suzanne,
 };
 
 const char* GetStateName(State state) {
@@ -94,6 +95,7 @@ const char* GetStateName(State state) {
     case State::bunny:          return "Bunny";
     case State::multi_mesh:     return "Multi Mesh";
     case State::multi_material: return "Multi Material";
+    case State::suzanne:        return "Suzanne";
     }
     return "Unknown";
 }
@@ -105,14 +107,15 @@ void RenderStateCombo(State& currentState) {
         "Teapot",
         "Bunny",
         "Multi Mesh",
-        "Multi Material"
+        "Multi Material",
+        "Suzanne"
     };
 
     // 現在の enum を int のインデックスに変換
     int currentItemIndex = static_cast<int>(currentState);
 
     // コンボボックスの描画
-    if (ImGui::BeginCombo("State", items[currentItemIndex])) {
+    if (ImGui::BeginCombo("Mode", items[currentItemIndex])) {
         for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
             bool isSelected = (currentItemIndex == i);
 
@@ -175,6 +178,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // マルチマテリアル
     Model* multiMaterial = Model::Create("resources/multiMaterial.obj");
     multiMaterial->SetRotate({ 0.0f,kRotateY,0.0f });
+    // スザンヌ
+    Model* suzanne = Model::Create("resources/suzanne.obj");
+    suzanne->SetRotate({ 0.0f,kRotateY,0.0f });
     // 音
     uint32_t se = Audio::GetInstance()->LoadSE("resources/Alarm01.wav");
 
@@ -239,6 +245,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         float uvR2 = multiMaterial->GetUVRotate(multiMaterial->GetMeshIndexByName("Material.001"));
         Vector2 uvS2 = multiMaterial->GetUVScale(multiMaterial->GetMeshIndexByName("Material.001"));
 
+        //// スザンヌ
+        //Transform suzanneTransform{
+        //    .scale = suzanne->GetScale(),
+        //    .rotate = suzanne->GetRotate(),
+        //    .translate = suzanne->GetTranslate(),
+        //};
+        //DirectionalLight suzanneDL = suzanne->GetDirectionalLight();
         // ImGui
         ImGui::Begin("CG2");
 
@@ -521,6 +534,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             multiMaterial->SetColorByName(multiMaterialColor2, "Material.001");
             Space();
             break;
+
+        case State::suzanne:
+            ModelOperate(suzanne, "Suzanne");
+            break;
         }
         ImGui::End();
 
@@ -558,6 +575,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         case State::multi_material:
             multiMaterial->Update(*debugCamera);
+            break;
+
+        case State::suzanne:
+            suzanne->Update(*debugCamera);
             break;
         }
         // ----------------------
@@ -605,6 +626,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         case State::multi_material:
             multiMaterial->Draw();
             break;
+
+        case State::suzanne:
+            suzanne->Draw();
+            break;
         }
 
         // 3D終了----------------------------------------------------
@@ -628,6 +653,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // フレーム終了
         EndFrame();
     }
+    delete suzanne;
+    delete multiMaterial;
+    delete multiMesh;
+    delete bunny;
+    delete teapot;
+    delete plane;
 
     delete debugCamera;
     // エンジン終了

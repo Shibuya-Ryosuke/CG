@@ -75,6 +75,16 @@ namespace RyoEngine {
         }
     }
 
+    void Model::SetHasUV(bool hasUV, int32_t meshIndex) {
+        if (meshIndex < 0) {
+            for (auto& mesh : meshes_) {
+                mesh.hasUV = hasUV;
+            }
+        } else {
+            meshes_[meshIndex].hasUV = hasUV;
+        }
+    }
+
     ShadingMode Model::GetLambertByName(const std::string& materialName) const {
         int32_t index = GetMeshIndexByName(materialName);
         if (index >= 0) {
@@ -251,6 +261,10 @@ namespace RyoEngine {
                 mesh.textureHandle = TextureManager::GetInstance()->GetWhiteTex();
             }
 
+            // ModelLoaderが「objの面(f)にvt(UV)が無かったか」を判定した結果をそのまま反映する。
+            // (Suzanneのようにvtを持たないobjは、ここで自動的にfalseになる)
+            mesh.hasUV = srcMesh.hasUV;
+
             meshes_.push_back(mesh);
         }
 
@@ -285,12 +299,24 @@ namespace RyoEngine {
         wvpData_->WVP = wvpMatrix;
     }
 
-    void Model::Draw() {
+    void Model::Draw(ModelCommon::DrawType drawType) {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
-        // メッシュごとにテクスチャ・マテリアルを切り替えながらドローコールを発行する
+        // メッシュごとにテクスチャ・マテリアル・PSOを切り替えながらドローコールを発行する
         // (WVP・ライトはモデル全体で共有のため、メッシュ間で使い回す)
         for (const auto& mesh : meshes_) {
+            // UVを持たないメッシュは、呼び出し元が指定したdrawType(REAL/REFLECT)を
+            // 対応するNO_UV系(NO_UV/REFLECT_NO_UV)に読み替えてPSOを切り替える。
+            // ModelCommon::BeginDraw()側でも同じdrawTypeのPSOが一旦セットされているが、
+            // メッシュ単位で異なるPSOが必要になるため、ここで都度上書きする。
+            ModelCommon::DrawType actualDrawType = drawType;
+            if (!mesh.hasUV) {
+                actualDrawType = (drawType == ModelCommon::DrawType::REFLECT)
+                    ? ModelCommon::DrawType::REFLECT_NO_UV
+                    : ModelCommon::DrawType::NO_UV;
+            }
+            commandList->SetPipelineState(ModelCommon::GetInstance()->GetPipelineState(actualDrawType));
+
             commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(mesh.textureHandle));
 
             commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);

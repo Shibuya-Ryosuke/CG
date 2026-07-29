@@ -8,6 +8,7 @@
 #include "../Camera/Camera.h"
 #include "../Camera/DebugCamera.h"
 #include "../Light/Light.h"
+#include "ModelCommon.h"
 
 namespace RyoEngine {
     class ReflectModel;
@@ -35,13 +36,25 @@ namespace RyoEngine {
             Vector2 uvScale = { 1.0f, 1.0f };
             float uvRotate = 0.0f;
             Vector2 uvTranslate = { 0.0f, 0.0f };
+
+            // このメッシュがUV(テクスチャ座標)を持っているか
+            // ModelLoaderがobjの面(f)にvtが無いことを検出すると自動的にfalseになる(Suzanneなど)。
+            // false の場合、Draw()内でModelCommon::DrawType::NO_UV系のPSO(TEXCOORDを使わない専用Shader)で描画する。
+            bool hasUV = true;
         };
 
         void Initialize();
         void Update(const Camera& camera);
         void Update(const DebugCamera& debugCamera);
 
-        void Draw();
+        /// <summary>
+        /// 描画
+        /// </summary>
+        /// <param name="drawType">
+        /// 通常描画(REAL)か反射描画(REFLECT)かを指定する。
+        /// メッシュごとにhasUVがfalseの場合は、内部で自動的にNO_UV / REFLECT_NO_UVへ読み替えてPSOを切り替える。
+        /// </param>
+        void Draw(ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL);
 
         /// <summary>
         /// モデルの作成
@@ -122,6 +135,9 @@ namespace RyoEngine {
         uint32_t GetVertexCount(size_t meshIndex = 0) const { return meshes_[meshIndex].vertexCount; }
         D3D12_GPU_VIRTUAL_ADDRESS GetMaterialResourceGVA(size_t meshIndex = 0) const { return meshes_[meshIndex].materialResource->GetGPUVirtualAddress(); }
 
+        // このメッシュがUVを持っているか
+        bool GetHasUV(size_t meshIndex = 0) const { return meshes_[meshIndex].hasUV; }
+
         ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
         ID3D12Resource* GetLightResource() const { return lightResource_.Get(); };
         D3D12_GPU_VIRTUAL_ADDRESS GetLightResourceGVA() const { return lightResource_->GetGPUVirtualAddress(); }
@@ -184,6 +200,14 @@ namespace RyoEngine {
         /// </summary>
         /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
         void SetColor(const Vector4& color, int32_t meshIndex = -1);
+
+        /// <summary>
+        /// このメッシュがUVを持つかどうかを指定する。
+        /// falseにすると、Draw()時にUV無し専用PSO(TEXCOORDを使わないShader)で描画されるようになる。
+        /// </summary>
+        /// <param name="hasUV">UVを持つか</param>
+        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
+        void SetHasUV(bool hasUV, int32_t meshIndex = -1);
 
         /// <summary>
         /// UVのスケール指定

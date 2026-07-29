@@ -289,14 +289,8 @@
     <None Include="HLSL\Model\Model.hlsli">
       <Filter>リソース ファイル\HLSL\Model</Filter>
     </None>
-    <None Include="Original\HLSL\Reflect\Reflect.hlsli">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="Original\HLSL\Reflect\Reflect.PS.hlsl">
-      <Filter>リソース ファイル</Filter>
-    </None>
-    <None Include="Original\HLSL\Reflect\Reflect.VS.hlsl">
-      <Filter>リソース ファイル</Filter>
+    <None Include="HLSL\Model\Model_NoUV.hlsli">
+      <Filter>リソース ファイル\HLSL\Model</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -316,6 +310,12 @@
       <Filter>リソース ファイル\HLSL\Model</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Model\Model.VS.hlsl">
+      <Filter>リソース ファイル\HLSL\Model</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Model\Model_NoUV.PS.hlsl">
+      <Filter>リソース ファイル\HLSL\Model</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Model\Model_NoUV.VS.hlsl">
       <Filter>リソース ファイル\HLSL\Model</Filter>
     </FxCompile>
   </ItemGroup>

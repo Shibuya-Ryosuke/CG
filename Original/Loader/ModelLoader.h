@@ -19,6 +19,11 @@ namespace RyoEngine {
 		struct MeshData {
 			std::vector<VertexData> vertices;
 			uint32_t materialIndex = 0; // materials 配列内のインデックス
+
+			// このメッシュの面(f)が1つでもUV(vt)を持たない頂点を含んでいた場合 false になる。
+			// (Blenderなどでobjを出力する際、UV展開していないモデルは vt が存在せず "f v//vn" 形式になる)
+			// false の場合、頂点のtexcoordには (0,0) が入る。
+			bool hasUV = true;
 		};
 
 		// モデル全体のデータ (複数メッシュ・複数マテリアルを保持)
