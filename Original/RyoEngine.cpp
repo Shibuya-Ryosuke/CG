@@ -27,6 +27,7 @@ namespace RyoEngine {
         DirectXCommon* dxCommon_ = nullptr;
         ShaderCompiler* shaderCompiler_ = nullptr;
         TextureManager* textureManager_ = nullptr;
+        LightManager* lightManager_ = nullptr;
         ModelCommon* modelCommon_ = nullptr;
         SpriteCommon* spriteCommon_ = nullptr;
         ReflectCommon* reflectCommon_ = nullptr;
@@ -65,6 +66,9 @@ namespace RyoEngine {
         textureManager_->Initialize();
 
         dxCommon_->CreateGameRenderTarget();
+
+        lightManager_ = LightManager::GetInstance();
+        lightManager_->Initialize();
 
         // 各種描画共通部の初期化
         modelCommon_ = ModelCommon::GetInstance();
@@ -114,6 +118,7 @@ namespace RyoEngine {
         reflectCommon_->Finalize();
         spriteCommon_->Finalize();
         modelCommon_->Finalize();
+        lightManager_->Finalize();
         textureManager_->Finalize();
         shaderCompiler_->Finalize();
 
@@ -178,10 +183,12 @@ namespace RyoEngine {
         D3D12_GPU_DESCRIPTOR_HANDLE gameTexHandle = dxCommon_->GetGameTextureGPUHandle();
         ImVec2 viewSize{ viewSize_.x,viewSize_.y };
         ImGui::Image(reinterpret_cast<ImTextureID>(gameTexHandle.ptr), viewSize);
-        if (ImGui::IsItemHovered()) {
-            onTheGameView = true;
-        } else {
-            onTheGameView = false;
+        if (!Input::IsMousePush(0) && !Input::IsMousePush(1) && !Input::IsMousePush(2)) {
+            if (ImGui::IsItemHovered()) {
+                onTheGameView = true;
+            } else {
+                onTheGameView = false;
+            }
         }
         ImGui::End();
 
@@ -259,6 +266,7 @@ namespace RyoEngine {
     WinApp* GetWinApp() { return winApp_; }
     DirectXCommon* GetDxCommon() { return dxCommon_; }
     TextureManager* GetTexManager() { return textureManager_; }
+    LightManager* GetLightManager() { return lightManager_; }
     ModelCommon* GetModelCommon() { return modelCommon_; }
     SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
     ReflectCommon* GetReflectCommon() { return reflectCommon_; }

@@ -36,6 +36,9 @@ PixelShaderOutput main(VertexShaderOutput input)
             case 0:
                 // None
                 cos = 1.0f;
+                output.color.rgb = gMaterial.color.rgb;
+                output.color.a = gMaterial.color.a;
+                return output;
                 break;
 
             case 1:

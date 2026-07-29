@@ -12,7 +12,6 @@ void ModelOperate(Model* model,const char* id) {
         .rotate = model->GetRotate(),
         .translate = model->GetTranslate()
     };
-    DirectionalLight dl = model->GetDirectionalLight();
     Vector4 color = model->GetColor();
     Vector2 uvT = model->GetUVTranslate();
     float uvR = model->GetUVRotate();
@@ -25,14 +24,6 @@ void ModelOperate(Model* model,const char* id) {
             ImGui::DragFloat3("scale", &transform.scale.x, 0.01f, -5.0f, 5.0f);
             ImGui::DragFloat3("rotate", &transform.rotate.x, 0.01f, -5.0f, 5.0f);
             ImGui::DragFloat3("translate", &transform.translate.x, 0.01f, -50.0f, 50.0f);
-            ImGui::TreePop();
-        }
-        ImGui::Spacing();
-        // ライト
-        if (ImGui::TreeNodeEx("light", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::ColorEdit4("color", &dl.color.x);
-            ImGui::DragFloat3("direction", &dl.direction.x, 0.01f, -5.0f, 5.0f);
-            ImGui::DragFloat("intensity", &dl.intensity, 0.01f, -5.0f, 5.0f);
             ImGui::TreePop();
         }
         ImGui::Spacing();
@@ -65,7 +56,6 @@ void ModelOperate(Model* model,const char* id) {
     ImGui::PopID();
     // セット
     model->SetTransform(transform);
-    model->SetDirectionalLight(dl);
     model->SetUVSRT(uvS, uvR, uvT);
     model->SetColor(color);
 }
@@ -137,6 +127,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
+    
     // 正面を向かせる定数
     const float kRotateY = 3.18f;
 
@@ -182,12 +173,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     Model* suzanne = Model::Create("resources/suzanne.obj");
     suzanne->SetRotate({ 0.0f,kRotateY,0.0f });
     // 音
-    uint32_t se = Audio::GetInstance()->LoadSE("resources/Alarm01.wav");
+    uint32_t se = Audio::GetInstance()->LoadSE("resources/Get.mp3");
 
 
 
     
-    multiMaterial->SetTexByName("resources/flower.png", "Material");
+   
     
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -205,7 +196,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             .rotate = sphere.GetRotate(),
             .translate = sphere.GetTranslate()
         };
-        DirectionalLight sphereDL = sphere.GetDirectionalLight();
         // uv
         Vector2 sphereUVS = sphere.GetUVScale();
         float sphereUVR = sphere.GetUVRotate();
@@ -231,7 +221,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             .rotate = multiMaterial->GetRotate(),
             .translate = multiMaterial->GetTranslate()
         };
-        DirectionalLight multiMaterialDL = multiMaterial->GetDirectionalLight();
         // color
         Vector4 multiMaterialColor1 = multiMaterial->GetColorByName("Material");
         Vector4 multiMaterialColor2 = multiMaterial->GetColorByName("Material.001");
@@ -245,64 +234,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         float uvR2 = multiMaterial->GetUVRotate(multiMaterial->GetMeshIndexByName("Material.001"));
         Vector2 uvS2 = multiMaterial->GetUVScale(multiMaterial->GetMeshIndexByName("Material.001"));
 
-        //// スザンヌ
-        //Transform suzanneTransform{
-        //    .scale = suzanne->GetScale(),
-        //    .rotate = suzanne->GetRotate(),
-        //    .translate = suzanne->GetTranslate(),
-        //};
-        //DirectionalLight suzanneDL = suzanne->GetDirectionalLight();
-        // ImGui
+       
         ImGui::Begin("CG2");
-
-        // リセット
-        //if (ImGui::Button("SRT Initialize")) {
-        //    // カメラ
-        //    debugCamera->SetTranslate({ 0.0f,0.3f,-9.2f });
-
-        //    // スプライト
-        //    sprite.SetScale({ 1.0f,1.0f });
-        //    sprite.SetRotate(0.0f);
-        //    sprite.SetTranslate({ sprite.GetTexSize().x / 2.0f,sprite.GetTexSize().y / 2.0f });
-        //    // uv
-        //    sprite.SetScale({ 1.0f,1.0f });
-        //    sprite.SetUVRotate(0.0f);
-        //    sprite.SetTranslate({ 0.0f,0.0f });
-
-        //    // 球
-        //    sphere.SetScale({ 1.0f,1.0f,1.0f });
-        //    sphere.SetRotate({ 0.0f,0.0f,0.0f });
-        //    sphere.SetTranslate({ 0.0f,0.0f,0.0f });
-        //    // 
-
-        //    // モデル
-        //    // 平面
-        //    plane->SetScale({ 1.0f,1.0f,1.0f });
-        //    plane->SetRotate({ 0.0f,kRotateY,0.0f });
-        //    plane->SetTranslate({ 4.0f,0.0f,0.0f });
-        //    // ティーポット
-        //    teapot->SetScale({ 1.0f,1.0f,1.0f });
-        //    teapot->SetRotate({ 0.0f,kRotateY,0.0f });
-        //    teapot->SetTranslate({ 0.0f,0.0f,0.0f });
-        //    // ウサギ
-        //    bunny->SetScale({ 1.0f,1.0f,1.0f });
-        //    bunny->SetRotate({ 0.0f,kRotateY,0.0f });
-        //    bunny->SetTranslate({ 0.0f,0.0f,0.0f });
-        //    // マルチメッシュ
-        //    multiMesh->SetScale({ 1.0f,1.0f,1.0f });
-        //    multiMesh->SetRotate({ 0.0f,kRotateY,0.0f });
-        //    multiMesh->SetTranslate({ 0.0f,0.0f,0.0f });
-        //    // マルチマテリアル
-        //    multiMaterial->SetScale({ 1.0f,1.0f,1.0f });
-        //    multiMaterial->SetRotate({ 0.0f,kRotateY,0.0f });
-        //    multiMaterial->SetTranslate({ 0.0f,0.0f,0.0f });
-        //}
-
-        ImGui::SameLine();
-        // オーディオ
-        if (ImGui::Button("play audio")) {
-            Audio::GetInstance()->PlaySE(se, 0.5f);
-        }
 
         // カメラ操作
         Transform cameraTransform{
@@ -314,6 +247,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         if (ImGui::CollapsingHeader("camera")) {
             ImGui::DragFloat3("rotate", &cameraTransform.rotate.x, 0.01f, -5.0f, 5.0f);
             ImGui::DragFloat3("translate", &cameraTransform.translate.x, 0.01f, -5.0f, 5.0f);
+
+            // 操作説明
+            ImGui::Text("右ホールド + ドラッグ       : 回転");
+            ImGui::Text("ホイールホールド + ドラッグ : 縦軸・横軸移動");
+            ImGui::Text("ホイールスクロール          : 前後移動");
         }
         ImGui::PopID();
         // セット
@@ -321,6 +259,16 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         debugCamera->SetTranslate(cameraTransform.translate);
         Space();
 
+        // ライト
+        DirectionalLight dl = GetLightManager()->GetDirectionalLight();
+        if (ImGui::CollapsingHeader("light")) {
+            ImGui::ColorEdit4("color", &dl.color.x);
+            ImGui::DragFloat3("direction", &dl.direction.x, 0.01f, -5.0f, 5.0f);
+            ImGui::DragFloat("intensity", &dl.intensity, 0.01f, -5.0f, 5.0f);
+        }
+        // セット
+        GetLightManager()->SetDirectionalLight(dl);
+        Space();
 
         // コンボで変更
         RenderStateCombo(state);
@@ -340,14 +288,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
                     ImGui::DragFloat3("scale", &sphereTransform.scale.x, 0.01f, -5.0f, 5.0f);
                     ImGui::DragFloat3("rotate", &sphereTransform.rotate.x, 0.01f, -5.0f, 5.0f);
                     ImGui::DragFloat3("translate", &sphereTransform.translate.x, 0.01f, -5.0f, 5.0f);
-                    ImGui::TreePop();
-                }
-                ImGui::Spacing();
-                // ライト
-                if (ImGui::TreeNodeEx("light", ImGuiTreeNodeFlags_DefaultOpen)) {
-                    ImGui::ColorEdit4("color", &sphereDL.color.x);
-                    ImGui::DragFloat3("direction", &sphereDL.direction.x, 0.01f, -5.0f, 5.0f);
-                    ImGui::DragFloat("intensity", &sphereDL.intensity, 0.01f, -5.0f, 5.0f);
                     ImGui::TreePop();
                 }
                 ImGui::Spacing();
@@ -380,7 +320,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             ImGui::PopID();
             // セット
             sphere.SetTransform(sphereTransform);
-            sphere.SetDirectionalLight(sphereDL);
             sphere.SetUVSRT(sphereUVS, sphereUVR, sphereUVT);
             sphere.SetColor(sphereColor);
             Space();
@@ -457,14 +396,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
                     ImGui::TreePop();
                 }
                 ImGui::Spacing();
-                // ライト
-                if (ImGui::TreeNodeEx("light", ImGuiTreeNodeFlags_DefaultOpen)) {
-                    ImGui::ColorEdit4("color", &multiMaterialDL.color.x);
-                    ImGui::DragFloat3("direction", &multiMaterialDL.direction.x, 0.01f, -5.0f, 5.0f);
-                    ImGui::DragFloat("intensity", &multiMaterialDL.intensity, 0.01f, -5.0f, 5.0f);
-                    ImGui::TreePop();
-                }
-                ImGui::Spacing();
                 ImGui::PopID();
 
                 ImGui::PushID("Cube_multi");
@@ -521,7 +452,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             }
             // セット
             multiMaterial->SetTransform(multiMaterialTransform);
-            multiMaterial->SetDirectionalLight(multiMaterialDL);
             // cube
             multiMaterial->SetUVScale(uvS1, multiMaterial->GetMeshIndexByName("Material"));
             multiMaterial->SetUVRotate(uvR1, multiMaterial->GetMeshIndexByName("Material"));
@@ -539,6 +469,56 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             ModelOperate(suzanne, "Suzanne");
             break;
         }
+        // リセット
+        if (ImGui::Button("Transform Reset")) {
+            //// カメラ
+            //debugCamera->SetTranslate({ 0.0f,0.3f,-9.2f });
+
+            // スプライト
+            sprite.SetScale({ 1.0f,1.0f });
+            sprite.SetRotate(0.0f);
+            sprite.SetTranslate({ sprite.GetTexSize().x / 2.0f,sprite.GetTexSize().y / 2.0f });
+            //// uv
+            //sprite.SetScale({ 1.0f,1.0f });
+            //sprite.SetUVRotate(0.0f);
+            //sprite.SetTranslate({ 0.0f,0.0f });
+
+            // 球
+            sphere.SetScale({ 1.0f,1.0f,1.0f });
+            sphere.SetRotate({ 0.0f,0.0f,0.0f });
+            sphere.SetTranslate({ -1.7f,0.0f,0.0f });
+            // 
+
+            // モデル
+            // 平面
+            plane->SetScale({ 1.0f,1.0f,1.0f });
+            plane->SetRotate({ 0.0f,kRotateY,0.0f });
+            plane->SetTranslate({ 1.7f,0.0f,0.0f });
+            // ティーポット
+            teapot->SetScale({ 1.0f,1.0f,1.0f });
+            teapot->SetRotate({ 0.0f,kRotateY,0.0f });
+            teapot->SetTranslate({ 0.0f,0.0f,0.0f });
+            // ウサギ
+            bunny->SetScale({ 1.0f,1.0f,1.0f });
+            bunny->SetRotate({ 0.0f,kRotateY,0.0f });
+            bunny->SetTranslate({ 0.0f,0.0f,0.0f });
+            // マルチメッシュ
+            multiMesh->SetScale({ 1.0f,1.0f,1.0f });
+            multiMesh->SetRotate({ 0.0f,kRotateY,0.0f });
+            multiMesh->SetTranslate({ 0.0f,0.0f,0.0f });
+            // マルチマテリアル
+            multiMaterial->SetScale({ 1.0f,1.0f,1.0f });
+            multiMaterial->SetRotate({ 0.0f,kRotateY,0.0f });
+            multiMaterial->SetTranslate({ 0.0f,0.0f,0.0f });
+            // スザンヌ
+            suzanne->SetScale({ 1.0f,1.0f,1.0f });
+            suzanne->SetRotate({ 0.0f,kRotateY,0.0f });
+            suzanne->SetTranslate({ 0.0f,0.0f,0.0f });
+        }
+
+        Space();
+
+        ImGui::Text("ゲームパッドのBボタンを押すと音が再生されます");
         ImGui::End();
 
         // ゲームパッド操作

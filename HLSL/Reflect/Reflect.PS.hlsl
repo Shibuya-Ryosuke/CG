@@ -63,6 +63,9 @@ PixelShaderOutput main(VertexShaderOutput input)
         float3 normal = normalize(input.normal);
         float3 lightDir = -normalize(gDirectionLight.direction);
 
+        
+        //////    警告      /////
+        // 現在のモード0はNoneでありlambertではない
         if (gMaterial.shadingMode == 0) { // Lambert
             cos = saturate(dot(normal, lightDir));
         }

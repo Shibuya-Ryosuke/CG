@@ -8,6 +8,7 @@
 #include "../Camera/Camera.h"
 #include "../Camera/DebugCamera.h"
 #include "../Light/Light.h"
+#include "../Light/LightManager.h"
 #include "ModelCommon.h"
 
 namespace RyoEngine {
@@ -70,6 +71,12 @@ namespace RyoEngine {
         /// <param name="filePath">objファイルまでのファイルパス</param>
         void CreateModel(const std::string& filePath);
 
+        /// <summary>
+        /// このモデルの各メッシュにデフォルトのシェーディングモード(HALF_LAMBERT)を設定する。
+        /// NOTE: 以前はここでモデルごとのDirectionalLight用リソースも作成していたが、
+        ///       ライトはシーンで1つに一本化したいという方針のため LightManager に移した。
+        ///       関数名は互換性のため残しているが、実質「デフォルトのシェーディングモード設定」のみを行う。
+        /// </summary>
         void CreateDirectionalLight();
 
 
@@ -100,25 +107,25 @@ namespace RyoEngine {
         const Vector3& GetRotate() const { return transform_.rotate; }
         const Vector3& GetTranslate() const { return transform_.translate; }
         /// <summary>
-        /// 指向性ライトの取得
+        /// 指向性ライトの取得 (シーン共有。LightManagerへの転送)
         /// </summary>
         /// <returns>指向性ライト構造体</returns>
-        const DirectionalLight& GetDirectionalLight() const { return *lightData_; }
+        const DirectionalLight& GetDirectionalLight() const { return LightManager::GetInstance()->GetDirectionalLight(); }
         /// <summary>
-        /// 指向性ライトの色取得
+        /// 指向性ライトの色取得 (シーン共有。LightManagerへの転送)
         /// </summary>
         /// <returns>色</returns>
-        const Vector4& GetDLColor() const { return lightData_->color; }
+        const Vector4& GetDLColor() const { return LightManager::GetInstance()->GetColor(); }
         /// <summary>
-        /// 指向性ライトの向き取得
+        /// 指向性ライトの向き取得 (シーン共有。LightManagerへの転送)
         /// </summary>
         /// <returns>向き</returns>
-        const Vector3& GetDLDirection() const { return lightData_->direction; }
+        const Vector3& GetDLDirection() const { return LightManager::GetInstance()->GetDirection(); }
         /// <summary>
-        /// 指向性ライトの光の強度取得
+        /// 指向性ライトの光の強度取得 (シーン共有。LightManagerへの転送)
         /// </summary>
         /// <returns>光の強度</returns>
-        float GetDLIntensity() const { return lightData_->intensity; }
+        float GetDLIntensity() const { return LightManager::GetInstance()->GetIntensity(); }
 
         // --- 以下、マテリアル/テクスチャ/頂点関連は meshIndex 指定版 ---
         // 既存コード互換のため meshIndex 省略時は 0番目 (先頭メッシュ) を対象にする
@@ -139,8 +146,9 @@ namespace RyoEngine {
         bool GetHasUV(size_t meshIndex = 0) const { return meshes_[meshIndex].hasUV; }
 
         ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
-        ID3D12Resource* GetLightResource() const { return lightResource_.Get(); };
-        D3D12_GPU_VIRTUAL_ADDRESS GetLightResourceGVA() const { return lightResource_->GetGPUVirtualAddress(); }
+        // ライトリソースはモデル固有ではなく、シーン共有のLightManagerが持つものを返す
+        ID3D12Resource* GetLightResource() const { return LightManager::GetInstance()->GetResource(); };
+        D3D12_GPU_VIRTUAL_ADDRESS GetLightResourceGVA() const { return LightManager::GetInstance()->GetGPUVirtualAddress(); }
         Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
         int32_t GetAnimEditID () { return animEditID_; }
 
@@ -154,29 +162,25 @@ namespace RyoEngine {
         void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
         void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
         /// <summary>
-        /// 指向性ライトの指定
+        /// 指向性ライトの指定 (シーン共有。LightManagerへの転送。全モデルに反映される)
         /// </summary>
         /// <param name="light">指向性ライト構造体</param>
-        void SetDirectionalLight(const DirectionalLight& light) {
-            SetDLColor(light.color);
-            SetDLDirection(light.direction);
-            SetDLIntensity(light.intensity);
-        }
+        void SetDirectionalLight(const DirectionalLight& light) { LightManager::GetInstance()->SetDirectionalLight(light); }
         /// <summary>
-        /// 指向性ライトの色指定
+        /// 指向性ライトの色指定 (シーン共有。LightManagerへの転送。全モデルに反映される)
         /// </summary>
         /// <param name="color">色</param>
-        void SetDLColor(const Vector4& color) { lightData_->color = color; }
+        void SetDLColor(const Vector4& color) { LightManager::GetInstance()->SetColor(color); }
         /// <summary>
-        /// 指向性ライトの向き指定 (関数内部で正規化が入ります)
+        /// 指向性ライトの向き指定 (シーン共有。LightManagerへの転送。全モデルに反映される。内部で正規化が入ります)
         /// </summary>
         /// <param name="direction">向き</param>
-        void SetDLDirection(const Vector3& direction) { lightData_->direction = Normalize(direction); }
+        void SetDLDirection(const Vector3& direction) { LightManager::GetInstance()->SetDirection(direction); }
         /// <summary>
-        /// 指向性ライトの光の強度指定
+        /// 指向性ライトの光の強度指定 (シーン共有。LightManagerへの転送。全モデルに反映される)
         /// </summary>
         /// <param name="intensity">光の強度</param>
-        void SetDLIntensity(float intensity) { lightData_->intensity = intensity; }
+        void SetDLIntensity(float intensity) { LightManager::GetInstance()->SetIntensity(intensity); }
 
         /// <summary>
         /// シェーディングモードの指定
@@ -265,9 +269,9 @@ namespace RyoEngine {
         // メッシュ配列 (マルチメッシュ/マルチマテリアル対応)
         std::vector<MeshResource> meshes_;
 
-        // ライト (モデル全体で共有)
-        Microsoft::WRL::ComPtr<ID3D12Resource> lightResource_;
-        DirectionalLight* lightData_ = nullptr;
+        // NOTE: ライト用のリソースはここでは持たない。
+        //       シーン全体で1つに共有するため LightManager (Singleton) が保持している。
+        //       GetLightResource()/GetLightResourceGVA()/GetDirectionalLight()等はLightManagerへの転送になっている。
 
         // 座標変換行列（WVP）用 (モデル全体で共有)
         Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_;

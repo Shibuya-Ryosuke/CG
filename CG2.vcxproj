@@ -94,6 +94,7 @@
     <ClCompile Include="Original\Graphics\TextureManager.cpp" />
     <ClCompile Include="Original\ImGui\ImGuiManager.cpp" />
     <ClCompile Include="Original\Input\Input.cpp" />
+    <ClCompile Include="Original\Light\LightManager.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
     <ClCompile Include="Original\Mesh\Mesh.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />
@@ -136,6 +137,7 @@
     <ClInclude Include="Original\ImGui\ImGuiManager.h" />
     <ClInclude Include="Original\Input\Input.h" />
     <ClInclude Include="Original\Light\Light.h" />
+    <ClInclude Include="Original\Light\LightManager.h" />
     <ClInclude Include="Original\Loader\ModelLoader.h" />
     <ClInclude Include="Original\Math\Math.h" />
     <ClInclude Include="Original\Math\Matrix.h" />

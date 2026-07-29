@@ -20,6 +20,7 @@
 #include "Input/Input.h"
 #include "ImGui/ImGuiManager.h"
 #include "Edit/AnimEdit.h"
+#include "Light/LightManager.h"
 #include <cstdint>
 #include <string>
 #include <format>
@@ -37,6 +38,7 @@ namespace RyoEngine {
     WinApp* GetWinApp();
     DirectXCommon* GetDxCommon();
     TextureManager* GetTexManager();
+    LightManager* GetLightManager();
     ModelCommon* GetModelCommon();
     SpriteCommon* GetSpriteCommon();
     ReflectCommon* GetReflectCommon();

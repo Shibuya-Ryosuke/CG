@@ -42,6 +42,10 @@ PixelShaderOutput main(VertexShaderOutput input)
             case 0:
         // None
                 cos = 1.0f;
+            // ライトの情報を使わずにrgbaを出し処理終了
+                output.color.rgb = gMaterial.color.rgb * textureColor.rgb;
+                output.color.a = gMaterial.color.a * textureColor.a;
+                return output;
                 break;
 
             case 1:

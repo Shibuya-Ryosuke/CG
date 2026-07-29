@@ -23,16 +23,11 @@ namespace RyoEngine {
     }
 
     void Model::CreateDirectionalLight() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
-
-        // DirectionalLightリソース作成
-        lightResource_ = DirectXCommon::CreateBufferResource(device, sizeof(DirectionalLight));
-        lightResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightData_));
-
-        // デフォルト値（白い光が斜め下に向いている状態）
-        lightData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-        lightData_->direction = { 0.0f, -1.0f, 0.0f };
-        lightData_->intensity = 1.0f;
+        // NOTE: 以前はここでモデルごとのDirectionalLight用定数バッファを作成していたが、
+        //       ライトはシーンで1つに共有する方針になったため、その生成処理は
+        //       LightManager::Initialize() 側に移動した(エンジン起動時に一度だけ呼ばれる想定)。
+        //       この関数名は互換性のため残しているが、実質的にやっているのは
+        //       「全メッシュのデフォルトシェーディングモードをHALF_LAMBERTにする」ことだけ。
 
         // 全メッシュのデフォルトシェーディングモードをHALF_LAMBERTにする
         for (auto& mesh : meshes_) {
@@ -323,8 +318,8 @@ namespace RyoEngine {
             commandList->SetGraphicsRootConstantBufferView(0, mesh.materialResource->GetGPUVirtualAddress());
             commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
 
-            // ライトの定数バッファをセット
-            commandList->SetGraphicsRootConstantBufferView(3, lightResource_->GetGPUVirtualAddress());
+            // ライトの定数バッファをセット (シーン共有のLightManagerが持つものを全モデルで参照する)
+            commandList->SetGraphicsRootConstantBufferView(3, LightManager::GetInstance()->GetGPUVirtualAddress());
 
             commandList->DrawInstanced(mesh.vertexCount, 1, 0, 0);
         }

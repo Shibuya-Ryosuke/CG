@@ -28,8 +28,8 @@ namespace RyoEngine {
         }
 
         // --- マウス ---
+        // 0:左, 1:右, 2:中
         static bool IsMousePush(int buttonNumber) {
-            // 0:左, 1:右, 2:中
             return GetInstance()->mouseState_.rgbButtons[buttonNumber] & 0x80;
         }
 

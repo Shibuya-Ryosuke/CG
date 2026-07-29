@@ -46,8 +46,12 @@ namespace RyoEngine {
         CreateWVPResource();
         CreateDirectionalLight();
 
-        // 正面から照らす
-        lightData_->direction = { 0.0f,0.0f,1.0f };
+        // NOTE: 以前はここで「このMesh専用のライト」を正面向きに変えていたが、
+        //       ライトはシーン全体で1つに共有する方針になったため、
+        //       個々のMesh生成時にLightManagerの向きを書き換えるのは他のオブジェクトにも
+        //       影響してしまい不適切なので削除した。正面から照らしたい場合は、
+        //       シーン側で明示的に LightManager::GetInstance()->SetDirection(...) を呼ぶこと。
+
         // 位置の設定
         transform_.translate = position;
         // カラーを設定
@@ -137,17 +141,11 @@ namespace RyoEngine {
     }
 
     void Mesh::CreateDirectionalLight() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
-
-        // DirectionalLightリソース作成
-        lightResource_ = DirectXCommon::CreateBufferResource(device, sizeof(DirectionalLight));
-        lightResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightData_));
-
-        // デフォルト値（白い光が斜め下に向いている状態）
-        lightData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-        lightData_->direction = { 0.0f, -1.0f, 0.0f };
-        lightData_->intensity = 1.0f;
-
+        // NOTE: 以前はここでMeshごとのDirectionalLight用定数バッファを作成していたが、
+        //       ライトはシーンで1つに共有する方針になったため、その生成処理は
+        //       LightManager::Initialize() 側に移動した(エンジン起動時に一度だけ呼ばれる想定)。
+        //       この関数名は互換性のため残しているが、実質的にやっているのは
+        //       「デフォルトのシェーディングモードをHALF_LAMBERTにする」ことだけ。
         materialData_->shadingMode = ShadingMode::HALF_LAMBERT;
     }
 
@@ -181,7 +179,8 @@ namespace RyoEngine {
         commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
         commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
 
-        commandList->SetGraphicsRootConstantBufferView(3, lightResource_->GetGPUVirtualAddress());
+        // ライトの定数バッファをセット (シーン共有のLightManagerが持つものを全オブジェクトで参照する)
+        commandList->SetGraphicsRootConstantBufferView(3, LightManager::GetInstance()->GetGPUVirtualAddress());
         // 描画実行
         commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
     }
