@@ -22,6 +22,11 @@ public:
 
 	void MoveTranslate(const Vector3& translation); // 移動させる
 	
+	// 接近フェーズ初期化
+	void ApproachPhaseInitialize() { fireTimer = kFireInterval_; }
+
+	void CountDownFire();
+
 	/// <summary>
 	/// 弾発射
 	/// </summary>
@@ -54,4 +59,8 @@ private:
 
 	// 弾
 	std::list<EnemyBullet*> bullets_;
+	// 発射間隔
+	static const int32_t kFireInterval_ = 60;
+	// 発射タイマー
+	int32_t fireTimer = 0;
 };

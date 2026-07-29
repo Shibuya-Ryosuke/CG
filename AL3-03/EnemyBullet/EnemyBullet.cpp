@@ -10,7 +10,7 @@ EnemyBullet::~EnemyBullet() {
 void EnemyBullet::Initialize(const Vector3& position, const Vector3& velocity) {
 	model_ = Model::Create("resources/AL3-03/enemyBullet/enemyBullet.obj");
 	model_->SetTex("resources/AL3-03/enemyBullet/enemyBullet.png");
-	model_->SetColor({ 0.0f,0.0f,0.0f,1.0f });
+	model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
 
 	model_->SetTranslate(position);
 	velocity_ = velocity;

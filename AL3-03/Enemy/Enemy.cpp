@@ -9,7 +9,6 @@ EnemyStateApproach* EnemyStateApproach::GetInstance() {
 	static EnemyStateApproach instance;
 	return &instance;
 }
-
 void EnemyStateApproach::Update(Enemy* enemy) {
 	// パブリックなゲッター経由で計算
 	Vector3 approachVelocity = enemy->GetVelocity() * enemy->GetApproachSpeedRate();
@@ -21,6 +20,9 @@ void EnemyStateApproach::Update(Enemy* enemy) {
 	if (enemy->GetPositionZ() < 0.0f) {
 		enemy->ChangeState(EnemyStateLeave::GetInstance());
 	}
+
+	// 発射タイマーカウントダウン
+	enemy->CountDownFire();
 }
 
 // --- 離脱状態 (Leave) ---
@@ -28,7 +30,6 @@ EnemyStateLeave* EnemyStateLeave::GetInstance() {
 	static EnemyStateLeave instance;
 	return &instance;
 }
-
 void EnemyStateLeave::Update(Enemy* enemy) {
 	Vector3 leaveVelocity{
 		.x = -enemy->GetMoveSpeed(),
@@ -44,6 +45,14 @@ void EnemyStateLeave::Update(Enemy* enemy) {
 void Enemy::MoveTranslate(const Vector3& translation) {
 	if (model_) {
 		model_->SetTranslate(model_->GetTranslate() + translation);
+	}
+}
+
+void Enemy::CountDownFire() {
+	fireTimer--;
+	if (fireTimer <= 0) {
+		Fire();
+		fireTimer = kFireInterval_;
 	}
 }
 
@@ -69,6 +78,12 @@ float Enemy::GetPositionZ() const {
 
 
 Enemy::~Enemy() {
+	// bulletの開放
+	for (EnemyBullet* bullet : bullets_) {
+		delete bullet;
+	}
+	bullets_.clear();
+
 	delete model_;
 	model_ = nullptr;
 }
@@ -81,7 +96,7 @@ void Enemy::Initialize(const Vector3& position, const Vector3& velocity) {
 	velocity_ = velocity;
 
 	state_ = EnemyStateApproach::GetInstance();
-	Fire();
+	ApproachPhaseInitialize();
 }
 
 void Enemy::ChangeState(IEnemyState* newState) {

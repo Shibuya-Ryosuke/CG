@@ -23,7 +23,7 @@ private:
 	// 弾の速度
 	static constexpr float kBulletSpeed_ = 1.0f;
 	// 寿命
-	static const int32_t kLifeTime_ = 60 * 5;
+	static const int32_t kDeathTime_ = 60 * 5;
 
 	// 自身
 	RyoEngine::Model* model_ = nullptr;
@@ -32,7 +32,7 @@ private:
 	Vector3 velocity_{};
 
 	// デスタイマー
-	int32_t deathTimer_ = kLifeTime_;
+	int32_t deathTimer_ = kDeathTime_;
 	// デスフラグ
 	bool isDead_ = false;
 };
