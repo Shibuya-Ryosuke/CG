@@ -29,6 +29,13 @@ namespace RyoEngine {
         commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
     }
 
+    void SpriteCommon::Draw() {
+        BeginDraw();
+        for (const auto& command : drawCommands_) {
+            command();
+        }
+    }
+
     void SpriteCommon::Finalize() {
         Logger::Log("SpriteCommon : Finalizing...\n");
         // グラフィックスパイプラインを解放

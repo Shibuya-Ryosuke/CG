@@ -54,6 +54,8 @@ namespace RyoEngine {
         void CreateIndexResource();
         void CreateMaterialResource();
         void CreateWVPResource();
+
+        void InternalDraw();
     private:
         // リソース類
         Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;

@@ -3,6 +3,7 @@
 #include "../Camera/Camera.h"
 #include "../Camera/DebugCamera.h"
 #include "../Graphics/TextureManager.h"
+#include "../3D/ModelCommon.h"
 
 namespace RyoEngine {
 
@@ -140,6 +141,24 @@ namespace RyoEngine {
         wvpData_->WVP = MakeIdentity4x4();
     }
 
+    void Mesh::InternalDraw() {
+        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+
+        // 自分自身のバッファをパイプラインにバインド
+        commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
+        commandList->IASetIndexBuffer(&indexBufferView_);
+
+        // RootParameter (0:Material, 1:WVP) 
+        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
+        commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
+        commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
+
+        // ライトの定数バッファをセット (シーン共有のLightManagerが持つものを全オブジェクトで参照する)
+        commandList->SetGraphicsRootConstantBufferView(3, LightManager::GetInstance()->GetGPUVirtualAddress());
+        // 描画実行
+        commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
+    }
+
     void Mesh::CreateDirectionalLight() {
         // NOTE: 以前はここでMeshごとのDirectionalLight用定数バッファを作成していたが、
         //       ライトはシーンで1つに共有する方針になったため、その生成処理は
@@ -168,21 +187,9 @@ namespace RyoEngine {
     }
 
     void Mesh::Draw() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-
-        // 自分自身のバッファをパイプラインにバインド
-        commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
-        commandList->IASetIndexBuffer(&indexBufferView_);
-
-        // RootParameter (0:Material, 1:WVP) 
-        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
-        commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
-
-        // ライトの定数バッファをセット (シーン共有のLightManagerが持つものを全オブジェクトで参照する)
-        commandList->SetGraphicsRootConstantBufferView(3, LightManager::GetInstance()->GetGPUVirtualAddress());
-        // 描画実行
-        commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
+        ModelCommon::GetInstance()->SetDrawCommands([this]() {
+            InternalDraw();
+        });
     }
 
     void Mesh::Finalize() {

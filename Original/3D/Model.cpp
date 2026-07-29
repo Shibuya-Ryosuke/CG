@@ -272,31 +272,8 @@ namespace RyoEngine {
         CreateDirectionalLight();
     }
 
-    void Model::Update(const Camera& camera) {
-        // ワールド行列の作成
-        worldMatrix_ = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
-        
-        // WVP行列の計算 (World * ViewProjection)
-        Matrix4x4 wvpMatrix = worldMatrix_ * camera.GetViewProjectionMatrix();
-
-        wvpData_->World = worldMatrix_;
-        wvpData_->WVP = wvpMatrix;
-    }
-
-    void Model::Update(const DebugCamera& debugCamera) {
-        // ワールド行列の作成
-        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-
-        // WVP行列の計算 (World * ViewProjection)
-        Matrix4x4 wvpMatrix = worldMatrix_ * debugCamera.GetViewProjectionMatrix();
-
-        wvpData_->World = worldMatrix_;
-        wvpData_->WVP = wvpMatrix;
-    }
-
-    void Model::Draw(ModelCommon::DrawType drawType) {
+    void Model::InternalDraw(ModelCommon::DrawType drawType) {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-
         // メッシュごとにテクスチャ・マテリアル・PSOを切り替えながらドローコールを発行する
         // (WVP・ライトはモデル全体で共有のため、メッシュ間で使い回す)
         for (const auto& mesh : meshes_) {
@@ -323,6 +300,34 @@ namespace RyoEngine {
 
             commandList->DrawInstanced(mesh.vertexCount, 1, 0, 0);
         }
+    }
+
+    void Model::Update(const Camera& camera) {
+        // ワールド行列の作成
+        worldMatrix_ = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
+        
+        // WVP行列の計算 (World * ViewProjection)
+        Matrix4x4 wvpMatrix = worldMatrix_ * camera.GetViewProjectionMatrix();
+
+        wvpData_->World = worldMatrix_;
+        wvpData_->WVP = wvpMatrix;
+    }
+
+    void Model::Update(const DebugCamera& debugCamera) {
+        // ワールド行列の作成
+        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+
+        // WVP行列の計算 (World * ViewProjection)
+        Matrix4x4 wvpMatrix = worldMatrix_ * debugCamera.GetViewProjectionMatrix();
+
+        wvpData_->World = worldMatrix_;
+        wvpData_->WVP = wvpMatrix;
+    }
+
+    void Model::Draw(ModelCommon::DrawType drawType) {
+        ModelCommon::GetInstance()->SetDrawCommands([ =, this]() {
+            InternalDraw(drawType);
+        });
     }
 
     Model* Model::Create(const std::string& filePath, bool registAnimEdit, const std::string& name) {

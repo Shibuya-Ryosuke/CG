@@ -226,6 +226,7 @@ namespace RyoEngine {
 		void CreateMaterialResource();
 		void CreateWVPResource();
 
+		void InternalDraw();
 		/// <summary>
 		/// デフォルトのシェーディングモード(HALF_LAMBERT)を設定する。
 		/// NOTE: 以前はここでMeshごとのDirectionalLight用リソースも作成していたが、

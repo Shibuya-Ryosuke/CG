@@ -52,6 +52,13 @@ namespace RyoEngine {
 		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	}
 
+	void ModelCommon::Draw() {
+		BeginDraw();
+		for (const auto& command : drawCommands_) {
+			command();
+		}
+	}
+
 	void ModelCommon::Finalize() {
 		Logger::Log("ModelCommon : Finalizing...\n");
 		// グラフィックスパイプラインを解放

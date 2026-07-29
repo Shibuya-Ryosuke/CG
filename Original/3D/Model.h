@@ -260,7 +260,7 @@ namespace RyoEngine {
     private:
         // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）
         void InternalInitialize(const ModelLoader::ModelData& modelData);
-
+        void InternalDraw(ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL);
         // 指定メッシュのuvScale/uvRotate/uvTranslateから、materialData->uvTransformを再計算して書き込む
         void UpdateUVTransform(MeshResource& mesh);
 

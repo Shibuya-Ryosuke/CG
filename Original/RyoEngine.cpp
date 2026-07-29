@@ -163,6 +163,9 @@ namespace RyoEngine {
             smoothedFps_ = (smoothedFps_ * 0.9f) + (fps_ * 0.1f);
         }
 
+        modelCommon_->CommandsClear();
+        spriteCommon_->CommandsClear();
+
         Input::Update();
 
 #ifdef _DEBUG
@@ -243,6 +246,14 @@ namespace RyoEngine {
     }
 
     void EndFrame() {
+        // 3d描画
+        Begin3dDraw();
+        modelCommon_->Draw();
+
+        // 2d描画
+        Begin2dDraw();
+        spriteCommon_->Draw();
+
         fontOutputer_->DrawAllText();
 
         auto cpuEnd = std::chrono::high_resolution_clock::now();

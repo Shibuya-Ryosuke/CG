@@ -123,19 +123,9 @@ namespace RyoEngine {
     }
 
     void Sprite::Draw() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        
-        // 3. 各種バッファをセット
-        commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
-        commandList->IASetIndexBuffer(&indexBufferView_);
-
-        // RootParameter (0:Material, 1:WVP, 2:Texture)
-        commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
-
-        // 4. インデックスを使って描画 (6つのインデックスを使用)
-        commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
+        SpriteCommon::GetInstance()->SetDrawCommands([this]() {
+            InternalDraw();
+        });
     }
 
     void Sprite::SetTex(const std::string& filePath) {
@@ -187,5 +177,20 @@ namespace RyoEngine {
         wvpResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Matrix4x4));
         wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&wvpData_));
         *wvpData_ = MakeIdentity4x4();
+    }
+    void Sprite::InternalDraw() {
+        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+
+        // 3. 各種バッファをセット
+        commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
+        commandList->IASetIndexBuffer(&indexBufferView_);
+
+        // RootParameter (0:Material, 1:WVP, 2:Texture)
+        commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
+        commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
+        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
+
+        // 4. インデックスを使って描画 (6つのインデックスを使用)
+        commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
     }
 }

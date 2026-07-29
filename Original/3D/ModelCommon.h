@@ -2,6 +2,8 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include "../Base/DirectXCommon.h"
+#include <vector>
+#include <functional>
 
 namespace RyoEngine {
     class ModelCommon {
@@ -24,6 +26,7 @@ namespace RyoEngine {
         void Initialize();
 
         void BeginDraw(DrawType drawType = DrawType::REAL);
+        void Draw();
 
         /// <summary>
         /// 終了処理
@@ -33,6 +36,7 @@ namespace RyoEngine {
         // --- ゲッター ---
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
         ID3D12PipelineState* GetPipelineState() const { return realPipelineState_.Get(); }
+        
 
         /// <summary>
         /// DrawTypeを指定してPSOを取得する (メッシュ単位でPSOを切り替えたい場合に使用)
@@ -46,6 +50,10 @@ namespace RyoEngine {
             }
             return realPipelineState_.Get();
         }
+
+        void SetDrawCommands(const std::function<void()>& function) { drawCommands_.push_back(function); }
+
+        void CommandsClear() { drawCommands_.clear(); }
 
     private:
         ModelCommon() = default;
@@ -77,5 +85,7 @@ namespace RyoEngine {
         void CreateNoUVPipelineState();
         // UVを持たないメッシュ用パイプライン生成 (反射描画)
         void CreateReflectNoUVPipelineState();
+
+        std::vector<std::function<void()>> drawCommands_;
     };
 }

@@ -581,7 +581,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // --- 描画処理 (Draw) ---
         // ----------------------
         // [3D描画フェーズ]
-        Begin3dDraw();
+        
         switch (state) {
         case State::sphere_plane:
             plane->Draw();
@@ -617,7 +617,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
         // [2D描画フェーズ]
-        Begin2dDraw();
+
         if (state == State::sprite) {
             sprite.Draw();
         }
