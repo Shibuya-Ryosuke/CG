@@ -1,6 +1,9 @@
 #include "Enemy.h"
 #include "EnemyState.h"
 #include "../Math.h"
+#include <cassert>
+
+#include "../Player/Player.h"
 
 using namespace RyoEngine;
 
@@ -57,18 +60,30 @@ void Enemy::CountDownFire() {
 }
 
 void Enemy::Fire() {
-	// 現在の座標をコピー
-	Vector3 position = model_->GetTranslate();
+	assert(player_);
 
-	// 弾を生成
+	// 弾の速さ（調整項目）
+	const float kBulletSpeed = 1.0f; // 必要に応じて数値は調整してください
+
+	// 自キャラのワールド座標を取得する
+	Vector3 playerPosition = player_->GetWorldposition();
+	// 敵キャラのワールド座標を取得する
+	Vector3 position = GetWorldposition();
+
+	// 敵キャラから自キャラへの差分ベクトルを求める
+	Vector3 velocity = playerPosition - position;
+
+	// ベクトルの正規化
+	velocity = Normalize(velocity);
+
+	// ベクトルの長さを、速さに合わせる
+	velocity *= kBulletSpeed;
+
+	// 弾を生成し、初期化
 	EnemyBullet* newBullet = new EnemyBullet();
-	// 弾の速度
-	Vector3 velocity(0, 0, -newBullet->GetBulletSpeed());
-	// 速度ベクトルを自機の向きに合わせて回転させる
-	velocity = TransformNormal(velocity, model_->GetWorldMatrix());
-	// 初期化
 	newBullet->Initialize(position, velocity);
-	// 弾を登録
+
+	// 弾を登録する
 	bullets_.push_back(newBullet);
 }
 

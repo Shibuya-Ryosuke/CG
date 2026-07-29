@@ -30,6 +30,15 @@ public:
 	/// </summary>
 	void Draw();
 
+	Vector3 GetWorldposition() {
+		Vector3 worldPos{
+			.x = model_->GetWorldMatrix().m[3][0],
+			.y = model_->GetWorldMatrix().m[3][1],
+			.z = model_->GetWorldMatrix().m[3][2],
+		};
+		return worldPos;
+	}
+
 private:
 	/// <summary>
 	/// 回転

@@ -19,6 +19,7 @@ void GameScene::Initialize() {
 	// 敵の生成
 	enemy_ = new Enemy();
 	enemy_->Initialize({0,0,30},{0,0,-enemy_->GetMoveSpeed()});
+	enemy_->SetPlayer(player_);
 
 	// 軸生成
 	axisIndicator_ = new AxisIndicator();

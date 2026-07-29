@@ -3,6 +3,7 @@
 #include "../EnemyBullet/EnemyBullet.h"
 
 class IEnemyState;
+class Player;
 
 /// <summary>
 /// 敵
@@ -32,16 +33,30 @@ public:
 	/// </summary>
 	void Fire();
 	
+	Vector3 GetWorldposition() {
+		Vector3 worldPos{
+			.x = model_->GetWorldMatrix().m[3][0],
+			.y = model_->GetWorldMatrix().m[3][1],
+			.z = model_->GetWorldMatrix().m[3][2],
+		};
+		return worldPos;
+	}
+
 	float GetPositionZ() const;                     // Z座標を取得する
 	Vector3 GetVelocity() const { return velocity_; }
 	float GetApproachSpeedRate() const { return kApproachSpeedRate_; }
 	float GetLeaveSpeedRate() const { return kLeaveSpeedRate_; }
 	float GetMoveSpeed() { return kMoveSpeed_; }
 
+	void SetPlayer(Player* player) { player_ = player; }
+
 private:
 	void UpdateState();
 
 private:
+	// プレイヤー
+	Player* player_ = nullptr;
+
 	// 自身
 	RyoEngine::Model* model_ = nullptr;
 	// ステート
