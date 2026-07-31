@@ -297,7 +297,6 @@ namespace RyoEngine {
 
             // ライトの定数バッファをセット (シーン共有のLightManagerが持つものを全モデルで参照する)
             commandList->SetGraphicsRootConstantBufferView(3, LightManager::GetInstance()->GetGPUVirtualAddress());
-
             commandList->DrawInstanced(mesh.vertexCount, 1, 0, 0);
         }
     }

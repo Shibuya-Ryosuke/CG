@@ -94,7 +94,7 @@ namespace RyoEngine {
 
         // フォント
         fontOutputer_ = new Font();
-        fontOutputer_->Initialize("Original/Resources/font.fnt", "Original/Resources/font_0.png");
+        fontOutputer_->Initialize("resources/font/font.fnt", "resources/font/font_0.png");
 
         std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
