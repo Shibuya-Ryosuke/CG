@@ -177,15 +177,6 @@ namespace RyoEngine {
         wvpData_->WVP = worldMatrix_ * camera.GetViewProjectionMatrix();
     }
 
-    void Mesh::Update(DebugCamera& debugCamera) {
-        // 3D用のワールド行列計算
-        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-
-        // 定数バッファに書き込み
-        wvpData_->World = worldMatrix_;
-        wvpData_->WVP = worldMatrix_ *debugCamera.GetViewProjectionMatrix();
-    }
-
     void Mesh::Draw() {
         ModelCommon::GetInstance()->SetDrawCommands([this]() {
             InternalDraw();

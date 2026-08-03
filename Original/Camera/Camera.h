@@ -8,11 +8,12 @@ namespace RyoEngine {
         /// 初期化込みコンストラクタ
         /// </summary>
         Camera();
-        ~Camera() = default;
+        virtual  ~Camera() = default;
+        Camera& operator=(const Camera&) = default;
 
-        void Initialize();
+        virtual void Initialize();
 
-        void Update();
+        virtual void Update();
 
         // Setter
         void SetRotate(const Vector3& rotate) { rotate_ = rotate; }
@@ -28,6 +29,7 @@ namespace RyoEngine {
             viewProjectionMatrix_ = viewMatrix_ * projectionMatrix_;
             isOverride_ = true; // 自動計算をスキップさせる
         }
+        void SetActive(bool isActive) { isActive_ = isActive; }
 
         // Getter
         const Vector3& GetTranslate() const { return translate_; }
@@ -36,8 +38,10 @@ namespace RyoEngine {
         const Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
         const Matrix4x4& GetProjectionMatrix() const { return projectionMatrix_; }
         const Matrix4x4& GetViewProjectionMatrix() const { return viewProjectionMatrix_; }
+        
+        bool IsActive() const { return isActive_; }
 
-    private:
+    protected:
         Vector3 rotate_;
         Vector3 translate_;
         float fovY_;
@@ -49,6 +53,8 @@ namespace RyoEngine {
         Matrix4x4 projectionMatrix_;
         Matrix4x4 viewProjectionMatrix_;
 
+    private:
         bool isOverride_ = false;
+        bool isActive_ = true;
     };
 }

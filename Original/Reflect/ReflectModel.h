@@ -65,7 +65,6 @@ namespace RyoEngine {
 
         // 更新（メインカメラを元に、鏡用の反転カメラ行列を計算する）
         void Update(const Camera& camera);
-        void Update(const DebugCamera& debugCamera);
 
         // 描画（メインシーンの描画中に呼び出す）
         void Draw();

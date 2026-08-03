@@ -40,25 +40,6 @@ namespace RyoEngine {
         model_->GetWvpResource()->Unmap(0, nullptr);
     }
 
-    void ReflectModel::Update(const DebugCamera& debugCamera) {
-        // 鏡の板ポリ自体の通常の更新
-        model_->Update(debugCamera);
-
-        TransformationMatrixForReflect* wvpData = nullptr;
-        model_->GetWvpResource()->Map(0, nullptr, reinterpret_cast<void**>(&wvpData));
-
-        // 鏡の板ポリ自体のワールド行列
-        wvpData->World = model_->GetWorldMatrix();
-        // メインカメラから見た鏡の板のWVP
-        wvpData->WVP = model_->GetWorldMatrix() * debugCamera.GetViewProjectionMatrix();
-
-        // 【変更】カメラを反転させないため、通常のVPをそのまま渡す
-        //（オブジェクト側のReflectUpdateで反転されたWorldが渡ってくるため、カメラは通常のものでOK）
-        wvpData->ReflectVP = debugCamera.GetViewProjectionMatrix();
-
-        model_->GetWvpResource()->Unmap(0, nullptr);
-    }
-
     void ReflectModel::Draw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
         auto reflectCommon = ReflectCommon::GetInstance();

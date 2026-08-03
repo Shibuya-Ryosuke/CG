@@ -9,9 +9,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
-    // カメラ
-    DebugCamera* debugCamera = new DebugCamera();
-    debugCamera->SetTranslate({ 0.0f,0.3f,-9.2f });
+    // ゲーム内カメラ
+    Camera camera;
+    camera.Initialize();
+
+    // デバッグカメラ
+    DebugCamera debugCamera;
+    debugCamera.Initialize();
+    debugCamera.SetTranslate({ 0.0f,0.3f,-9.2f });
+
+    // アクティブカメラ
+    Camera* activeCamera = nullptr;
 
     // 球
     Mesh sphere;
@@ -28,11 +36,25 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // -- 更新処理（Update） --
         // ----------------------
         
-        // 各種更新
-        debugCamera->SetAvailable(RyoEngine::GetOnTheGameView());
-        debugCamera->Update();
+        // アクティブの反転(お試し)
+        if (Input::TriggerKey(DIK_K)) {
+            if (camera.IsActive()) {
+                camera.SetActive(false);
+            } else {
+                camera.SetActive(true);
+            }
+        }
 
-        sphere.Update(*debugCamera);
+        if (!camera.IsActive()) {
+            debugCamera.SetAvailable(RyoEngine::GetOnTheGameView());
+        }
+
+        // アクティブカメラを決定
+        activeCamera = camera.IsActive() ? &camera : &debugCamera;
+        activeCamera->Update();
+       
+
+        sphere.Update(*activeCamera);
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------
@@ -53,6 +75,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // --- 描画処理 (Draw) ---
         // ----------------------
         
+        if (camera.IsActive()) {
+            PrintText("camera", { 10,10 });
+        } else {
+            PrintText("debug", { 10,10 });
+        }
         sphere.Draw();
 
         // ----------------------
@@ -62,8 +89,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // フレーム終了
         EndFrame();
     }
-
-    delete debugCamera;
+    
     // エンジン終了
     RyoEngine::Finalize();
 

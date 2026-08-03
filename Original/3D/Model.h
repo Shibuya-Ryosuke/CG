@@ -46,7 +46,6 @@ namespace RyoEngine {
 
         void Initialize();
         void Update(const Camera& camera);
-        void Update(const DebugCamera& debugCamera);
 
         /// <summary>
         /// 描画

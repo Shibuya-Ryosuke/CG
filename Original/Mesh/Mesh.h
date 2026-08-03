@@ -42,11 +42,6 @@ namespace RyoEngine {
 		/// </summary>
 		/// <param name="camera">カメラ</param>
 		void Update(Camera& camera);
-		/// <summary>
-		/// 更新処理
-		/// </summary>
-		/// <param name="debugCamera">デバッグカメラ</param>
-		void Update(DebugCamera& debugCamera);
 
 		/// <summary>
 		/// 描画 (3d描画のところに書いてください)
