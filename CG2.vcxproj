@@ -96,7 +96,9 @@
     <ClCompile Include="Original\Input\Input.cpp" />
     <ClCompile Include="Original\Light\LightManager.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
+    <ClCompile Include="Original\Math\Collision.cpp" />
     <ClCompile Include="Original\Mesh\Mesh.cpp" />
+    <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />
     <ClCompile Include="Original\Reflect\ReflectCommon.cpp" />
     <ClCompile Include="Original\Reflect\ReflectModel.cpp" />
@@ -139,12 +141,14 @@
     <ClInclude Include="Original\Light\Light.h" />
     <ClInclude Include="Original\Light\LightManager.h" />
     <ClInclude Include="Original\Loader\ModelLoader.h" />
+    <ClInclude Include="Original\Math\Collision.h" />
     <ClInclude Include="Original\Math\Math.h" />
     <ClInclude Include="Original\Math\Matrix.h" />
     <ClInclude Include="Original\Math\Geometry.h" />
     <ClInclude Include="Original\Math\Transform.h" />
     <ClInclude Include="Original\Math\Vector.h" />
     <ClInclude Include="Original\Mesh\Mesh.h" />
+    <ClInclude Include="Original\PrimitiveRenderer\PrimitiveRenderer.h" />
     <ClInclude Include="Original\RyoEngine.h" />
     <ClInclude Include="Original\Reflect\ReflectCommon.h" />
     <ClInclude Include="Original\Reflect\ReflectModel.h" />
@@ -155,6 +159,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
     <None Include="HLSL\Model\Model_NoUV.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="HLSL\Primitive\Primitive.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
@@ -181,6 +189,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="HLSL\Model\Model_NoUV.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="HLSL\Primitive\Primitive_PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="HLSL\Primitive\Primitive_VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>

@@ -66,6 +66,60 @@ inline Vector3 Normalize(const Vector3& v) {
 	result.z = v.z / len;
 	return result;
 }
+/// クロス積
+inline Vector3 Cross(const Vector3& v1, const Vector3& v2) {
+	return Vector3{
+		v1.y * v2.z - v1.z * v2.y,
+		v1.z * v2.x - v1.x * v2.z,
+		v1.x * v2.y - v1.y * v2.x
+	};
+}
+/// 正射影ベクトル (v1をv2方向へ投影)
+inline Vector3 Project(const Vector3& v1, const Vector3& v2) {
+	float dot = Dot(v1, v2);
+	float lengthSq = v2.x * v2.x + v2.y * v2.y + v2.z * v2.z;
+	if (lengthSq == 0.0f) return { 0.0f, 0.0f, 0.0f };
+
+	float t = dot / lengthSq;
+	return { t * v2.x, t * v2.y, t * v2.z };
+}
+/// 線分上の最近接点
+inline Vector3 ClosestPoint(const Vector3& point, const Segment& segment) {
+	Vector3 A = point - segment.origin;
+	const Vector3& B = segment.diff;
+
+	float dot = Dot(A, B);
+	float lengthSq = Dot(B, B);
+	if (lengthSq == 0.0f) return segment.origin;
+
+	float t = dot / lengthSq;
+	// 線分なので t の範囲を 0.0 ～ 1.0 に制限（クランプ）する
+	if (t < 0.0f) t = 0.0f;
+	if (t > 1.0f) t = 1.0f;
+
+	return segment.origin + B * t;
+}
+/// 反射ベクトル (法線nに対してvを反射させる)
+inline Vector3 Reflect(const Vector3& v, const Vector3& n) {
+	return v - n * (2.0f * Dot(v, n));
+}
+/// ベクトルに垂直なベクトルを1つ求める(法線から任意の接ベクトルを作る時などに使う)
+inline Vector3 Perpendicular(const Vector3& vector) {
+	if (vector.x != 0.0f || vector.y != 0.0f) {
+		return { -vector.y, vector.x, 0.0f };
+	}
+	return { 0.0f, -vector.z, vector.y };
+}
+/// 値をmin~maxの範囲に収める
+inline float Clamp(float value, float min, float max) {
+	if (value < min) return min;
+	if (value > max) return max;
+	return value;
+}
+/// 線形補間
+inline Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
+	return v1 * (1.0f - t) + v2 * t;
+}
 
 
 
@@ -370,6 +424,38 @@ inline Matrix4x4 MakeRotateMatrix(const Vector3& rotate) {
 	// 2. それらを掛け合わせる
 	// 順番はエンジンの仕様によりますが、一般的には X -> Y -> Z の順
 	return matRotX * matRotY * matRotZ;
+}
+/// OBBの中心・座標軸から、そのOBBをワールド空間に配置するための行列を作成する
+inline Matrix4x4 CreateWorldMatrixFromOBB(const OBB& obb) {
+	Matrix4x4 mat{};
+
+	mat.m[0][0] = obb.orientations[0].x;
+	mat.m[0][1] = obb.orientations[0].y;
+	mat.m[0][2] = obb.orientations[0].z;
+	mat.m[0][3] = 0.0f;
+
+	mat.m[1][0] = obb.orientations[1].x;
+	mat.m[1][1] = obb.orientations[1].y;
+	mat.m[1][2] = obb.orientations[1].z;
+	mat.m[1][3] = 0.0f;
+
+	mat.m[2][0] = obb.orientations[2].x;
+	mat.m[2][1] = obb.orientations[2].y;
+	mat.m[2][2] = obb.orientations[2].z;
+	mat.m[2][3] = 0.0f;
+
+	mat.m[3][0] = obb.center.x;
+	mat.m[3][1] = obb.center.y;
+	mat.m[3][2] = obb.center.z;
+	mat.m[3][3] = 1.0f;
+
+	return mat;
+}
+/// 回転行列から、OBBの座標軸(orientations)を設定する
+inline void CreateAxisFromOBB(OBB& obb, const Matrix4x4& rotateMatrix) {
+	obb.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
+	obb.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
+	obb.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
 }
 /// アフィン変換行列
 inline Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate) {

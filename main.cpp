@@ -27,6 +27,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     sphere.SetTranslate({ 0.0f,0.0f,0.0f });
     sphere.SetTex("resources/uvChecker.png");
     
+    
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
@@ -53,7 +54,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         activeCamera = camera.IsActive() ? &camera : &debugCamera;
         activeCamera->Update();
        
-
+        SetCameraForPrimitive(*activeCamera);
+        DrawSphere({ 0.0f,0.0f,0.0f }, 2.0f, 16, { 1.0f,1.0f,1.0f }, PrimitiveDrawMode::Fill);
         sphere.Update(*activeCamera);
         // ----------------------
         // ------ 更新終了 -------
@@ -80,7 +82,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         } else {
             PrintText("debug", { 10,10 });
         }
-        sphere.Draw();
+        //sphere.Draw();
 
         // ----------------------
         // ------ 描画終了 -------

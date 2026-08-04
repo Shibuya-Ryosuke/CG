@@ -31,6 +31,9 @@
     <Filter Include="Externals\imgui">
       <UniqueIdentifier>{f8e73db1-1900-4825-8904-3a2c1c51d53c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="リソース ファイル\HLSL\Primitive">
+      <UniqueIdentifier>{d94fb639-85ea-4770-88b6-b96d1234543a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -142,6 +145,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Light\LightManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Math\Collision.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -284,6 +293,12 @@
     <ClInclude Include="Original\Light\LightManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Original\Math\Collision.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\PrimitiveRenderer\PrimitiveRenderer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Sprite\Sprite.hlsli">
@@ -297,6 +312,9 @@
     </None>
     <None Include="HLSL\Model\Model_NoUV.hlsli">
       <Filter>リソース ファイル\HLSL\Model</Filter>
+    </None>
+    <None Include="HLSL\Primitive\Primitive.hlsli">
+      <Filter>リソース ファイル\HLSL\Primitive</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -323,6 +341,12 @@
     </FxCompile>
     <FxCompile Include="HLSL\Model\Model_NoUV.VS.hlsl">
       <Filter>リソース ファイル\HLSL\Model</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Primitive\Primitive_PS.hlsl">
+      <Filter>リソース ファイル\HLSL\Primitive</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Primitive\Primitive_VS.hlsl">
+      <Filter>リソース ファイル\HLSL\Primitive</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

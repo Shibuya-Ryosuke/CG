@@ -21,6 +21,7 @@
 #include "ImGui/ImGuiManager.h"
 #include "Edit/AnimEdit.h"
 #include "Light/LightManager.h"
+#include "PrimitiveRenderer/PrimitiveRenderer.h"
 #include <cstdint>
 #include <string>
 #include <format>
@@ -72,6 +73,16 @@ namespace RyoEngine {
     void SetImGuiViewSize(Vector2 viewSize);
 
     bool GetOnTheGameView();
+
+
+    inline void SetCameraForPrimitive(const Camera& camera) {
+        PrimitiveRenderer::SetCamera(camera);
+    }
+    inline void DrawSphere(const Vector3& center, float radius, uint32_t subdivision,
+        const Vector4& color, PrimitiveDrawMode mode) {
+        PrimitiveRenderer::DrawSphere(center, radius, subdivision, color, mode);
+    }
+
     
     uint32_t LoadTex(const std::string& filePath);
     

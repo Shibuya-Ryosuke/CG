@@ -71,6 +71,8 @@ namespace RyoEngine {
         lightManager_->Initialize();
 
         // 各種描画共通部の初期化
+        PrimitiveRenderer::Initialize();
+
         modelCommon_ = ModelCommon::GetInstance();
         modelCommon_->Initialize();
 
@@ -118,6 +120,7 @@ namespace RyoEngine {
         reflectCommon_->Finalize();
         spriteCommon_->Finalize();
         modelCommon_->Finalize();
+        PrimitiveRenderer::Finalize();
         lightManager_->Finalize();
         textureManager_->Finalize();
         shaderCompiler_->Finalize();
@@ -163,6 +166,7 @@ namespace RyoEngine {
             smoothedFps_ = (smoothedFps_ * 0.9f) + (fps_ * 0.1f);
         }
 
+        PrimitiveRenderer::NewFrame();
         modelCommon_->CommandsClear();
         spriteCommon_->CommandsClear();
 
@@ -246,6 +250,8 @@ namespace RyoEngine {
     }
 
     void EndFrame() {
+        PrimitiveRenderer::Flush();
+
         // 3d描画
         Begin3dDraw();
         modelCommon_->Draw();

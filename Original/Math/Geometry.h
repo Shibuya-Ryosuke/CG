@@ -20,6 +20,47 @@ struct Sphere {
 	Vector3 center;
 	float radius;
 };
+
+// --- 当たり判定・図形描画用の形状構造体 ---
+// (MT3.h/cppからの移植。演算子(+,-,*など)は Vector.h / Matrix.h 側の operator を使うため、
+//  ここでは構造体の定義のみを持つ)
+
+// 平面
+struct Plane {
+	Vector3 normal;
+	float distance;
+};
+// 直線 (originから両方向に無限に伸びる)
+struct Line {
+	Vector3 origin;  // 始点
+	Vector3 diff;    // 終点への差分ベクトル
+};
+// 半直線 (originからdiff方向にのみ無限に伸びる)
+struct Ray {
+	Vector3 origin;  // 始点
+	Vector3 diff;    // 終点への差分ベクトル
+};
+// 線分 (originからorigin+diffまで)
+struct Segment {
+	Vector3 origin;  // 始点
+	Vector3 diff;    // 終点への差分ベクトル
+};
+// 三角形
+struct Triangle {
+	Vector3 vertices[3];
+};
+// AABB (軸平行境界ボックス)
+struct AABB {
+	Vector3 min; // 最小点
+	Vector3 max; // 最大点
+};
+// OBB (有向境界ボックス)
+struct OBB {
+	Vector3 center;           // 中心点
+	Vector3 orientations[3];  // 座標軸(正規化された各軸方向)
+	Vector3 size;             // 各軸方向の半径(中心から面までの距離。全長ではない点に注意)
+};
+
 struct VertexData {
 	Vector4 position;
 	Vector2 texcoord;
