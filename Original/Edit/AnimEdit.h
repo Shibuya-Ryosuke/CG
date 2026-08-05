@@ -4,6 +4,7 @@
 namespace RyoEngine {
 
 	class Model;
+	class Camera;
 
 	class AnimEdit {
 	public:
@@ -25,6 +26,9 @@ namespace RyoEngine {
 
 		// モデルを登録
 		static void SetTargetModel(Model* model, const std::string& name);
+
+		// ★追加：カメラを登録（Model同様、Translate/Rotateに加えFovY(ズーム)も編集対象にできる）
+		static void SetTargetCamera(Camera* camera, const std::string& name);
 
 		// フラグを登録
 		static void RegisterFlag(const std::string& name, bool* ptr);

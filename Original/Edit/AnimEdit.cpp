@@ -1,6 +1,8 @@
 #include "AnimEdit.h"
 #include "../Base/Logger.h"
 #include "../3D/Model.h"
+// ★追加：Camera対応のため。プロジェクトの実際の配置に合わせてパスを調整してください。
+#include "../Camera/Camera.h"
 #include "../Easing/Easing.h"
 #include <vector>
 #include <string>
@@ -33,10 +35,13 @@ namespace RyoEngine {
 		};
 
 		// トランスフォームモード（SRT）の定義
+		// ★追加：Zoom はカメラの fovY_ 専用モード。値はVector3のxにだけ格納する（y,zは未使用）。
+		// Model選択時はScaleのみ、Camera選択時はZoomのみが意味を持つ。
 		enum class TransformMode {
 			Translate = 0,
 			Rotate,
 			Scale,
+			Zoom,
 			MaxModes
 		};
 
@@ -284,6 +289,13 @@ namespace RyoEngine {
 			// 途中で止められたとき0に戻すフラグ
 			//bool returnToZeroOnStop = false;
 
+			// ★追加：このウィンドウがModelとCameraのどちらを対象にしているか。
+			enum class TargetType {
+				Model = 0,
+				Camera
+			};
+			TargetType targetType = TargetType::Model;
+
 			// アニメーションが適用される対象モデル
 			Model* currentSelectModel = nullptr;
 			// ★追加：currentSelectModel が指しているモデルの登録名。
@@ -294,6 +306,29 @@ namespace RyoEngine {
 			// ウィンドウ側にモデル名を直接持たせて名前で引き直すことで、
 			// 1モデル:Nウィンドウの関係でも正しく復元できるようにする。
 			std::string targetModelName = "";
+
+			// ★追加：アニメーションが適用される対象カメラ（targetType == Camera の時のみ使用）
+			Camera* currentSelectCamera = nullptr;
+			// ★追加：currentSelectCamera が指しているカメラの登録名（targetModelNameのカメラ版）
+			std::string targetCameraName = "";
+
+			// ★追加：Model/Cameraどちらが選ばれていても、
+			// 「今このウィンドウがどのオブジェクトを触っているか」を一意に表すキー。
+			// ResolveWinners/ApplyWinners/m_ActiveAnimationWindowId など、
+			// これまで Model* をキーにしていた箇所を Model/Camera 両対応にするために使う。
+			// Model*とCamera*はどちらも単なるアドレスであり、異なるオブジェクトを指す限り衝突しないため
+			// void* として扱って問題ない。
+			void* GetTargetKey() const {
+				if (targetType == TargetType::Camera) return static_cast<void*>(currentSelectCamera);
+				return static_cast<void*>(currentSelectModel);
+			}
+
+			// ★追加：オフセット再生用の基準値。
+			// ゲーム同期モードで再生が始まった「その瞬間」の対象(Model/Camera)の実際の値を保存しておく。
+			// 再生中は「0フレーム目からの差分（オフセット）」をこの基準値に足し込んで最終値を出すため、
+			// 同じアニメーションでも、対象が今どこにいるかによって再生結果が変わる（＝固定値の再生にならない）。
+			// 添字は TransformMode（Translate/Rotate/Scale/Zoom）。Zoomはxだけを使う。
+			Vector3 playbackBase[static_cast<size_t>(TransformMode::MaxModes)] = {};
 
 			// ★エディタUI専用メンバ。ImGui/ImSequencer/ImCurveEditに依存するため、
 			// リリースビルドでは持たない（実行時のトリガー/SRT適用ロジックは一切これらを使わない）。
@@ -319,6 +354,11 @@ namespace RyoEngine {
 		// 選択中のモデル
 		Model* m_pTargetModel = nullptr;
 
+		// ★追加：登録されたカメラリスト（モデルと同じ構造）
+		std::vector<std::pair<std::string, Camera*>> m_pTargetCameras;
+		// ★追加：選択中のカメラ
+		Camera* m_pTargetCamera = nullptr;
+
 		// 登録されたフラグリスト
 		std::vector<std::pair<std::string, bool*>> m_RegisteredFlags; // ★追加：登録フラグのリスト
 
@@ -328,10 +368,11 @@ namespace RyoEngine {
 		// 名前だけはユーザーが手動で変更できるようにここに保持しておく。
 		std::map<int32_t, std::string> m_AnimEndGroupNames;
 
-		// ★変更：「このモデルには今どのウィンドウのアニメーションを適用するか」を記録するマップ。
-		// 同じモデルに複数のウィンドウ（＝複数のアニメーション）が割り当てられていても、
+		// ★変更：「このモデル/カメラには今どのウィンドウのアニメーションを適用するか」を記録するマップ。
+		// 同じ対象に複数のウィンドウ（＝複数のアニメーション）が割り当てられていても、
 		// 実際にSRTへ書き込む(反映する)のは ResolveAnimationTriggers() が選んだ1ウィンドウだけにする。
-		std::map<Model*, int32_t> m_ActiveAnimationWindowId;
+		// ★変更：Model*限定だったキーを void*（WindowData::GetTargetKey()）に一般化し、Cameraにも対応。
+		std::map<void*, int32_t> m_ActiveAnimationWindowId;
 
 		// 登録フラグリストから名前で検索するヘルパー
 		static bool* FindRegisteredFlag(Impl* impl, const std::string& name) {
@@ -479,30 +520,50 @@ namespace RyoEngine {
 			}
 		}
 
-		// --- Step 3. モデルごとに勝者を決定する ---
-		// 同フレームで同じモデルに対し複数の再生要求が重なっていたら、id が大きい方を優先する。
+		// --- Step 3. 対象（モデル/カメラ）ごとに勝者を決定する ---
+		// 同フレームで同じ対象に対し複数の再生要求が重なっていたら、id が大きい方を優先する。
 		// （要求の発生源が keepFlag でも trigger でも区別しない）
-		static std::map<Model*, WindowData*> ResolveWinners(const std::vector<ActivationRequest>& requests) {
-			std::map<Model*, WindowData*> winners;
+		// ★変更：Model*限定だったキーを void*（WindowData::GetTargetKey()）に一般化し、Cameraにも対応。
+		static std::map<void*, WindowData*> ResolveWinners(const std::vector<ActivationRequest>& requests) {
+			std::map<void*, WindowData*> winners;
 			for (auto& req : requests) {
-				Model* model = req.window->currentSelectModel;
-				if (!model) continue;
+				void* key = req.window->GetTargetKey();
+				if (!key) continue;
 
-				auto it = winners.find(model);
+				auto it = winners.find(key);
 				if (it == winners.end() || req.window->id > it->second->id) {
-					winners[model] = req.window;
+					winners[key] = req.window;
 				}
 			}
 			return winners;
 		}
 
+		// --- ★追加：オフセット再生用の基準値キャプチャ ---
+		// 再生が開始される瞬間の対象(Model/Camera)の実際の値を、そのままplaybackBaseへ保存する。
+		// この基準値に「0フレーム目からの差分」を足したものを最終的な適用値として使う（UpdateAnimationAnimate参照）。
+		static void CapturePlaybackBase(WindowData& window) {
+			if (window.targetType == WindowData::TargetType::Camera) {
+				Camera* c = window.currentSelectCamera;
+				if (!c) return;
+				window.playbackBase[static_cast<size_t>(TransformMode::Translate)] = c->GetTranslate();
+				window.playbackBase[static_cast<size_t>(TransformMode::Rotate)] = c->GetRotate();
+				window.playbackBase[static_cast<size_t>(TransformMode::Zoom)] = { c->GetFovY(), 0.0f, 0.0f };
+			} else {
+				Model* m = window.currentSelectModel;
+				if (!m) return;
+				window.playbackBase[static_cast<size_t>(TransformMode::Translate)] = m->GetTranslate();
+				window.playbackBase[static_cast<size_t>(TransformMode::Rotate)] = m->GetRotate();
+				window.playbackBase[static_cast<size_t>(TransformMode::Scale)] = m->GetScale();
+			}
+		}
+
 		// --- Step 4. 勝者を再生開始。今再生中の別ウィンドウがいれば即座に打ち切って切り替える ---
-		static void ApplyWinners(Impl* impl, const std::map<Model*, WindowData*>& winners) {
+		static void ApplyWinners(Impl* impl, const std::map<void*, WindowData*>& winners) {
 			for (auto& pair : winners) {
-				Model* model = pair.first;
+				void* key = pair.first;
 				WindowData* winner = pair.second;
 
-				auto activeIt = impl->m_ActiveAnimationWindowId.find(model);
+				auto activeIt = impl->m_ActiveAnimationWindowId.find(key);
 				if (activeIt != impl->m_ActiveAnimationWindowId.end() && activeIt->second != winner->id) {
 					for (auto& w : impl->m_SubWindows) {
 						if (w->id == activeIt->second) {
@@ -526,7 +587,11 @@ namespace RyoEngine {
 				winner->frameTimer = 0.0f;
 				winner->currentLoopCount = 0;
 				winner->isPlaying = true;
-				impl->m_ActiveAnimationWindowId[model] = winner->id;
+
+				// ★追加：再生開始のこの瞬間の実際の値を基準値として記録する（オフセット再生用）
+				CapturePlaybackBase(*winner);
+
+				impl->m_ActiveAnimationWindowId[key] = winner->id;
 			}
 		}
 
@@ -542,7 +607,7 @@ namespace RyoEngine {
 
 			if (requests.empty()) return;
 
-			std::map<Model*, WindowData*> winners = ResolveWinners(requests);
+			std::map<void*, WindowData*> winners = ResolveWinners(requests);
 			ApplyWinners(impl, winners);
 		}
 
@@ -613,15 +678,26 @@ namespace RyoEngine {
 				// 挿入対称軸が選択されていない場合以下処理をスキップ
 				if (targetGroup == AxisGroup::None) return;
 
-				// 現在のモードに応じた値をモデルから取得
+				// 現在のモードに応じた値をモデル/カメラから取得
 				Vector3 modelVal = { 0.0f, 0.0f, 0.0f };
-				if (window.currentSelectModel) {
-					Model* m = window.currentSelectModel;
-					if (window.currentTransformMode == static_cast<int>(TransformMode::Translate)) modelVal = m->GetTranslate();
-					else if (window.currentTransformMode == static_cast<int>(TransformMode::Rotate)) modelVal = m->GetRotate();
-					else if (window.currentTransformMode == static_cast<int>(TransformMode::Scale)) modelVal = m->GetScale();
+				if (window.targetType == WindowData::TargetType::Camera) {
+					if (window.currentSelectCamera) {
+						Camera* c = window.currentSelectCamera;
+						if (window.currentTransformMode == static_cast<int>(TransformMode::Translate)) modelVal = c->GetTranslate();
+						else if (window.currentTransformMode == static_cast<int>(TransformMode::Rotate)) modelVal = c->GetRotate();
+						else if (window.currentTransformMode == static_cast<int>(TransformMode::Zoom)) modelVal = { c->GetFovY(), 0.0f, 0.0f };
+					} else {
+						Logger::LogError("[AnimEdit]\ncurrentSelectCamera is nullptr!");
+					}
 				} else {
-					Logger::LogError("[AnimEdit]\ncurrentSelectModel is nullptr!");
+					if (window.currentSelectModel) {
+						Model* m = window.currentSelectModel;
+						if (window.currentTransformMode == static_cast<int>(TransformMode::Translate)) modelVal = m->GetTranslate();
+						else if (window.currentTransformMode == static_cast<int>(TransformMode::Rotate)) modelVal = m->GetRotate();
+						else if (window.currentTransformMode == static_cast<int>(TransformMode::Scale)) modelVal = m->GetScale();
+					} else {
+						Logger::LogError("[AnimEdit]\ncurrentSelectModel is nullptr!");
+					}
 				}
 
 				// 保存すべきキーフレームリストの参照を取得
@@ -673,7 +749,8 @@ namespace RyoEngine {
 			const char* curveEditorNames[] = {
 				"グラフ (Translate) [赤:X, 緑:Y, 青:Z]",
 				"グラフ (Rotate) [赤:X, 緑:Y, 青:Z]",
-				"グラフ (Scale) [赤:X, 緑:Y, 青:Z]"
+				"グラフ (Scale) [赤:X, 緑:Y, 青:Z]",
+				"グラフ (Zoom/FovY) [赤:FovYのみ使用]"
 			};
 
 			ImGui::Text("%s", curveEditorNames[window.currentTransformMode]);
@@ -779,10 +856,10 @@ namespace RyoEngine {
 						AxisGroup g = static_cast<AxisGroup>(i);
 						ImGui::Text("[ 所属グループ : %s ]", window.GetGroupName(g));
 
-						// ★ 修正：現在のモードに応じてラベルを切り替え
-						const char* labelX = (mode == 0) ? "Translate.X" : (mode == 1) ? "Rotate.X" : "Scale.X";
-						const char* labelY = (mode == 0) ? "Translate.Y" : (mode == 1) ? "Rotate.Y" : "Scale.Y";
-						const char* labelZ = (mode == 0) ? "Translate.Z" : (mode == 1) ? "Rotate.Z" : "Scale.Z";
+						// ★ 修正：現在のモードに応じてラベルを切り替え（Zoomモードを追加）
+						const char* labelX = (mode == 0) ? "Translate.X" : (mode == 1) ? "Rotate.X" : (mode == 2) ? "Scale.X" : "Zoom.FovY";
+						const char* labelY = (mode == 0) ? "Translate.Y" : (mode == 1) ? "Rotate.Y" : (mode == 2) ? "Scale.Y" : "Zoom.Y(未使用)";
+						const char* labelZ = (mode == 0) ? "Translate.Z" : (mode == 1) ? "Rotate.Z" : (mode == 2) ? "Scale.Z" : "Zoom.Z(未使用)";
 
 						// グループに応じて必要な軸のドラッグUIを出す
 						float dragSpeed = (mode == 0) ? 0.1f : 0.01f;  // ドラッグスピードはtranslateの時だけ早くしてある
@@ -947,56 +1024,133 @@ namespace RyoEngine {
 		// ウィンドウ以外は毎フレームの UpdateAnimationAnimate をスキップし、
 		// モデルへの書き込みが競合しないようにする。
 		static bool IsActiveAnimationWindow(WindowData& window, Impl* impl) {
-			Model* model = window.currentSelectModel;
-			if (!model) return false;
+			void* key = window.GetTargetKey();
+			if (!key) return false;
 
-			auto it = impl->m_ActiveAnimationWindowId.find(model);
+			auto it = impl->m_ActiveAnimationWindowId.find(key);
 			if (it != impl->m_ActiveAnimationWindowId.end()) {
 				return it->second == window.id;
 			}
 
 			// ★まだどのウィンドウもトリガーされていない場合：
-			// このモデルを対象にしているウィンドウが自分だけなら、そのまま適用する（単一運用ならこれで従来通り）。
+			// この対象(モデル/カメラ)を対象にしているウィンドウが自分だけなら、そのまま適用する（単一運用ならこれで従来通り）。
 			// 複数ある場合はどれかがトリガーされて選ばれるまで、誰も書き込まない（初期競合を避ける）。
-			int32_t sameModelCount = 0;
+			int32_t sameTargetCount = 0;
 			for (auto& w : impl->m_SubWindows) {
-				if (w->currentSelectModel == model) sameModelCount++;
+				if (w->GetTargetKey() == key) sameTargetCount++;
 			}
-			return sameModelCount <= 1;
+			return sameTargetCount <= 1;
 		}
 
-		// モデルにSRTを入れる処理
+		// ★追加：オフセット再生の計算。
+		// 「0フレーム目のキーフレーム値」を基準(=0)とみなし、「今のフレームのキーフレーム値」との差分(offset)を、
+		// 再生開始時点の実際の値(base)へ足し込んだ最終値を返す。
+		// キーが1つも無い軸は frame0Val == currentVal == defaultVal(=0) となるため offset は必ず0になり、
+		// その軸は base の値のまま変化しない。
+		static Vector3 EvaluateOffsetValue(WindowData& window, TransformMode mode, const Vector3& base) {
+			float frame0X = EvaluateAxisNew(0, window, static_cast<int>(mode), 0, 0.0f);
+			float frame0Y = EvaluateAxisNew(0, window, static_cast<int>(mode), 1, 0.0f);
+			float frame0Z = EvaluateAxisNew(0, window, static_cast<int>(mode), 2, 0.0f);
+
+			float curX = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(mode), 0, 0.0f);
+			float curY = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(mode), 1, 0.0f);
+			float curZ = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(mode), 2, 0.0f);
+
+			Vector3 result;
+			result.x = base.x + (curX - frame0X);
+			result.y = base.y + (curY - frame0Y);
+			result.z = base.z + (curZ - frame0Z);
+			return result;
+		}
+
+		// モデル/カメラにSRT(またはTranslate/Rotate/Zoom)を入れる処理
 		static void UpdateAnimationAnimate(WindowData& window, Impl* impl) {
-			if (impl->m_pTargetModels.empty() || !impl->m_pTargetModels[0].second) return;
+			static_cast<void>(impl);
 			if (!window.isPlaying && window.isGameSyncMode) return;
-			Model* targetModel = window.currentSelectModel;
-			// ★追加：対象モデルが見つからない（再ロード時にリンクできなかった等）場合は
-			// 何もせず抜ける。ここが無いと nullptr を触ってクラッシュする。
-			if (targetModel == nullptr) return;
 
-			// 1. Translate 適用
-			Vector3 currentModelPos = targetModel->GetTranslate();
-			Vector3 finalTranslate;
-			finalTranslate.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 0, currentModelPos.x);
-			finalTranslate.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 1, currentModelPos.y);
-			finalTranslate.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 2, currentModelPos.z);
-			targetModel->SetTranslate(finalTranslate);
+			if (window.targetType == WindowData::TargetType::Camera) {
+				Camera* targetCamera = window.currentSelectCamera;
+				// ★対象カメラが見つからない（再ロード時にリンクできなかった等）場合は何もせず抜ける
+				if (targetCamera == nullptr) return;
 
-			// 2. Rotate 適用
-			Vector3 currentModelRot = targetModel->GetRotate();
-			Vector3 finalRotate;
-			finalRotate.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 0, currentModelRot.x);
-			finalRotate.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 1, currentModelRot.y);
-			finalRotate.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 2, currentModelRot.z);
-			targetModel->SetRotate(finalRotate);
+				if (window.isGameSyncMode) {
+					// ★変更：ゲーム同期モードはオフセット再生。
+					// 再生開始時点にキャプチャした playbackBase（CapturePlaybackBase参照）を基準に、
+					// 0フレーム目からの差分だけを動かす。これで「今カメラがどこにいても」そこから動く。
+					Vector3& base = window.playbackBase[static_cast<size_t>(TransformMode::Translate)];
+					targetCamera->SetTranslate(EvaluateOffsetValue(window, TransformMode::Translate, base));
 
-			// 3. Scale 適用
-			Vector3 currentModelScale = targetModel->GetScale();
-			Vector3 finalScale;
-			finalScale.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Scale), 0, currentModelScale.x);
-			finalScale.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Scale), 1, currentModelScale.y);
-			finalScale.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Scale), 2, currentModelScale.z);
-			targetModel->SetScale(finalScale);
+					Vector3& baseRot = window.playbackBase[static_cast<size_t>(TransformMode::Rotate)];
+					targetCamera->SetRotate(EvaluateOffsetValue(window, TransformMode::Rotate, baseRot));
+
+					Vector3& baseZoom = window.playbackBase[static_cast<size_t>(TransformMode::Zoom)];
+					targetCamera->SetFovY(EvaluateOffsetValue(window, TransformMode::Zoom, baseZoom).x);
+				} else {
+					// 編集モードは従来通り絶対値で適用（キーフレームの数値そのものを見せたいため）
+					// 1. Translate 適用
+					Vector3 currentPos = targetCamera->GetTranslate();
+					Vector3 finalTranslate;
+					finalTranslate.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 0, currentPos.x);
+					finalTranslate.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 1, currentPos.y);
+					finalTranslate.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 2, currentPos.z);
+					targetCamera->SetTranslate(finalTranslate);
+
+					// 2. Rotate 適用
+					Vector3 currentRot = targetCamera->GetRotate();
+					Vector3 finalRotate;
+					finalRotate.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 0, currentRot.x);
+					finalRotate.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 1, currentRot.y);
+					finalRotate.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 2, currentRot.z);
+					targetCamera->SetRotate(finalRotate);
+
+					// 3. Zoom(FovY) 適用：スカラー値のためvalue.xだけを使う
+					float currentFovY = targetCamera->GetFovY();
+					float finalFovY = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Zoom), 0, currentFovY);
+					targetCamera->SetFovY(finalFovY);
+				}
+			} else {
+				Model* targetModel = window.currentSelectModel;
+				// ★対象モデルが見つからない（再ロード時にリンクできなかった等）場合は
+				// 何もせず抜ける。ここが無いと nullptr を触ってクラッシュする。
+				if (targetModel == nullptr) return;
+
+				if (window.isGameSyncMode) {
+					// ★変更：ゲーム同期モードはオフセット再生（Cameraと同じ考え方）
+					Vector3& base = window.playbackBase[static_cast<size_t>(TransformMode::Translate)];
+					targetModel->SetTranslate(EvaluateOffsetValue(window, TransformMode::Translate, base));
+
+					Vector3& baseRot = window.playbackBase[static_cast<size_t>(TransformMode::Rotate)];
+					targetModel->SetRotate(EvaluateOffsetValue(window, TransformMode::Rotate, baseRot));
+
+					Vector3& baseScale = window.playbackBase[static_cast<size_t>(TransformMode::Scale)];
+					targetModel->SetScale(EvaluateOffsetValue(window, TransformMode::Scale, baseScale));
+				} else {
+					// 編集モードは従来通り絶対値で適用（キーフレームの数値そのものを見せたいため）
+					// 1. Translate 適用
+					Vector3 currentModelPos = targetModel->GetTranslate();
+					Vector3 finalTranslate;
+					finalTranslate.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 0, currentModelPos.x);
+					finalTranslate.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 1, currentModelPos.y);
+					finalTranslate.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Translate), 2, currentModelPos.z);
+					targetModel->SetTranslate(finalTranslate);
+
+					// 2. Rotate 適用
+					Vector3 currentModelRot = targetModel->GetRotate();
+					Vector3 finalRotate;
+					finalRotate.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 0, currentModelRot.x);
+					finalRotate.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 1, currentModelRot.y);
+					finalRotate.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Rotate), 2, currentModelRot.z);
+					targetModel->SetRotate(finalRotate);
+
+					// 3. Scale 適用
+					Vector3 currentModelScale = targetModel->GetScale();
+					Vector3 finalScale;
+					finalScale.x = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Scale), 0, currentModelScale.x);
+					finalScale.y = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Scale), 1, currentModelScale.y);
+					finalScale.z = EvaluateAxisNew(window.currentFrame, window, static_cast<int>(TransformMode::Scale), 2, currentModelScale.z);
+					targetModel->SetScale(finalScale);
+				}
+			}
 		}
 
 		// 新規作成で作られたウィンドウの描画（エディタUI専用）
@@ -1030,19 +1184,45 @@ namespace RyoEngine {
 				window.name = nameBuf;
 			}
 
-			// 2. 適用先モデルの変更
-			if (ImGui::BeginCombo("適用先モデル", window.targetModelName.c_str())) {
-				for (auto& pair : impl->m_pTargetModels) {
-					bool isSelected = (window.targetModelName == pair.first);
-					if (ImGui::Selectable(pair.first.c_str(), isSelected)) {
-						window.targetModelName = pair.first;
-						window.currentFrame = 0;
-						window.isPlaying = false;
-						UpdateAnimationAnimate(window, impl);
-						window.currentSelectModel = pair.second; // 実際のポインタを更新
+			// 2. 適用先の種類（Model / Camera）の変更
+			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "[ 適用先の種類 ]");
+			if (ImGui::RadioButton("Model##targetType", window.targetType == WindowData::TargetType::Model)) {
+				window.targetType = WindowData::TargetType::Model;
+			}
+			ImGui::SameLine();
+			if (ImGui::RadioButton("Camera##targetType", window.targetType == WindowData::TargetType::Camera)) {
+				window.targetType = WindowData::TargetType::Camera;
+			}
+
+			// 2-1. 適用先モデル/カメラの変更
+			if (window.targetType == WindowData::TargetType::Model) {
+				if (ImGui::BeginCombo("適用先モデル", window.targetModelName.c_str())) {
+					for (auto& pair : impl->m_pTargetModels) {
+						bool isSelected = (window.targetModelName == pair.first);
+						if (ImGui::Selectable(pair.first.c_str(), isSelected)) {
+							window.targetModelName = pair.first;
+							window.currentFrame = 0;
+							window.isPlaying = false;
+							UpdateAnimationAnimate(window, impl);
+							window.currentSelectModel = pair.second; // 実際のポインタを更新
+						}
 					}
+					ImGui::EndCombo();
 				}
-				ImGui::EndCombo();
+			} else {
+				if (ImGui::BeginCombo("適用先カメラ", window.targetCameraName.c_str())) {
+					for (auto& pair : impl->m_pTargetCameras) {
+						bool isSelected = (window.targetCameraName == pair.first);
+						if (ImGui::Selectable(pair.first.c_str(), isSelected)) {
+							window.targetCameraName = pair.first;
+							window.currentFrame = 0;
+							window.isPlaying = false;
+							UpdateAnimationAnimate(window, impl);
+							window.currentSelectCamera = pair.second; // 実際のポインタを更新
+						}
+					}
+					ImGui::EndCombo();
+				}
 			}
 
 			// 3. アニメーションのコピー機能
@@ -1097,11 +1277,11 @@ namespace RyoEngine {
 			// 「対象モデルへの書き込み権を持つウィンドウ」として登録する。
 			// ゲーム同期モードはトリガー調停(ResolveAnimationTriggers)が別途管理しているので対象外。
 			if (!window.isGameSyncMode && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
-				Model* model = window.currentSelectModel;
-				if (model) {
-					auto it = impl->m_ActiveAnimationWindowId.find(model);
+				void* key = window.GetTargetKey();
+				if (key) {
+					auto it = impl->m_ActiveAnimationWindowId.find(key);
 					if (it == impl->m_ActiveAnimationWindowId.end() || it->second != window.id) {
-						// 直前まで同じモデルを操作していた別ウィンドウがいたら再生を停止し、0フレーム目の情報を入れて元に戻しておく
+						// 直前まで同じ対象を操作していた別ウィンドウがいたら再生を停止し、0フレーム目の情報を入れて元に戻しておく
 						if (it != impl->m_ActiveAnimationWindowId.end()) {
 							for (auto& w : impl->m_SubWindows) {
 								if (w->id == it->second) {
@@ -1113,7 +1293,7 @@ namespace RyoEngine {
 								}
 							}
 						}
-						impl->m_ActiveAnimationWindowId[model] = window.id;
+						impl->m_ActiveAnimationWindowId[key] = window.id;
 					}
 				}
 			}
@@ -1209,10 +1389,19 @@ namespace RyoEngine {
 			// ==========================================
 			// 1. 【編集モード】
 			// ==========================================
-			const char* transformModeNames[] = { "Translate (位置)", "Rotate (回転)", "Scale (拡縮)" };
+			// ★変更：Zoom(FovY)を追加。Scaleは Model 専用、Zoom は Camera 専用。
+			const char* transformModeNames[] = { "Translate (位置)", "Rotate (回転)", "Scale (拡縮) ※Model専用", "Zoom (FOV) ※Camera専用" };
 			ImGui::PushItemWidth(200);
 			ImGui::Combo("編集モード", &window.currentTransformMode, transformModeNames, IM_ARRAYSIZE(transformModeNames));
 			ImGui::PopItemWidth();
+
+			// ★追加：対象の種類と噛み合わないモードを選んでいたら注意を出す（動作はするが意味を持たない）
+			if (window.targetType == WindowData::TargetType::Camera && window.currentTransformMode == static_cast<int>(TransformMode::Scale)) {
+				ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f), "[ 注意: CameraにはScaleがありません。Zoom(FOV)を使ってください ]");
+			}
+			if (window.targetType == WindowData::TargetType::Model && window.currentTransformMode == static_cast<int>(TransformMode::Zoom)) {
+				ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f), "[ 注意: ModelにはZoom(FOV)がありません。Scaleを使ってください ]");
+			}
 
 			ImGui::Spacing();
 
@@ -1843,52 +2032,84 @@ namespace RyoEngine {
 		AnimEdit& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
 
-		// 1. 閉じている時に表示する現在の選択モデル名を取得
+		// ★追加：新規作成の対象種別（Model / Camera）を選ぶUI用の一時状態。
+		// コピー元選択(copySourceIdx)と同様、保存不要なUI状態としてstatic localで持つ。
+		static int s_newWindowTargetType = 0; // 0:Model, 1:Camera
+
+		ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "[ 新規作成の対象 ]");
+		if (ImGui::RadioButton("Model##newWindowTargetType", s_newWindowTargetType == 0)) {
+			s_newWindowTargetType = 0;
+		}
+		ImGui::SameLine();
+		if (ImGui::RadioButton("Camera##newWindowTargetType", s_newWindowTargetType == 1)) {
+			s_newWindowTargetType = 1;
+		}
+
+		// 1. 閉じている時に表示する現在の選択モデル/カメラ名を取得
 		std::string previewName = "未選択";
-		if (impl->m_pTargetModel) {
-			for (size_t i = 0; i < impl->m_pTargetModels.size(); ++i) {
-				if (impl->m_pTargetModels[i].second == impl->m_pTargetModel) {
-					const std::string& name = impl->m_pTargetModels[i].first;
-					if (name == "NoName") {
-						previewName = "Model [" + std::to_string(i) + "]";
-					} else {
-						previewName = name;
+		if (s_newWindowTargetType == 0) {
+			if (impl->m_pTargetModel) {
+				for (size_t i = 0; i < impl->m_pTargetModels.size(); ++i) {
+					if (impl->m_pTargetModels[i].second == impl->m_pTargetModel) {
+						const std::string& name = impl->m_pTargetModels[i].first;
+						previewName = (name == "NoName") ? ("Model [" + std::to_string(i) + "]") : name;
+						break;
 					}
-					break;
+				}
+			}
+		} else {
+			if (impl->m_pTargetCamera) {
+				for (size_t i = 0; i < impl->m_pTargetCameras.size(); ++i) {
+					if (impl->m_pTargetCameras[i].second == impl->m_pTargetCamera) {
+						const std::string& name = impl->m_pTargetCameras[i].first;
+						previewName = (name == "NoName") ? ("Camera [" + std::to_string(i) + "]") : name;
+						break;
+					}
 				}
 			}
 		}
 
 		// 2. コンボボックスの展開処理
-		if (ImGui::BeginCombo("適用先モデル", previewName.c_str())) {
-			for (size_t i = 0; i < impl->m_pTargetModels.size(); ++i) {
-				Model* modelPtr = impl->m_pTargetModels[i].second;
-				const std::string& name = impl->m_pTargetModels[i].first;
+		if (s_newWindowTargetType == 0) {
+			if (ImGui::BeginCombo("適用先モデル", previewName.c_str())) {
+				for (size_t i = 0; i < impl->m_pTargetModels.size(); ++i) {
+					Model* modelPtr = impl->m_pTargetModels[i].second;
+					const std::string& name = impl->m_pTargetModels[i].first;
 
-				if (!modelPtr) continue;
+					if (!modelPtr) continue;
 
-				std::string displayName;
-				if (name == "NoName") {
-					displayName = "Model [" + std::to_string(i) + "]";
-				} else {
-					displayName = name;
+					std::string displayName = (name == "NoName") ? ("Model [" + std::to_string(i) + "]") : name;
+					bool isSelected = (impl->m_pTargetModel == modelPtr);
+
+					ImGui::PushID(static_cast<int>(i));
+					if (ImGui::Selectable(displayName.c_str(), isSelected)) {
+						impl->m_pTargetModel = modelPtr;
+					}
+					if (isSelected) ImGui::SetItemDefaultFocus();
+					ImGui::PopID();
 				}
-
-				bool isSelected = (impl->m_pTargetModel == modelPtr);
-
-				ImGui::PushID(static_cast<int>(i));
-
-				if (ImGui::Selectable(displayName.c_str(), isSelected)) {
-					impl->m_pTargetModel = modelPtr;
-				}
-
-				if (isSelected) {
-					ImGui::SetItemDefaultFocus();
-				}
-
-				ImGui::PopID();
+				ImGui::EndCombo();
 			}
-			ImGui::EndCombo();
+		} else {
+			if (ImGui::BeginCombo("適用先カメラ", previewName.c_str())) {
+				for (size_t i = 0; i < impl->m_pTargetCameras.size(); ++i) {
+					Camera* cameraPtr = impl->m_pTargetCameras[i].second;
+					const std::string& name = impl->m_pTargetCameras[i].first;
+
+					if (!cameraPtr) continue;
+
+					std::string displayName = (name == "NoName") ? ("Camera [" + std::to_string(i) + "]") : name;
+					bool isSelected = (impl->m_pTargetCamera == cameraPtr);
+
+					ImGui::PushID(static_cast<int>(i));
+					if (ImGui::Selectable(displayName.c_str(), isSelected)) {
+						impl->m_pTargetCamera = cameraPtr;
+					}
+					if (isSelected) ImGui::SetItemDefaultFocus();
+					ImGui::PopID();
+				}
+				ImGui::EndCombo();
+			}
 		}
 
 		// 新規作成ボタンの処理
@@ -1915,12 +2136,26 @@ namespace RyoEngine {
 				newWindow->name = name;
 				newWindow->is_open = true;
 				newWindow->currentTransformMode = 0;
-				newWindow->currentSelectModel = impl->m_pTargetModel;
-				// ★追加：モデルへのポインタと同時に、登録名も控えておく（セーブ/ロードで使用）
-				for (auto& pair : impl->m_pTargetModels) {
-					if (pair.second == impl->m_pTargetModel) {
-						newWindow->targetModelName = pair.first;
-						break;
+
+				if (s_newWindowTargetType == 0) {
+					newWindow->targetType = Impl::WindowData::TargetType::Model;
+					newWindow->currentSelectModel = impl->m_pTargetModel;
+					// ★追加：モデルへのポインタと同時に、登録名も控えておく（セーブ/ロードで使用）
+					for (auto& pair : impl->m_pTargetModels) {
+						if (pair.second == impl->m_pTargetModel) {
+							newWindow->targetModelName = pair.first;
+							break;
+						}
+					}
+				} else {
+					newWindow->targetType = Impl::WindowData::TargetType::Camera;
+					newWindow->currentSelectCamera = impl->m_pTargetCamera;
+					// ★追加：カメラへのポインタと同時に、登録名も控えておく（セーブ/ロードで使用）
+					for (auto& pair : impl->m_pTargetCameras) {
+						if (pair.second == impl->m_pTargetCamera) {
+							newWindow->targetCameraName = pair.first;
+							break;
+						}
 					}
 				}
 				newWindow->delegate.m_pImpl = impl;
@@ -2034,11 +2269,8 @@ namespace RyoEngine {
 						target->isPlaying = false;
 						target->currentFrame = 0;
 
-						// モデルにSRTを入れる処理
-						// 先ほど型エラーで悩まれていた関数をここで呼ぶのが良さそうです
-						// target->target_model が削除対象ウィンドウのモデルポインタだと仮定
-						if (target->currentSelectModel) {
-							// 修正：引数を適宜調整してください
+						// モデル/カメラにSRT(Translate/Rotate/Scale or Zoom)を入れる処理
+						if (target->GetTargetKey()) {
 							impl->UpdateAnimationAnimate(*target, impl);
 						}
 					}
@@ -2107,6 +2339,9 @@ namespace RyoEngine {
 			// これなら同じモデルを複数ウィンドウで参照していても、
 			// ロード時にそれぞれのウィンドウが正しく同じモデルを引き直せる。
 			window_json["target_model_name"] = w->targetModelName;
+			// ★追加：Model/Cameraのどちらを対象にしているか、およびカメラの登録名
+			window_json["target_type"] = static_cast<int>(w->targetType);
+			window_json["target_camera_name"] = w->targetCameraName;
 
 			json modes_arr = json::array();
 			for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
@@ -2227,6 +2462,17 @@ namespace RyoEngine {
 				for (auto& pair : impl->m_pTargetModels) {
 					if (pair.first == w->targetModelName && pair.second != nullptr) {
 						w->currentSelectModel = pair.second;
+						break;
+					}
+				}
+
+				// ★追加：Model/Cameraのどちらを対象にしていたか、およびカメラの再リンク
+				w->targetType = static_cast<Impl::WindowData::TargetType>(item.value("target_type", 0));
+				w->targetCameraName = item.value("target_camera_name", "");
+				w->currentSelectCamera = nullptr;
+				for (auto& pair : impl->m_pTargetCameras) {
+					if (pair.first == w->targetCameraName && pair.second != nullptr) {
+						w->currentSelectCamera = pair.second;
 						break;
 					}
 				}
@@ -2390,6 +2636,47 @@ namespace RyoEngine {
 			ImGui::TreePop();
 		}
 
+		// ★追加：登録済みカメラの一覧表示（読み取り専用）。Model一覧と同じ考え方。
+		ImGui::Spacing();
+		if (ImGui::TreeNodeEx("登録済カメラ (現在は読み取り専用)")) {
+			if (impl->m_pTargetCameras.empty()) {
+				ImGui::Text("カメラが登録されていません");
+			} else {
+				for (size_t i = 0; i < impl->m_pTargetCameras.size(); ++i) {
+					const std::string& name = impl->m_pTargetCameras[i].first;
+					Camera* camera = impl->m_pTargetCameras[i].second;
+					if (!camera) continue;
+
+					std::string displayName = (name == "NoName") ? ("Camera [" + std::to_string(i) + "]") : name;
+
+					ImGui::PushID(static_cast<int>(i));
+					if (ImGui::TreeNodeEx(displayName.c_str())) {
+						ImGui::BeginDisabled();
+						Vector3 translate = camera->GetTranslate();
+						float pos[3] = { translate.x, translate.y, translate.z };
+						if (ImGui::DragFloat3("translate", pos, 0.1f)) {
+							camera->SetTranslate({ pos[0], pos[1], pos[2] });
+						}
+
+						Vector3 rotate = camera->GetRotate();
+						float rot[3] = { rotate.x, rotate.y, rotate.z };
+						if (ImGui::DragFloat3("rotate", rot, 0.1f)) {
+							camera->SetRotate({ rot[0], rot[1], rot[2] });
+						}
+
+						float fovY = camera->GetFovY();
+						if (ImGui::DragFloat("fovY", &fovY, 0.01f)) {
+							camera->SetFovY(fovY);
+						}
+						ImGui::EndDisabled();
+						ImGui::TreePop();
+					}
+					ImGui::PopID();
+				}
+			}
+			ImGui::TreePop();
+		}
+
 		ImGui::Spacing();
 		if (ImGui::TreeNodeEx("登録済みアニメーション")) {
 			if (impl->m_SubWindows.empty()) {
@@ -2418,5 +2705,19 @@ namespace RyoEngine {
 			if (pair.second == model) return;
 		}
 		models.push_back(std::make_pair(name, model));
+	}
+
+	// ★追加：カメラを登録する（SetTargetModelのカメラ版）
+	void AnimEdit::SetTargetCamera(Camera* camera, const std::string& name) {
+		if (camera == nullptr) {
+			Logger::LogWarning("[AnimEdit] (SetTargetCamera)\nThe selected Camera is nullptr.\n");
+			return;
+		}
+
+		auto& cameras = GetInstance().m_pImpl->m_pTargetCameras;
+		for (const auto& pair : cameras) {
+			if (pair.second == camera) return;
+		}
+		cameras.push_back(std::make_pair(name, camera));
 	}
 }
