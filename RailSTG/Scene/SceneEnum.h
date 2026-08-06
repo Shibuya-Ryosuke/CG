@@ -1,5 +1,5 @@
 #pragma once
-enum class SceneState {
+enum class Scene {
 	None,
 	Title,
 	Game,

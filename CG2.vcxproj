@@ -100,10 +100,9 @@
     <ClCompile Include="Original\Mesh\Mesh.cpp" />
     <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />
-    <ClCompile Include="Original\Reflect\ReflectCommon.cpp" />
-    <ClCompile Include="Original\Reflect\ReflectModel.cpp" />
     <ClCompile Include="RailSTG\Bullet\BaseBullet.cpp" />
     <ClCompile Include="RailSTG\Player\Player.cpp" />
+    <ClCompile Include="RailSTG\Scene\Game.cpp" />
     <ClCompile Include="RailSTG\Scene\SceneManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -153,8 +152,6 @@
     <ClInclude Include="Original\Mesh\Mesh.h" />
     <ClInclude Include="Original\PrimitiveRenderer\PrimitiveRenderer.h" />
     <ClInclude Include="Original\RyoEngine.h" />
-    <ClInclude Include="Original\Reflect\ReflectCommon.h" />
-    <ClInclude Include="Original\Reflect\ReflectModel.h" />
     <ClInclude Include="RailSTG\BaseObject\BaseObject.h" />
     <ClInclude Include="RailSTG\Bullet\BaseBullet.h" />
     <ClInclude Include="RailSTG\Enemy\BaseEnemy.h" />
@@ -180,10 +177,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
     <None Include="HLSL\Primitive\Primitive.hlsli">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </None>
-    <None Include="HLSL\Reflect\Reflect.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
@@ -214,14 +207,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="HLSL\Primitive\Primitive_VS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="HLSL\Reflect\Reflect.PS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="HLSL\Reflect\Reflect.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>

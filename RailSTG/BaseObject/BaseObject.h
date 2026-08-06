@@ -4,6 +4,7 @@
 
 class BaseObject {
 public:
+	BaseObject() = default;
 	virtual ~BaseObject() = default;
 
 	// コピーコンストラクタと代入演算子の明示的削除
@@ -23,7 +24,7 @@ public:
 	/// <summary>
 	/// 更新
 	/// </summary>
-	virtual void Update(RyoEngine::Camera& camera) = 0;
+	virtual void Update(const RyoEngine::Camera& camera) = 0;
 
 	/// <summary>
 	/// 描画

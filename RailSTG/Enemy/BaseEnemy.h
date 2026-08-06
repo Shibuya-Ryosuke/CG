@@ -23,7 +23,7 @@ public:
 	/// 更新
 	/// </summary>
 	/// <param name="camera"></param>
-	void Update(RyoEngine::Camera& camera) override;
+	void Update(const RyoEngine::Camera& camera) override;
 
 	/// <summary>
 	/// 描画

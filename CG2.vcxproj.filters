@@ -117,12 +117,6 @@
     <ClCompile Include="Original\ImGui\ImGuiManager.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Reflect\ReflectCommon.cpp">
-      <Filter>Engine\ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Reflect\ReflectModel.cpp">
-      <Filter>Engine\ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Original\Externals\imgui\imgui.cpp">
       <Filter>Externals\imgui</Filter>
     </ClCompile>
@@ -192,6 +186,9 @@
     <ClCompile Include="RailSTG\Player\Player.cpp">
       <Filter>RailSTG\Player</Filter>
     </ClCompile>
+    <ClCompile Include="RailSTG\Scene\Game.cpp">
+      <Filter>RailSTG\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">
@@ -258,12 +255,6 @@
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\ImGui\ImGuiManager.h">
-      <Filter>Engine\ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Reflect\ReflectCommon.h">
-      <Filter>Engine\ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Reflect\ReflectModel.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Externals\imgui\imconfig.h">
@@ -368,9 +359,6 @@
     <ClInclude Include="RailSTG\Scene\Title.h">
       <Filter>RailSTG\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="RailSTG\Scene\Game.h">
-      <Filter>RailSTG\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="RailSTG\Scene\Result.h">
       <Filter>RailSTG\Scene</Filter>
     </ClInclude>
@@ -380,13 +368,13 @@
     <ClInclude Include="RailSTG\Scene\SceneEnum.h">
       <Filter>RailSTG\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="RailSTG\Scene\Game.h">
+      <Filter>RailSTG\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Sprite\Sprite.hlsli">
       <Filter>Engine\リソース ファイル\HLSL\Sprite</Filter>
-    </None>
-    <None Include="HLSL\Reflect\Reflect.hlsli">
-      <Filter>Engine\リソース ファイル\HLSL\Reflect</Filter>
     </None>
     <None Include="HLSL\Model\Model.hlsli">
       <Filter>Engine\リソース ファイル\HLSL\Model</Filter>
@@ -404,12 +392,6 @@
     </FxCompile>
     <FxCompile Include="HLSL\Sprite\Sprite.VS.hlsl">
       <Filter>Engine\リソース ファイル\HLSL\Sprite</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\Reflect\Reflect.PS.hlsl">
-      <Filter>Engine\リソース ファイル\HLSL\Reflect</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\Reflect\Reflect.VS.hlsl">
-      <Filter>Engine\リソース ファイル\HLSL\Reflect</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Model\Model.PS.hlsl">
       <Filter>Engine\リソース ファイル\HLSL\Model</Filter>

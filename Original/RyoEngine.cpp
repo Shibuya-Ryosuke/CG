@@ -30,7 +30,7 @@ namespace RyoEngine {
         LightManager* lightManager_ = nullptr;
         ModelCommon* modelCommon_ = nullptr;
         SpriteCommon* spriteCommon_ = nullptr;
-        ReflectCommon* reflectCommon_ = nullptr;
+        //ReflectCommon* reflectCommon_ = nullptr;
         Font* fontOutputer_ = nullptr;
         Audio* audio_ = nullptr;
 
@@ -79,8 +79,8 @@ namespace RyoEngine {
         spriteCommon_ = SpriteCommon::GetInstance();
         spriteCommon_->Initialize();
 
-        reflectCommon_ = ReflectCommon::GetInstance();
-        reflectCommon_->Initialize();
+        //reflectCommon_ = ReflectCommon::GetInstance();
+        //reflectCommon_->Initialize();
 
         // オーディオの初期化
         audio_ = Audio::GetInstance();
@@ -117,7 +117,7 @@ namespace RyoEngine {
         audio_->Finalize();
         Audio::DestroyInstance();
 
-        reflectCommon_->Finalize();
+        //reflectCommon_->Finalize();
         spriteCommon_->Finalize();
         modelCommon_->Finalize();
         PrimitiveRenderer::Finalize();
@@ -286,7 +286,7 @@ namespace RyoEngine {
     LightManager* GetLightManager() { return lightManager_; }
     ModelCommon* GetModelCommon() { return modelCommon_; }
     SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
-    ReflectCommon* GetReflectCommon() { return reflectCommon_; }
+    //ReflectCommon* GetReflectCommon() { return reflectCommon_; }
     Font* GetFontOutputter() { return fontOutputer_; }
 
 

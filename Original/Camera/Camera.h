@@ -4,10 +4,7 @@
 namespace RyoEngine {
     class Camera {
     public:
-        /// <summary>
-        /// 初期化込みコンストラクタ
-        /// </summary>
-        Camera();
+        Camera() = default;
         virtual  ~Camera() = default;
         // activeCameraを決めるときに必要
         Camera& operator=(const Camera&) = default;

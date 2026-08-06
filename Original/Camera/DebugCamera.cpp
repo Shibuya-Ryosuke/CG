@@ -2,23 +2,6 @@
 #include "../Input/Input.h"
 
 namespace RyoEngine {
-	DebugCamera::DebugCamera() {
-		rotate_ = { 0,0,0 };
-		translate_ = { 0,0,-20 };
-
-		fovY_ = 0.45f;
-		aspectRatio_ = 1280.0f / 720.0f;
-		nearZ_ = 0.1f;
-		farZ_ = 100.0f;
-
-		rotateSpeed_ = 0.005f;
-		moveSpeed_ = 0.01f;
-		wheelSpeed_ = 0.01f;
-
-		isAvailable_ = false;
-
-		Update();
-	};
 
 	void DebugCamera::Initialize() {
 		rotate_ = { 0,0,0 };

@@ -1,16 +1,26 @@
 #include "SceneManager.h"
+#include "Game.h"
 
 using namespace RyoEngine;
 
-void SceneManager::Initialize(SceneState sceneState) {
+SceneManager::SceneManager() = default;
+SceneManager::~SceneManager() = default;
+
+void SceneManager::Initialize(Scene sceneState) {
     // ゲームカメラ
     camera_ = std::make_unique<Camera>();
+    camera_->Initialize();
     camera_->SetActive(true);
     // デバッグカメラ
     debugCamera_ = std::make_unique<DebugCamera>();
+    debugCamera_->Initialize();
 
-    // シーン
-    sceneState_ = sceneState;
+    // シーン（enum）
+    scene_ = sceneState;
+
+    // シーン別
+    game_ = std::make_unique<Game>();
+    game_->Initialize();
 }
 
 void SceneManager::Finalize() {
@@ -20,10 +30,40 @@ void SceneManager::Finalize() {
 void SceneManager::Update() {
     // アクティブカメラの決定とその更新
     UpdateCamera();
+
+    switch (scene_) {
+    case Scene::Title:
+        break;
+
+    case Scene::Game:
+        game_->Update(*activeCamera_);
+        break;
+
+    case Scene::Result:
+        break;
+
+    case Scene::None:
+    default:
+        break;
+    }
 }
 
 void SceneManager::Draw() {
+    switch (scene_) {
+    case Scene::Title:
+        break;
 
+    case Scene::Game:
+        game_->Draw();
+        break;
+
+    case Scene::Result:
+        break;
+
+    case Scene::None:
+    default:
+        break;
+    }
 }
 
 void SceneManager::UpdateCamera() {

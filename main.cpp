@@ -13,7 +13,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     // ゲーム初期化
     SceneManager sceneManager;
-    sceneManager.Initialize(SceneState::Title);
+    sceneManager.Initialize(Scene::Game);
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {

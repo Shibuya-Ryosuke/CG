@@ -4,17 +4,19 @@
 
 #include "SceneEnum.h"
 
+class Game;
+
 class SceneManager {
 public:
-	SceneManager() = default;
-	~SceneManager() = default;
+	SceneManager();
+	~SceneManager();
 	SceneManager(const SceneManager&) = delete;
 	SceneManager& operator=(const SceneManager&) = delete;
 
 	/// <summary>
 	/// 初期化
 	/// </summary>
-	void Initialize(SceneState sceneState);
+	void Initialize(Scene sceneState);
 
 	/// <summary>
 	/// 終了
@@ -43,6 +45,9 @@ private:
 	std::unique_ptr<RyoEngine::DebugCamera> debugCamera_ = nullptr;
 	RyoEngine::Camera* activeCamera_ = nullptr;
 
-	// シーン
-	SceneState sceneState_ = SceneState::None;
+	// シーン（enum）
+	Scene scene_ = Scene::None;
+
+	// シーン別保持
+	std::unique_ptr<Game> game_ = nullptr;
 };

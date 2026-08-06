@@ -4,10 +4,7 @@
 namespace RyoEngine {
 	class DebugCamera : public Camera {
 	public:
-		/// <summary>
-		/// 初期化込みコンストラクタ
-		/// </summary>
-		DebugCamera();
+		DebugCamera() = default;
 		~DebugCamera() override = default;
 
 		void Initialize() override;

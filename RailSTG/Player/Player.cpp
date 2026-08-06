@@ -2,15 +2,20 @@
 
 using namespace RyoEngine;
 
-void Player::Initialize() {
+Player::Player() = default;
+Player::~Player() = default;
 
+void Player::Initialize() {
+	// モデルの生成
+	model_ = Model::Create("resources/RailSTG/TR.obj");
+	model_->SetTranslate({ 0.0f,0.0f,0.0f });
 }
 
 void Player::Finalize() {
 
 }
 
-void Player::Update(RyoEngine::Camera& camera) {
+void Player::Update(const RyoEngine::Camera& camera) {
 	model_->Update(camera);
 }
 

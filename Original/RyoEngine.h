@@ -11,8 +11,8 @@
 #include "2D/SpriteCommon.h"
 #include "2D/Sprite.h"
 #include "Mesh/Mesh.h"
-#include "Reflect/ReflectCommon.h"
-#include "Reflect/ReflectModel.h"
+//#include "Reflect/ReflectCommon.h"
+//#include "Reflect/ReflectModel.h"
 #include "Audio/Audio.h"
 #include "Math/Math.h"
 #include "Camera/Camera.h"
@@ -42,7 +42,7 @@ namespace RyoEngine {
     LightManager* GetLightManager();
     ModelCommon* GetModelCommon();
     SpriteCommon* GetSpriteCommon();
-    ReflectCommon* GetReflectCommon();
+    //ReflectCommon* GetReflectCommon();
     Font* GetFontOutputter();
 
     

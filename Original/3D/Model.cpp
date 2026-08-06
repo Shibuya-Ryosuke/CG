@@ -1,8 +1,8 @@
 #include "Model.h"
 #include "../Base/DirectXCommon.h"
 #include "../Graphics/TextureManager.h"
-#include "../Reflect/ReflectCommon.h"
-#include "../Reflect/ReflectModel.h"
+//#include "../Reflect/ReflectCommon.h"
+//#include "../Reflect/ReflectModel.h"
 #include "../Edit/AnimEdit.h"
 
 namespace RyoEngine {
@@ -318,13 +318,13 @@ namespace RyoEngine {
         });
     }
 
-    Model* Model::Create(const std::string& filePath, bool registAnimEdit, const std::string& name) {
-        Model* instance = new Model();
+    std::unique_ptr<Model> Model::Create(const std::string& filePath, bool registAnimEdit, const std::string& name) {
+        std::unique_ptr<Model> instance = std::make_unique<Model>();
         instance->Initialize(); // 共通の初期化
         instance->CreateModel(filePath); // モデル読み込みとリソース作成 (複数メッシュに対応)
 
         if (registAnimEdit) {
-            AnimEdit::SetTargetModel(instance, name);
+            AnimEdit::SetTargetModel(instance.get(), name);
         }
 
         return instance;

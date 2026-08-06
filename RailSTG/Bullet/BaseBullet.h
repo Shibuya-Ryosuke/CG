@@ -22,7 +22,7 @@ public:
 	/// <summary>
 	/// 更新
 	/// </summary>
-	void Update(RyoEngine::Camera& camera) override;
+	void Update(const RyoEngine::Camera& camera) override;
 
 	/// <summary>
 	/// 描画

@@ -1,17 +1,6 @@
 #include "Camera.h"
 
 namespace RyoEngine {
-    Camera::Camera() {
-        // メンバ変数への代入
-        rotate_ = { 0.0f, 0.0f, 0.0f };
-        translate_ = { 0.0f, 0.0f, -10.0f };
-        fovY_ = 0.45f;
-        aspectRatio_ = 1280.0f / 720.0f;
-        nearZ_ = 0.1f;
-        farZ_ = 100.0f;
-
-        Update();
-    }
 
     void Camera::Initialize() {
         // メンバ変数への代入

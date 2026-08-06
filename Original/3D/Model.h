@@ -3,6 +3,7 @@
 #include <wrl.h>
 #include <string>
 #include <vector>
+#include <memory>
 #include "../Math/Math.h"
 #include "../Loader/ModelLoader.h"
 #include "../Camera/Camera.h"
@@ -63,7 +64,7 @@ namespace RyoEngine {
         /// <param name="registAnimEdit">アニメエディタに登録するか</param>
         /// <param name="name">登録名</param>
         /// <returns></returns>
-        static Model* Create(const std::string& filePath, bool registAnimEdit = false, const std::string& name = "NoName");
+        static std::unique_ptr<Model> Create(const std::string& filePath, bool registAnimEdit = false, const std::string& name = "NoName");
         /// <summary>
         /// モデルの作成 (代入・書き換え時に使用)
         /// </summary>
