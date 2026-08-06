@@ -6,6 +6,10 @@
 
 class Player : public BaseObject {
 public:
+	// コピーコンストラクタと代入演算子の明示的削除
+	Player(const Player&) = delete;
+	Player& operator=(const Player&) = delete;
+
 	/// <summary>
 	/// 初期化
 	/// </summary>

@@ -1,9 +1,14 @@
 #pragma once
 #include "../../Original/RyoEngine.h"
+#include <memory>
 
 class BaseObject {
 public:
 	virtual ~BaseObject() = default;
+
+	// コピーコンストラクタと代入演算子の明示的削除
+	BaseObject(const BaseObject&) = delete;
+	BaseObject& operator=(const BaseObject&) = delete;
 
 	/// <summary>
 	/// 初期化
@@ -27,5 +32,5 @@ public:
 
 protected:
 	// 自身
-	RyoEngine::Model* model_ = nullptr;
+	std::unique_ptr<RyoEngine::Model> model_ = nullptr;
 };

@@ -5,6 +5,9 @@
 class BaseEnemy : public BaseObject {
 public:
 	~BaseEnemy() override = default;
+	// コピーコンストラクタと代入演算子の明示的削除
+	BaseEnemy(const BaseEnemy&) = delete;
+	BaseEnemy& operator=(const BaseEnemy&) = delete;
 
 	/// <summary>
 	/// 更新

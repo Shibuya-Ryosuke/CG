@@ -5,6 +5,9 @@
 class BaseBullet : public BaseObject {
 public:
 	~BaseBullet() override = default;
+	// コピーコンストラクタと代入演算子の明示的削除
+	BaseBullet(const BaseBullet&) = delete;
+	BaseBullet& operator=(const BaseBullet&) = delete;
 
 	/// <summary>
 	/// 初期化

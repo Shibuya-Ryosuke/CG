@@ -3,6 +3,11 @@
 
 class InputManager {
 public:
+	InputManager() = default;
+	~InputManager() = default;
+	InputManager(const InputManager&) = delete;
+	InputManager& operator=(const InputManager&) = delete;
+
 	/// <summary>
 	/// インスタンスの取得
 	/// </summary>
@@ -37,13 +42,6 @@ public:
 	// IsPushMainShot() みたいな
 
 
-
-
-private:
-	InputManager() = default;
-	~InputManager() = default;
-	InputManager(const InputManager&) = delete;
-	InputManager& operator=(const InputManager&) = delete;
 
 private:
 	// デバイスの種類

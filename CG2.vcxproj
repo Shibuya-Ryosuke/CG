@@ -103,6 +103,8 @@
     <ClCompile Include="Original\Reflect\ReflectCommon.cpp" />
     <ClCompile Include="Original\Reflect\ReflectModel.cpp" />
     <ClCompile Include="RailSTG\Bullet\BaseBullet.cpp" />
+    <ClCompile Include="RailSTG\Player\Player.cpp" />
+    <ClCompile Include="RailSTG\Scene\SceneManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\2D\Sprite.h" />
@@ -162,6 +164,8 @@
     <ClInclude Include="RailSTG\Player\PlayerEnum.h" />
     <ClInclude Include="RailSTG\Scene\Game.h" />
     <ClInclude Include="RailSTG\Scene\Result.h" />
+    <ClInclude Include="RailSTG\Scene\SceneEnum.h" />
+    <ClInclude Include="RailSTG\Scene\SceneManager.h" />
     <ClInclude Include="RailSTG\Scene\Title.h" />
     <ClInclude Include="RailSTG\Time\TimeEnum.h" />
     <ClInclude Include="RailSTG\Time\TimeManager.h" />

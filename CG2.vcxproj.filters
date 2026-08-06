@@ -186,6 +186,12 @@
     <ClCompile Include="RailSTG\Bullet\BaseBullet.cpp">
       <Filter>RailSTG\Bullet</Filter>
     </ClCompile>
+    <ClCompile Include="RailSTG\Scene\SceneManager.cpp">
+      <Filter>RailSTG\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Player\Player.cpp">
+      <Filter>RailSTG\Player</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">
@@ -366,6 +372,12 @@
       <Filter>RailSTG\Scene</Filter>
     </ClInclude>
     <ClInclude Include="RailSTG\Scene\Result.h">
+      <Filter>RailSTG\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Scene\SceneManager.h">
+      <Filter>RailSTG\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Scene\SceneEnum.h">
       <Filter>RailSTG\Scene</Filter>
     </ClInclude>
   </ItemGroup>

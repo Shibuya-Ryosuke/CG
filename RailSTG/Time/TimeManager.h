@@ -2,6 +2,11 @@
 #include "TimeEnum.h"
 class TimeManager {
 public:
+	TimeManager() = default;
+	~TimeManager() = default;
+	TimeManager(const TimeManager&) = delete;
+	TimeManager& operator=(const TimeManager&) = delete;
+
 	/// <summary>
 	/// インスタンスの取得
 	/// </summary>
@@ -36,10 +41,6 @@ public:
 
 	void SetTimeState(TimeState state){}
 private:
-	TimeManager() = default;
-	~TimeManager() = default;
-	TimeManager(const TimeManager&) = delete;
-	TimeManager& operator=(const TimeManager&) = delete;
 
 	// 初期倍率
 	float kInitTimeScale = 1.0f;

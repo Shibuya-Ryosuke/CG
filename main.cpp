@@ -3,26 +3,17 @@
 #include "Original/ImGui/ImGuiAllInclude.h"
 #endif
 
+#include "RailSTG/Scene/SceneManager.h"
+
 using namespace RyoEngine;
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
 
-    // ゲーム内カメラ
-    Camera camera;
-    camera.Initialize();
-
-    // デバッグカメラ
-    DebugCamera debugCamera;
-    debugCamera.Initialize();
-    debugCamera.SetTranslate({ 0.0f,0.3f,-9.2f });
-
-    // アクティブカメラ
-    Camera* activeCamera = nullptr;
-    
-    // 開発時初期反転
-    camera.SetActive(false);
+    // ゲーム初期化
+    SceneManager sceneManager;
+    sceneManager.Initialize(SceneState::Title);
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -34,38 +25,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // -- 更新処理（Update） --
         // ----------------------
         
-        // アクティブの反転(お試し)
-        if (Input::TriggerKey(DIK_K)) {
-            if (camera.IsActive()) {
-                camera.SetActive(false);
-            } else {
-                camera.SetActive(true);
-            }
-        }
-        // デバッグカメラの時画面上かどうかの判定（ImGuiの操作中動くのを防ぐため）
-        if (!camera.IsActive()) {
-            debugCamera.SetAvailable(RyoEngine::GetOnTheGameView());
-        }
-
-        // アクティブカメラを決定
-        activeCamera = camera.IsActive() ? &camera : &debugCamera;
-        activeCamera->Update();
-        // 即時描画モードに登録
-        SetCameraForPrimitive(*activeCamera);
-        
-
+        // 更新
+        sceneManager.Update();
 
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------
        
-
-
-        // --------------------------------------------------------------------------------
-        // Reflect
-       
-        
-        // --------------------------------------------------------------------------------
 
 
 
@@ -75,12 +41,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // --- 描画処理 (Draw) ---
         // ----------------------
         
-        if (camera.IsActive()) {
-            PrintText("camera", { 10,10 });
-        } else {
-            PrintText("debug", { 10,10 });
-        }
-        
+        // 描画
+        sceneManager.Draw();
 
         // ----------------------
         // ------ 描画終了 -------
@@ -90,6 +52,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         EndFrame();
     }
     
+    // ゲーム終了
+    sceneManager.Finalize();
+
     // エンジン終了
     RyoEngine::Finalize();
 
