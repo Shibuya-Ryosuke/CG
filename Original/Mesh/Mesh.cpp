@@ -73,7 +73,7 @@ namespace RyoEngine {
         std::vector<uint32_t> indices(totalIndexCount);
 
         // Geometry.h の球体生成関数で頂点を埋める
-        ::CreateSphere(subdivision, vertices.data(), indices.data());
+        CreateSphereForGeometry(subdivision, vertices.data(), indices.data());
 
         // 頂点バッファ生成
         vertexResource_ = DirectXCommon::CreateBufferResource(device, sizeof(VertexData) * vertices.size());

@@ -21,16 +21,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // アクティブカメラ
     Camera* activeCamera = nullptr;
     
+    // 開発時初期反転
     camera.SetActive(false);
-
-    AnimEdit::Initialize();
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
         NewFrame();
-        AnimEdit::Update();
-        AnimEdit::SetTargetCamera(&camera, "camera");
+       
 
         // ----------------------
         // -- 更新処理（Update） --
@@ -44,7 +42,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
                 camera.SetActive(true);
             }
         }
-
+        // デバッグカメラの時画面上かどうかの判定（ImGuiの操作中動くのを防ぐため）
         if (!camera.IsActive()) {
             debugCamera.SetAvailable(RyoEngine::GetOnTheGameView());
         }
@@ -52,11 +50,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // アクティブカメラを決定
         activeCamera = camera.IsActive() ? &camera : &debugCamera;
         activeCamera->Update();
-       
-       
-
+        // 即時描画モードに登録
         SetCameraForPrimitive(*activeCamera);
-        DrawSphere({ 0.0f,0.0f,0.0f }, 2.0f, 16, { 1.0f,1.0f,1.0f }, PrimitiveDrawMode::Fill);
+        
+
+
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------

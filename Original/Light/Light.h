@@ -1,8 +1,10 @@
 #pragma once
 #include "../Math/Vector.h"
 
-struct DirectionalLight {
-	Vector4 color;
-	Vector3 direction;
-	float intensity;
-};
+namespace RyoEngine {
+	struct DirectionalLight {
+		Vector4 color;
+		Vector3 direction;
+		float intensity;
+	};
+}

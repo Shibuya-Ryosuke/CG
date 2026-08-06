@@ -1,0 +1,39 @@
+#pragma once
+#include "../../Original/RyoEngine.h"
+#include "../BaseObject/BaseObject.h"
+
+class BaseEnemy : public BaseObject {
+public:
+	~BaseEnemy() override = default;
+
+	/// <summary>
+	/// 更新
+	/// </summary>
+	void Initialize() override;
+
+	/// <summary>
+	/// 終了
+	/// </summary>
+	void Finalize() override;
+
+	/// <summary>
+	/// 更新
+	/// </summary>
+	/// <param name="camera"></param>
+	void Update(RyoEngine::Camera& camera) override;
+
+	/// <summary>
+	/// 描画
+	/// </summary>
+	void Draw() override;
+
+protected:
+	// 速度
+	RyoEngine::Vector3 velocity_{};
+
+	// 死亡
+	bool isDead_ = false;
+
+	// 衝突判定用
+	RyoEngine::OBB obb_{};
+};

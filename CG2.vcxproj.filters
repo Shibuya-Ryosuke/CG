@@ -1,97 +1,127 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="ソース ファイル">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="ヘッダー ファイル">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="リソース ファイル">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="リソース ファイル\HLSL">
-      <UniqueIdentifier>{f9a25521-3498-4266-b3c9-e67c94f817a3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="リソース ファイル\HLSL\Sprite">
-      <UniqueIdentifier>{49bb948b-afed-4b17-b0cd-3ec18adff378}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="リソース ファイル\HLSL\Reflect">
-      <UniqueIdentifier>{7c1b1358-122b-4f68-adc1-9be6b0a36c4a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="リソース ファイル\HLSL\Model">
-      <UniqueIdentifier>{11f21ad4-adfd-4df1-b2a0-b64fbfdcd0dc}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Externals">
       <UniqueIdentifier>{2072f028-1924-4696-a6a7-4be793480c22}</UniqueIdentifier>
     </Filter>
     <Filter Include="Externals\imgui">
       <UniqueIdentifier>{f8e73db1-1900-4825-8904-3a2c1c51d53c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="リソース ファイル\HLSL\Primitive">
+    <Filter Include="Engine">
+      <UniqueIdentifier>{410416bb-c79b-4e16-94ed-8ae276e5fd76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\ソース ファイル">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Engine\ヘッダー ファイル">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Engine\リソース ファイル">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Engine\リソース ファイル\HLSL">
+      <UniqueIdentifier>{f9a25521-3498-4266-b3c9-e67c94f817a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\リソース ファイル\HLSL\Sprite">
+      <UniqueIdentifier>{49bb948b-afed-4b17-b0cd-3ec18adff378}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\リソース ファイル\HLSL\Reflect">
+      <UniqueIdentifier>{7c1b1358-122b-4f68-adc1-9be6b0a36c4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\リソース ファイル\HLSL\Model">
+      <UniqueIdentifier>{11f21ad4-adfd-4df1-b2a0-b64fbfdcd0dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\リソース ファイル\HLSL\Primitive">
       <UniqueIdentifier>{d94fb639-85ea-4770-88b6-b96d1234543a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG">
+      <UniqueIdentifier>{e7774822-b220-405d-8168-37313d0901d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG\Player">
+      <UniqueIdentifier>{3d895e27-1748-475c-b1c4-b15ac0c587a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG\Enemy">
+      <UniqueIdentifier>{2a9561ff-011e-4d92-8c08-c281954dc157}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG\Bullet">
+      <UniqueIdentifier>{1818c81a-dd77-42e8-ba82-d1f643671355}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG\Scene">
+      <UniqueIdentifier>{f2542d2c-8bb3-4ebd-aebd-4429aa585281}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG\UI">
+      <UniqueIdentifier>{351c2754-9eb2-4457-8ca2-14da06f5fd79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG\Input">
+      <UniqueIdentifier>{2fc20c71-9098-4053-801a-412ef65d5af1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG\Time">
+      <UniqueIdentifier>{88cf4597-3373-47ac-ba63-a0eebb81f536}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG\BaseObject">
+      <UniqueIdentifier>{5afbf49a-411d-40a7-ab50-9b24d01cebaf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Loader\ModelLoader.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Audio\Audio.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Base\Logger.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Base\WinApp.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Base\DirectXCommon.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Base\ShaderCompiler.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Graphics\TextureManager.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\3D\ModelCommon.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\3D\Model.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Camera\Camera.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\2D\Sprite.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\2D\SpriteCommon.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\RyoEngine.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Input\Input.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Camera\DebugCamera.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\ImGui\ImGuiManager.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Reflect\ReflectCommon.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Reflect\ReflectModel.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Externals\imgui\imgui.cpp">
       <Filter>Externals\imgui</Filter>
@@ -115,10 +145,10 @@
       <Filter>Externals\imgui</Filter>
     </ClCompile>
     <ClCompile Include="Original\Mesh\Mesh.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Base\Font.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Externals\imgui\GraphEditor.cpp">
       <Filter>Externals\imgui</Filter>
@@ -139,93 +169,96 @@
       <Filter>Externals\imgui</Filter>
     </ClCompile>
     <ClCompile Include="Original\Edit\AnimEdit.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Easing\Easing.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Light\LightManager.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Math\Collision.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Bullet\BaseBullet.cpp">
+      <Filter>RailSTG\Bullet</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Math\Vector.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Math\Matrix.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Math\Geometry.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Math\Transform.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Light\Light.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Loader\ModelLoader.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Audio\Audio.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Base\WinApp.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Base\Logger.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Base\DirectXCommon.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Base\ShaderCompiler.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Graphics\TextureManager.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\3D\ModelCommon.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\3D\Model.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Camera\Camera.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\2D\Sprite.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\2D\SpriteCommon.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\RyoEngine.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Input\Input.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Camera\DebugCamera.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\ImGui\ImGuiManager.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Reflect\ReflectCommon.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Reflect\ReflectModel.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Externals\imgui\imconfig.h">
       <Filter>Externals\imgui</Filter>
@@ -252,10 +285,10 @@
       <Filter>Externals\imgui</Filter>
     </ClInclude>
     <ClInclude Include="Original\Mesh\Mesh.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Base\Font.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Externals\imgui\GraphEditor.h">
       <Filter>Externals\imgui</Filter>
@@ -282,71 +315,107 @@
       <Filter>Externals\imgui</Filter>
     </ClInclude>
     <ClInclude Include="Original\ImGui\ImGuiAllInclude.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Edit\AnimEdit.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Easing\Easing.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Light\LightManager.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Math\Collision.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\PrimitiveRenderer\PrimitiveRenderer.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Input\InputManager.h">
+      <Filter>RailSTG\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Player\Player.h">
+      <Filter>RailSTG\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Time\TimeManager.h">
+      <Filter>RailSTG\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Time\TimeEnum.h">
+      <Filter>RailSTG\Time</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Input\InputEnum.h">
+      <Filter>RailSTG\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Player\PlayerEnum.h">
+      <Filter>RailSTG\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Bullet\BaseBullet.h">
+      <Filter>RailSTG\Bullet</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\BaseObject\BaseObject.h">
+      <Filter>RailSTG\BaseObject</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Enemy\BaseEnemy.h">
+      <Filter>RailSTG\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Scene\Title.h">
+      <Filter>RailSTG\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Scene\Game.h">
+      <Filter>RailSTG\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Scene\Result.h">
+      <Filter>RailSTG\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Sprite\Sprite.hlsli">
-      <Filter>リソース ファイル\HLSL\Sprite</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Sprite</Filter>
     </None>
     <None Include="HLSL\Reflect\Reflect.hlsli">
-      <Filter>リソース ファイル\HLSL\Reflect</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Reflect</Filter>
     </None>
     <None Include="HLSL\Model\Model.hlsli">
-      <Filter>リソース ファイル\HLSL\Model</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Model</Filter>
     </None>
     <None Include="HLSL\Model\Model_NoUV.hlsli">
-      <Filter>リソース ファイル\HLSL\Model</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Model</Filter>
     </None>
     <None Include="HLSL\Primitive\Primitive.hlsli">
-      <Filter>リソース ファイル\HLSL\Primitive</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Primitive</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="HLSL\Sprite\Sprite.PS.hlsl">
-      <Filter>リソース ファイル\HLSL\Sprite</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Sprite</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Sprite\Sprite.VS.hlsl">
-      <Filter>リソース ファイル\HLSL\Sprite</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Sprite</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Reflect\Reflect.PS.hlsl">
-      <Filter>リソース ファイル\HLSL\Reflect</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Reflect</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Reflect\Reflect.VS.hlsl">
-      <Filter>リソース ファイル\HLSL\Reflect</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Reflect</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Model\Model.PS.hlsl">
-      <Filter>リソース ファイル\HLSL\Model</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Model</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Model\Model.VS.hlsl">
-      <Filter>リソース ファイル\HLSL\Model</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Model</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Model\Model_NoUV.PS.hlsl">
-      <Filter>リソース ファイル\HLSL\Model</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Model</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Model\Model_NoUV.VS.hlsl">
-      <Filter>リソース ファイル\HLSL\Model</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Model</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Primitive\Primitive_PS.hlsl">
-      <Filter>リソース ファイル\HLSL\Primitive</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Primitive</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Primitive\Primitive_VS.hlsl">
-      <Filter>リソース ファイル\HLSL\Primitive</Filter>
+      <Filter>Engine\リソース ファイル\HLSL\Primitive</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>
