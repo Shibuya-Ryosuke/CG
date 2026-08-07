@@ -161,6 +161,9 @@ namespace RyoEngine {
         void SetScale(const Vector3& scale) { transform_.scale = scale; }
         void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
         void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
+        void SetTranslateX(float translateX) { transform_.translate.x = translateX; }
+        void SetTranslateY(float translateY) { transform_.translate.y = translateY; }
+
         /// <summary>
         /// 指向性ライトの指定 (シーン共有。LightManagerへの転送。全モデルに反映される)
         /// </summary>

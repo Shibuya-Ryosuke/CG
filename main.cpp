@@ -26,8 +26,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         
         // 更新
+#ifdef _DEBUG
+        ImGui::Begin("RailSTG_debug");
+#endif
         sceneManager.Update();
-
+#ifdef _DEBUG
+        ImGui::End();
+#endif
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------

@@ -35,11 +35,11 @@ namespace RyoEngine {
 		void ToggleIsAvailable() { isAvailable_ = !isAvailable_; };
 
 	private:
-		float rotateSpeed_;
-		float moveSpeed_;
-		float wheelSpeed_;
+		float rotateSpeed_ = 0.0f;
+		float moveSpeed_ = 0.0f;
+		float wheelSpeed_ = 0.0f;
 
-		bool isAvailable_;
+		bool isAvailable_ = false;
 	};
 
 }

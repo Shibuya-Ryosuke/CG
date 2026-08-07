@@ -5,6 +5,8 @@
 #include "../BaseObject/BaseObject.h"
 #include "PlayerEnum.h"
 
+class PlayerBullet;
+
 class Player : public BaseObject {
 public:
 	Player();
@@ -26,13 +28,29 @@ public:
 	void Update(const RyoEngine::Camera& camera) override;
 	void Draw() override;
 
+	/// <summary>
+	/// 移動
+	/// </summary>
+	void Move();
+
+	/// <summary>
+	/// メイン攻撃
+	/// </summary>
+	void MainShot();
 private:
 	// 定数（まだデータドリブンにしてないのでいったんここ）
 	int32_t kMaxHp = 1;
 	int32_t kInvincibleTimer = 60;
+	int32_t kMainShotInterval = 5;
+	float kBulletSpeed = 2.0f;
 
 private:
 	
+	// 弾
+	std::vector<std::unique_ptr<PlayerBullet>> bullets_;
+	// 射撃間隔
+	int32_t mainShotInterval_ = kMainShotInterval;
+
 	// 各種ステータス
 	// 体力
 	int32_t hp_ = kMaxHp;
@@ -54,4 +72,7 @@ private:
 
 	// 衝突判定用
 	RyoEngine::OBB obb_{};
+
+	///仮ですぴーど
+	float speed_ = 0.2f;
 };

@@ -6,3 +6,12 @@ enum class DeviceType : int32_t {
 	Keyboard,      // キーマウ
 	Controller,    // パッド
 };
+
+enum class InputAction : int32_t {
+	MoveUp,
+	MoveDown,
+	MoveLeft,
+	MoveRight,
+	MainShot,
+	Count,
+};

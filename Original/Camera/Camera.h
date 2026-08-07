@@ -40,16 +40,16 @@ namespace RyoEngine {
         bool IsActive() const { return isActive_; }
 
     protected:
-        Vector3 rotate_;
-        Vector3 translate_;
-        float fovY_;
-        float aspectRatio_;
-        float nearZ_;
-        float farZ_;
+        Vector3 rotate_{};
+        Vector3 translate_{};
+        float fovY_ = 0.0f;
+        float aspectRatio_ = 0.0f;
+        float nearZ_ = 0.0f;
+        float farZ_ = 0.0f;
 
-        Matrix4x4 viewMatrix_;
-        Matrix4x4 projectionMatrix_;
-        Matrix4x4 viewProjectionMatrix_;
+        Matrix4x4 viewMatrix_{};
+        Matrix4x4 projectionMatrix_{};
+        Matrix4x4 viewProjectionMatrix_{};
 
     private:
         bool isOverride_ = false;

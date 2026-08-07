@@ -177,9 +177,6 @@
     <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="RailSTG\Bullet\BaseBullet.cpp">
-      <Filter>RailSTG\Bullet</Filter>
-    </ClCompile>
     <ClCompile Include="RailSTG\Scene\SceneManager.cpp">
       <Filter>RailSTG\Scene</Filter>
     </ClCompile>
@@ -188,6 +185,9 @@
     </ClCompile>
     <ClCompile Include="RailSTG\Scene\Game.cpp">
       <Filter>RailSTG\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Bullet\PlayerBullet.cpp">
+      <Filter>RailSTG\Bullet</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -370,6 +370,12 @@
     </ClInclude>
     <ClInclude Include="RailSTG\Scene\Game.h">
       <Filter>RailSTG\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Bullet\PlayerBullet.h">
+      <Filter>RailSTG\Bullet</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Enemy\Mob.h">
+      <Filter>RailSTG\Enemy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
