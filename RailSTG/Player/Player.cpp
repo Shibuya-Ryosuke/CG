@@ -22,7 +22,6 @@ void Player::Initialize() {
 }
 
 void Player::Finalize() {
-
 }
 
 void Player::Update(const RyoEngine::Camera& camera) {
