@@ -54,8 +54,6 @@ private:
 	// 各種ステータス
 	// 体力
 	int32_t hp_ = kMaxHp;
-	// 死亡
-	bool isDead_ = false;
 	// 速度
 	RyoEngine::Vector3 velocity_{};
 

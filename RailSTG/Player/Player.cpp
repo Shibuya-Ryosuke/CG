@@ -2,6 +2,8 @@
 #include <imgui.h>
 #endif
 
+#include <algorithm>
+
 #include "Player.h"
 #include "../Bullet/PlayerBullet/PlayerBullet.h"
 #include "../Input/InputManager.h"
@@ -25,6 +27,19 @@ void Player::Finalize() {
 }
 
 void Player::Update(const RyoEngine::Camera& camera) {
+	// リクエストを反映
+	if (request_ != PlayerState::None) {
+		state_ = request_;
+		request_ = PlayerState::None;
+	}
+
+	// 当たり判定を取次のフレームの初めに死んだ弾を削除 (erase-removeイディオム)
+	bullets_.erase(
+		std::remove_if(bullets_.begin(), bullets_.end(),
+			[](const std::unique_ptr<PlayerBullet>& b) { return b->IsDead(); }),
+		bullets_.end()
+	);
+
 	// 移動
 	Move();
 	switch (state_) {
@@ -46,6 +61,10 @@ void Player::Update(const RyoEngine::Camera& camera) {
 		break;
 	}
 
+	// 座標更新
+	model_->Update(camera);
+
+
 	// 弾の更新
 #ifdef _DEBUG
 	ImGui::Begin("playerBullets");
@@ -65,18 +84,6 @@ void Player::Update(const RyoEngine::Camera& camera) {
 #ifdef _DEBUG
 	ImGui::End();
 #endif
-
-	// 座標更新
-	model_->Update(camera);
-
-	// 当たり判定
-	
-	// 死んだ弾を削除 (erase-removeイディオム)
-	bullets_.erase(
-		std::remove_if(bullets_.begin(), bullets_.end(),
-			[](const std::unique_ptr<PlayerBullet>& b) { return b->IsDead(); }),
-		bullets_.end()
-	);
 }
 
 void Player::Draw() {

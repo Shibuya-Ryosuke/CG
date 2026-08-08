@@ -70,6 +70,9 @@
     <Filter Include="RailSTG\Enemy\Mob">
       <UniqueIdentifier>{ec9b5567-3e5e-4843-a33c-29c6e13801e8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\Bullet\EnemyBullet">
+      <UniqueIdentifier>{524543be-15e1-4e59-8f3c-36fa6c731760}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -197,6 +200,9 @@
     </ClCompile>
     <ClCompile Include="RailSTG\Enemy\Mob\Mob.cpp">
       <Filter>RailSTG\Enemy\Mob</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Bullet\EnemyBullet\EnemyBullet.cpp">
+      <Filter>RailSTG\Bullet\EnemyBullet</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -385,6 +391,12 @@
     </ClInclude>
     <ClInclude Include="RailSTG\Enemy\Mob\Mob.h">
       <Filter>RailSTG\Enemy\Mob</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Bullet\EnemyBullet\EnemyBullet.h">
+      <Filter>RailSTG\Bullet\EnemyBullet</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Enemy\EnemyEnum.h">
+      <Filter>RailSTG\Enemy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

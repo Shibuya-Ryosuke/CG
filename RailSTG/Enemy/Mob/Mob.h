@@ -1,5 +1,10 @@
 #pragma once
+#include <memory>
+
 #include "../BaseEnemy.h"
+#include "../EnemyEnum.h"
+
+class EnemyBullet;
 
 class Mob : public BaseEnemy {
 public:
@@ -30,7 +35,23 @@ public:
 	/// </summary>
 	void Draw() override;
 
+	/// <summary>
+	/// 射撃
+	/// </summary>
+	void Shot();
+
 private:
+	int32_t kShotInterval = 60;
+	float kBulletSpeed = 2.0f;
 	RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,0.1f };
 
+private:
+	// 弾
+	std::vector<std::unique_ptr<EnemyBullet>> bullets_;
+	// 射撃間隔
+	int32_t shotInterval_ = kShotInterval;
+
+	// 状態
+	MobState state_ = MobState::None;
+	MobState request_ = MobState::None;
 };
