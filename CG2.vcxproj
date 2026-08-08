@@ -101,6 +101,7 @@
     <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />
     <ClCompile Include="RailSTG\Bullet\PlayerBullet\PlayerBullet.cpp" />
+    <ClCompile Include="RailSTG\Enemy\Mob\Mob.cpp" />
     <ClCompile Include="RailSTG\Player\Player.cpp" />
     <ClCompile Include="RailSTG\Scene\Game.cpp" />
     <ClCompile Include="RailSTG\Scene\SceneManager.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="RailSTG\Bullet\BaseBullet.h" />
     <ClInclude Include="RailSTG\Bullet\PlayerBullet\PlayerBullet.h" />
     <ClInclude Include="RailSTG\Enemy\BaseEnemy.h" />
+    <ClInclude Include="RailSTG\Enemy\Mob\Mob.h" />
     <ClInclude Include="RailSTG\Input\InputEnum.h" />
     <ClInclude Include="RailSTG\Input\InputManager.h" />
     <ClInclude Include="RailSTG\Player\Player.h" />

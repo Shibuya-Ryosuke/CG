@@ -4,31 +4,22 @@
 
 class BaseEnemy : public BaseObject {
 public:
+	BaseEnemy() = default;
 	~BaseEnemy() override = default;
 	// コピーコンストラクタと代入演算子の明示的削除
 	BaseEnemy(const BaseEnemy&) = delete;
 	BaseEnemy& operator=(const BaseEnemy&) = delete;
 
-	/// <summary>
-	/// 更新
-	/// </summary>
-	void Initialize() override;
+	
+	RyoEngine::Vector3 GetTranslate() { return model_->GetTranslate(); }
+	void SetTranslate(const RyoEngine::Vector3 translate) { model_->SetTranslate(translate); }
 
-	/// <summary>
-	/// 終了
-	/// </summary>
-	void Finalize() override;
+	void SetVelocity(const RyoEngine::Vector3 velocity) { velocity_ = velocity; }
+	void SetVelocityZ(const float velocityZ) { velocity_.z = velocityZ; }
 
-	/// <summary>
-	/// 更新
-	/// </summary>
-	/// <param name="camera"></param>
-	void Update(const RyoEngine::Camera& camera) override;
+	bool IsDead() const { return isDead_; }
+	void SetIsDead(bool isDead) { isDead_ = isDead; }
 
-	/// <summary>
-	/// 描画
-	/// </summary>
-	void Draw() override;
 
 protected:
 	// 速度

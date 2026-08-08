@@ -1,11 +1,13 @@
 #pragma once
 #include <memory>
+#include <cstdint>
 
 namespace RyoEngine {
 	class Camera;
 }
 
 class Player;
+class Mob;
 
 class Game {
 public:
@@ -34,8 +36,15 @@ public:
 	/// </summary>
 	void Draw();
 
+	void MobSpawn();
+
+private:
+	int32_t kMobSpawnTimer_ = 300;
 private:
 	// プレイヤー
 	std::unique_ptr<Player> player_ = nullptr;
-
+	// モブ
+	std::vector<std::unique_ptr<Mob>> mobs_;
+	// スポーン時間
+	int32_t mobSpawnTimer_ = kMobSpawnTimer_;
 };

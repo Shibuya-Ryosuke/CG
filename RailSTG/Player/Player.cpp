@@ -66,15 +66,17 @@ void Player::Update(const RyoEngine::Camera& camera) {
 	ImGui::End();
 #endif
 
+	// 座標更新
+	model_->Update(camera);
+
+	// 当たり判定
+	
 	// 死んだ弾を削除 (erase-removeイディオム)
 	bullets_.erase(
 		std::remove_if(bullets_.begin(), bullets_.end(),
 			[](const std::unique_ptr<PlayerBullet>& b) { return b->IsDead(); }),
 		bullets_.end()
 	);
-
-	// 座標更新
-	model_->Update(camera);
 }
 
 void Player::Draw() {
