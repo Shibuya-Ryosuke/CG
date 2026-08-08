@@ -3,7 +3,7 @@
 #endif
 
 #include "Player.h"
-#include "../Bullet/PlayerBullet.h"
+#include "../Bullet/PlayerBullet/PlayerBullet.h"
 #include "../Input/InputManager.h"
 
 using namespace RyoEngine;

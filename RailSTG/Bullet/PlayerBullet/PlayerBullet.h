@@ -1,7 +1,7 @@
 #pragma once
-#include "../../Original/RyoEngine.h"
+#include "../../../Original/RyoEngine.h"
 
-#include "BaseBullet.h"
+#include "../BaseBullet.h"
 
 class PlayerBullet : public BaseBullet {
 public:
