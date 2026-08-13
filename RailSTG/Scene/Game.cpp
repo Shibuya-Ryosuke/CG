@@ -14,6 +14,7 @@ void Game::Initialize() {
 	// プレイヤーの作成
 	player_ = std::make_unique<Player>();
 	player_->Initialize();
+	player_->SetTranslateY(150.0f);
 }
 
 void Game::Finalize() {
@@ -50,7 +51,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 #ifdef _DEBUG
 	ImGui::End();
 #endif
-	// 死んモブを削除 (erase-removeイディオム)
+	// 死んだモブを削除 (erase-removeイディオム)
 	mobs_.erase(
 		std::remove_if(mobs_.begin(), mobs_.end(),
 			[](const std::unique_ptr<Mob>& mob) { return mob->IsDead(); }),
@@ -71,6 +72,7 @@ void Game::MobSpawn() {
 	// モブの生成
 	auto mob = std::make_unique<Mob>();
 	mob->Initialize();
+	mob->SetTranslateY(150.0f);
 
 	// 追加
 	mobs_.push_back(std::move(mob));

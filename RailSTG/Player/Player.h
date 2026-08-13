@@ -37,6 +37,12 @@ public:
 	/// メイン攻撃
 	/// </summary>
 	void MainShot();
+
+	void SetTranslate(const RyoEngine::Vector3 translate) { model_->SetTranslate(translate); }
+
+	void SetTranslateX(const float x) { model_->SetTranslateX(x); }
+	void SetTranslateY(const float y) { model_->SetTranslateY(y); }
+	
 private:
 	// 定数（まだデータドリブンにしてないのでいったんここ）
 	int32_t kMaxHp = 1;

@@ -10,10 +10,18 @@ void SceneManager::Initialize(Scene sceneState) {
     // ゲームカメラ
     camera_ = std::make_unique<Camera>();
     camera_->Initialize();
-    camera_->SetActive(true);
+    camera_->SetActive(false);
+    camera_->SetTranslateY(153.0f);
     // デバッグカメラ
     debugCamera_ = std::make_unique<DebugCamera>();
     debugCamera_->Initialize();
+    debugCamera_->SetTranslateY(153.0f);
+
+    // 天球
+    skydome_ = Model::Create("resources/RailSTG/Skydome/skydome.obj");
+    skydome_->SetLambert(ShadingMode::NONE);
+    // 地面
+    ground_ = Model::Create("resources/RailSTG/Ground/ground.obj");
 
     // シーン（enum）
     scene_ = sceneState;
@@ -30,6 +38,8 @@ void SceneManager::Finalize() {
 void SceneManager::Update() {
     // アクティブカメラの決定とその更新
     UpdateCamera();
+    skydome_->Update(*activeCamera_);
+    ground_->Update(*activeCamera_);
 
     switch (scene_) {
     case Scene::Title:
@@ -49,6 +59,8 @@ void SceneManager::Update() {
 }
 
 void SceneManager::Draw() {
+    skydome_->Draw();
+    ground_->Draw();
     switch (scene_) {
     case Scene::Title:
         break;

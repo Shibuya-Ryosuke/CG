@@ -50,4 +50,9 @@ private:
 
 	// シーン別保持
 	std::unique_ptr<Game> game_ = nullptr;
+
+	// 天球
+	std::unique_ptr<RyoEngine::Model> skydome_ = nullptr;
+	// 地面
+	std::unique_ptr<RyoEngine::Model> ground_ = nullptr;
 };

@@ -47,4 +47,5 @@ private:
 	std::vector<std::unique_ptr<Mob>> mobs_;
 	// スポーン時間
 	int32_t mobSpawnTimer_ = kMobSpawnTimer_;
+
 };

@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 #include <cassert>
+#include <array>
+#include <unordered_map>
 #include <algorithm>
 #include <dxgidebug.h>
 
@@ -30,9 +32,31 @@ namespace RyoEngine {
 				current = &materials.back();
 				s >> current->name;
 			} else if (identifier == "map_Kd" && current != nullptr) {
-				std::string textureFilename;
-				s >> textureFilename;
-				// 連続してファイルパスにする
+				// 残り全部（オプション + ファイル名）を読み取る
+				std::vector<std::string> tokens;
+				std::string token;
+				while (s >> token) {
+					tokens.push_back(token);
+				}
+
+				// 既知のmapオプションフラグとその引数の数（Wavefront MTL仕様）
+				static const std::unordered_map<std::string, int> kOptionArgCounts = {
+					{"-blendu", 1}, {"-blendv", 1}, {"-cc", 1}, {"-clamp", 1},
+					{"-mm", 2}, {"-o", 3}, {"-s", 3}, {"-t", 3},
+					{"-texres", 1}, {"-bm", 1}, {"-imfchan", 1}, {"-type", 1},
+				};
+
+				size_t i = 0;
+				while (i < tokens.size()) {
+					auto it = kOptionArgCounts.find(tokens[i]);
+					if (it != kOptionArgCounts.end()) {
+						i += 1 + it->second; // オプション名 + 引数の分だけスキップ
+					} else {
+						break; // オプションでなければ、そこがファイル名
+					}
+				}
+
+				std::string textureFilename = (i < tokens.size()) ? tokens[i] : "";
 				current->textureFilePath = directoryPath + textureFilename;
 			}
 		}
@@ -91,28 +115,25 @@ namespace RyoEngine {
 				s >> normal.x >> normal.y >> normal.z;
 				normals.push_back(normal);
 			} else if (identifier == "f") {
-				VertexData triangle[3]{};
-				// この面(f)がUV(vt)インデックスを持たない頂点を1つでも含んでいたか
-				// (Blender等でUV展開せずに書き出すと "f v//vn" のようにvtインデックスが空になる)
-				bool faceHasUV = true;
-
-				// 面は三角形限定。その他は未対応
-				for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
-					std::string vertexDefinition;
-					s >> vertexDefinition;
-					// 頂点の要素へのIndexは「位置/UV/法線」で格納されているので、分解してIndexを取得する
-					// "v/vt/vn" だけでなく "v//vn" (vt省略) にも対応するため、
-					// 各要素はまず文字列のまま取り出し、空文字列かどうかで判定してからstoiする。
+				// 面を構成する全頂点を先に読み込む(3つとは限らない)
+				std::vector<std::array<std::string, 3>> faceVertexDefs; // 各頂点の "v/vt/vn" 分解結果
+				std::string vertexDefinition;
+				while (s >> vertexDefinition) {
 					std::istringstream v(vertexDefinition);
-					std::string indexStrs[3];
+					std::array<std::string, 3> indexStrs{};
 					for (int32_t element = 0; element < 3; ++element) {
-						std::getline(v, indexStrs[element], '/');  // 「/」区切りでインデックス文字列を読んでいく
+						std::getline(v, indexStrs[element], '/');
 					}
+					faceVertexDefs.push_back(indexStrs);
+				}
 
-					// 位置 (必須)
+				if (faceVertexDefs.size() < 3) continue; // 不正な面はスキップ
+
+				// 各頂点インデックスからVertexDataを構築するヘルパー
+				bool faceHasUV = true;
+				auto buildVertex = [&](const std::array<std::string, 3>& indexStrs) -> VertexData {
 					Vector4 position = positions[static_cast<size_t>(std::stoi(indexStrs[0])) - 1];
 
-					// UV (省略されている場合がある。省略時は(0,0)を入れ、faceHasUVをfalseにする)
 					Vector2 texcoord = { 0.0f, 0.0f };
 					if (!indexStrs[1].empty()) {
 						texcoord = texcoords[static_cast<size_t>(std::stoi(indexStrs[1])) - 1];
@@ -121,23 +142,32 @@ namespace RyoEngine {
 						faceHasUV = false;
 					}
 
-					// 法線 (必須)
 					Vector3 normal = normals[static_cast<size_t>(std::stoi(indexStrs[2])) - 1];
 
 					position.x *= -1.0f;
 					normal.x *= -1.0f;
 
-					triangle[faceVertex] = { position,texcoord,normal };
+					return { position, texcoord, normal };
+					};
+
+				std::vector<VertexData> faceVertices;
+				faceVertices.reserve(faceVertexDefs.size());
+				for (auto& indexStrs : faceVertexDefs) {
+					faceVertices.push_back(buildVertex(indexStrs));
 				}
 
-				// 現在アクティブなメッシュ(末尾)に、頂点を逆順で登録することで、周り順を逆にする
 				MeshData& currentMesh = modelData.meshes.back();
 				if (!faceHasUV) {
 					currentMesh.hasUV = false;
 				}
-				currentMesh.vertices.push_back(triangle[2]);
-				currentMesh.vertices.push_back(triangle[1]);
-				currentMesh.vertices.push_back(triangle[0]);
+
+				// 三角形ファン分割: (0,1,2), (0,2,3), (0,3,4), ...
+				for (size_t i = 1; i + 1 < faceVertices.size(); ++i) {
+					// 元の実装同様、頂点を逆順で積んで周り順を反転させる
+					currentMesh.vertices.push_back(faceVertices[i + 1]);
+					currentMesh.vertices.push_back(faceVertices[i]);
+					currentMesh.vertices.push_back(faceVertices[0]);
+				}
 			} else if (identifier == "mtllib") {
 				std::string materialFilename;
 				s >> materialFilename;

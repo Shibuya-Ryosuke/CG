@@ -13,6 +13,7 @@ public:
 	
 	RyoEngine::Vector3 GetTranslate() { return model_->GetTranslate(); }
 	void SetTranslate(const RyoEngine::Vector3 translate) { model_->SetTranslate(translate); }
+	void SetTranslateY(const float y) { model_->SetTranslateY(y); }
 
 	void SetVelocity(const RyoEngine::Vector3 velocity) { velocity_ = velocity; }
 	void SetVelocityZ(const float velocityZ) { velocity_.z = velocityZ; }
