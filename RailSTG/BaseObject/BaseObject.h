@@ -31,6 +31,9 @@ public:
 	/// </summary>
 	virtual void Draw() = 0;
 
+	RyoEngine::Vector3 GetWorldPos() const { return model_->GetWorldPos(); }
+
+
 protected:
 	// 自身
 	std::unique_ptr<RyoEngine::Model> model_ = nullptr;

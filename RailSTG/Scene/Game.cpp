@@ -14,7 +14,7 @@ void Game::Initialize() {
 	// プレイヤーの作成
 	player_ = std::make_unique<Player>();
 	player_->Initialize();
-	player_->SetTranslateY(150.0f);
+	player_->SetOffset(0.0f, 0.0f);
 }
 
 void Game::Finalize() {

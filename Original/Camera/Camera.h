@@ -16,7 +16,7 @@ namespace RyoEngine {
         // Setter
         void SetRotate(const Vector3& rotate) { rotate_ = rotate; }
         void SetTranslate(const Vector3& translate) { translate_ = translate; }
-        void setTranslateX(const float x) { translate_.x = x; }
+        void SetTranslateX(const float x) { translate_.x = x; }
         void SetTranslateY(const float y) { translate_.y = y; }
         void SetTranslateZ(const float z) { translate_.z = z; }
         void SetFovY(float fovY) { fovY_ = fovY; }
@@ -35,11 +35,25 @@ namespace RyoEngine {
         const Vector3& GetTranslate() const { return translate_; }
         const Vector3& GetRotate() const { return rotate_; }
         float GetFovY() const { return fovY_; }
+        float GetAspectRatio() const { return aspectRatio_; }
         const Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
         const Matrix4x4& GetProjectionMatrix() const { return projectionMatrix_; }
         const Matrix4x4& GetViewProjectionMatrix() const { return viewProjectionMatrix_; }
-        
+
         bool IsActive() const { return isActive_; }
+
+        /// <summary>
+        /// カメラのローカル+Z軸(正面)をワールド空間へ変換したベクトル
+        /// </summary>
+        Vector3 GetForward() const;
+        /// <summary>
+        /// カメラのローカル+X軸(右)をワールド空間へ変換したベクトル
+        /// </summary>
+        Vector3 GetRight() const;
+        /// <summary>
+        /// カメラのローカル+Y軸(上)をワールド空間へ変換したベクトル
+        /// </summary>
+        Vector3 GetUp() const;
 
     protected:
         Vector3 rotate_{};
@@ -53,8 +67,12 @@ namespace RyoEngine {
         Matrix4x4 projectionMatrix_{};
         Matrix4x4 viewProjectionMatrix_{};
 
-    private:
+        // NOTE: 元々private宣言だったが、RailCameraControllerなど派生クラスが
+        //       SetCustomMatrices()によるオーバーライドを尊重して自動計算をスキップできるよう
+        //       protectedへ変更した。
         bool isOverride_ = false;
+
+    private:
         bool isActive_ = true;
     };
 }

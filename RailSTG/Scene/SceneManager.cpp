@@ -7,12 +7,25 @@ SceneManager::SceneManager() = default;
 SceneManager::~SceneManager() = default;
 
 void SceneManager::Initialize(Scene sceneState) {
-    // ゲームカメラ
-    camera_ = std::make_unique<Camera>();
+    // ゲームカメラ(レール自動移動カメラ)
+    camera_ = std::make_unique<RailCameraController>();
     camera_->Initialize();
-    camera_->SetActive(false);
-    camera_->SetTranslateY(153.0f);
-    camera_->SetTranslateZ(-25.0f);
+    camera_->SetActive(true);
+
+    // 軌道のウェイポイント(仮の値。旧来のSetTranslateY(153.0f)/SetTranslateZ(-25.0f)相当の
+    // 開始位置を先頭に置いてある。実際のステージレイアウトに合わせて後で調整する)
+    camera_->SetWayPoints({
+        {   0.0f, 153.0f,   -25.0f }, // 0: スタート
+        {   0.0f, 153.0f,   100.0f }, // 1: まっすぐ進む
+        {  40.0f, 160.0f,   300.0f }, // 2: 大きく右へ曲がりながら少し上昇
+        { -40.0f, 150.0f,   500.0f }, // 3: 今度は大きく左へカーブして下降
+        {   0.0f, 153.0f,   700.0f }, // 4: 中央に戻ってくる
+        {   0.0f, 180.0f,  1000.0f }, // 5: 一気に上空高くへ駆け上がる
+        {   0.0f, 153.0f,  1300.0f }, // 6: ゴール・着地
+        });
+    // 1フレームあたりに進むワールド距離(仮の値)
+    camera_->SetMoveSpeed(0.5f);
+
     // デバッグカメラ
     debugCamera_ = std::make_unique<DebugCamera>();
     debugCamera_->Initialize();
@@ -21,6 +34,7 @@ void SceneManager::Initialize(Scene sceneState) {
 
     // 天球
     skydome_ = Model::Create("resources/RailSTG/Skydome/skydome.obj");
+    skydome_->SetTex("resources/uvChecker.png");
     skydome_->SetLambert(ShadingMode::NONE);
     // 地面
     ground_ = Model::Create("resources/RailSTG/Ground/ground.obj");
@@ -40,6 +54,7 @@ void SceneManager::Finalize() {
 void SceneManager::Update() {
     // アクティブカメラの決定とその更新
     UpdateCamera();
+
     skydome_->Update(*activeCamera_);
     ground_->Update(*activeCamera_);
 
@@ -100,9 +115,9 @@ void SceneManager::UpdateCamera() {
     } else {
         PrintText("debug", { 10,10 });
     }
-    
+
     // アクティブカメラを決定
-    activeCamera_ = camera_->IsActive() ? camera_.get() : debugCamera_.get();
+    activeCamera_ = camera_->IsActive() ? static_cast<RyoEngine::Camera*>(camera_.get()) : static_cast<RyoEngine::Camera*>(debugCamera_.get());
     activeCamera_->Update();
 
 #else

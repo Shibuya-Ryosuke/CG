@@ -73,6 +73,9 @@
     <Filter Include="RailSTG\Bullet\EnemyBullet">
       <UniqueIdentifier>{524543be-15e1-4e59-8f3c-36fa6c731760}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\RailCamera">
+      <UniqueIdentifier>{6e5d19b9-1673-4c8e-92aa-9298ef810358}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -203,6 +206,9 @@
     </ClCompile>
     <ClCompile Include="RailSTG\Bullet\EnemyBullet\EnemyBullet.cpp">
       <Filter>RailSTG\Bullet\EnemyBullet</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\RailCamera\RailCameraController.cpp">
+      <Filter>RailSTG\RailCamera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -397,6 +403,9 @@
     </ClInclude>
     <ClInclude Include="RailSTG\Enemy\EnemyEnum.h">
       <Filter>RailSTG\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\RailCamera\RailCameraController.h">
+      <Filter>RailSTG\RailCamera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

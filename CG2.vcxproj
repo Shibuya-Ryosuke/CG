@@ -104,6 +104,7 @@
     <ClCompile Include="RailSTG\Bullet\PlayerBullet\PlayerBullet.cpp" />
     <ClCompile Include="RailSTG\Enemy\Mob\Mob.cpp" />
     <ClCompile Include="RailSTG\Player\Player.cpp" />
+    <ClCompile Include="RailSTG\RailCamera\RailCameraController.cpp" />
     <ClCompile Include="RailSTG\Scene\Game.cpp" />
     <ClCompile Include="RailSTG\Scene\SceneManager.cpp" />
   </ItemGroup>
@@ -165,6 +166,7 @@
     <ClInclude Include="RailSTG\Input\InputManager.h" />
     <ClInclude Include="RailSTG\Player\Player.h" />
     <ClInclude Include="RailSTG\Player\PlayerEnum.h" />
+    <ClInclude Include="RailSTG\RailCamera\RailCameraController.h" />
     <ClInclude Include="RailSTG\Scene\Game.h" />
     <ClInclude Include="RailSTG\Scene\Result.h" />
     <ClInclude Include="RailSTG\Scene\SceneEnum.h" />

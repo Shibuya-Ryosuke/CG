@@ -10,7 +10,7 @@ namespace RyoEngine {
 		fovY_ = 0.45f;
 		aspectRatio_ = 1280.0f / 720.0f;
 		nearZ_ = 0.1f;
-		farZ_ = 100.0f;
+		farZ_ = 1000.0f;
 
 		rotateSpeed_ = 0.005f;
 		moveSpeed_ = 0.01f;

@@ -150,6 +150,8 @@ namespace RyoEngine {
         ID3D12Resource* GetLightResource() const { return LightManager::GetInstance()->GetResource(); };
         D3D12_GPU_VIRTUAL_ADDRESS GetLightResourceGVA() const { return LightManager::GetInstance()->GetGPUVirtualAddress(); }
         Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
+        Vector3 GetWorldPos() const { return { wvpData_->World.m[3][0],wvpData_->World.m[3][1],wvpData_->World.m[3][2] }; }
+
         int32_t GetAnimEditID () { return animEditID_; }
 
         // Setter
@@ -163,6 +165,7 @@ namespace RyoEngine {
         void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
         void SetTranslateX(float translateX) { transform_.translate.x = translateX; }
         void SetTranslateY(float translateY) { transform_.translate.y = translateY; }
+        void SetTranslateZ(float translateZ) { transform_.translate.z = translateZ; }
 
         /// <summary>
         /// 指向性ライトの指定 (シーン共有。LightManagerへの転送。全モデルに反映される)

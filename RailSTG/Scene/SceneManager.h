@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "SceneEnum.h"
+#include "../RailCamera/RailCameraController.h"
 
 class Game;
 
@@ -40,8 +41,8 @@ private:
 	void UpdateCamera();
 
 private:
-	// カメラ
-	std::unique_ptr<RyoEngine::Camera> camera_ = nullptr;
+	// カメラ(レールに沿って自動移動するゲーム用カメラ)
+	std::unique_ptr<RailCameraController> camera_ = nullptr;
 	std::unique_ptr<RyoEngine::DebugCamera> debugCamera_ = nullptr;
 	RyoEngine::Camera* activeCamera_ = nullptr;
 

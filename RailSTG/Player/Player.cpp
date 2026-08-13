@@ -3,6 +3,7 @@
 #endif
 
 #include <algorithm>
+#include <cmath>
 
 #include "Player.h"
 #include "../Bullet/PlayerBullet/PlayerBullet.h"
@@ -33,18 +34,22 @@ void Player::Update(const RyoEngine::Camera& camera) {
 		request_ = PlayerState::None;
 	}
 
-	// 当たり判定を取次のフレームの初めに死んだ弾を削除 (erase-removeイディオム)
+	// 前フレームで死んだ弾を削除 (erase-removeイディオム)
 	bullets_.erase(
 		std::remove_if(bullets_.begin(), bullets_.end(),
 			[](const std::unique_ptr<PlayerBullet>& b) { return b->IsDead(); }),
 		bullets_.end()
 	);
 
-	// 移動
+	// 入力によるカメラ基準オフセットの更新
 	Move();
+
+	// カメラへの追従・画面内クランプを反映してワールド座標を更新
+	UpdateFollowTransform(camera);
+
 	switch (state_) {
 	case PlayerState::Standard:
-		MainShot();
+		MainShot(camera);
 		break;
 
 	case PlayerState::SpecialAttack1:
@@ -71,10 +76,10 @@ void Player::Update(const RyoEngine::Camera& camera) {
 #endif
 	for (auto& bullet : bullets_) {
 		bullet->Update(camera);
-		
+
 #ifdef _DEBUG
 		// 表示
-		if(ImGui::TreeNodeEx("bullet", ImGuiTreeNodeFlags_DefaultOpen)) {
+		if (ImGui::TreeNodeEx("bullet", ImGuiTreeNodeFlags_DefaultOpen)) {
 			Vector3 t = bullet->GetTranslate();
 			ImGui::Text("translate: (%.2f, %.2f, %.2f)", t.x, t.y, t.z);
 			ImGui::TreePop();
@@ -100,31 +105,49 @@ void Player::Draw() {
 void Player::Move() {
 	// 上
 	if (InputManager::IsPushAction(InputAction::MoveUp)) {
-		float ty = model_->GetTranslate().y;
-		ty += speed_;
-		model_->SetTranslateY(ty);
+		offsetY_ += speed_;
 	}
 	// 下
 	if (InputManager::IsPushAction(InputAction::MoveDown)) {
-		float ty = model_->GetTranslate().y;
-		ty -= speed_;
-		model_->SetTranslateY(ty);
+		offsetY_ -= speed_;
 	}
 	// 左
 	if (InputManager::IsPushAction(InputAction::MoveLeft)) {
-		float tx = model_->GetTranslate().x;
-		tx -= speed_;
-		model_->SetTranslateX(tx);
+		offsetX_ -= speed_;
 	}
 	// 右
 	if (InputManager::IsPushAction(InputAction::MoveRight)) {
-		float tx = model_->GetTranslate().x;
-		tx += speed_;
-		model_->SetTranslateX(tx);
+		offsetX_ += speed_;
 	}
 }
 
-void Player::MainShot() {
+void Player::UpdateFollowTransform(const RyoEngine::Camera& camera) {
+	// kFollowDistance分だけ前方にある平面のうち、画面に映る範囲の半分の幅・高さ(ワールド単位)を求める。
+	// FOVとアスペクト比から毎フレーム計算するので、解像度(1280x720 <-> 1920x1080等)が
+	// 変わってもアスペクト比さえ正しく更新されればこの計算式は変更不要で自動追従する。
+	float halfHeight = kFollowDistance * tanf(camera.GetFovY() * 0.5f);
+	float halfWidth = halfHeight * camera.GetAspectRatio();
+
+	// 画面端ぎりぎりに張り付かないよう余白を差し引く
+	float clampX = (halfWidth > kClampMargin) ? (halfWidth - kClampMargin) : 0.0f;
+	float clampY = (halfHeight > kClampMargin) ? (halfHeight - kClampMargin) : 0.0f;
+
+	offsetX_ = Clamp(offsetX_, -clampX, clampX);
+	offsetY_ = Clamp(offsetY_, -clampY, clampY);
+
+	// カメラのForward/Right/Upを基準に、実際のワールド座標を計算する
+	Vector3 worldPos = camera.GetTranslate()
+		+ camera.GetForward() * kFollowDistance
+		+ camera.GetRight() * offsetX_
+		+ camera.GetUp() * offsetY_;
+
+	model_->SetTranslate(worldPos);
+
+	// カメラの向きに合わせて自機も傾ける(演出用。丸ごとコピーが強すぎる場合は係数を掛けて弱めてもよい)
+	model_->SetRotate(camera.GetRotate());
+}
+
+void Player::MainShot(const RyoEngine::Camera& camera) {
 	// メイン射撃のタイマー減少
 	if (mainShotInterval_ > 0) {
 		mainShotInterval_--;
@@ -135,13 +158,13 @@ void Player::MainShot() {
 			auto bullet = std::make_unique<PlayerBullet>();
 			bullet->Initialize();
 
-			// プレイヤーの位置と向きを取得
+			// 発射位置 = 現在のプレイヤーのワールド座標(UpdateFollowTransformで計算済み)
 			Vector3 position = model_->GetTranslate();
-			Vector3 rotate = model_->GetRotate();
 
-			// ローカルの正面(+Z)をプレイヤーの回転で変換 → ワールド空間の正面ベクトル
-			Vector3 forward = TransformVector3({ 0.0f, 0.0f, 1.0f }, MakeRotateMatrix(rotate));
-			forward = Normalize(forward);
+			// 発射方向はカメラの正面方向をそのまま使う。
+			// (プレイヤー自身のrotateはカメラの傾きをコピーしているだけの演出用なので、
+			//  弾の進行方向としてはカメラのForwardを直接使うほうが素直で分かりやすい)
+			Vector3 forward = camera.GetForward();
 
 			// 弾に位置と速度をセット
 			bullet->SetTranslate(position);

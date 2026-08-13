@@ -9,7 +9,7 @@ namespace RyoEngine {
         fovY_ = 0.45f;
         aspectRatio_ = 1280.0f / 720.0f;
         nearZ_ = 0.1f;
-        farZ_ = 100.0f;
+        farZ_ = 1000.0f;
 
         Update();
     }
@@ -29,5 +29,17 @@ namespace RyoEngine {
 
         // ViewProjection行列の合成
         viewProjectionMatrix_ = viewMatrix_ * projectionMatrix_;
+    }
+
+    Vector3 Camera::GetForward() const {
+        return Normalize(TransformVector3({ 0.0f, 0.0f, 1.0f }, MakeRotateMatrix(rotate_)));
+    }
+
+    Vector3 Camera::GetRight() const {
+        return Normalize(TransformVector3({ 1.0f, 0.0f, 0.0f }, MakeRotateMatrix(rotate_)));
+    }
+
+    Vector3 Camera::GetUp() const {
+        return Normalize(TransformVector3({ 0.0f, 1.0f, 0.0f }, MakeRotateMatrix(rotate_)));
     }
 }
