@@ -12,10 +12,12 @@ void SceneManager::Initialize(Scene sceneState) {
     camera_->Initialize();
     camera_->SetActive(false);
     camera_->SetTranslateY(153.0f);
+    camera_->SetTranslateZ(-25.0f);
     // デバッグカメラ
     debugCamera_ = std::make_unique<DebugCamera>();
     debugCamera_->Initialize();
     debugCamera_->SetTranslateY(153.0f);
+    debugCamera_->SetTranslateZ(-25.0f);
 
     // 天球
     skydome_ = Model::Create("resources/RailSTG/Skydome/skydome.obj");

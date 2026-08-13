@@ -16,7 +16,9 @@ namespace RyoEngine {
         // Setter
         void SetRotate(const Vector3& rotate) { rotate_ = rotate; }
         void SetTranslate(const Vector3& translate) { translate_ = translate; }
-        void SetTranslateY(const float translate) { translate_.y = translate; }
+        void setTranslateX(const float x) { translate_.x = x; }
+        void SetTranslateY(const float y) { translate_.y = y; }
+        void SetTranslateZ(const float z) { translate_.z = z; }
         void SetFovY(float fovY) { fovY_ = fovY; }
         void SetAspectRatio(float aspectRatio) { aspectRatio_ = aspectRatio; }
         void SetNearZ(float nearZ) { nearZ_ = nearZ; }
