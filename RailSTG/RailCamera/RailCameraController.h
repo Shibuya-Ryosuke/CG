@@ -61,6 +61,6 @@ private:
 	// 現在区間内の進行度 (0.0 ～ 1.0)
 	float segmentT_ = 0.0f;
 
-	// 1フレームあたりに進むワールド距離
-	float moveSpeed_ = 0.1f;
+	// 1秒あたりに進むワールド距離
+	float moveSpeed_ = 30.0f;
 };

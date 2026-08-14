@@ -1,6 +1,7 @@
-#include "RailCameraController.h"
 #include <cmath>
-#include <imgui.h>
+
+#include "RailCameraController.h"
+#include "../Time/TimeManager.h"
 
 using namespace RyoEngine;
 
@@ -66,7 +67,13 @@ void RailCameraController::AdvanceProgress() {
 		// 同じ位置が2つ連続している場合など、0除算を避ける
 		segmentLength = 1.0f;
 	}
-	segmentT_ += moveSpeed_ / segmentLength;
+
+	// 1. TimeManagerからスロー反映済みのDeltaTimeを取得する
+	float deltaTime = TimeManager::GetInstance().GetDeltaTime();
+
+	// 2. 移動量に deltaTime を掛ける
+	// （※これに合わせて moveSpeed_ の数値の大きさの調整が必要になる場合があります）
+	segmentT_ += (moveSpeed_ / segmentLength) * deltaTime;
 
 	// 区間をまたいだ分だけ次の区間へ進める
 	while (segmentT_ >= 1.0f && currentIndex_ + 2 < wayPoints_.size()) {

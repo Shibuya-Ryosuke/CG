@@ -24,7 +24,6 @@ void SceneManager::Initialize(Scene sceneState) {
         {   0.0f, 153.0f,  1300.0f }, // 6: ゴール・着地
         });
     // 1フレームあたりに進むワールド距離(仮の値)
-    camera_->SetMoveSpeed(0.5f);
 
     // デバッグカメラ
     debugCamera_ = std::make_unique<DebugCamera>();
