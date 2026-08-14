@@ -23,6 +23,9 @@ void Player::Initialize() {
 	// 初期ステート
 	state_ = PlayerState::Standard;
 
+	// レティクル
+	reticle_ = std::make_unique<Reticle>();
+	reticle_->Initialize();
 }
 
 void Player::Finalize() {
@@ -76,6 +79,9 @@ void Player::Update(const RyoEngine::Camera& camera) {
 	obb_.orientations[1] = model_->GetOrientationY();
 	obb_.orientations[2] = model_->GetOrientationZ();
 	obb_.size = { 1.0f,1.0f,1.0f };
+	
+	// レティクル
+	reticle_->Update(camera);
 
 	// 弾の更新
 #ifdef _DEBUG
@@ -103,6 +109,9 @@ void Player::Draw() {
 	for (auto& bullet : bullets_) {
 		bullet->Draw();
 	}
+
+	// レティクル
+	reticle_->Draw();
 
 	// 自身
 	model_->Draw();

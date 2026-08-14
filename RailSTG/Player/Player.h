@@ -4,6 +4,7 @@
 
 #include "../BaseObject/BaseObject.h"
 #include "PlayerEnum.h"
+#include "../Reticle/Reticle.h"
 
 class PlayerBullet;
 
@@ -82,6 +83,8 @@ private:
 
 private:
 
+	// レティクル
+	std::unique_ptr<Reticle> reticle_ = nullptr;
 	// 弾
 	std::vector<std::unique_ptr<PlayerBullet>> bullets_;
 	// 射撃間隔

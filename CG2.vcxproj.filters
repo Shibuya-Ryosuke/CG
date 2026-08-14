@@ -76,6 +76,9 @@
     <Filter Include="RailSTG\RailCamera">
       <UniqueIdentifier>{6e5d19b9-1673-4c8e-92aa-9298ef810358}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\Reticle">
+      <UniqueIdentifier>{ec0ec906-d0ee-4e52-83d9-ef1f82d01188}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -212,6 +215,9 @@
     </ClCompile>
     <ClCompile Include="RailSTG\Time\TimeManager.cpp">
       <Filter>RailSTG\Time</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Reticle\Reticle.cpp">
+      <Filter>RailSTG\Reticle</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -409,6 +415,9 @@
     </ClInclude>
     <ClInclude Include="RailSTG\RailCamera\RailCameraController.h">
       <Filter>RailSTG\RailCamera</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Reticle\Reticle.h">
+      <Filter>RailSTG\Reticle</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
