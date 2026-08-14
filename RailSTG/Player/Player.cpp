@@ -54,7 +54,7 @@ void Player::Update(const RyoEngine::Camera& camera) {
 
 	switch (state_) {
 	case PlayerState::Standard:
-		MainShot();
+		MainShot(camera);
 		break;
 
 	case PlayerState::SpecialAttack1:
@@ -81,7 +81,7 @@ void Player::Update(const RyoEngine::Camera& camera) {
 	obb_.size = { 1.0f,1.0f,1.0f };
 	
 	// レティクル
-	reticle_->Update(camera);
+	reticle_->Update(camera, model_->GetWorldPos());
 
 	// 弾の更新
 #ifdef _DEBUG
@@ -162,7 +162,7 @@ void Player::UpdateFollowTransform(const RyoEngine::Camera& camera) {
 	model_->SetRotate(camera.GetRotate());
 }
 
-void Player::MainShot() {
+void Player::MainShot(const RyoEngine::Camera& camera) {
 	if (mainShotInterval_ > 0) {
 		mainShotInterval_ -= TimeManager::GetDeltaTime();
 	} else {
@@ -173,7 +173,7 @@ void Player::MainShot() {
 			Vector3 position = model_->GetTranslate();
 
 			// カメラのForwardではなく、自機位置からレティクル位置へ向かうベクトルを使う
-			Vector3 direction = Normalize(reticle_->GetWorldPos() - position);
+			Vector3 direction = reticle_->GetAimDirection(camera, position);
 
 			bullet->SetTranslate(position);
 			bullet->SetVelocity(direction * kBulletSpeed);

@@ -38,7 +38,7 @@ public:
 	/// <summary>
 	/// メイン攻撃
 	/// </summary>
-	void MainShot();
+	void MainShot(const RyoEngine::Camera& camera);
 
 	void OnCollision(){}
 
