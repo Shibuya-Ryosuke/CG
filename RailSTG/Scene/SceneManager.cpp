@@ -34,11 +34,12 @@ void SceneManager::Initialize(Scene sceneState) {
 
     // 天球
     skydome_ = Model::Create("resources/RailSTG/Skydome/skydome.obj");
-    skydome_->SetTex("resources/uvChecker.png");
+    //skydome_->SetTex("resources/uvChecker.png");
     skydome_->SetLambert(ShadingMode::NONE);
+    skydome_->SetScale({ 10.0f,10.0f,10.0f });
     // 地面
     ground_ = Model::Create("resources/RailSTG/Ground/ground.obj");
-
+    //ground_->SetScale({ 10.0f,10.0f,10.0f });
     // シーン（enum）
     scene_ = sceneState;
 
@@ -119,11 +120,11 @@ void SceneManager::UpdateCamera() {
     // アクティブカメラを決定
     activeCamera_ = camera_->IsActive() ? static_cast<RyoEngine::Camera*>(camera_.get()) : static_cast<RyoEngine::Camera*>(debugCamera_.get());
     activeCamera_->Update();
-
 #else
     // リリース時はゲームカメラで固定
     activeCamera_ = camera_.get();
     activeCamera_->Update();
 #endif
-
+    // 即時描画のカメラ指定
+    PrimitiveRenderer::SetCamera(*activeCamera_);
 }

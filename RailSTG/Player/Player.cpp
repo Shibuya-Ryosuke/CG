@@ -8,6 +8,7 @@
 #include "Player.h"
 #include "../Bullet/PlayerBullet/PlayerBullet.h"
 #include "../Input/InputManager.h"
+#include "../Time/TimeManager.h"
 
 using namespace RyoEngine;
 
@@ -41,6 +42,7 @@ void Player::Update(const RyoEngine::Camera& camera) {
 		bullets_.end()
 	);
 
+
 	// 入力によるカメラ基準オフセットの更新
 	Move();
 
@@ -68,7 +70,12 @@ void Player::Update(const RyoEngine::Camera& camera) {
 
 	// 座標更新
 	model_->Update(camera);
-
+	// obb
+	obb_.center = model_->GetWorldPos();
+	obb_.orientations[0] = model_->GetOrientationX();
+	obb_.orientations[1] = model_->GetOrientationY();
+	obb_.orientations[2] = model_->GetOrientationZ();
+	obb_.size = { 1.0f,1.0f,1.0f };
 
 	// 弾の更新
 #ifdef _DEBUG
@@ -99,25 +106,24 @@ void Player::Draw() {
 
 	// 自身
 	model_->Draw();
-
 }
 
 void Player::Move() {
 	// 上
 	if (InputManager::IsPushAction(InputAction::MoveUp)) {
-		offsetY_ += speed_;
+		offsetY_ += speed_ * TimeManager::GetDeltaTime();
 	}
 	// 下
 	if (InputManager::IsPushAction(InputAction::MoveDown)) {
-		offsetY_ -= speed_;
+		offsetY_ -= speed_ * TimeManager::GetDeltaTime();
 	}
 	// 左
 	if (InputManager::IsPushAction(InputAction::MoveLeft)) {
-		offsetX_ -= speed_;
+		offsetX_ -= speed_ * TimeManager::GetDeltaTime();
 	}
 	// 右
 	if (InputManager::IsPushAction(InputAction::MoveRight)) {
-		offsetX_ += speed_;
+		offsetX_ += speed_ * TimeManager::GetDeltaTime();
 	}
 }
 
@@ -150,7 +156,7 @@ void Player::UpdateFollowTransform(const RyoEngine::Camera& camera) {
 void Player::MainShot(const RyoEngine::Camera& camera) {
 	// メイン射撃のタイマー減少
 	if (mainShotInterval_ > 0) {
-		mainShotInterval_--;
+		mainShotInterval_ -= TimeManager::GetDeltaTime();
 	} else {
 		// 0以下の時発射
 		if (InputManager::IsPushAction(InputAction::MainShot)) {

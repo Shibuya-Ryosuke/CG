@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <cstdint>
 #include "../Math/Math.h"
 #include "../Loader/ModelLoader.h"
 #include "../Camera/Camera.h"
@@ -149,10 +150,15 @@ namespace RyoEngine {
         // ライトリソースはモデル固有ではなく、シーン共有のLightManagerが持つものを返す
         ID3D12Resource* GetLightResource() const { return LightManager::GetInstance()->GetResource(); };
         D3D12_GPU_VIRTUAL_ADDRESS GetLightResourceGVA() const { return LightManager::GetInstance()->GetGPUVirtualAddress(); }
+        
         Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
         Vector3 GetWorldPos() const { return { wvpData_->World.m[3][0],wvpData_->World.m[3][1],wvpData_->World.m[3][2] }; }
+        Vector3 GetOrientationX() const { return Normalize({ wvpData_->World.m[0][0], wvpData_->World.m[0][1], wvpData_->World.m[0][2] }); }
+        Vector3 GetOrientationY() const { return Normalize({ wvpData_->World.m[1][0], wvpData_->World.m[1][1], wvpData_->World.m[1][2] }); }
+        Vector3 GetOrientationZ() const { return Normalize({ wvpData_->World.m[2][0], wvpData_->World.m[2][1], wvpData_->World.m[2][2] }); }
 
-        int32_t GetAnimEditID () { return animEditID_; }
+        int32_t GetAnimEditID() const { return animEditID_; }
+        
 
         // Setter
         /// <summary>

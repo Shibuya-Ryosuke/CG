@@ -40,6 +40,13 @@ public:
 	/// <param name="camera">発射方向(カメラの正面)を求めるために使用</param>
 	void MainShot(const RyoEngine::Camera& camera);
 
+	void OnCollision(){}
+
+	const RyoEngine::OBB& GetOBB() const { return obb_; }
+	const std::vector<std::unique_ptr<PlayerBullet>>& GetBullets() const {
+		return bullets_;
+	}
+
 	// NOTE: 以下3つはワールド座標を直接いじる旧来のセッター(デバッグ用途向けに残してある)。
 	//       Update()内でUpdateFollowTransform()がカメラ基準のオフセットから毎フレーム
 	//       ワールド座標を再計算して上書きするため、Update()呼び出し後は効果が消えてしまう点に注意。
@@ -65,8 +72,8 @@ private:
 	// 定数（まだデータドリブンにしてないのでいったんここ）
 	int32_t kMaxHp = 1;
 	int32_t kInvincibleTimer = 60;
-	int32_t kMainShotInterval = 5;
-	float kBulletSpeed = 2.0f;
+	float kMainShotInterval = 0.1f;
+	float kBulletSpeed = 120.0f;
 
 	// カメラからどれだけ前方の位置に留まるか(この距離の平面上をカメラ基準でスライドする)
 	float kFollowDistance = 25.0f;
@@ -78,11 +85,14 @@ private:
 	// 弾
 	std::vector<std::unique_ptr<PlayerBullet>> bullets_;
 	// 射撃間隔
-	int32_t mainShotInterval_ = kMainShotInterval;
+	float mainShotInterval_ = kMainShotInterval;
 
 	// 各種ステータス
 	// 体力
 	int32_t hp_ = kMaxHp;
+	// 死亡フラグ
+	bool isDead_ = false;
+
 	// 速度
 	RyoEngine::Vector3 velocity_{};
 
@@ -100,8 +110,8 @@ private:
 	// 衝突判定用
 	RyoEngine::OBB obb_{};
 
-	///仮ですぴーど
-	float speed_ = 0.2f;
+	///仮ですぴーど(１秒あたり)
+	float speed_ = 12.0f;
 
 	// カメラのローカル空間(Right方向・Up方向)での自機のオフセット
 	float offsetX_ = 0.0f;

@@ -2,7 +2,7 @@
 #include "../Base/DirectXCommon.h"
 #include "SpriteCommon.h"
 #include "../Graphics/TextureManager.h"
-#include "../Reflect/ReflectCommon.h"
+//#include "../Reflect/ReflectCommon.h"
 
 namespace RyoEngine {
     Sprite::Sprite() {};

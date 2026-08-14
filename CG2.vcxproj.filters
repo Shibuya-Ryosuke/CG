@@ -210,6 +210,9 @@
     <ClCompile Include="RailSTG\RailCamera\RailCameraController.cpp">
       <Filter>RailSTG\RailCamera</Filter>
     </ClCompile>
+    <ClCompile Include="RailSTG\Time\TimeManager.cpp">
+      <Filter>RailSTG\Time</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">

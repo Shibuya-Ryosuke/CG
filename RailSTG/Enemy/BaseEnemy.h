@@ -10,8 +10,11 @@ public:
 	BaseEnemy(const BaseEnemy&) = delete;
 	BaseEnemy& operator=(const BaseEnemy&) = delete;
 
-	
-	RyoEngine::Vector3 GetTranslate() { return model_->GetTranslate(); }
+	void OnCollision(){}
+
+	RyoEngine::Vector3 GetTranslate() const { return model_->GetTranslate(); }
+	const RyoEngine::OBB& GetOBB() const { return obb_; }
+
 	void SetTranslate(const RyoEngine::Vector3 translate) { model_->SetTranslate(translate); }
 	void SetTranslateY(const float y) { model_->SetTranslateY(y); }
 

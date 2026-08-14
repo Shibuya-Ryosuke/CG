@@ -38,6 +38,8 @@ public:
 
 	void MobSpawn();
 
+	void CheckAllCollision();
+
 private:
 	int32_t kMobSpawnTimer_ = 300;
 private:

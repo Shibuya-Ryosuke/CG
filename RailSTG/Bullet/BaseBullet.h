@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Original/RyoEngine.h"
 #include "../BaseObject/BaseObject.h"
+#include "../Time/TimeManager.h"
 
 class BaseBullet : public BaseObject {
 public:
@@ -15,7 +16,7 @@ public:
 
 		// 寿命で死亡
 		if (lifespan_ > 0) {
-			lifespan_--;
+			lifespan_ -= TimeManager::GetDeltaTime();
 		} else {
 			isDead_ = true;
 		}
@@ -29,8 +30,10 @@ public:
 		model_->Draw();
 	}
 
-	RyoEngine::Vector3 GetTranslate() { return model_->GetTranslate(); }
+	void OnCollision() { isDead_ = true; }
 
+	RyoEngine::Vector3 GetTranslate() const { return model_->GetTranslate(); }
+	const RyoEngine::OBB& GetOBB() const { return obb_; }
 	
 	/// <summary>
 	/// 座標のセット
@@ -55,7 +58,8 @@ public:
 	void SetIsDead(bool dead) { isDead_ = dead; }
 
 protected:
-	int32_t kLifespan = 180;
+	// 寿命(秒)
+	float kLifespan = 3.0f;
 
 
 protected:
@@ -63,7 +67,7 @@ protected:
 	RyoEngine::Vector3 velocity_{};
 
 	// 寿命
-	int32_t lifespan_ = kLifespan;
+	float lifespan_ = kLifespan;
 
 	// 死亡
 	bool isDead_ = false;

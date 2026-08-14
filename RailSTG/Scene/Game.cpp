@@ -4,6 +4,10 @@
 #include "Game.h"
 #include "../Player/Player.h"
 #include "../Enemy/Mob/Mob.h"
+#include "../Bullet/EnemyBullet/EnemyBullet.h"
+#include "../Bullet/PlayerBullet/PlayerBullet.h"
+#include "../Time/TimeManager.h"
+#include "../Time/TimeEnum.h"
 
 using namespace RyoEngine;
 
@@ -22,6 +26,11 @@ void Game::Finalize() {
 }
 
 void Game::Update(const RyoEngine::Camera& camera) {
+	TimeManager::Update();
+	if (Input::TriggerKey(DIK_M)) {
+		TimeManager::SetTimeState(TimeState::JustEvasion);
+	}
+
 	// モブの出現
 	if (mobSpawnTimer_ > 0) {
 		mobSpawnTimer_--;
@@ -32,10 +41,10 @@ void Game::Update(const RyoEngine::Camera& camera) {
 
 	// プレイヤーの更新
 	player_->Update(camera);
-	// モブの更新
 #ifdef _DEBUG
 	ImGui::Begin("mobs");
 #endif
+	// モブの更新
 	for (auto& mob: mobs_) {
 		mob->Update(camera);
 
@@ -51,6 +60,10 @@ void Game::Update(const RyoEngine::Camera& camera) {
 #ifdef _DEBUG
 	ImGui::End();
 #endif
+
+	// 当たり判定
+	CheckAllCollision();
+
 	// 死んだモブを削除 (erase-removeイディオム)
 	mobs_.erase(
 		std::remove_if(mobs_.begin(), mobs_.end(),
@@ -62,9 +75,13 @@ void Game::Update(const RyoEngine::Camera& camera) {
 void Game::Draw() {
 	// プレイヤーの描画
 	player_->Draw();
+	// 当たり判定用の描画はデバッグ時のみのためここで描画
+	PrimitiveRenderer::DrawOBB(player_->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+
 	// モブの描画
 	for (auto& mob : mobs_) {
 		mob->Draw();
+		PrimitiveRenderer::DrawOBB(mob->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 	}
 }
 
@@ -76,4 +93,28 @@ void Game::MobSpawn() {
 
 	// 追加
 	mobs_.push_back(std::move(mob));
+}
+
+void Game::CheckAllCollision() {
+	// プレイヤーの弾取得
+	const auto& playerBullets = player_->GetBullets();
+	
+	for (auto& mob : mobs_) {
+		// モブと自弾の判定
+		for (auto& bullet : playerBullets) {
+			if (IsCollision(mob->GetOBB(), bullet->GetOBB())) {
+				// 当たったら弾の消滅
+				bullet->OnCollision();
+			}
+		}
+		const auto& mobBullets = mob->GetBullets();
+
+		// モブ弾とプレイヤーの判定
+		for (auto& bullet : mobBullets) {
+			if (IsCollision(player_->GetOBB(), bullet->GetOBB())) {
+				// 当たったら弾の消滅
+				bullet->OnCollision();
+			}
+		}
+	}
 }

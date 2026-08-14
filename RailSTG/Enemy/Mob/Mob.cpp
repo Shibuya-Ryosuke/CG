@@ -6,6 +6,7 @@
 
 #include "Mob.h"
 #include "../../Bullet/EnemyBullet/EnemyBullet.h"
+#include "../../Time/TimeManager.h"
 
 using namespace RyoEngine;
 
@@ -38,10 +39,17 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 
 	// 移動
 	Vector3 myT = model_->GetTranslate();
-	myT += velocity_;
+	myT += velocity_ * TimeManager::GetDeltaTime();
 	model_->SetTranslate(myT);
 	// 更新
 	model_->Update(camera);
+
+	// obb
+	obb_.center = model_->GetWorldPos();
+	obb_.orientations[0] = model_->GetOrientationX();
+	obb_.orientations[1] = model_->GetOrientationY();
+	obb_.orientations[2] = model_->GetOrientationZ();
+	obb_.size = { 1.0f,1.0f,1.0f };
 
 	if (model_->GetTranslate().z > 50.0f) {
 		isDead_ = true;
@@ -92,12 +100,13 @@ void Mob::Draw() {
 		bullet->Draw();
 	}
 	model_->Draw();
+	PrimitiveRenderer::DrawOBB(obb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 }
 
 void Mob::Shot() {
 	// メイン射撃のタイマー減少
 	if (shotInterval_ > 0) {
-		shotInterval_--;
+		shotInterval_ -= TimeManager::GetDeltaTime();
 	} else {
 		// 0以下の時発射
 		// 新しい弾作成

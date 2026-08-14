@@ -1,5 +1,7 @@
 #pragma once
 #include "TimeEnum.h"
+#include <cstdint>
+
 class TimeManager {
 public:
 	TimeManager() = default;
@@ -19,39 +21,48 @@ public:
 	/// <summary>
 	/// 初期化
 	/// </summary>
-	void Initialize();
+	static void Initialize();
 
 	/// <summary>
 	/// 終了
 	/// </summary>
-	void Finalize();
+	static void Finalize();
 
 	/// <summary>
 	/// 更新
 	/// </summary>
-	void Update();
+	static void Update();
 
 	/// <summary>
 	/// ゲーム全体で流れる時間の速さを取得
 	/// </summary>
-	/// <returns>timeSpeed_</returns>
-	float GetTimeSpeed() const {
-		return GetInstance().timeSpeed_;
+	/// <returns>timeScale_</returns>
+	static float GetTimeScale() {
+		return GetInstance().timeScale_;
 	}
 
-	void SetTimeState(TimeState state){}
+	static float GetDeltaTime() {
+		return GetInstance().deltaTime_;
+	}
+	static void SetTimeState(TimeState state) { GetInstance().request_ = state; }
 private:
 
 	// 初期倍率
 	float kInitTimeScale = 1.0f;
-
+	
+	// ジャスト回避スロー時間
+	int32_t kJustEvasionTime = 30;
+	
 private:
-	// 時間の速さ
-	float timeSpeed_ = 0.0f;
 	// 時間に掛ける倍率（0 ~ 1）
-	float timeScale_ = 0.0f;
+	float timeScale_ = kInitTimeScale;
+	// deltaタイム
+	float deltaTime_ = 0.0f;
+
+	// ジャスト回避スロー時間
+	int32_t justEvasionTime = kJustEvasionTime;
 
 	// 状態
-	TimeState state_ = TimeState::None;
+	TimeState state_ = TimeState::Default;
 	TimeState request_ = TimeState::None;
 };

@@ -40,16 +40,21 @@ public:
 	/// </summary>
 	void Shot();
 
+
+	const std::vector<std::unique_ptr<EnemyBullet>>& GetBullets() const {
+		return bullets_;
+	}
+
 private:
-	int32_t kShotInterval = 60;
-	float kBulletSpeed = 2.0f;
-	RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,0.1f };
+	float kShotInterval = 1.0f;
+	float kBulletSpeed = 120.0f;
+	RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,6.0f };
 
 private:
 	// 弾
 	std::vector<std::unique_ptr<EnemyBullet>> bullets_;
 	// 射撃間隔
-	int32_t shotInterval_ = kShotInterval;
+	float shotInterval_ = kShotInterval;
 
 	// 状態
 	MobState state_ = MobState::None;
