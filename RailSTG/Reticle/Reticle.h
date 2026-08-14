@@ -8,7 +8,6 @@ class Reticle {
 public:
 	Reticle();
 	~Reticle();
-	// コピーコンストラクタと代入演算子の明示的削除
 	Reticle(const Reticle&) = delete;
 	Reticle& operator=(const Reticle&) = delete;
 
@@ -19,10 +18,21 @@ public:
 	RyoEngine::Vector3 GetWorldPos() { return model_->GetWorldPos(); }
 
 private:
-	float kDistancePlayerToReticle = 5.0f;
+	// マウス移動によるカメラ基準オフセットの更新
+	void Move();
+
+private:
+	// カメラからレティクルまでの距離
+	float kDistanceCameraToReticle = 50.0f;
+	// マウス感度
+	float kMouseSensitivity = 0.05f;
+	// 画面端でのクランプ用余白
+	float kClampMargin = 0.5f;
 
 private:
 	std::unique_ptr<RyoEngine::Model> model_ = nullptr;
 
-
+	// カメラのRight/Up基準でのオフセット(Playerのoffsetと同じ考え方)
+	float offsetX_ = 0.0f;
+	float offsetY_ = 0.0f;
 };

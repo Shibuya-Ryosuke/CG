@@ -51,6 +51,10 @@ public:
 	/// <param name="action">アクション名</param>
 	/// <returns>bool</returns>
 	static bool IsPushAction(InputAction action)  {
+		// マウスで打てるように
+		if (action == InputAction::MainShot) {
+			return RyoEngine::Input::IsMousePush(0);
+		}
 		return RyoEngine::Input::PushKey(InputManager::GetInstance().keyBindings_[static_cast<size_t>(action)]);
 	}
 
@@ -75,7 +79,7 @@ private:
 		    DIK_S,      // MoveDown
 		    DIK_A,      // MoveLeft
 		    DIK_D,      // MoveRight
-		    DIK_SPACE,  // MainShot
+		    //DIK_SPACE,  // MainShot
 		}
 	};
 

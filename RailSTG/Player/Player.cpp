@@ -54,7 +54,7 @@ void Player::Update(const RyoEngine::Camera& camera) {
 
 	switch (state_) {
 	case PlayerState::Standard:
-		MainShot(camera);
+		MainShot();
 		break;
 
 	case PlayerState::SpecialAttack1:
@@ -162,32 +162,24 @@ void Player::UpdateFollowTransform(const RyoEngine::Camera& camera) {
 	model_->SetRotate(camera.GetRotate());
 }
 
-void Player::MainShot(const RyoEngine::Camera& camera) {
-	// メイン射撃のタイマー減少
+void Player::MainShot() {
 	if (mainShotInterval_ > 0) {
 		mainShotInterval_ -= TimeManager::GetDeltaTime();
 	} else {
-		// 0以下の時発射
 		if (InputManager::IsPushAction(InputAction::MainShot)) {
-			// 新しい弾作成
 			auto bullet = std::make_unique<PlayerBullet>();
 			bullet->Initialize();
 
-			// 発射位置 = 現在のプレイヤーのワールド座標(UpdateFollowTransformで計算済み)
 			Vector3 position = model_->GetTranslate();
 
-			// 発射方向はカメラの正面方向をそのまま使う。
-			// (プレイヤー自身のrotateはカメラの傾きをコピーしているだけの演出用なので、
-			//  弾の進行方向としてはカメラのForwardを直接使うほうが素直で分かりやすい)
-			Vector3 forward = camera.GetForward();
+			// カメラのForwardではなく、自機位置からレティクル位置へ向かうベクトルを使う
+			Vector3 direction = Normalize(reticle_->GetWorldPos() - position);
 
-			// 弾に位置と速度をセット
 			bullet->SetTranslate(position);
-			bullet->SetVelocity(forward * kBulletSpeed);
+			bullet->SetVelocity(direction * kBulletSpeed);
 
 			bullets_.push_back(std::move(bullet));
 
-			// 発射間隔をリセット
 			mainShotInterval_ = kMainShotInterval;
 		}
 	}

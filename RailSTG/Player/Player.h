@@ -38,8 +38,7 @@ public:
 	/// <summary>
 	/// メイン攻撃
 	/// </summary>
-	/// <param name="camera">発射方向(カメラの正面)を求めるために使用</param>
-	void MainShot(const RyoEngine::Camera& camera);
+	void MainShot();
 
 	void OnCollision(){}
 
