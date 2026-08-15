@@ -8,6 +8,7 @@ namespace RyoEngine {
 
 class Player;
 class Mob;
+class Reticle;
 
 class Game {
 public:
@@ -45,6 +46,8 @@ private:
 private:
 	// プレイヤー
 	std::unique_ptr<Player> player_ = nullptr;
+	// レティクル
+	std::unique_ptr<Reticle> reticle_ = nullptr;
 	// モブ
 	std::vector<std::unique_ptr<Mob>> mobs_;
 	// スポーン時間

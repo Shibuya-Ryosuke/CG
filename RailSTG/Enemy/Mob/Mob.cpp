@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "Mob.h"
+#include "../BaseEnemy.h"
 #include "../../Bullet/EnemyBullet/EnemyBullet.h"
 #include "../../Time/TimeManager.h"
 
@@ -35,6 +36,11 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 	if (request_ != MobState::None) {
 		state_ = request_;
 		request_ = MobState::None;
+	}
+
+	if (lockOnRequest_ != LockOnState::None) {
+		lockOnState_ = lockOnRequest_;
+		lockOnRequest_ = LockOnState::None;
 	}
 
 	// 移動
@@ -101,6 +107,8 @@ void Mob::Draw() {
 	}
 	model_->Draw();
 	PrimitiveRenderer::DrawOBB(obb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+	// ロックオンエフェクト
+	BaseEnemy::DrawLockOnEffect();
 }
 
 void Mob::Shot() {

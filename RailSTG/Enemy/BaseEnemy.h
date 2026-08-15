@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Original/RyoEngine.h"
 #include "../BaseObject/BaseObject.h"
+#include "EnemyEnum.h"
 
 class BaseEnemy : public BaseObject {
 public:
@@ -25,6 +26,24 @@ public:
 	void SetIsDead(bool isDead) { isDead_ = isDead; }
 
 
+	void SetLockOnState(LockOnState state) { lockOnRequest_ = state; }
+
+	void DrawLockOnEffect() {
+		switch (lockOnState_) {
+		case LockOnState::Hoverd:
+			RyoEngine::PrimitiveRenderer::DrawRect2D({ GetWorldPos().x,GetWorldPos().y }, { 20.0f,20.0f }, 0.0f, { 0.5f,0.8f,0.7f,0.7f }, RyoEngine::PrimitiveDrawMode::Fill);
+			break;
+
+		case LockOnState::Locked:
+			RyoEngine::PrimitiveRenderer::DrawRect2D({ GetWorldPos().x,GetWorldPos().y }, { 20.0f,20.0f }, 0.0f, { 1.0f,0.0f,0.0f,1.0f }, RyoEngine::PrimitiveDrawMode::Fill);
+			break;
+
+		case LockOnState::None:
+		default:
+			break;
+		}
+	}
+
 protected:
 	// 速度
 	RyoEngine::Vector3 velocity_{};
@@ -34,4 +53,8 @@ protected:
 
 	// 衝突判定用
 	RyoEngine::OBB obb_{};
+
+	// ロックオンステート
+	LockOnState lockOnState_ = LockOnState::None;
+	LockOnState lockOnRequest_ = LockOnState::None;
 };

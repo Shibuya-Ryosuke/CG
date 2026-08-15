@@ -102,7 +102,8 @@ namespace RyoEngine {
         /// </summary>
         static void DrawLine3D(const Vector3& start, const Vector3& end, const Vector4& color);
 
-        // ===================== 2D (スクリーン座標/ピクセル基準、原点は左上) =====================
+
+
 
         /// <summary>
         /// 2D矩形を描画する

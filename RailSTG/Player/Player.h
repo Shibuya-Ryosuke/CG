@@ -60,6 +60,7 @@ public:
 	/// </summary>
 	void SetOffset(float offsetX, float offsetY) { offsetX_ = offsetX; offsetY_ = offsetY; }
 
+	void SetReticle(std::unique_ptr<Reticle> reticle) { reticle_ = std::move(reticle); }
 private:
 	/// <summary>
 	/// カメラからのオフセットを画面内にクランプしたうえで、
