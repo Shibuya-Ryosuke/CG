@@ -6,7 +6,9 @@
 #include <cmath>
 
 #include "Player.h"
+#include "../Bullet/BaseBullet.h"
 #include "../Bullet/PlayerBullet/PlayerBullet.h"
+#include "../Bullet/HomingMissile/HomingMissile.h"
 #include "../Input/InputManager.h"
 #include "../Time/TimeManager.h"
 
@@ -37,13 +39,6 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 		state_ = request_;
 		request_ = PlayerState::None;
 	}
-
-	// 前フレームで死んだ弾を削除 (erase-removeイディオム)
-	bullets_.erase(
-		std::remove_if(bullets_.begin(), bullets_.end(),
-			[](const std::unique_ptr<PlayerBullet>& b) { return b->IsDead(); }),
-		bullets_.end()
-	);
 
 
 	// 入力によるカメラ基準オフセットの更新
@@ -99,25 +94,17 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	// レティクル
 	reticle_->Update();
 
+	// 死んだ弾を削除 (erase-removeイディオム)
+	bullets_.erase(
+		std::remove_if(bullets_.begin(), bullets_.end(),
+			[](const std::unique_ptr<BaseBullet>& b) { return b->IsDead(); }),
+		bullets_.end()
+	);
+
 	// 弾の更新
-#ifdef _DEBUG
-	ImGui::Begin("playerBullets");
-#endif
 	for (auto& bullet : bullets_) {
 		bullet->Update(camera);
-
-#ifdef _DEBUG
-		// 表示
-		if (ImGui::TreeNodeEx("bullet", ImGuiTreeNodeFlags_DefaultOpen)) {
-			Vector3 bulletT = bullet->GetTranslate();
-			ImGui::Text("translate: (%.2f, %.2f, %.2f)", bulletT.x, bulletT.y, bulletT.z);
-			ImGui::TreePop();
-		}
-#endif
 	}
-#ifdef _DEBUG
-	ImGui::End();
-#endif
 }
 
 void Player::Draw() {
@@ -295,6 +282,8 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 
 				// すでに2体に達していたらロックオンモードを終了
 				if (lockedCount >= 2) {
+					// ミサイル発射
+					ShootMissile(camera, enemies);
 					// プレイヤーと時間を通常へ
 					TimeManager::SetTimeState(TimeState::Default);
 					request_ = PlayerState::Standard;
@@ -317,4 +306,38 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 		}
 	}
 	
+}
+
+void Player::ShootMissile(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies) {
+	// 1. ロックオンされている敵を全員集める
+	std::vector<BaseEnemy*> lockedEnemies;
+	for (auto& enemy : enemies) {
+		if (enemy->GetLockOnState() == LockOnState::Locked) {
+			lockedEnemies.push_back(enemy.get());
+		}
+	}
+
+	// 2. ロックオンしている敵が1体以上いれば、ミサイルを発射する！
+	if (!lockedEnemies.empty()) {
+		Vector3 playerPos = model_->GetTranslate();
+		Vector3 rightDir = camera.GetRight(); // カメラの右方向ベクトル
+
+		// 発射するミサイルの数だけループ（またはロックオンされた敵に対応させる）
+		for (size_t i = 0; i < lockedEnemies.size(); ++i) {
+			auto missile = std::make_unique<HomingMissile>();
+
+			// 左右に少しずらしてスポーンさせる（偶数番目は左、奇数番目は右など）
+			float offsetX = (i % 2 == 0) ? -2.0f : 2.0f;
+			Vector3 spawnPos = playerPos + rightDir * offsetX;
+
+			// ターゲットを割り当てる（敵が1体の場合は同じ敵を狙う、2体の場合はそれぞれの敵を狙う）
+			BaseEnemy* target = lockedEnemies[i % lockedEnemies.size()];
+
+			// 初期化
+			missile->Initialize(spawnPos, target);
+
+			// ミサイルリストに追加
+			bullets_.push_back(std::move(missile));
+		}
+	}
 }

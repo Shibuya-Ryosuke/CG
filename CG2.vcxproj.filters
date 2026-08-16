@@ -79,6 +79,9 @@
     <Filter Include="RailSTG\Reticle">
       <UniqueIdentifier>{ec0ec906-d0ee-4e52-83d9-ef1f82d01188}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\Bullet\HomingMissile">
+      <UniqueIdentifier>{02d44fd6-653c-46ac-a618-c430b6aac22f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -221,6 +224,9 @@
     </ClCompile>
     <ClCompile Include="Original\Math\Math.cpp">
       <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Bullet\HomingMissile\HomingMissile.cpp">
+      <Filter>RailSTG\Bullet\HomingMissile</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -421,6 +427,9 @@
     </ClInclude>
     <ClInclude Include="RailSTG\Reticle\Reticle.h">
       <Filter>RailSTG\Reticle</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Bullet\HomingMissile\HomingMissile.h">
+      <Filter>RailSTG\Bullet\HomingMissile</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

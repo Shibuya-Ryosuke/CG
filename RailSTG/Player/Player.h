@@ -7,7 +7,7 @@
 #include "../Reticle/Reticle.h"
 #include "../Enemy/BaseEnemy.h"
 
-class PlayerBullet;
+class BaseBullet;
 
 class Player : public BaseObject {
 public:
@@ -44,14 +44,15 @@ public:
 	void MainShot(const RyoEngine::Camera& camera);
 	void LockOnMode();
 	void UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
+	void ShootMissile(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
 
 	void OnCollision(){}
 
 	const RyoEngine::OBB& GetOBB() const { return obb_; }
-	const std::vector<std::unique_ptr<PlayerBullet>>& GetBullets() const {
+	const std::vector<std::unique_ptr<BaseBullet>>& GetBullets() const {
 		return bullets_;
 	}
-
+	
 	// NOTE: 以下3つはワールド座標を直接いじる旧来のセッター(デバッグ用途向けに残してある)。
 	//       Update()内でUpdateFollowTransform()がカメラ基準のオフセットから毎フレーム
 	//       ワールド座標を再計算して上書きするため、Update()呼び出し後は効果が消えてしまう点に注意。
@@ -95,7 +96,8 @@ private:
 	// レティクル
 	std::unique_ptr<Reticle> reticle_ = nullptr;
 	// 弾
-	std::vector<std::unique_ptr<PlayerBullet>> bullets_;
+	std::vector<std::unique_ptr<BaseBullet>> bullets_;
+
 	// 射撃間隔
 	float mainShotInterval_ = kMainShotInterval;
 

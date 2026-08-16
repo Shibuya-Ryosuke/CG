@@ -102,6 +102,7 @@
     <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />
     <ClCompile Include="RailSTG\Bullet\EnemyBullet\EnemyBullet.cpp" />
+    <ClCompile Include="RailSTG\Bullet\HomingMissile\HomingMissile.cpp" />
     <ClCompile Include="RailSTG\Bullet\PlayerBullet\PlayerBullet.cpp" />
     <ClCompile Include="RailSTG\Enemy\Mob\Mob.cpp" />
     <ClCompile Include="RailSTG\Player\Player.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="RailSTG\BaseObject\BaseObject.h" />
     <ClInclude Include="RailSTG\Bullet\BaseBullet.h" />
     <ClInclude Include="RailSTG\Bullet\EnemyBullet\EnemyBullet.h" />
+    <ClInclude Include="RailSTG\Bullet\HomingMissile\HomingMissile.h" />
     <ClInclude Include="RailSTG\Bullet\PlayerBullet\PlayerBullet.h" />
     <ClInclude Include="RailSTG\Enemy\BaseEnemy.h" />
     <ClInclude Include="RailSTG\Enemy\EnemyEnum.h" />
