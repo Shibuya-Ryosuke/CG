@@ -41,6 +41,8 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 		request_ = PlayerState::None;
 	}
 
+	// レティクル
+	reticle_->Update();
 
 	// 入力によるカメラ基準オフセットの更新
 	Move();
@@ -91,9 +93,6 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	ImGui::Text("specialAttack1 coolTime: (%.2f)", specialAttack1CoolTime);
 	ImGui::End();
 #endif
-
-	// レティクル
-	reticle_->Update();
 
 	// 死んだ弾を削除 (erase-removeイディオム)
 	bullets_.erase(

@@ -289,7 +289,7 @@ namespace RyoEngine {
 
 		result[2][0] = (src[13] * tmp[0] + src[14] * tmp[3] + src[15] * tmp[4]) -
 			(src[13] * tmp[1] + src[14] * tmp[2] + src[15] * tmp[5]);
-		result[2][1] = (src[12] * tmp[1] + src[14] * src[6] * src[3] + src[15] * tmp[9]) - // 補足：一部展開
+		result[2][1] = (src[12] * tmp[1] + src[14] * tmp[6] + src[15] * tmp[9]) -
 			(src[12] * tmp[0] + src[14] * tmp[7] + src[15] * tmp[8]);
 		result[2][2] = (src[12] * tmp[2] + src[13] * tmp[7] + src[15] * tmp[10]) -
 			(src[12] * tmp[3] + src[13] * tmp[6] + src[15] * tmp[11]);
@@ -299,7 +299,7 @@ namespace RyoEngine {
 		result[3][0] = (src[9] * tmp[1] + src[10] * tmp[2] + src[11] * tmp[5]) -
 			(src[9] * tmp[0] + src[10] * tmp[3] + src[11] * tmp[4]);
 		result[3][1] = (src[8] * tmp[0] + src[10] * tmp[7] + src[11] * tmp[8]) -
-			(src[8] * tmp[1] + src[10] * src[6] * src[3] + src[11] * tmp[9]);
+			(src[8] * tmp[1] + src[10] * tmp[6] + src[11] * tmp[9]);
 		result[3][2] = (src[8] * tmp[3] + src[9] * tmp[6] + src[11] * tmp[11]) -
 			(src[8] * tmp[2] + src[9] * tmp[7] + src[11] * tmp[10]);
 		result[3][3] = (src[8] * tmp[4] + src[9] * tmp[9] + src[10] * tmp[10]) -
