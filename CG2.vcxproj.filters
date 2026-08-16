@@ -82,6 +82,9 @@
     <Filter Include="RailSTG\Bullet\HomingMissile">
       <UniqueIdentifier>{02d44fd6-653c-46ac-a618-c430b6aac22f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\Particle">
+      <UniqueIdentifier>{fbe1fdc1-e526-408a-bbe8-db1bfbb70683}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -227,6 +230,9 @@
     </ClCompile>
     <ClCompile Include="RailSTG\Bullet\HomingMissile\HomingMissile.cpp">
       <Filter>RailSTG\Bullet\HomingMissile</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Particle\ParticleManager.cpp">
+      <Filter>RailSTG\Particle</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -430,6 +436,12 @@
     </ClInclude>
     <ClInclude Include="RailSTG\Bullet\HomingMissile\HomingMissile.h">
       <Filter>RailSTG\Bullet\HomingMissile</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Particle\Particle.h">
+      <Filter>RailSTG\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Particle\ParticleManager.h">
+      <Filter>RailSTG\Particle</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

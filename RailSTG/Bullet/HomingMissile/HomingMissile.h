@@ -23,6 +23,6 @@ public:
 
 private:
     BaseEnemy* targetEnemy_ = nullptr; // 追尾する敵のポインタ
-    float turnRate_ = 0.08f;           // 旋回性能（大回り具合）
+    float turnRate_ = 1.0f;           // 旋回性能（大回り具合）
     float speed_ = 60.0f;              // ミサイルの移動速度
 };

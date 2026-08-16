@@ -1,5 +1,6 @@
 #include "SceneManager.h"
 #include "Game.h"
+#include "../Particle/ParticleManager.h"
 
 using namespace RyoEngine;
 
@@ -39,6 +40,9 @@ void SceneManager::Initialize(Scene sceneState) {
     // 地面
     ground_ = Model::Create("resources/RailSTG/Ground/ground.obj");
     //ground_->SetScale({ 10.0f,10.0f,10.0f });
+    // 
+    // パーティクルマネージャー
+    ParticleManager::GetInstance().Initialize();
     // シーン（enum）
     scene_ = sceneState;
 
@@ -48,7 +52,7 @@ void SceneManager::Initialize(Scene sceneState) {
 }
 
 void SceneManager::Finalize() {
-
+    ParticleManager::GetInstance().Finalize();
 }
 
 void SceneManager::Update() {
@@ -57,6 +61,8 @@ void SceneManager::Update() {
 
     skydome_->Update(*activeCamera_);
     ground_->Update(*activeCamera_);
+
+    ParticleManager::GetInstance().Update(*activeCamera_);
 
     switch (scene_) {
     case Scene::Title:
@@ -78,6 +84,9 @@ void SceneManager::Update() {
 void SceneManager::Draw() {
     skydome_->Draw();
     ground_->Draw();
+
+    ParticleManager::GetInstance().Draw();
+
     switch (scene_) {
     case Scene::Title:
         break;

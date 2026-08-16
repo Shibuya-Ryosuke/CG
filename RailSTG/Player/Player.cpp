@@ -11,6 +11,7 @@
 #include "../Bullet/HomingMissile/HomingMissile.h"
 #include "../Input/InputManager.h"
 #include "../Time/TimeManager.h"
+#include "../Particle/ParticleManager.h"
 
 using namespace RyoEngine;
 
@@ -193,6 +194,23 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 			bullets_.push_back(std::move(bullet));
 
 			mainShotInterval_ = kMainShotInterval;
+
+			for (int i = 0; i < 4; ++i) {
+				// 銃口からフワッと広がるように、少しだけランダムな速度を混ぜる
+				RyoEngine::Vector3 particleVel = {
+					(rand() % 10 - 5) * 0.2f,
+					(rand() % 10 - 5) * 0.2f,
+					(rand() % 10 - 5) * 0.2f
+				};
+
+				ParticleManager::GetInstance().Emit(
+					model_->GetWorldPos(),                   // 発生位置（弾の現在地・発射位置）
+					particleVel,                // 飛び散る速度
+					1.0f,                      // 寿命（秒）
+					0.3f,                       // 大きさ（スケール）
+					{ 1.0f, 0.9f, 0.3f, 1.0f }  // 色（黄色・オレンジっぽい発射光）
+				);
+			}
 		}
 	}
 }

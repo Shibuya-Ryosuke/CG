@@ -274,29 +274,34 @@ namespace RyoEngine {
 
     void Model::InternalDraw(ModelCommon::DrawType drawType) {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        // メッシュごとにテクスチャ・マテリアル・PSOを切り替えながらドローコールを発行する
-        // (WVP・ライトはモデル全体で共有のため、メッシュ間で使い回す)
+        auto lightManager = LightManager::GetInstance(); // ループの外で取得
+        D3D12_GPU_VIRTUAL_ADDRESS lightGVA = lightManager->GetGPUVirtualAddress();
+
+        // 最後にセットしたPSOを保持しておき、変更時のみ切り替える（最適化）
+        ID3D12PipelineState* lastPSO = nullptr;
+
         for (const auto& mesh : meshes_) {
-            // UVを持たないメッシュは、呼び出し元が指定したdrawType(REAL/REFLECT)を
-            // 対応するNO_UV系(NO_UV/REFLECT_NO_UV)に読み替えてPSOを切り替える。
-            // ModelCommon::BeginDraw()側でも同じdrawTypeのPSOが一旦セットされているが、
-            // メッシュ単位で異なるPSOが必要になるため、ここで都度上書きする。
             ModelCommon::DrawType actualDrawType = drawType;
             if (!mesh.hasUV) {
                 actualDrawType = (drawType == ModelCommon::DrawType::REFLECT)
                     ? ModelCommon::DrawType::REFLECT_NO_UV
                     : ModelCommon::DrawType::NO_UV;
             }
-            commandList->SetPipelineState(ModelCommon::GetInstance()->GetPipelineState(actualDrawType));
 
+            ID3D12PipelineState* currentPSO = ModelCommon::GetInstance()->GetPipelineState(actualDrawType);
+            if (currentPSO != lastPSO) {
+                commandList->SetPipelineState(currentPSO);
+                lastPSO = currentPSO;
+            }
+
+            // SRV(テクスチャ)は DescriptorTable でセット
             commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(mesh.textureHandle));
 
             commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
             commandList->SetGraphicsRootConstantBufferView(0, mesh.materialResource->GetGPUVirtualAddress());
             commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
+            commandList->SetGraphicsRootConstantBufferView(3, lightGVA);
 
-            // ライトの定数バッファをセット (シーン共有のLightManagerが持つものを全モデルで参照する)
-            commandList->SetGraphicsRootConstantBufferView(3, LightManager::GetInstance()->GetGPUVirtualAddress());
             commandList->DrawInstanced(mesh.vertexCount, 1, 0, 0);
         }
     }
