@@ -121,6 +121,7 @@ void ParticleManager::Draw() {
 
         const Particle& p = particles_[i];
         ImGui::Text("position: (%.2f, %.2f, %.2f)", p.position.x, p.position.y, p.position.z);
+        ImGui::Text("particleColor: (%.2f,%.2f, %.2f, %.2f)", p.color.x, p.color.y, p.color.z, p.color.w);
     }
     ImGui::End();
 }

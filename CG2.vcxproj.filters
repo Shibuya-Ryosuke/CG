@@ -225,9 +225,6 @@
     <ClCompile Include="RailSTG\Reticle\Reticle.cpp">
       <Filter>RailSTG\Reticle</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Math\Math.cpp">
-      <Filter>Engine\ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="RailSTG\Bullet\HomingMissile\HomingMissile.cpp">
       <Filter>RailSTG\Bullet\HomingMissile</Filter>
     </ClCompile>
