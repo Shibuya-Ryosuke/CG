@@ -5,6 +5,7 @@
 #include "../BaseObject/BaseObject.h"
 #include "PlayerEnum.h"
 #include "../Reticle/Reticle.h"
+#include "../Enemy/BaseEnemy.h"
 
 class PlayerBullet;
 
@@ -26,7 +27,9 @@ public:
 	/// </summary>
 	void Finalize() override;
 
-	void Update(const RyoEngine::Camera& camera) override;
+	void Update(const RyoEngine::Camera& camera) override { (void)camera; };
+
+	void UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
 	void Draw() override;
 
 	/// <summary>
@@ -39,6 +42,8 @@ public:
 	/// メイン攻撃
 	/// </summary>
 	void MainShot(const RyoEngine::Camera& camera);
+	void LockOnMode();
+	void UpdateLockOn(const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
 
 	void OnCollision(){}
 

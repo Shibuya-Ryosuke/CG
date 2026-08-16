@@ -38,11 +38,6 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 		request_ = MobState::None;
 	}
 
-	if (lockOnRequest_ != LockOnState::None) {
-		lockOnState_ = lockOnRequest_;
-		lockOnRequest_ = LockOnState::None;
-	}
-
 	// 移動
 	Vector3 myT = model_->GetTranslate();
 	myT += velocity_ * TimeManager::GetDeltaTime();

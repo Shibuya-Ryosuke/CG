@@ -25,17 +25,17 @@ public:
 	bool IsDead() const { return isDead_; }
 	void SetIsDead(bool isDead) { isDead_ = isDead; }
 
-
-	void SetLockOnState(LockOnState state) { lockOnRequest_ = state; }
+	LockOnState GetLockOnState() { return lockOnState_; }
+	void SetLockOnState(LockOnState state) { lockOnState_ = state; }
 
 	void DrawLockOnEffect() {
 		switch (lockOnState_) {
 		case LockOnState::Hoverd:
-			RyoEngine::PrimitiveRenderer::DrawRect2D({ GetWorldPos().x,GetWorldPos().y }, { 20.0f,20.0f }, 0.0f, { 0.5f,0.8f,0.7f,0.7f }, RyoEngine::PrimitiveDrawMode::Fill);
+			RyoEngine::PrimitiveRenderer::DrawSphere(model_->GetWorldPos(), 1.0f, 16, { 0.0f,1.0f,0.0f,1.0f }, RyoEngine::PrimitiveDrawMode::Fill);
 			break;
 
 		case LockOnState::Locked:
-			RyoEngine::PrimitiveRenderer::DrawRect2D({ GetWorldPos().x,GetWorldPos().y }, { 20.0f,20.0f }, 0.0f, { 1.0f,0.0f,0.0f,1.0f }, RyoEngine::PrimitiveDrawMode::Fill);
+			RyoEngine::PrimitiveRenderer::DrawSphere(model_->GetWorldPos(), 1.0f, 16, { 1.0f,0.0f,0.0f,1.0f }, RyoEngine::PrimitiveDrawMode::Fill);
 			break;
 
 		case LockOnState::None:
@@ -56,5 +56,4 @@ protected:
 
 	// ロックオンステート
 	LockOnState lockOnState_ = LockOnState::None;
-	LockOnState lockOnRequest_ = LockOnState::None;
 };

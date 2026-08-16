@@ -97,6 +97,7 @@
     <ClCompile Include="Original\Light\LightManager.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
     <ClCompile Include="Original\Math\Collision.cpp" />
+    <ClCompile Include="Original\Math\Math.cpp" />
     <ClCompile Include="Original\Mesh\Mesh.cpp" />
     <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />

@@ -35,7 +35,7 @@ void TimeManager::Update() {
 		break;
 
 	case TimeState::Targeting:
-		GetInstance().timeScale_ = 0.1f;
+		GetInstance().timeScale_ = 0.025f;
 		break;
 	}
 

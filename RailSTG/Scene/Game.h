@@ -7,6 +7,7 @@ namespace RyoEngine {
 }
 
 class Player;
+class BaseEnemy;
 class Mob;
 class Reticle;
 
@@ -42,15 +43,17 @@ public:
 	void CheckAllCollision();
 
 private:
-	int32_t kMobSpawnTimer_ = 300;
+	float kMobSpawnTimer_ = 5.0f;
 private:
 	// プレイヤー
 	std::unique_ptr<Player> player_ = nullptr;
 	// レティクル
 	std::unique_ptr<Reticle> reticle_ = nullptr;
 	// モブ
-	std::vector<std::unique_ptr<Mob>> mobs_;
+	std::vector<Mob*> mobs_;
+	// 敵全体
+	std::vector<std::unique_ptr<BaseEnemy>> enemies_;
 	// スポーン時間
-	int32_t mobSpawnTimer_ = kMobSpawnTimer_;
+	float mobSpawnTimer_ = kMobSpawnTimer_;
 
 };

@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cassert>
 namespace RyoEngine {
+
 	/// operator
 //=================================================================================================
 
@@ -120,9 +121,6 @@ namespace RyoEngine {
 	inline Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
 		return v1 * (1.0f - t) + v2 * t;
 	}
-
-
-
 
 
 	// matrix
@@ -729,6 +727,22 @@ namespace RyoEngine {
 		result.m[3][3] = 1.0f;
 
 		return result;
+	}
+
+	// vector2
+	inline Vector2 WorldToScreen(const Vector3& worldPos, const Matrix4x4 view, Matrix4x4 projection, float screenWidth, float screenHeight) {
+		// 1. ビュー行列とプロジェクション行列を取得
+		Matrix4x4 matViewProj = view * projection;
+
+		// 2. 3D座標にVP行列を掛ける（同次座標系）
+		Vector3 ndc = TransformVector3(worldPos, matViewProj);
+
+		// 5. スクリーン座標（ピクセル単位：例 0〜1280, 0〜720）に変換
+		// ※ 画面中央が(0,0)か、左上が(0,0)かによって計算が少し変わります
+		float screenX = (ndc.x + 1.0f) * 0.5f * screenWidth;
+		float screenY = (1.0f - ndc.y) * 0.5f * screenHeight; // Y軸は上下反転することが多い
+
+		return { screenX, screenY };
 	}
 	//=================================================================================================
 }

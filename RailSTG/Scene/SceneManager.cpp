@@ -10,7 +10,7 @@ void SceneManager::Initialize(Scene sceneState) {
     // ゲームカメラ(レール自動移動カメラ)
     camera_ = std::make_unique<RailCameraController>();
     camera_->Initialize();
-    camera_->SetActive(true);
+    camera_->SetActive(false);
 
     // 軌道のウェイポイント(仮の値。旧来のSetTranslateY(153.0f)/SetTranslateZ(-25.0f)相当の
     // 開始位置を先頭に置いてある。実際のステージレイアウトに合わせて後で調整する)

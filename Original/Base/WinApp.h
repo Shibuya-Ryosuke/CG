@@ -28,7 +28,7 @@ namespace RyoEngine {
 
 
 		// ゲッター
-		HWND GetHwnd() const { return hwnd_; };
+		HWND GetHwnd() const { return hwnd_; }
 		HINSTANCE GetHInstance() const { return wc_.hInstance; };
 
 	private:

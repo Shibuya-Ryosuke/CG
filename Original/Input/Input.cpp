@@ -65,6 +65,8 @@ namespace RyoEngine {
 		}
 
 		// ----- マウス -----
+		// 前フレーム状態
+		instance->preMouseState_ = instance->mouseState_;
 		// デバイス取得
 		HRESULT hrM = instance->mouse_->Poll();
 		if (FAILED(hrM)) {

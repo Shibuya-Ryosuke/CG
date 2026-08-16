@@ -6,6 +6,9 @@
 #include <Xinput.h>
 #include <cmath>
 
+#include "../Base/WinApp.h"
+#include "../Math/Math.h"
+
 #pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"xinput.lib")
@@ -32,6 +35,13 @@ namespace RyoEngine {
         static bool IsMousePush(int buttonNumber) {
             return GetInstance()->mouseState_.rgbButtons[buttonNumber] & 0x80;
         }
+        static bool IsMouseTrigger(int buttonNumber) {
+            Input* instance = GetInstance();
+            bool current = instance->mouseState_.rgbButtons[buttonNumber] & 0x80;
+            bool previous = instance->preMouseState_.rgbButtons[buttonNumber] & 0x80;
+
+            return current && !previous;
+        }
 
         static long GetMouseRelX() {
             return GetInstance()->mouseState_.lX;
@@ -43,6 +53,16 @@ namespace RyoEngine {
 
         static long GetMouseWheel() {
             return GetInstance()->mouseState_.lZ;
+        }
+
+        static Vector2 GetMouseScreenPos() {
+            POINT cursolPos;
+            GetCursorPos(&cursolPos);
+
+            HWND hwnd = WinApp::GetInstance()->GetHwnd();
+            ScreenToClient(hwnd, &cursolPos);
+
+            return { static_cast<float>(cursolPos.x),static_cast<float>(cursolPos.y) };
         }
 
         // --- コントローラー (ボタン) ---
@@ -99,6 +119,7 @@ namespace RyoEngine {
 
 		Microsoft::WRL::ComPtr<IDirectInputDevice8> mouse_;
 		DIMOUSESTATE mouseState_ = {};
+        DIMOUSESTATE preMouseState_ = {};
 
 		XINPUT_STATE joyState_ = {};
 		XINPUT_STATE joyStatePrevious_ = {};

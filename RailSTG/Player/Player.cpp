@@ -31,7 +31,7 @@ void Player::Initialize() {
 void Player::Finalize() {
 }
 
-void Player::Update(const RyoEngine::Camera& camera) {
+void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies) {
 	// リクエストを反映
 	if (request_ != PlayerState::None) {
 		state_ = request_;
@@ -55,9 +55,11 @@ void Player::Update(const RyoEngine::Camera& camera) {
 	switch (state_) {
 	case PlayerState::Standard:
 		MainShot(camera);
+		LockOnMode();
 		break;
 
 	case PlayerState::SpecialAttack1:
+		UpdateLockOn(enemies);
 		break;
 
 	case PlayerState::SpecialAttack2:
@@ -80,6 +82,17 @@ void Player::Update(const RyoEngine::Camera& camera) {
 	obb_.orientations[2] = model_->GetOrientationZ();
 	obb_.size = { 1.0f,1.0f,1.0f };
 	
+#ifdef _DEBUG
+	ImGui::Begin("player");
+	Vector3 t = model_->GetTranslate();
+	ImGui::Text("translate: (%.2f, %.2f, %.2f)", t.x, t.y, t.z);
+	ImGui::NewLine();
+
+	ImGui::Text("request: ( %d )", request_);
+	ImGui::Text("state: ( %d )", state_);
+	ImGui::End();
+#endif
+
 	// レティクル
 	reticle_->Update(camera, model_->GetWorldPos());
 
@@ -93,8 +106,8 @@ void Player::Update(const RyoEngine::Camera& camera) {
 #ifdef _DEBUG
 		// 表示
 		if (ImGui::TreeNodeEx("bullet", ImGuiTreeNodeFlags_DefaultOpen)) {
-			Vector3 t = bullet->GetTranslate();
-			ImGui::Text("translate: (%.2f, %.2f, %.2f)", t.x, t.y, t.z);
+			Vector3 bulletT = bullet->GetTranslate();
+			ImGui::Text("translate: (%.2f, %.2f, %.2f)", bulletT.x, bulletT.y, bulletT.z);
 			ImGui::TreePop();
 		}
 #endif
@@ -111,10 +124,16 @@ void Player::Draw() {
 	}
 
 	// レティクル
-	reticle_->Draw();
+	if (state_ == PlayerState::Standard) {
+		reticle_->Draw();
+	}
 
 	// 自身
 	model_->Draw();
+
+	if (state_ == PlayerState::SpecialAttack1) {
+		PrimitiveRenderer::DrawRect2D({ 640.0f,360.0f }, { 1280.0f,720.0f }, 0.0f, { 0.0f,0.0f,0.0f,0.6f }, PrimitiveDrawMode::Fill);
+	}
 }
 
 void Player::Move() {
@@ -181,6 +200,88 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 			bullets_.push_back(std::move(bullet));
 
 			mainShotInterval_ = kMainShotInterval;
+		}
+	}
+}
+
+void Player::LockOnMode() {
+	if (Input::IsMousePush(1)) {
+		request_ = PlayerState::SpecialAttack1;
+		TimeManager::SetTimeState(TimeState::Targeting);
+	}
+}
+
+void Player::UpdateLockOn(const std::vector<std::unique_ptr<BaseEnemy>>& enemies) {
+
+	// 再度右クリックで解除
+	if (Input::IsMouseTrigger(1)) {
+		request_ = PlayerState::Standard;
+		// 全敵の状ロックオン状態を解除
+		for (auto& enemy : enemies) {
+			enemy->SetLockOnState(LockOnState::None);
+		}
+		return;
+	}
+
+	// レティクル座標
+	Vector3 reticlePos = reticle_->GetWorldPos();
+
+	// 1. まず、毎フレームの開始時に全敵の「Hoverd」を一旦「None」に戻す（Lockedは維持）
+	for (auto& enemy : enemies) {
+		if (enemy->GetLockOnState() == LockOnState::Hoverd) {
+			enemy->SetLockOnState(LockOnState::None);
+		}
+	}
+
+	// 2. レティクルに最も近い敵を1体だけ探して Hoverd にする
+	BaseEnemy* closestEnemy = nullptr;
+	float minDistance = 100.0f; // ホバー判定の距離しきい値
+
+	for (auto& enemy : enemies) {
+		if (enemy->GetLockOnState() == LockOnState::Locked) continue; // 確定済みは除外
+
+		float distance = Length(enemy->GetWorldPos() - reticlePos);
+		if (distance < minDistance) {
+			minDistance = distance;
+			closestEnemy = enemy.get();
+		}
+	}
+
+	if (closestEnemy) {
+		closestEnemy->SetLockOnState(LockOnState::Hoverd);
+	}
+
+	// 3. クリックされた瞬間（最大2体までの制限付き）
+	if (Input::IsMouseTrigger(0)) {
+		for (auto& enemy : enemies) {
+			// ホバー中の敵をクリックした場合Lockedへ
+			if (enemy->GetLockOnState() == LockOnState::Hoverd) {
+
+				// 現在すでにLockedになっている敵の数をその場で数える
+				int lockedCount = 0;
+				for (auto& e : enemies) {
+					if (e->GetLockOnState() == LockOnState::Locked) {
+						lockedCount++;
+					}
+				}
+
+				// ロックオンの数が上限に行っていたら時間とプレイヤーを元に戻す
+				if (lockedCount >= 2) {
+					TimeManager::SetTimeState(TimeState::Default);
+					request_ = PlayerState::Standard;
+					return;
+				}
+
+				// 新しい敵をロックオン確定にする
+				enemy->SetLockOnState(LockOnState::Locked);
+				break;
+			}
+			// Lockedの敵をもう一度クリックしたら解除
+			else if (enemy->GetLockOnState() == LockOnState::Locked && Length(enemy->GetWorldPos() - reticlePos) < minDistance) {
+				// レティクルが重なっているLockedの敵をクリックしたら解除
+				enemy->SetLockOnState(LockOnState::None);
+				break;
+			}
 		}
 	}
 }
