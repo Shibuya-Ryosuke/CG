@@ -122,24 +122,11 @@ namespace RyoEngine {
         HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
         assert(SUCCEEDED(hr));
 
-        // ミニマップの作成
         DirectX::ScratchImage mipImages{};
-        // 画像の幅か高さが1ピクセルなら、ミップマップを作らずに元の画像をそのまま使う
-        if (image.GetMetadata().width == 1 || image.GetMetadata().height == 1) {
-            // moveで中身をそのまま移動させる
-            mipImages = std::move(image);
-        } else {
-            // 2x2以上の通常画像ならミップマップを生成する
-            hr = DirectX::GenerateMipMaps(
-                image.GetImages(),
-                image.GetImageCount(),
-                image.GetMetadata(),
-                DirectX::TEX_FILTER_SRGB,
-                0,
-                mipImages
-            );
-            assert(SUCCEEDED(hr));
-        }
+        mipImages = std::move(image);
+
+        auto fmt = mipImages.GetMetadata().format;
+        Logger::Log(std::format("TexManager: format={}, HasAlpha={}\n", static_cast<int>(fmt), DirectX::HasAlpha(fmt)));
 
         // ミップマップ付きのデータを返す
         return mipImages;

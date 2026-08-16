@@ -60,6 +60,16 @@ namespace RyoEngine {
         }
     }
 
+    void Model::SetEnableLighting(bool enableLighting, int32_t meshIndex) {
+        if (meshIndex < 0) {
+            for (auto& mesh : meshes_) {
+                mesh.materialData->enableLighting = enableLighting;
+            }
+        } else {
+            meshes_[meshIndex].materialData->enableLighting = enableLighting;
+        }
+    }
+
     void Model::SetColor(const Vector4& color, int32_t meshIndex) {
         if (meshIndex < 0) {
             for (auto& mesh : meshes_) {
@@ -272,10 +282,14 @@ namespace RyoEngine {
         CreateDirectionalLight();
     }
 
-    void Model::InternalDraw(ModelCommon::DrawType drawType) {
+    void Model::InternalDraw(ModelCommon::DrawType drawType, D3D12_GPU_VIRTUAL_ADDRESS externalWVP) {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
         auto lightManager = LightManager::GetInstance(); // ループの外で取得
         D3D12_GPU_VIRTUAL_ADDRESS lightGVA = lightManager->GetGPUVirtualAddress();
+
+        // externalWVPが指定されていれば(パーティクル等の外部インスタンスバッファ)そちらを優先し、
+        // 指定が無ければ従来通りモデル自身が持つ1個のwvpResource_を使う
+        D3D12_GPU_VIRTUAL_ADDRESS wvpGVA = (externalWVP != 0) ? externalWVP : wvpResource_->GetGPUVirtualAddress();
 
         // 最後にセットしたPSOを保持しておき、変更時のみ切り替える（最適化）
         ID3D12PipelineState* lastPSO = nullptr;
@@ -299,11 +313,17 @@ namespace RyoEngine {
 
             commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
             commandList->SetGraphicsRootConstantBufferView(0, mesh.materialResource->GetGPUVirtualAddress());
-            commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
+            commandList->SetGraphicsRootConstantBufferView(1, wvpGVA);
             commandList->SetGraphicsRootConstantBufferView(3, lightGVA);
 
             commandList->DrawInstanced(mesh.vertexCount, 1, 0, 0);
         }
+    }
+
+    void Model::DrawInstance(D3D12_GPU_VIRTUAL_ADDRESS externalWVP, ModelCommon::DrawType drawType) {
+        ModelCommon::GetInstance()->SetDrawCommands([this, externalWVP, drawType]() {
+            InternalDraw(drawType, externalWVP);
+        });
     }
 
     void Model::Update(const Camera& camera) {

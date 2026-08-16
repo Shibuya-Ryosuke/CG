@@ -59,6 +59,17 @@ namespace RyoEngine {
         void Draw(ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL);
 
         /// <summary>
+        /// パーティクルなど、同じモデルを大量に・独立した位置で描画したい場合に使う。
+        /// 呼び出し側が用意した「1インスタンス分のTransformationMatrix(World/WVP)」が
+        /// 書き込まれたバッファのGPUアドレスを渡して描画する。
+        /// このモデル自身が持つwvpResource_は使わないため、何回呼んでも互いのデータを
+        /// 上書きし合わない(＝Update()を毎回呼んでも最後の1個しか描画されない問題を回避できる)。
+        /// </summary>
+        /// <param name="externalWVP">1インスタンス分のTransformationMatrixが書き込まれたCBのGPU仮想アドレス</param>
+        /// <param name="drawType">通常描画(REAL)か反射描画(REFLECT)か</param>
+        void DrawInstance(D3D12_GPU_VIRTUAL_ADDRESS externalWVP, ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL);
+
+        /// <summary>
         /// モデルの作成
         /// </summary>
         /// <param name="filePath">objまでのファイルパス</param>
@@ -201,6 +212,7 @@ namespace RyoEngine {
         /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
         void SetLambert(const ShadingMode lambertMode, int32_t meshIndex = -1);
 
+        void SetEnableLighting(bool enableLighting, int32_t meshIndex = -1);
         /// <summary>
         /// テクスチャの指定 (ハンドル)
         /// </summary>
@@ -272,7 +284,7 @@ namespace RyoEngine {
     private:
         // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）
         void InternalInitialize(const ModelLoader::ModelData& modelData);
-        void InternalDraw(ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL);
+        void InternalDraw(ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL, D3D12_GPU_VIRTUAL_ADDRESS externalWVP = 0);
         // 指定メッシュのuvScale/uvRotate/uvTranslateから、materialData->uvTransformを再計算して書き込む
         void UpdateUVTransform(MeshResource& mesh);
 
