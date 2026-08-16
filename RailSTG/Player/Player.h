@@ -86,6 +86,10 @@ private:
 	// 画面端ぎりぎりに張り付かないようにするための余白(ワールド単位)
 	float kClampMargin = 0.5f;
 
+
+	float kSpecialAttack1CoolTime = 4.0f;
+	float kSpecialAttack1CanceledCoolTime = 0.8f;
+
 private:
 
 	// レティクル
@@ -124,4 +128,7 @@ private:
 	// カメラのローカル空間(Right方向・Up方向)での自機のオフセット
 	float offsetX_ = 0.0f;
 	float offsetY_ = 0.0f;
+
+	// スペシャル攻撃１（ロックオンミサイル）クールタイム
+	float specialAttack1CoolTime = kSpecialAttack1CoolTime;
 };

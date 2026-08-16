@@ -90,11 +90,14 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 
 	ImGui::Text("request: ( %d )", request_);
 	ImGui::Text("state: ( %d )", state_);
+	ImGui::NewLine();
+
+	ImGui::Text("specialAttack1 coolTime: (%.2f)", specialAttack1CoolTime);
 	ImGui::End();
 #endif
 
 	// レティクル
-	reticle_->Update(camera, model_->GetWorldPos());
+	reticle_->Update();
 
 	// 弾の更新
 #ifdef _DEBUG
@@ -191,8 +194,11 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 
 			Vector3 position = model_->GetTranslate();
 
-			// カメラのForwardではなく、自機位置からレティクル位置へ向かうベクトルを使う
-			Vector3 direction = reticle_->GetAimDirection(camera, position);
+			// 1. 2Dレティクルの現在位置を取得 (例: reticle_->GetPosition())
+			Vector2 reticlePos = reticle_->GetPosition();
+
+			// 2. 2Dレティクル位置から、3D空間に向かう発射方向を逆算する
+			Vector3 direction = GetWorldDirectionFromScreen(reticlePos, camera.GetViewMatrix(), camera.GetProjectionMatrix());
 
 			bullet->SetTranslate(position);
 			bullet->SetVelocity(direction * kBulletSpeed);
@@ -205,18 +211,26 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 }
 
 void Player::LockOnMode() {
-	if (Input::IsMousePush(1)) {
-		request_ = PlayerState::SpecialAttack1;
-		TimeManager::SetTimeState(TimeState::Targeting);
+	if (specialAttack1CoolTime > 0.0f) {
+		specialAttack1CoolTime -= TimeManager::GetDeltaTime();
+	} else {
+		if (Input::IsMousePush(1)) {
+			request_ = PlayerState::SpecialAttack1;
+			TimeManager::SetTimeState(TimeState::Targeting);
+		}
 	}
 }
 
 void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies) {
 
 	// 再度右クリックで解除
-	if (Input::IsMouseTrigger(2)) {
+	if (Input::IsMouseTrigger(1)) {
+		// プレイヤーと時間を通常へ
 		request_ = PlayerState::Standard;
 		TimeManager::SetTimeState(TimeState::Default);
+		// キャンセル時のクールタイムを代入
+		specialAttack1CoolTime = kSpecialAttack1CanceledCoolTime;
+
 		// 全敵の状ロックオン状態を解除
 		for (auto& enemy : enemies) {
 			enemy->SetLockOnState(LockOnState::None);
@@ -281,8 +295,12 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 
 				// すでに2体に達していたらロックオンモードを終了
 				if (lockedCount >= 2) {
+					// プレイヤーと時間を通常へ
 					TimeManager::SetTimeState(TimeState::Default);
 					request_ = PlayerState::Standard;
+
+					// スペシャル攻撃１のクールタイムを代入
+					specialAttack1CoolTime = kSpecialAttack1CoolTime;
 					return;
 				}
 				break;
