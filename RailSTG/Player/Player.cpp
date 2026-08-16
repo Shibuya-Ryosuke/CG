@@ -103,6 +103,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 
 	// 弾の更新
 	ImGui::Begin("playerBullet");
+	ImGui::Text("count: %d", static_cast<int>(bullets_.size()));
 	for (auto& bullet : bullets_) {
 		bullet->Update(camera);
 		ImGui::Text("b translate: (%.2f, %.2f, %.2f)", bullet->GetTranslate().x, bullet->GetTranslate().y, bullet->GetTranslate().z);
