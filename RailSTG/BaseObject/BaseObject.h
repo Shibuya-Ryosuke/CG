@@ -31,6 +31,7 @@ public:
 	/// </summary>
 	virtual void Draw() = 0;
 
+
 	RyoEngine::Vector3 GetWorldPos() const { return model_->GetWorldPos(); }
 
 

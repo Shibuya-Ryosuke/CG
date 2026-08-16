@@ -40,6 +40,7 @@ public:
 	/// </summary>
 	/// <param name="translate">座標</param>
 	void SetTranslate(const RyoEngine::Vector3& translate) { model_->SetTranslate(translate); }
+	void SetRotate(const RyoEngine::Vector3& rotate) { model_->SetRotate(rotate); }
 	/// <summary>
 	/// 速度
 	/// </summary>
@@ -56,6 +57,17 @@ public:
 	/// </summary>
 	/// <param name="dead"></param>
 	void SetIsDead(bool dead) { isDead_ = dead; }
+
+
+	// 方向ベクトルから、その方向を向くオイラー角(X:ピッチ, Y:ヨー, Z:0)を求める
+	inline void DirectionToRotate(const RyoEngine::Vector3& direction) {
+		RyoEngine::Vector3 rotate{};
+		float horizontalLength = std::sqrtf(direction.x * direction.x + direction.z * direction.z);
+		rotate.y = atan2f(direction.x, direction.z);
+		rotate.x = atan2f(-direction.y, horizontalLength);
+		rotate.z = 0.0f;
+		model_->SetRotate(rotate);
+	}
 
 protected:
 	// 寿命(秒)

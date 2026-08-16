@@ -190,11 +190,17 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 			// 2. 2Dレティクル位置から、3D空間に向かう発射方向を逆算する
 			Vector3 direction = GetWorldDirectionFromScreen(reticlePos, camera.GetViewMatrix(), camera.GetProjectionMatrix());
 
+			// 進行方向へ向かせる
+			bullet->DirectionToRotate(direction);
+			// 位置のセット
 			bullet->SetTranslate(position);
+			// ベクトルのセット
 			bullet->SetVelocity(direction * kBulletSpeed);
 
+			// リストへの追加
 			bullets_.push_back(std::move(bullet));
 
+			// 発射感覚のリセット
 			mainShotInterval_ = kMainShotInterval;
 
 			for (int i = 0; i < 4; ++i) {
@@ -221,6 +227,7 @@ void Player::LockOnMode() {
 	if (specialAttack1CoolTime > 0.0f) {
 		specialAttack1CoolTime -= TimeManager::GetDeltaTime();
 	} else {
+		// 右クリックでロックオンモードへ
 		if (Input::IsMousePush(1)) {
 			request_ = PlayerState::SpecialAttack1;
 			TimeManager::SetTimeState(TimeState::Targeting);
@@ -238,32 +245,31 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 		// キャンセル時のクールタイムを代入
 		specialAttack1CoolTime = kSpecialAttack1CanceledCoolTime;
 
-		// 全敵の状ロックオン状態を解除
+		// 全敵のロックオン状態を解除
 		for (auto& enemy : enemies) {
 			enemy->SetLockOnState(LockOnState::None);
 		}
 		return;
 	}
 
-	// 1. マウスの現在位置を画面の2D座標として取得する
-	// （※お使いのInputクラスやWin32APIからマウス座標を取る関数に置き換えてください）
+	// マウスの現在位置を画面の2D座標として取得
 	Vector2 mousePos = Input::GetMouseScreenPos();
 
-	// 2. まず、毎フレームの開始時に全敵の「Hoverd」を一旦「None」に戻す（Lockedは維持）
+	// 毎フレームの開始時に全敵のHoverdをNoneに戻す（Lockedは維持）
 	for (auto& enemy : enemies) {
 		if (enemy->GetLockOnState() == LockOnState::Hoverd) {
 			enemy->SetLockOnState(LockOnState::None);
 		}
 	}
 
-	// 3. マウスカーソルに最も近い敵を1体だけ探して Hoverd にする
+	// マウスカーソルに最も近い敵を1体だけ探してHoverdheへ
 	BaseEnemy* closestEnemy = nullptr;
-	float minPixelDistance = 60.0f; // ホバー判定の許容ピクセル範囲（例: 半径60ピクセル以内）
+	float minPixelDistance = 60.0f; // ホバー判定の許容ピクセル範囲
 	
 	for (auto& enemy : enemies) {
 		if (enemy->GetLockOnState() == LockOnState::Locked) continue; // 確定済みは除外
 
-		// 3Dの敵座標を、画面上の2Dピクセル座標に変換する
+		// 3Dの敵座標を画面上の2Dピクセル座標に変換する
 		Vector2 enemyScreenPos = WorldToScreen(enemy->GetWorldPos(), camera.GetViewMatrix(), camera.GetProjectionMatrix());
 		
 		// 画面外（カメラの後ろなど）にいる場合はスキップ
@@ -329,7 +335,7 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 }
 
 void Player::ShootMissile(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies) {
-	// 1. ロックオンされている敵を全員集める
+	// ロックオンされている敵をまとめる
 	std::vector<BaseEnemy*> lockedEnemies;
 	for (auto& enemy : enemies) {
 		if (enemy->GetLockOnState() == LockOnState::Locked) {
@@ -337,7 +343,7 @@ void Player::ShootMissile(const RyoEngine::Camera& camera, const std::vector<std
 		}
 	}
 
-	// 2. ロックオンしている敵が1体以上いれば、ミサイルを発射する！
+	// ロックオンしている敵が1体以上いればミサイルを発射する
 	if (!lockedEnemies.empty()) {
 		Vector3 playerPos = model_->GetTranslate();
 		Vector3 rightDir = camera.GetRight(); // カメラの右方向ベクトル
