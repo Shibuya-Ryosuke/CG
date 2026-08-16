@@ -59,7 +59,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 		break;
 
 	case PlayerState::SpecialAttack1:
-		UpdateLockOn(enemies);
+		UpdateLockOn(camera, enemies);
 		break;
 
 	case PlayerState::SpecialAttack2:
@@ -211,11 +211,12 @@ void Player::LockOnMode() {
 	}
 }
 
-void Player::UpdateLockOn(const std::vector<std::unique_ptr<BaseEnemy>>& enemies) {
+void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies) {
 
 	// 再度右クリックで解除
-	if (Input::IsMouseTrigger(1)) {
+	if (Input::IsMouseTrigger(2)) {
 		request_ = PlayerState::Standard;
+		TimeManager::SetTimeState(TimeState::Default);
 		// 全敵の状ロックオン状態を解除
 		for (auto& enemy : enemies) {
 			enemy->SetLockOnState(LockOnState::None);
@@ -223,41 +224,54 @@ void Player::UpdateLockOn(const std::vector<std::unique_ptr<BaseEnemy>>& enemies
 		return;
 	}
 
-	// レティクル座標
-	Vector3 reticlePos = reticle_->GetWorldPos();
+	// 1. マウスの現在位置を画面の2D座標として取得する
+	// （※お使いのInputクラスやWin32APIからマウス座標を取る関数に置き換えてください）
+	Vector2 mousePos = Input::GetMouseScreenPos();
 
-	// 1. まず、毎フレームの開始時に全敵の「Hoverd」を一旦「None」に戻す（Lockedは維持）
+	// 2. まず、毎フレームの開始時に全敵の「Hoverd」を一旦「None」に戻す（Lockedは維持）
 	for (auto& enemy : enemies) {
 		if (enemy->GetLockOnState() == LockOnState::Hoverd) {
 			enemy->SetLockOnState(LockOnState::None);
 		}
 	}
 
-	// 2. レティクルに最も近い敵を1体だけ探して Hoverd にする
+	// 3. マウスカーソルに最も近い敵を1体だけ探して Hoverd にする
 	BaseEnemy* closestEnemy = nullptr;
-	float minDistance = 100.0f; // ホバー判定の距離しきい値
-
+	float minPixelDistance = 60.0f; // ホバー判定の許容ピクセル範囲（例: 半径60ピクセル以内）
+	
 	for (auto& enemy : enemies) {
 		if (enemy->GetLockOnState() == LockOnState::Locked) continue; // 確定済みは除外
 
-		float distance = Length(enemy->GetWorldPos() - reticlePos);
-		if (distance < minDistance) {
-			minDistance = distance;
+		// 3Dの敵座標を、画面上の2Dピクセル座標に変換する
+		Vector2 enemyScreenPos = WorldToScreen(enemy->GetWorldPos(), camera.GetViewMatrix(), camera.GetProjectionMatrix());
+		
+		// 画面外（カメラの後ろなど）にいる場合はスキップ
+		if (enemyScreenPos.x < 0.0f || enemyScreenPos.y < 0.0f) continue;
+
+		// マウス座標とのピクセル単位の距離を計算
+		float distance = Length(enemyScreenPos - mousePos);
+
+		if (distance < minPixelDistance) {
+			minPixelDistance = distance;
 			closestEnemy = enemy.get();
 		}
 	}
 
+	// 一番近い敵をHoverdに
 	if (closestEnemy) {
 		closestEnemy->SetLockOnState(LockOnState::Hoverd);
 	}
-
-	// 3. クリックされた瞬間（最大2体までの制限付き）
+	
+	
+	// クリックされた瞬間（最大2体まで）
 	if (Input::IsMouseTrigger(0)) {
 		for (auto& enemy : enemies) {
-			// ホバー中の敵をクリックした場合Lockedへ
+			// ホバー中の敵をクリックした場合
 			if (enemy->GetLockOnState() == LockOnState::Hoverd) {
+				// ロックオン状態へ
+				enemy->SetLockOnState(LockOnState::Locked);
 
-				// 現在すでにLockedになっている敵の数をその場で数える
+				// 現在すでにLockedになっている敵の数を数える
 				int lockedCount = 0;
 				for (auto& e : enemies) {
 					if (e->GetLockOnState() == LockOnState::Locked) {
@@ -265,23 +279,24 @@ void Player::UpdateLockOn(const std::vector<std::unique_ptr<BaseEnemy>>& enemies
 					}
 				}
 
-				// ロックオンの数が上限に行っていたら時間とプレイヤーを元に戻す
+				// すでに2体に達していたらロックオンモードを終了
 				if (lockedCount >= 2) {
 					TimeManager::SetTimeState(TimeState::Default);
 					request_ = PlayerState::Standard;
 					return;
 				}
-
-				// 新しい敵をロックオン確定にする
-				enemy->SetLockOnState(LockOnState::Locked);
 				break;
 			}
-			// Lockedの敵をもう一度クリックしたら解除
-			else if (enemy->GetLockOnState() == LockOnState::Locked && Length(enemy->GetWorldPos() - reticlePos) < minDistance) {
-				// レティクルが重なっているLockedの敵をクリックしたら解除
-				enemy->SetLockOnState(LockOnState::None);
-				break;
+			// すでにLockedの敵をクリックして重なっていたら解除する
+			else if (enemy->GetLockOnState() == LockOnState::Locked) {
+				Vector2 enemyScreenPos = WorldToScreen(enemy->GetWorldPos(), camera.GetViewMatrix(), camera.GetProjectionMatrix());
+				
+				if (Length(enemyScreenPos - mousePos) < minPixelDistance) {
+					enemy->SetLockOnState(LockOnState::None);
+					break;
+				}
 			}
 		}
 	}
+	
 }

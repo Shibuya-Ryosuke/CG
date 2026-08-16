@@ -121,7 +121,7 @@ void SceneManager::UpdateCamera() {
     activeCamera_->Update();
 #else
     // リリース時はゲームカメラで固定
-    activeCamera_ = camera_.get();
+    activeCamera_ = debugCamera_.get();
     activeCamera_->Update();
 #endif
     // 即時描画のカメラ指定

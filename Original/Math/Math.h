@@ -39,8 +39,6 @@ namespace RyoEngine {
 
 	/// function
 	//=================================================================================================
-	// vector
-	// 3
 
 	/// 内積
 	inline float Dot(const Vector3& v1, const Vector3& v2) {
@@ -50,6 +48,9 @@ namespace RyoEngine {
 		return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 	}
 	/// 長さ(ノルム)
+	inline float Length(const Vector2& v) {
+		return std::sqrtf(v.x * v.x + v.y * v.y);
+	}
 	inline float Length(const Vector3& v) {
 		return std::sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 	}
@@ -730,7 +731,7 @@ namespace RyoEngine {
 	}
 
 	// vector2
-	inline Vector2 WorldToScreen(const Vector3& worldPos, const Matrix4x4 view, Matrix4x4 projection, float screenWidth, float screenHeight) {
+	inline Vector2 WorldToScreen(const Vector3& worldPos, const Matrix4x4 view, Matrix4x4 projection, float screenWidth = 1280.0f, float screenHeight = 720.0f) {
 		// 1. ビュー行列とプロジェクション行列を取得
 		Matrix4x4 matViewProj = view * projection;
 

@@ -43,7 +43,7 @@ public:
 	void CheckAllCollision();
 
 private:
-	float kMobSpawnTimer_ = 5.0f;
+	float kMobSpawnTimer_ = 3.0f;
 private:
 	// プレイヤー
 	std::unique_ptr<Player> player_ = nullptr;

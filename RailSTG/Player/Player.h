@@ -43,7 +43,7 @@ public:
 	/// </summary>
 	void MainShot(const RyoEngine::Camera& camera);
 	void LockOnMode();
-	void UpdateLockOn(const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
+	void UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
 
 	void OnCollision(){}
 
