@@ -1,5 +1,6 @@
 #include "PlayerBullet.h"
 #include "../../Time/TimeManager.h"
+#include "../../GameMath/GameMath.h"
 
 using namespace RyoEngine;
 
@@ -31,11 +32,7 @@ void PlayerBullet::Update(const RyoEngine::Camera& camera) {
 	model_->Update(camera);
 
 	// obb
-	obb_.center = model_->GetWorldPos();
-	obb_.orientations[0] = model_->GetOrientationX();
-	obb_.orientations[1] = model_->GetOrientationY();
-	obb_.orientations[2] = model_->GetOrientationZ();
-	obb_.size = { 1.0f,1.0f,1.0f };
+	UpdateOBB(obb_, model_.get(), { 1.0f,1.0f,1.0f });
 }
 
 void PlayerBullet::Draw() {

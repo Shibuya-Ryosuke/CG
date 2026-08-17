@@ -2,6 +2,7 @@
 #include "../../Time/TimeEnum.h"
 #include "../../Time/TimeManager.h"
 #include "../../Enemy/BaseEnemy.h"
+#include "../../GameMath/GameMath.h"
 
 using namespace RyoEngine;
 
@@ -26,7 +27,7 @@ void HomingMissile::Initialize(const RyoEngine::Vector3& spawnPos, BaseEnemy* ta
 
 	// 初期速度（最初は前方に勢いよく飛び出すなど、お好みで調整）
 	// 例としてカメラ前方や、上方向に少し飛び出す挙動にしてもカッコいいです
-	velocity_ = { 0.0f, 3.0f, 10.0f };
+	velocity_ = { 0.0f, 5.0f, 10.0f };
 }
 
 void HomingMissile::Finalize() {}
@@ -61,11 +62,7 @@ void HomingMissile::Update(const RyoEngine::Camera& camera) {
 	model_->Update(camera);
 
 	// OBBの更新
-	obb_.center = model_->GetWorldPos();
-	obb_.orientations[0] = model_->GetOrientationX();
-	obb_.orientations[1] = model_->GetOrientationY();
-	obb_.orientations[2] = model_->GetOrientationZ();
-	obb_.size = { 1.0f, 1.0f, 1.0f };
+	UpdateOBB(obb_, model_.get(), { 1.0f,1.0f,1.0f });
 }
 
 void HomingMissile::Draw() {

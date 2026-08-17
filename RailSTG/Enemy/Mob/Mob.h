@@ -51,7 +51,7 @@ private:
 	float kBulletSpeed = 120.0f;
 	RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,6.0f };
 
-	float kFollowDistance = 70.0f;
+	float kFollowDistance = 60.0f;
 
 private:
 	// 弾

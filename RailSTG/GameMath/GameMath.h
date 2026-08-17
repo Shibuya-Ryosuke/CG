@@ -88,3 +88,17 @@ inline void UpdateFollowTransform(
 	// カメラの向きに合わせて自機も傾ける(演出用。丸ごとコピーが強すぎる場合は係数を掛けて弱めてもよい)
 	model->SetRotate(camera.GetRotate());
 }
+
+/// <summary>
+/// OBBの更新
+/// </summary>
+/// <param name="obb">OBB</param>
+/// <param name="model">自身</param>
+/// <param name="size">サイズ</param>
+inline void UpdateOBB(RyoEngine::OBB& obb, const RyoEngine::Model* model, const RyoEngine::Vector3& size) {
+	obb.center = model->GetWorldPos();
+	obb.orientations[0] = model->GetOrientationX();
+	obb.orientations[1] = model->GetOrientationY();
+	obb.orientations[2] = model->GetOrientationZ();
+	obb.size = size;
+}
