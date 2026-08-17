@@ -85,6 +85,9 @@
     <Filter Include="RailSTG\Particle">
       <UniqueIdentifier>{fbe1fdc1-e526-408a-bbe8-db1bfbb70683}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\GameMath">
+      <UniqueIdentifier>{31762e2c-956b-4db9-9ebb-8c7ac613480f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -439,6 +442,9 @@
     </ClInclude>
     <ClInclude Include="RailSTG\Particle\ParticleManager.h">
       <Filter>RailSTG\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\GameMath\GameMath.h">
+      <Filter>RailSTG\GameMath</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

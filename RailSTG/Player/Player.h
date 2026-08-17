@@ -53,34 +53,21 @@ public:
 		return bullets_;
 	}
 	
-	// NOTE: 以下3つはワールド座標を直接いじる旧来のセッター(デバッグ用途向けに残してある)。
-	//       Update()内でUpdateFollowTransform()がカメラ基準のオフセットから毎フレーム
-	//       ワールド座標を再計算して上書きするため、Update()呼び出し後は効果が消えてしまう点に注意。
-	//       ゲーム開始時の初期位置をずらしたい場合は、代わりにSetOffset()でオフセットを指定すること。
-	void SetTranslate(const RyoEngine::Vector3 translate) { model_->SetTranslate(translate); }
-	void SetTranslateX(const float x) { model_->SetTranslateX(x); }
-	void SetTranslateY(const float y) { model_->SetTranslateY(y); }
-
+	
 	/// <summary>
 	/// カメラのローカル空間(Right方向・Up方向)での初期オフセットを指定する
 	/// </summary>
-	void SetOffset(float offsetX, float offsetY) { offsetX_ = offsetX; offsetY_ = offsetY; }
+	void SetFollowOffset(const RyoEngine::Vector3& offset) { followOffset_ = offset; }
 
 	void SetReticle(std::unique_ptr<Reticle> reticle) { reticle_ = std::move(reticle); }
 private:
-	/// <summary>
-	/// カメラからのオフセットを画面内にクランプしたうえで、
-	/// カメラのForward/Right/Up基準にワールド座標・向きを計算して反映する
-	/// </summary>
-	/// <param name="camera">追従対象のレールカメラ</param>
-	void UpdateFollowTransform(const RyoEngine::Camera& camera);
 
 private:
 	// 定数（まだデータドリブンにしてないのでいったんここ）
 	int32_t kMaxHp = 1;
 	int32_t kInvincibleTimer = 60;
-	float kMainShotInterval = 0.1f;
-	float kBulletSpeed = 120.0f;
+	float kMainShotInterval = 0.08f;
+	float kBulletSpeed = 200.0f;
 
 	// カメラからどれだけ前方の位置に留まるか(この距離の平面上をカメラ基準でスライドする)
 	float kFollowDistance = 25.0f;
@@ -127,9 +114,8 @@ private:
 	///仮ですぴーど(１秒あたり)
 	float speed_ = 12.0f;
 
-	// カメラのローカル空間(Right方向・Up方向)での自機のオフセット
-	float offsetX_ = 0.0f;
-	float offsetY_ = 0.0f;
+	// カメラのローカル空間での自機のオフセット
+	RyoEngine::Vector3 followOffset_ = { 0.0f,0.0f,kFollowDistance };
 
 	// スペシャル攻撃１（ロックオンミサイル）クールタイム
 	float specialAttack1CoolTime = kSpecialAttack1CoolTime;

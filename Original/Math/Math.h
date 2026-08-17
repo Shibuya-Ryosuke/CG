@@ -729,49 +729,5 @@ namespace RyoEngine {
 
 		return result;
 	}
-
-	// screen
-	inline Vector2 WorldToScreen(const Vector3& worldPos, const Matrix4x4 view, const Matrix4x4 projection, float screenWidth = 1280.0f, float screenHeight = 720.0f) {
-		// 1. ビュー行列とプロジェクション行列を取得
-		Matrix4x4 matViewProj = view * projection;
-
-		// 2. 3D座標にVP行列を掛ける（同次座標系）
-		Vector3 ndc = TransformVector3(worldPos, matViewProj);
-
-		// 5. スクリーン座標（ピクセル単位：例 0〜1280, 0〜720）に変換
-		// ※ 画面中央が(0,0)か、左上が(0,0)かによって計算が少し変わります
-		float screenX = (ndc.x + 1.0f) * 0.5f * screenWidth;
-		float screenY = (1.0f - ndc.y) * 0.5f * screenHeight; // Y軸は上下反転することが多い
-
-		return { screenX, screenY };
-	}
-
-	inline Vector3 GetWorldDirectionFromScreen(
-		const Vector2& screenPos,
-		const Matrix4x4 view,
-		const Matrix4x4 projection,
-		float screenWidth = 1280.0f,
-		float screenHeight = 720.0f)
-	{
-		// 1. スクリーン座標（ピクセル）を NDC座標（-1.0 〜 1.0）に逆変換する
-		float ndc_x = (screenPos.x / screenWidth) * 2.0f - 1.0f;
-		float ndc_y = 1.0f - (screenPos.y / screenHeight) * 2.0f; // Y軸反転を戻す
-
-		// 2. ビュー行列とプロジェクション行列を取得し、逆行列を求める
-		Matrix4x4 matViewProj = view * projection;
-		Matrix4x4 matInverseViewProj = Inverse(matViewProj); // ※エンジンに逆行列計算関数(Inverse)がある前提
-
-		// 3. NDCの近平面（Z = 0.0 または -1.0）と遠平面（Z = 1.0）の点を計算
-		// ※RyoEngineのNDCのZ範囲（0〜1か、-1〜1か）に合わせて調整してください
-		Vector3 nearNdc = { ndc_x, ndc_y, 0.0f };
-		Vector3 farNdc = { ndc_x, ndc_y, 1.0f };
-
-		Vector3 nearWorld = TransformVector3(nearNdc, matInverseViewProj);
-		Vector3 farWorld = TransformVector3(farNdc, matInverseViewProj);
-
-		// 4. 近い点から遠い点へ向かう方向ベクトルを計算して正規化する
-		Vector3 direction = farWorld - nearWorld;
-		return Normalize(direction);
-	}
 	//=================================================================================================
 }

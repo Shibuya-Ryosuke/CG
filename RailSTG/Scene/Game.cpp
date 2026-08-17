@@ -19,7 +19,6 @@ void Game::Initialize() {
 	// プレイヤーの作成
 	player_ = std::make_unique<Player>();
 	player_->Initialize();
-	player_->SetOffset(0.0f, 0.0f);
 }
 
 void Game::Finalize() {

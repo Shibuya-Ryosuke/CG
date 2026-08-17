@@ -19,6 +19,8 @@ public:
 	void SetTranslate(const RyoEngine::Vector3 translate) { model_->SetTranslate(translate); }
 	void SetTranslateY(const float y) { model_->SetTranslateY(y); }
 
+	void SetFollowOffset(const RyoEngine::Vector3& offset) { followOffset_ = offset; }
+
 	void SetVelocity(const RyoEngine::Vector3 velocity) { velocity_ = velocity; }
 	void SetVelocityZ(const float velocityZ) { velocity_.z = velocityZ; }
 
@@ -56,4 +58,7 @@ protected:
 
 	// ロックオンステート
 	LockOnState lockOnState_ = LockOnState::None;
+
+	// カメラ追従オフセット
+	RyoEngine::Vector3 followOffset_{};
 };

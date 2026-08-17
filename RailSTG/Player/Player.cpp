@@ -12,6 +12,7 @@
 #include "../Input/InputManager.h"
 #include "../Time/TimeManager.h"
 #include "../Particle/ParticleManager.h"
+#include "../GameMath/GameMath.h"
 
 using namespace RyoEngine;
 
@@ -48,7 +49,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	Move();
 
 	// カメラへの追従・画面内クランプを反映してワールド座標を更新
-	UpdateFollowTransform(camera);
+	UpdateFollowTransform(model_.get(), camera, followOffset_, true, kClampMargin);
 
 	switch (state_) {
 	case PlayerState::Standard:
@@ -133,46 +134,20 @@ void Player::Draw() {
 void Player::Move() {
 	// 上
 	if (InputManager::IsPushAction(InputAction::MoveUp)) {
-		offsetY_ += speed_ * TimeManager::GetDeltaTime();
+		followOffset_.y += speed_ * TimeManager::GetDeltaTime();
 	}
 	// 下
 	if (InputManager::IsPushAction(InputAction::MoveDown)) {
-		offsetY_ -= speed_ * TimeManager::GetDeltaTime();
+		followOffset_.y -= speed_ * TimeManager::GetDeltaTime();
 	}
 	// 左
 	if (InputManager::IsPushAction(InputAction::MoveLeft)) {
-		offsetX_ -= speed_ * TimeManager::GetDeltaTime();
+		followOffset_.x -= speed_ * TimeManager::GetDeltaTime();
 	}
 	// 右
 	if (InputManager::IsPushAction(InputAction::MoveRight)) {
-		offsetX_ += speed_ * TimeManager::GetDeltaTime();
+		followOffset_.x += speed_ * TimeManager::GetDeltaTime();
 	}
-}
-
-void Player::UpdateFollowTransform(const RyoEngine::Camera& camera) {
-	// kFollowDistance分だけ前方にある平面のうち、画面に映る範囲の半分の幅・高さ(ワールド単位)を求める。
-	// FOVとアスペクト比から毎フレーム計算するので、解像度(1280x720 <-> 1920x1080等)が
-	// 変わってもアスペクト比さえ正しく更新されればこの計算式は変更不要で自動追従する。
-	float halfHeight = kFollowDistance * tanf(camera.GetFovY() * 0.5f);
-	float halfWidth = halfHeight * camera.GetAspectRatio();
-
-	// 画面端ぎりぎりに張り付かないよう余白を差し引く
-	float clampX = (halfWidth > kClampMargin) ? (halfWidth - kClampMargin) : 0.0f;
-	float clampY = (halfHeight > kClampMargin) ? (halfHeight - kClampMargin) : 0.0f;
-
-	offsetX_ = Clamp(offsetX_, -clampX, clampX);
-	offsetY_ = Clamp(offsetY_, -clampY, clampY);
-
-	// カメラのForward/Right/Upを基準に、実際のワールド座標を計算する
-	Vector3 worldPos = camera.GetTranslate()
-		+ camera.GetForward() * kFollowDistance
-		+ camera.GetRight() * offsetX_
-		+ camera.GetUp() * offsetY_;
-
-	model_->SetTranslate(worldPos);
-
-	// カメラの向きに合わせて自機も傾ける(演出用。丸ごとコピーが強すぎる場合は係数を掛けて弱めてもよい)
-	model_->SetRotate(camera.GetRotate());
 }
 
 void Player::MainShot(const RyoEngine::Camera& camera) {
