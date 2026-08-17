@@ -11,6 +11,8 @@ void EnemyBullet::Initialize() {
 		// 生成
 		model_ = Model::Create("resources/RailSTG/Bullet/bullet.obj");
 		model_->SetTex("resources/RailSTG/Bullet/flower.png");
+		// お試しで小さく
+		model_->SetScale({ 0.5f,0.5f,0.5f });
 	}
 }
 
@@ -32,7 +34,7 @@ void EnemyBullet::Update(const RyoEngine::Camera& camera) {
 	model_->Update(camera);
 
 	// obb
-	UpdateOBB(obb_, model_.get(), { 1.0f,1.0f,1.0f });
+	UpdateOBB(obb_, model_.get(), { 0.5f,0.5f,0.5f });
 }
 
 void EnemyBullet::Draw() {

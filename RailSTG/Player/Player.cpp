@@ -42,6 +42,46 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 		request_ = PlayerState::None;
 	}
 
+	// メイン攻撃発射間隔減少
+	if (mainShotInterval_ > 0) {
+		mainShotInterval_ -= TimeManager::GetDeltaTime();
+	}
+
+	// スペシャル攻撃1クールタイム減少
+	if (specialAttack1CoolTime > 0.0f) {
+		specialAttack1CoolTime -= TimeManager::GetDeltaTime();
+	}
+
+	// 回避クールタイム減少
+	if (evasionCoolTime_ > 0.0f) {
+		evasionCoolTime_ -= TimeManager::GetDeltaTime();
+	}
+
+	// ジャスト回避継続時間の減少
+	if (justEvasionDuration_ > 0.0f) {
+		justEvasionDuration_ -= TimeManager::GetDeltaTime();
+	} else {
+		isJustEvasion_ = false;
+	}
+
+	// 回避継続時間の減少
+	if (evasionDuration_ > 0.0f) {
+		evasionDuration_ -= TimeManager::GetDeltaTime();
+	} else {
+		isEvasion_ = false;
+	}
+
+	// デバッグ用の色付け
+	if (isJustEvasion_) {
+		// 緑
+		model_->SetColor({ 0.0f,0.0f,1.0f,1.0f });
+	} else if (isEvasion_) {
+		// 青
+		model_->SetColor({ 0.0f,1.0f,0.0f,1.0f });
+	} else {
+		model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
+	}
+
 	// レティクル
 	reticle_->Update();
 
@@ -53,6 +93,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 
 	switch (state_) {
 	case PlayerState::Standard:
+		Evasion();
 		MainShot(camera);
 		LockOnMode();
 		break;
@@ -79,12 +120,32 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	
 #ifdef _DEBUG
 	ImGui::Begin("player");
-	Vector3 t = model_->GetTranslate();
-	ImGui::Text("translate: (%.2f, %.2f, %.2f)", t.x, t.y, t.z);
+	ImGui::Text("hp: (%.2f)", hp_);
+	ImGui::NewLine();
+
+	Vector3 t = model_->GetWorldPos();
+	ImGui::Text("world: (%.2f, %.2f, %.2f)", t.x, t.y, t.z);
 	ImGui::NewLine();
 
 	ImGui::Text("request: ( %d )", request_);
 	ImGui::Text("state: ( %d )", state_);
+	ImGui::NewLine();
+	
+	if (isEvasion_) {
+		ImGui::Text("isEvasion: true");
+	} else {
+		ImGui::Text("isEvasion: false");
+	}
+
+	if (isJustEvasion_) {
+		ImGui::Text("isJustEvasion: true");
+	} else {
+		ImGui::Text("isJustEvasion: false");
+	}
+
+	ImGui::Text("evasionDuration    : (%.4f)", evasionDuration_);
+	ImGui::Text("justEvasionDuration: (%.4f)", justEvasionDuration_);
+	ImGui::Text("evasionCoolTime    : (%.4f)", evasionCoolTime_);
 	ImGui::NewLine();
 
 	ImGui::Text("specialAttack1 coolTime: (%.2f)", specialAttack1CoolTime);
@@ -147,9 +208,7 @@ void Player::Move() {
 }
 
 void Player::MainShot(const RyoEngine::Camera& camera) {
-	if (mainShotInterval_ > 0) {
-		mainShotInterval_ -= TimeManager::GetDeltaTime();
-	} else {
+	if (mainShotInterval_ <= 0) {
 		if (InputManager::IsPushAction(InputAction::MainShot)) {
 			auto bullet = std::make_unique<PlayerBullet>();
 			bullet->Initialize();
@@ -172,7 +231,7 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 			// リストへの追加
 			bullets_.push_back(std::move(bullet));
 
-			// 発射感覚のリセット
+			// 発射間隔のリセット
 			mainShotInterval_ = kMainShotInterval;
 
 			for (int i = 0; i < 4; ++i) {
@@ -195,10 +254,22 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 	}
 }
 
+void Player::Evasion() {
+	if (evasionCoolTime_ <= 0.0f) {
+		if (Input::TriggerKey(DIK_SPACE)) {
+			// 回避とジャスト回避を有効
+			isEvasion_ = true;
+			isJustEvasion_ = true;
+			// 持続時間とクールダウンを設定
+			justEvasionDuration_ = kJustEvasionDuration;
+			evasionDuration_ = kEvasionDuration;
+			evasionCoolTime_ = kEvasionCoolTime;
+		}
+	}
+}
+
 void Player::LockOnMode() {
-	if (specialAttack1CoolTime > 0.0f) {
-		specialAttack1CoolTime -= TimeManager::GetDeltaTime();
-	} else {
+	if (specialAttack1CoolTime <= 0.0f) {
 		// 右クリックでロックオンモードへ
 		if (Input::IsMousePush(1)) {
 			request_ = PlayerState::SpecialAttack1;
@@ -337,5 +408,22 @@ void Player::ShootMissile(const RyoEngine::Camera& camera, const std::vector<std
 			// ミサイルリストに追加
 			bullets_.push_back(std::move(missile));
 		}
+	}
+}
+
+void Player::OnCollision(float damage) {
+	if (!isEvasion_) {
+		hp_ -= damage;
+		return;
+	}
+
+	if (justEvasionDuration_ > 0.0f) {
+		// タイムマネージャーにジャスト回避を知らせる
+		TimeManager::SetTimeState(TimeState::JustEvasion);
+		// スローの解除を同期させるためにジャスト回避継続時間を知らせる
+		TimeManager::SetJustEvasionDuration(justEvasionDuration_);
+
+		// プレイヤー側ではないが、ジャスト回避した時に当たっている弾を、撃ってきた敵に対して跳ね返す（追尾弾）
+		// 速度は倍にする
 	}
 }

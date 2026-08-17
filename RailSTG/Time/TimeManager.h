@@ -45,13 +45,13 @@ public:
 		return GetInstance().deltaTime_;
 	}
 	static void SetTimeState(TimeState state) { GetInstance().request_ = state; }
+
+	static void SetJustEvasionDuration(float duration) { GetInstance().justEvasionDuration_ = duration; }
+
 private:
 
 	// 初期倍率
 	float kInitTimeScale = 1.0f;
-	
-	// ジャスト回避スロー時間
-	int32_t kJustEvasionTime = 30;
 	
 private:
 	// 時間に掛ける倍率（0 ~ 1）
@@ -60,7 +60,7 @@ private:
 	float deltaTime_ = 0.0f;
 
 	// ジャスト回避スロー時間
-	int32_t justEvasionTime = kJustEvasionTime;
+	float justEvasionDuration_ = 0.0f;
 
 	// 状態
 	TimeState state_ = TimeState::Default;

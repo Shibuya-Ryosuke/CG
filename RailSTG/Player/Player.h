@@ -42,11 +42,19 @@ public:
 	/// メイン攻撃
 	/// </summary>
 	void MainShot(const RyoEngine::Camera& camera);
+
+	/// <summary>
+	/// 回避行動
+	/// </summary>
+	void Evasion();
+	bool IsEvasion() { return isEvasion_; }
+	bool IsJustEvasion() { return isJustEvasion_; }
+
 	void LockOnMode();
 	void UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
 	void ShootMissile(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
 
-	void OnCollision(){}
+	void OnCollision(float damage);
 
 	const RyoEngine::OBB& GetOBB() const { return obb_; }
 	const std::vector<std::unique_ptr<BaseBullet>>& GetBullets() const {
@@ -64,8 +72,8 @@ private:
 
 private:
 	// 定数（まだデータドリブンにしてないのでいったんここ）
-	int32_t kMaxHp = 1;
-	int32_t kInvincibleTimer = 60;
+	float kMaxHp = 100.0f;
+	float kInvincibleTimer = 2.0f;
 	float kMainShotInterval = 0.08f;
 	float kBulletSpeed = 260.0f;
 
@@ -77,6 +85,13 @@ private:
 
 	float kSpecialAttack1CoolTime = 4.0f;
 	float kSpecialAttack1CanceledCoolTime = 0.8f;
+
+	// 回避持続時間は13F(概算)
+	float kEvasionDuration = 0.216f;
+	// ジャスト回避持続時間は6F(概算)
+	float kJustEvasionDuration = 0.100f;
+	// 回避クールタイムは1秒
+	float kEvasionCoolTime = 1.0f;
 
 private:
 
@@ -90,7 +105,7 @@ private:
 
 	// 各種ステータス
 	// 体力
-	int32_t hp_ = kMaxHp;
+	float hp_ = kMaxHp;
 	// 死亡フラグ
 	bool isDead_ = false;
 
@@ -104,9 +119,13 @@ private:
 	// 回避
 	bool isEvasion_ = false;
 	bool isJustEvasion_ = false;
+	float evasionCoolTime_ = kEvasionCoolTime;
+	float evasionDuration_ = kEvasionDuration;
+	float justEvasionDuration_ = kJustEvasionDuration;
 
-	// 無敵時間
-	int32_t invincibleTimer_ = kInvincibleTimer;
+	// 無敵（被弾時の想定）
+	bool isInvincible_ = false;
+	float invincibleTimer_ = kInvincibleTimer;
 
 	// 衝突判定用
 	RyoEngine::OBB obb_{};

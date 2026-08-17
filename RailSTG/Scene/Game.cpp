@@ -125,8 +125,13 @@ void Game::CheckAllCollision() {
 		// モブ弾とプレイヤーの判定
 		for (auto& bullet : mobBullets) {
 			if (IsCollision(player_->GetOBB(), bullet->GetOBB())) {
-				// 当たったら弾の消滅
-				bullet->OnCollision();
+				// 回避状態じゃないときだけ弾の消滅
+				if (!player_->IsEvasion() && !player_->IsJustEvasion()) {
+					// 当たったら弾の消滅
+					bullet->OnCollision();
+				}
+				// プレイヤーの衝突コールバック
+				player_->OnCollision(10.0f);
 			}
 		}
 	}

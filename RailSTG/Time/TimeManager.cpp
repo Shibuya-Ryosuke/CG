@@ -25,11 +25,12 @@ void TimeManager::Update() {
 		break;
 
 	case TimeState::JustEvasion:
+		// 余裕があれば
+		// 本当は一気に0.2でタイマーが0に近づくごとに徐々に1.0に近づけるようなことをしたい
 		GetInstance().timeScale_ = 0.2f;
-		if (GetInstance().justEvasionTime > 0) {
-			GetInstance().justEvasionTime--;
+		if (GetInstance().justEvasionDuration_ > 0) {
+			GetInstance().justEvasionDuration_ -= GetInstance().deltaTime_;
 		} else {
-			GetInstance().justEvasionTime = GetInstance().kJustEvasionTime;
 			GetInstance().request_ = TimeState::Default;
 		}
 		break;
