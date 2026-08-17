@@ -50,11 +50,6 @@ inline RyoEngine::Vector3 GetWorldDirectionFromScreen(
 /// カメラからのオフセットを画面内にクランプしたうえで、
 /// カメラのForward/Right/Up基準にワールド座標・向きを計算して反映する
 /// </summary>
-
-/// <summary>
-/// カメラからのオフセットを画面内にクランプしたうえで、
-/// カメラのForward/Right/Up基準にワールド座標・向きを計算して反映する
-/// </summary>
 /// <param name="model">自身</param>
 /// <param name="camera">追従対象のカメラ</param>
 /// <param name="followOffset">追従オフセット</param>

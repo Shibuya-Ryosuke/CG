@@ -67,7 +67,7 @@ private:
 	int32_t kMaxHp = 1;
 	int32_t kInvincibleTimer = 60;
 	float kMainShotInterval = 0.08f;
-	float kBulletSpeed = 200.0f;
+	float kBulletSpeed = 260.0f;
 
 	// カメラからどれだけ前方の位置に留まるか(この距離の平面上をカメラ基準でスライドする)
 	float kFollowDistance = 25.0f;

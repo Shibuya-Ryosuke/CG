@@ -8,6 +8,7 @@
 #include "../BaseEnemy.h"
 #include "../../Bullet/EnemyBullet/EnemyBullet.h"
 #include "../../Time/TimeManager.h"
+#include "../../GameMath/GameMath.h"
 
 using namespace RyoEngine;
 
@@ -20,10 +21,11 @@ void Mob::Initialize() {
 		model_ = Model::Create("resources/RailSTG/Enemy/enemy.obj");
 		model_->SetTex("resources/RailSTG/Enemy/brick.png");
 	}
-	// 位置セット
-	model_->SetTranslate({ 2.0f,0.0f,2.0f });
 	// 速度セット
 	SetVelocity(kVelocity);
+
+	// 距離を入れる
+	followOffset_.z = kFollowDistance;
 
 	// 初期ステート
 	state_ = MobState::Standard;
@@ -39,9 +41,11 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 	}
 
 	// 移動
-	Vector3 myT = model_->GetTranslate();
-	myT += velocity_ * TimeManager::GetDeltaTime();
-	model_->SetTranslate(myT);
+	Move();
+
+	// カメラに追従
+	UpdateFollowTransform(model_.get(), camera, followOffset_);
+
 	// 更新
 	model_->Update(camera);
 
@@ -52,7 +56,7 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 	obb_.orientations[2] = model_->GetOrientationZ();
 	obb_.size = { 1.0f,1.0f,1.0f };
 
-	if (model_->GetTranslate().z > 50.0f) {
+	if (followOffset_.z > 200.0f) {
 		isDead_ = true;
 	}
 
@@ -133,4 +137,9 @@ void Mob::Shot() {
 		// 発射間隔をリセット
 		shotInterval_ = kShotInterval;
 	}
+}
+
+void Mob::Move() {
+	// 移動
+	followOffset_ += velocity_ * TimeManager::GetDeltaTime();
 }

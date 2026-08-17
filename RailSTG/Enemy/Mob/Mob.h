@@ -40,6 +40,7 @@ public:
 	/// </summary>
 	void Shot();
 
+	void Move();
 
 	const std::vector<std::unique_ptr<EnemyBullet>>& GetBullets() const {
 		return bullets_;
@@ -49,6 +50,8 @@ private:
 	float kShotInterval = 1.0f;
 	float kBulletSpeed = 120.0f;
 	RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,6.0f };
+
+	float kFollowDistance = 70.0f;
 
 private:
 	// 弾

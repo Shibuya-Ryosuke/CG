@@ -49,8 +49,8 @@ void Game::Update(const RyoEngine::Camera& camera) {
 #ifdef _DEBUG
 		// 座標表示
 		if (ImGui::TreeNodeEx("mob", ImGuiTreeNodeFlags_DefaultOpen)) {
-			Vector3 t = mob->GetTranslate();
-			ImGui::Text("translate: (%.2f, %.2f, %.2f)", t.x, t.y, t.z);
+			Vector3 t = mob->GetWorldPos();
+			ImGui::Text("world: (%.2f, %.2f, %.2f)", t.x, t.y, t.z);
 			ImGui::TreePop();
 		}
 #endif
@@ -100,7 +100,6 @@ void Game::MobSpawn() {
 	// モブの生成
 	auto mob = std::make_unique<Mob>();
 	mob->Initialize();
-	mob->SetTranslateY(150.0f);
 
 	// 追加
 	BaseEnemy* rawPtr = mob.get();
