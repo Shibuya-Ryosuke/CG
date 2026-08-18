@@ -130,12 +130,12 @@ void Mob::Shot() {
 		Vector3 rotate = model_->GetRotate();
 
 		// ローカルの正面(+Z)をモブの回転で変換 → ワールド空間の正面ベクトル
-		Vector3 forward = TransformVector3({ 0.0f, 0.0f, 1.0f }, MakeRotateMatrix(rotate));
-		forward = Normalize(forward);
+		Vector3 direction = targetPos_ - position;
+		direction = Normalize(direction);
 
 		// 弾に位置と速度をセット
 		bullet->SetTranslate(position);
-		bullet->SetVelocity(forward * -kBulletSpeed);
+		bullet->SetVelocity(direction * kBulletSpeed);
 		bullet->SetIsDeflectable(true);
 		bullet->SetDamage(kBulletDamage);
 		bullet->SetOwnerId(GetEnemyId());

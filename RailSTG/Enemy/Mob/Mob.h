@@ -49,6 +49,8 @@ public:
 		return bullets_;
 	}
 
+	void SetTargetPos(const RyoEngine::Vector3& targetPos) { targetPos_ = targetPos; }
+
 private:
 	float kShotInterval = 1.0f;
 	float kBulletSpeed = 120.0f;
@@ -65,6 +67,9 @@ private:
 	std::vector<std::unique_ptr<EnemyBullet>> bullets_;
 	// 射撃間隔
 	float shotInterval_ = kShotInterval;
+
+	// ターゲット（プレイヤー）の座標
+	RyoEngine::Vector3 targetPos_{};
 
 	// 状態
 	MobState state_ = MobState::None;

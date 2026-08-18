@@ -39,11 +39,16 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		mobSpawnTimer_ = kMobSpawnTimer_;
 	}
 
+	// プレイヤーの更新
+	player_->UpdatePlayer(camera, enemies_);
+
 #ifdef _DEBUG
 	ImGui::Begin("mobs");
 #endif
 	// モブの更新
 	for (auto& mob : mobs_) {
+		// プレイヤーの位置を保存（モブが撃つときプレイヤーに向けて発射するため）
+		mob->SetTargetPos(player_->GetWorldPos());
 		mob->Update(camera);
 		mob->UpdateDeflectedBullets([this](int32_t id) {return FindEnemyById(id);});
 
@@ -61,9 +66,6 @@ void Game::Update(const RyoEngine::Camera& camera) {
 #ifdef _DEBUG
 	ImGui::End();
 #endif
-
-	// プレイヤーの更新
-	player_->UpdatePlayer(camera, enemies_);
 
 	// 当たり判定
 	CheckAllCollision();
