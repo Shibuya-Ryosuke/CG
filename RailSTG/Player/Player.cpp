@@ -160,13 +160,19 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	);
 
 	// 弾の更新
+#ifdef _DEBUG
 	ImGui::Begin("playerBullet");
 	ImGui::Text("count: %d", static_cast<int>(bullets_.size()));
+#endif
 	for (auto& bullet : bullets_) {
 		bullet->Update(camera);
+#ifdef _DEBUG
 		ImGui::Text("b translate: (%.2f, %.2f, %.2f)", bullet->GetTranslate().x, bullet->GetTranslate().y, bullet->GetTranslate().z);
+#endif
 	}
+#ifdef _DEBUG
 	ImGui::End();
+#endif
 }
 
 void Player::Draw() {

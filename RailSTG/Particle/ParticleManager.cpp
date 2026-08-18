@@ -118,8 +118,10 @@ void ParticleManager::Update(const RyoEngine::Camera& camera) {
 void ParticleManager::Draw() {
     if (!model_ || !instanceWVPResource_) return;
 
+#ifdef _DEBUG
     ImGui::Begin("particle");
     ImGui::Text("count: %d", static_cast<int>(particles_.size()));
+#endif
 
     for (size_t i = 0; i < particles_.size(); ++i) {
         // i番目のパーティクル専用のCBアドレス(他のパーティクルとは独立したメモリ)を渡して描画する。
@@ -129,8 +131,12 @@ void ParticleManager::Draw() {
         model_->DrawInstance(wvpGVA);
 
         const Particle& p = particles_[i];
+#ifdef _DEBUG
         ImGui::Text("position: (%.2f, %.2f, %.2f)", p.position.x, p.position.y, p.position.z);
         ImGui::Text("particleColor: (%.2f,%.2f, %.2f, %.2f)", p.color.x, p.color.y, p.color.z, p.color.w);
+#endif
     }
+#ifdef _DEBUG
     ImGui::End();
+#endif
 }
