@@ -125,8 +125,7 @@ namespace RyoEngine {
         DirectX::ScratchImage mipImages{};
         mipImages = std::move(image);
 
-        auto fmt = mipImages.GetMetadata().format;
-        Logger::Log(std::format("TexManager: format={}, HasAlpha={}\n", static_cast<int>(fmt), DirectX::HasAlpha(fmt)));
+        // 元画像サイズのまま出している。ミップマップを作っていない(RailSTGの時に変えた。戻しても良い)
 
         // ミップマップ付きのデータを返す
         return mipImages;

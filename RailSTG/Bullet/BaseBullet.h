@@ -15,8 +15,8 @@ public:
 		(void)camera;
 
 		// 寿命で死亡
-		if (lifespan_ > 0) {
-			lifespan_ -= TimeManager::GetDeltaTime();
+		if (lifeTime_ > 0) {
+			lifeTime_ -= TimeManager::GetDeltaTime();
 		} else {
 			isDead_ = true;
 		}
@@ -33,6 +33,7 @@ public:
 	void OnCollision() { isDead_ = true; }
 
 	RyoEngine::Vector3 GetTranslate() const { return model_->GetTranslate(); }
+	RyoEngine::Vector3 GetVelocity() const { return velocity_; }
 	const RyoEngine::OBB& GetOBB() const { return obb_; }
 	
 	/// <summary>
@@ -72,9 +73,11 @@ public:
 	float GetDamage() { return damage_; }
 	void SetDamage(float damage) { damage_ = damage; }
 
+	void ResetLifeTime() { lifeTime_ = kLifeTime; }
+
 protected:
 	// 寿命(秒)
-	float kLifespan = 3.0f;
+	float kLifeTime = 3.0f;
 
 
 protected:
@@ -82,7 +85,7 @@ protected:
 	RyoEngine::Vector3 velocity_{};
 
 	// 寿命
-	float lifespan_ = kLifespan;
+	float lifeTime_ = kLifeTime;
 
 	// 死亡
 	bool isDead_ = false;

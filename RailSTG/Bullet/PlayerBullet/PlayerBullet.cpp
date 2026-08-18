@@ -21,6 +21,7 @@ void PlayerBullet::Finalize() {
 void PlayerBullet::Update(const RyoEngine::Camera& camera) {
 	// 寿命の減少
 	BaseBullet::Update(camera);
+	if (isDead_)return;
 
 	// 座標の取得
 	Vector3 translate = model_->GetTranslate();

@@ -26,6 +26,11 @@ void Mob::Initialize() {
 	// hpセット
 	SetHp(kMaxHp_);
 
+	// ID格納
+	enemyId_ = nextEnemyId_;
+	// 次に入れるIDのために1増やす
+	nextEnemyId_++;
+
 	// 距離を入れる
 	followOffset_.z = kFollowDistance;
 
@@ -81,6 +86,9 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 		if (ImGui::TreeNodeEx("bullet", ImGuiTreeNodeFlags_DefaultOpen)) {
 			Vector3 bulletT = bullet->GetTranslate();
 			ImGui::Text("translate: (%.2f, %.2f, %.2f)", bulletT.x, bulletT.y, bulletT.z);
+			Vector3 bulletV = bullet->GetVelocity();
+			ImGui::Text("velocity : (%.2f, %.2f, %.2f)", bulletV.x, bulletV.y, bulletV.z);
+			ImGui::Text("ownerId  : (%d)", bullet->GetOwnerId());
 			ImGui::TreePop();
 		}
 #endif
@@ -129,7 +137,8 @@ void Mob::Shot() {
 		bullet->SetTranslate(position);
 		bullet->SetVelocity(forward * -kBulletSpeed);
 		bullet->SetIsDeflectable(true);
-		bullet->SetDamage(10.0f);
+		bullet->SetDamage(kBulletDamage);
+		bullet->SetOwnerId(GetEnemyId());
 
 		bullets_.push_back(std::move(bullet));
 
@@ -141,4 +150,18 @@ void Mob::Shot() {
 void Mob::Move() {
 	// 移動
 	followOffset_ += velocity_ * TimeManager::GetDeltaTime();
+}
+
+void Mob::UpdateDeflectedBullets(const std::function<BaseEnemy* (int32_t)>& enemyFinder) {
+	for (auto& bullet : bullets_) {
+		if (bullet->IsDeflected()) {
+			BaseEnemy* owner = enemyFinder(bullet->GetOwnerId());
+			if (owner) {
+				bullet->SetTargetPosition(owner->GetWorldPos());
+			} else {
+				// 発射元が死亡済み → ターゲット解除(直進させる/自爆させる等は後で決める)
+				bullet->ClearTarget();
+			}
+		}
+	}
 }

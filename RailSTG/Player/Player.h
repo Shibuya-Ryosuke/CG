@@ -69,6 +69,13 @@ public:
 	void SetFollowOffset(const RyoEngine::Vector3& offset) { followOffset_ = offset; }
 
 	void SetReticle(std::unique_ptr<Reticle> reticle) { reticle_ = std::move(reticle); }
+
+	/// <summary>
+	/// 跳ね返した弾のダメージ倍率
+	/// </summary>
+	/// <returns></returns>
+	float GetDeflectedDamageScale() const { return kDeflectedDamageScale; }
+
 private:
 
 private:
@@ -77,6 +84,8 @@ private:
 	float kInvincibleTimer = 2.0f;
 	float kMainShotInterval = 0.08f;
 	float kBulletSpeed = 260.0f;
+	float kBulletDamage = 5.0f;
+	float kHomingMissileDamage = 20.0f;
 
 	// カメラからどれだけ前方の位置に留まるか(この距離の平面上をカメラ基準でスライドする)
 	float kFollowDistance = 25.0f;
@@ -94,6 +103,8 @@ private:
 	// 回避クールタイムは1秒
 	float kEvasionCoolTime = 1.0f;
 
+	// ジャスト回避で跳ね返した弾のダメージ倍率
+	float kDeflectedDamageScale = 3.0f;
 private:
 
 	// レティクル

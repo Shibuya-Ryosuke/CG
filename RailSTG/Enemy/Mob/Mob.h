@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <functional>
 
 #include "../BaseEnemy.h"
 #include "../EnemyEnum.h"
@@ -42,6 +43,7 @@ public:
 
 	void Move();
 
+	void UpdateDeflectedBullets(const std::function<BaseEnemy* (int32_t)>& enemyFinder);
 	
 	const std::vector<std::unique_ptr<EnemyBullet>>& GetBullets() const {
 		return bullets_;
@@ -55,6 +57,8 @@ private:
 	float kFollowDistance = 60.0f;
 
 	float kMaxHp_ = 100.0f;
+
+	float kBulletDamage = 10.0f;
 
 private:
 	// 弾

@@ -45,12 +45,15 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	// モブの更新
 	for (auto& mob : mobs_) {
 		mob->Update(camera);
+		mob->UpdateDeflectedBullets([this](int32_t id) {return FindEnemyById(id);});
 
 #ifdef _DEBUG
 		// 座標表示
 		if (ImGui::TreeNodeEx("mob", ImGuiTreeNodeFlags_DefaultOpen)) {
 			Vector3 t = mob->GetWorldPos();
 			ImGui::Text("world: (%.2f, %.2f, %.2f)", t.x, t.y, t.z);
+			ImGui::Text("hp   : (%.2f)", mob->GetHp());
+			ImGui::Text("id   : (%d)", mob->GetEnemyId());
 			ImGui::TreePop();
 		}
 #endif
@@ -116,10 +119,13 @@ void Game::CheckAllCollision() {
 		// モブと自弾の判定
 		for (auto& bullet : playerBullets) {
 			if (IsCollision(mob->GetOBB(), bullet->GetOBB())) {
+				// 敵の衝突コールバック
+				mob->OnCollision(bullet->GetDamage());
 				// 当たったら弾の消滅
 				bullet->OnCollision();
 			}
 		}
+		// モブの弾
 		const auto& mobBullets = mob->GetBullets();
 
 		// モブ弾とプレイヤーの判定
@@ -135,16 +141,19 @@ void Game::CheckAllCollision() {
 					// スローの解除を同期させるためにジャスト回避継続時間を知らせる
 					TimeManager::SetJustEvasionDuration(player_->GetJustEvasionDuration());
 
-					// 速度は倍にする
 					// 反射可能な弾か判定
 					if (bullet->IsDeflectable()) {
-						// 跳ね返されたことを伝える
-						bullet->SetIsDeflected(true);
-
-						// ジャスト回避した時に当たっている弾を、撃ってきた敵に対して跳ね返す（追尾弾）
-						// 速度は1.5倍で返し、ダメージは2倍にする
-						// 
-						// ベクトルやらの計算
+						// 跳ね返されてない弾のみ
+						if (!bullet->IsDeflected()) {
+							// 速度の保存
+							bullet->CaptureSpeedForDeflection();
+							// 跳ね返されたことを伝える
+							bullet->SetIsDeflected(true);
+							// 寿命のリセット
+							bullet->ResetLifeTime();
+							// ダメージ増加
+							bullet->SetDamage(bullet->GetDamage() * player_->GetDeflectedDamageScale());
+						}
 					}
 				}
 
@@ -156,16 +165,29 @@ void Game::CheckAllCollision() {
 			}
 		}
 
-		//const auto& deflectedBullets = isDeflectedがtrueの弾のみ集める
-		// モブと跳ね返された弾の当たり判定
-		//for (auto& bullet : deflectedBullets) {
-		//	if (IsCollision(mob->GetOBB(), bullet->GetOBB())) {
-		//		// 当たったら弾の消滅
-		//		bullet->OnCollision();
+		// モブと跳ね返された弾の判定
+		for (auto& bullet : mobBullets) {
+			// そもそも跳ね返せないものは無視
+			if (!bullet->IsDeflectable()) return;
 
-		//		// モブにダメージを与える必要がある
-		//		mob->OnCollision();
-		//	}
-		//}
+			// 跳ね返された弾で判定
+			if (bullet->IsDeflected()) {
+				if (IsCollision(mob->GetOBB(), bullet->GetOBB())) {
+					// モブにダメージ
+					mob->OnCollision(bullet->GetDamage());
+					// 弾の消滅
+					bullet->OnCollision();
+				}
+			}
+		}
 	}
+}
+
+BaseEnemy* Game::FindEnemyById(int32_t enemyId) const {
+	for (const auto& enemy : enemies_) {
+		if (enemy->GetEnemyId() == enemyId) {
+			return enemy.get();
+		}
+	}
+	return nullptr; // 死亡済み、またはそもそも存在しないID
 }

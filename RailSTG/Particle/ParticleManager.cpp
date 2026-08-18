@@ -39,6 +39,15 @@ void ParticleManager::Finalize() {
     model_.reset();
 }
 
+/// <summary>
+/// 出現
+/// </summary>
+/// <param name="position">位置</param>
+/// <param name="velocity">速さ</param>
+/// <param name="lifeTime">寿命</param>
+/// <param name="scale">大きさ</param>
+/// <param name="color">色</param>
+/// <param name="useGravity">重力を適用するかどうか</param>
 void ParticleManager::Emit(const Vector3& position, const Vector3& velocity,
     float lifeTime, float scale, const Vector4& color, bool useGravity) {
     Particle p;

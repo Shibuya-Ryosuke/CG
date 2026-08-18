@@ -42,6 +42,13 @@ public:
 
 	void CheckAllCollision();
 
+
+	/// <summary>
+	/// enemyIdから現在生存している敵を検索
+	/// 見つからなければnullptr
+	/// </summary>
+	BaseEnemy* FindEnemyById(int32_t enemyId) const;
+
 private:
 	float kMobSpawnTimer_ = 3.0f;
 private:

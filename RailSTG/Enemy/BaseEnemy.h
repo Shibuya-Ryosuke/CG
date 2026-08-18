@@ -2,6 +2,7 @@
 #include "../../Original/RyoEngine.h"
 #include "../BaseObject/BaseObject.h"
 #include "EnemyEnum.h"
+#include <cstdint>
 
 class BaseEnemy : public BaseObject {
 public:
@@ -22,6 +23,7 @@ public:
 	void SetVelocity(const RyoEngine::Vector3 velocity) { velocity_ = velocity; }
 	void SetVelocityZ(const float velocityZ) { velocity_.z = velocityZ; }
 
+	float GetHp() { return hp_; }
 	void SetHp(float hp) { hp_ = hp; }
 
 	bool IsDead() const { return isDead_; }
@@ -29,6 +31,8 @@ public:
 
 	LockOnState GetLockOnState() { return lockOnState_; }
 	void SetLockOnState(LockOnState state) { lockOnState_ = state; }
+
+	int32_t GetEnemyId() const { return enemyId_; }
 
 	void DrawLockOnEffect() {
 		switch (lockOnState_) {
@@ -46,7 +50,20 @@ public:
 		}
 	}
 
+	void OnCollision(float damage) {
+		hp_ -= damage;
+		if (hp_ <= 0.0f) {
+			isDead_ = true;
+		}
+	}
+
 protected:
+	// ID
+	int32_t enemyId_ = -1;
+
+	// 次に発行するID
+	static inline int32_t nextEnemyId_ = 0;
+
 	// 速度
 	RyoEngine::Vector3 velocity_{};
 

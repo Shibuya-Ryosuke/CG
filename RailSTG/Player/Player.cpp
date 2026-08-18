@@ -227,6 +227,7 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 			bullet->SetTranslate(position);
 			// ベクトルのセット
 			bullet->SetVelocity(direction * kBulletSpeed);
+			bullet->SetDamage(kBulletDamage);
 
 			// リストへの追加
 			bullets_.push_back(std::move(bullet));
@@ -234,7 +235,7 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 			// 発射間隔のリセット
 			mainShotInterval_ = kMainShotInterval;
 
-			for (int i = 0; i < 4; ++i) {
+			for (int i = 0; i < 10; ++i) {
 				// 銃口からフワッと広がるように、少しだけランダムな速度を混ぜる
 				RyoEngine::Vector3 particleVel = {
 					(rand() % 10 - 5) * 0.2f,
@@ -246,8 +247,9 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 					model_->GetWorldPos(),                   // 発生位置（弾の現在地・発射位置）
 					particleVel,                // 飛び散る速度
 					1.0f,                      // 寿命（秒）
-					0.3f,                       // 大きさ（スケール）
-					{ 1.0f, 0.9f, 0.3f, 1.0f }  // 色（黄色・オレンジっぽい発射光）
+					0.1f,                       // 大きさ（スケール）
+					{ 1.0f, 0.9f, 0.3f, 1.0f },  // 色（黄色・オレンジっぽい発射光）
+					true
 				);
 			}
 		}
@@ -404,6 +406,7 @@ void Player::ShootMissile(const RyoEngine::Camera& camera, const std::vector<std
 
 			// 初期化
 			missile->Initialize(spawnPos, target);
+			missile->SetDamage(kHomingMissileDamage);
 
 			// ミサイルリストに追加
 			bullets_.push_back(std::move(missile));
@@ -415,4 +418,7 @@ void Player::OnCollision(float damage) {
 	if (isEvasion_)return;
 
 	hp_ -= damage;
+	//if (hp_ <= 0.0f) {
+	//	isDead_ = true;
+	//}
 }
