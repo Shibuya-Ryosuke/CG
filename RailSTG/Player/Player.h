@@ -49,6 +49,7 @@ public:
 	void Evasion();
 	bool IsEvasion() { return isEvasion_; }
 	bool IsJustEvasion() { return isJustEvasion_; }
+	float GetJustEvasionDuration() { return justEvasionDuration_; }
 
 	void LockOnMode();
 	void UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);

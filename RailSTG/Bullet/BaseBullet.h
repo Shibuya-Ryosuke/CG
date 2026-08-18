@@ -69,6 +69,9 @@ public:
 		model_->SetRotate(rotate);
 	}
 
+	float GetDamage() { return damage_; }
+	void SetDamage(float damage) { damage_ = damage; }
+
 protected:
 	// 寿命(秒)
 	float kLifespan = 3.0f;
@@ -86,4 +89,7 @@ protected:
 
 	// 衝突判定用
 	RyoEngine::OBB obb_{};
+
+	// ダメージ
+	float damage_ = 0.0f;
 };

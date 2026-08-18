@@ -125,14 +125,47 @@ void Game::CheckAllCollision() {
 		// モブ弾とプレイヤーの判定
 		for (auto& bullet : mobBullets) {
 			if (IsCollision(player_->GetOBB(), bullet->GetOBB())) {
+				// プレイヤーの衝突コールバック
+				player_->OnCollision(bullet->GetDamage());
+
+				// ジャスト回避時
+				if (player_->IsJustEvasion()) {
+					// タイムマネージャーにジャスト回避を知らせる
+					TimeManager::SetTimeState(TimeState::JustEvasion);
+					// スローの解除を同期させるためにジャスト回避継続時間を知らせる
+					TimeManager::SetJustEvasionDuration(player_->GetJustEvasionDuration());
+
+					// 速度は倍にする
+					// 反射可能な弾か判定
+					if (bullet->IsDeflectable()) {
+						// 跳ね返されたことを伝える
+						bullet->SetIsDeflected(true);
+
+						// ジャスト回避した時に当たっている弾を、撃ってきた敵に対して跳ね返す（追尾弾）
+						// 速度は1.5倍で返し、ダメージは2倍にする
+						// 
+						// ベクトルやらの計算
+					}
+				}
+
 				// 回避状態じゃないときだけ弾の消滅
 				if (!player_->IsEvasion() && !player_->IsJustEvasion()) {
 					// 当たったら弾の消滅
 					bullet->OnCollision();
 				}
-				// プレイヤーの衝突コールバック
-				player_->OnCollision(10.0f);
 			}
 		}
+
+		//const auto& deflectedBullets = isDeflectedがtrueの弾のみ集める
+		// モブと跳ね返された弾の当たり判定
+		//for (auto& bullet : deflectedBullets) {
+		//	if (IsCollision(mob->GetOBB(), bullet->GetOBB())) {
+		//		// 当たったら弾の消滅
+		//		bullet->OnCollision();
+
+		//		// モブにダメージを与える必要がある
+		//		mob->OnCollision();
+		//	}
+		//}
 	}
 }

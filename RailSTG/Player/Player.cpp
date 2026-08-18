@@ -412,18 +412,7 @@ void Player::ShootMissile(const RyoEngine::Camera& camera, const std::vector<std
 }
 
 void Player::OnCollision(float damage) {
-	if (!isEvasion_) {
-		hp_ -= damage;
-		return;
-	}
+	if (isEvasion_)return;
 
-	if (justEvasionDuration_ > 0.0f) {
-		// タイムマネージャーにジャスト回避を知らせる
-		TimeManager::SetTimeState(TimeState::JustEvasion);
-		// スローの解除を同期させるためにジャスト回避継続時間を知らせる
-		TimeManager::SetJustEvasionDuration(justEvasionDuration_);
-
-		// プレイヤー側ではないが、ジャスト回避した時に当たっている弾を、撃ってきた敵に対して跳ね返す（追尾弾）
-		// 速度は倍にする
-	}
+	hp_ -= damage;
 }

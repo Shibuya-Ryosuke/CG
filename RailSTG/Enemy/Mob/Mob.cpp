@@ -23,6 +23,8 @@ void Mob::Initialize() {
 	}
 	// 速度セット
 	SetVelocity(kVelocity);
+	// hpセット
+	SetHp(kMaxHp_);
 
 	// 距離を入れる
 	followOffset_.z = kFollowDistance;
@@ -126,6 +128,8 @@ void Mob::Shot() {
 		// 弾に位置と速度をセット
 		bullet->SetTranslate(position);
 		bullet->SetVelocity(forward * -kBulletSpeed);
+		bullet->SetIsDeflectable(true);
+		bullet->SetDamage(10.0f);
 
 		bullets_.push_back(std::move(bullet));
 

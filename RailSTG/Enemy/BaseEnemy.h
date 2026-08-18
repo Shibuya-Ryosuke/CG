@@ -11,8 +11,6 @@ public:
 	BaseEnemy(const BaseEnemy&) = delete;
 	BaseEnemy& operator=(const BaseEnemy&) = delete;
 
-	void OnCollision(){}
-
 	RyoEngine::Vector3 GetTranslate() const { return model_->GetTranslate(); }
 	const RyoEngine::OBB& GetOBB() const { return obb_; }
 
@@ -23,6 +21,8 @@ public:
 
 	void SetVelocity(const RyoEngine::Vector3 velocity) { velocity_ = velocity; }
 	void SetVelocityZ(const float velocityZ) { velocity_.z = velocityZ; }
+
+	void SetHp(float hp) { hp_ = hp; }
 
 	bool IsDead() const { return isDead_; }
 	void SetIsDead(bool isDead) { isDead_ = isDead; }
@@ -49,6 +49,9 @@ public:
 protected:
 	// 速度
 	RyoEngine::Vector3 velocity_{};
+
+	// hp
+	float hp_ = 0.0f;
 
 	// 死亡
 	bool isDead_ = false;

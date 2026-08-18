@@ -42,6 +42,7 @@ public:
 
 	void Move();
 
+	
 	const std::vector<std::unique_ptr<EnemyBullet>>& GetBullets() const {
 		return bullets_;
 	}
@@ -52,6 +53,8 @@ private:
 	RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,6.0f };
 
 	float kFollowDistance = 60.0f;
+
+	float kMaxHp_ = 100.0f;
 
 private:
 	// 弾

@@ -15,6 +15,15 @@ public:
 	void Update(const RyoEngine::Camera& camera) override;
 	void Draw() override;
 
-private:
+	void SetIsDeflectable(bool isDefrectable) { isDeflectable_ = isDefrectable; }
+	void SetIsDeflected(bool isDefrected) { isDeflected_ = isDefrected; }
 
+	bool IsDeflectable() { return isDeflectable_; }
+	bool IsDeflected() { return isDeflected_; }
+
+private:
+	// プレイヤーが反射可能か
+	bool isDeflectable_ = false;
+	// 跳ね返されたか
+	bool isDeflected_ = false;
 };
