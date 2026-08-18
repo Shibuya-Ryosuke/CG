@@ -10,6 +10,7 @@ class Player;
 class BaseEnemy;
 class Mob;
 class HomingMob;
+class Mine;
 class Reticle;
 
 class Game {
@@ -41,6 +42,7 @@ public:
 
 	void MobSpawn();
 	void HomingMobSpawn();
+	void MineSpawn();
 
 	void CheckAllCollision();
 
@@ -64,6 +66,8 @@ private:
 	std::vector<Mob*> mobs_;
 	// 追尾弾出す敵
 	std::vector<HomingMob*> homingMobs_;
+	// 機雷
+	std::vector<Mine*> mines_;
 	// 敵全体
 	std::vector<std::unique_ptr<BaseEnemy>> enemies_;
 	// スポーン時間

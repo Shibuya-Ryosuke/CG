@@ -2,22 +2,8 @@
 #include "Math.h"
 
 namespace RyoEngine {
-	// ============================================================
-// 当たり判定関数群 (MT3.h/cpp からの移植)
-//
-// NOTE: Vector/Matrix の四則演算(Add/Subtract/Multiplyなど)は
-//       Vector.h / Matrix.h 側で operator として既に実装済みのため、
-//       ここでは移植していません。
-//       Plane/Line/Ray/Segment/AABB/OBB/Triangle 等の構造体は
-//       Geometry.h(Math.h経由でinclude)側にあります。
-//
-// NOTE: MT3.cpp にあった Draw〇〇 系(Novice::DrawLineに依存する描画関数)は
-//       このエンジンでは使わない設計のため移植していません。
-//       図形の可視化は PrimitiveRenderer::DrawXXX() 側を使ってください。
-// ============================================================
-
-// --- 球 ---
-// 球と球
+/// --- 球 ---
+/// 球と球
 	bool IsCollision(const Sphere& s1, const Sphere& s2);
 	// 球と平面
 	bool IsCollision(const Sphere& sphere, const Plane& plane);

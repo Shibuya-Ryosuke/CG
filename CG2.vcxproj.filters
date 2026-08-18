@@ -91,6 +91,9 @@
     <Filter Include="RailSTG\Enemy\HomingMob">
       <UniqueIdentifier>{4bcdbdcb-54f6-4791-bfb3-8e6bffd3dc9f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\Enemy\Mine">
+      <UniqueIdentifier>{01ec91f7-3a89-4bd9-a78c-337eb48f5cbc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -239,6 +242,9 @@
     </ClCompile>
     <ClCompile Include="RailSTG\Enemy\HomingMob\HomingMob.cpp">
       <Filter>RailSTG\Enemy\HomingMob</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Enemy\Mine\Mine.cpp">
+      <Filter>RailSTG\Enemy\Mine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -454,6 +460,9 @@
     </ClInclude>
     <ClInclude Include="RailSTG\Enemy\HomingMob\HomingMob.h">
       <Filter>RailSTG\Enemy\HomingMob</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Enemy\Mine\Mine.h">
+      <Filter>RailSTG\Enemy\Mine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

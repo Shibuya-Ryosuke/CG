@@ -1,15 +1,19 @@
-#include "../../Original/RyoEngine.h"
+#ifdef _DEBUG
 #include <imgui.h>
+#endif
 
+#include "../../Original/RyoEngine.h"
 #include "Game.h"
 #include "../Player/Player.h"
 #include "../Enemy/BaseEnemy.h"
 #include "../Enemy/Mob/Mob.h"
 #include "../Enemy/HomingMob/HomingMob.h"
+#include "../Enemy/Mine/Mine.h"
 #include "../Bullet/EnemyBullet/EnemyBullet.h"
 #include "../Bullet/PlayerBullet/PlayerBullet.h"
 #include "../Time/TimeManager.h"
 #include "../Time/TimeEnum.h"
+#include <random>
 
 using namespace RyoEngine;
 
@@ -20,6 +24,9 @@ void Game::Initialize() {
 	// プレイヤーの作成
 	player_ = std::make_unique<Player>();
 	player_->Initialize();
+
+	// お試しで初期化時に出現
+	MineSpawn();
 }
 
 void Game::Finalize() {
@@ -101,6 +108,11 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	ImGui::End();
 #endif
 
+	// 機雷の更新
+	for (auto& mine : mines_) {
+		mine->Update(camera);
+	}
+
 	// 当たり判定
 	CheckAllCollision();
 
@@ -114,6 +126,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	// 2. mobs_ のポインタリストは一度クリアして、生き残っているものだけで作り直す
 	mobs_.clear();
 	homingMobs_.clear();
+	mines_.clear();
 
 	for (auto& enemy : enemies_) {
 		// Mob* へのキャスト
@@ -123,6 +136,10 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		// HomingMob* へのキャスト
 		else if (HomingMob* homingMob = dynamic_cast<HomingMob*>(enemy.get())) {
 			homingMobs_.push_back(homingMob);
+		}
+		// Mine* へのキャスト
+		else if (Mine* mine = dynamic_cast<Mine*>(enemy.get())) {
+			mines_.push_back(mine);
 		}
 	}
 
@@ -136,7 +153,8 @@ void Game::Draw() {
 
 	// 全敵の描画
 	for (auto& enemy : enemies_) {
-		enemy->Draw();PrimitiveRenderer::DrawOBB(enemy->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+		enemy->Draw();
+		PrimitiveRenderer::DrawOBB(enemy->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 	}
 }
 
@@ -165,6 +183,24 @@ void Game::HomingMobSpawn() {
 	homingMobs_.push_back(static_cast<HomingMob*>(rawPtr));
 }
 
+void Game::MineSpawn() {
+	for (int i = 0; i < 5; ++i) {
+		auto mine = std::make_unique<Mine>();
+		mine->Initialize();
+
+		// ランダムなx,y,zオフセットを散らす(範囲は要調整)
+		float randX = RandomFloat(-9.0f, 9.0f);
+		float randY = RandomFloat(-5.0f, 5.0f);
+		float randZ = RandomFloat(80.0f, 120.0f);
+		mine->SetFollowOffset({ randX, randY, randZ});
+
+		BaseEnemy* rawPtr = mine.get();
+		enemies_.push_back(std::move(mine));
+
+		mines_.push_back(static_cast<Mine*>(rawPtr));
+	}
+}
+
 void Game::CheckAllCollision() {
 	// プレイヤーの弾取得
 	const auto& playerBullets = player_->GetBullets();
@@ -179,6 +215,17 @@ void Game::CheckAllCollision() {
 				bullet->OnCollision();
 			}
 		}
+
+		// 機雷と自機の判定
+		if (Mine* mine = dynamic_cast<Mine*>(enemy.get())) {
+			if (IsCollision(player_->GetOBB(), mine->GetOBB())) {
+				// 機雷のダメージを受ける
+				player_->OnCollision(mine->GetDamage());
+				// 機雷死亡
+				mine->OnPlayerCollision();
+			}
+		}
+
 		// 敵の弾
 		const auto& enemyBullets = enemy->GetBullets();
 

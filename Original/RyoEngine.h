@@ -84,7 +84,9 @@ namespace RyoEngine {
         PrimitiveRenderer::DrawSphere(center, radius, subdivision, color, mode);
     }
 
-    
+    int32_t RandomInt32_t(int32_t min, int32_t max);
+    float RandomFloat(float min, float max);
+
     uint32_t LoadTex(const std::string& filePath);
     
     template <typename... Args>

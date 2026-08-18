@@ -1,9 +1,9 @@
 #include "RyoEngine.h"
 #include "Externals/imgui/imgui.h"
-#include <cstdlib>
-#include <ctime>
+#include <random>
 #include <chrono>
 #include <dxgidebug.h>
+#include <algorithm>
 #pragma comment(lib, "dxguid.lib")
 
 namespace RyoEngine {
@@ -97,8 +97,6 @@ namespace RyoEngine {
         // フォント
         fontOutputer_ = new Font();
         fontOutputer_->Initialize("resources/debugfont/debugfont.fnt", "resources/debugfont/debugfont.png");
-
-        std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
         lastTime_ = std::chrono::high_resolution_clock::now();
 
@@ -272,6 +270,30 @@ namespace RyoEngine {
         cpuFps_ = (cpuFrameTime_ > 0.0f) ? (1.0f / cpuFrameTime_) : 0.0f;
 
         GetDxCommon()->PostDraw();  // ImGuiの終了処理はこの中にいる
+    }
+
+    int32_t RandomInt32_t(int32_t min, int32_t max) {
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+
+        // 順序が逆になっていたら自動で入れ替える安全策
+        int32_t actualMin = std::min(min, max);
+        int32_t actualMax = std::max(min, max);
+
+        std::uniform_int_distribution<int32_t> dist(actualMin, actualMax);
+        return dist(gen);
+    }
+
+    float RandomFloat(float min, float max) {
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+
+        // 順序が逆になっていたら自動で入れ替える安全策
+        float actualMin = std::min(min, max);
+        float actualMax = std::max(min, max);
+
+        std::uniform_real_distribution<float> dist(actualMin, actualMax);
+        return dist(gen);
     }
 
     uint32_t LoadTex(const std::string& filePath) {

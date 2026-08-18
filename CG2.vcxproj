@@ -104,6 +104,7 @@
     <ClCompile Include="RailSTG\Bullet\HomingMissile\HomingMissile.cpp" />
     <ClCompile Include="RailSTG\Bullet\PlayerBullet\PlayerBullet.cpp" />
     <ClCompile Include="RailSTG\Enemy\HomingMob\HomingMob.cpp" />
+    <ClCompile Include="RailSTG\Enemy\Mine\Mine.cpp" />
     <ClCompile Include="RailSTG\Enemy\Mob\Mob.cpp" />
     <ClCompile Include="RailSTG\Particle\ParticleManager.cpp" />
     <ClCompile Include="RailSTG\Player\Player.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="RailSTG\Enemy\BaseEnemy.h" />
     <ClInclude Include="RailSTG\Enemy\EnemyEnum.h" />
     <ClInclude Include="RailSTG\Enemy\HomingMob\HomingMob.h" />
+    <ClInclude Include="RailSTG\Enemy\Mine\Mine.h" />
     <ClInclude Include="RailSTG\Enemy\Mob\Mob.h" />
     <ClInclude Include="RailSTG\GameMath\GameMath.h" />
     <ClInclude Include="RailSTG\Input\InputEnum.h" />

@@ -27,7 +27,7 @@ public:
 	void SetVelocity(const RyoEngine::Vector3 velocity) { velocity_ = velocity; }
 	void SetVelocityZ(const float velocityZ) { velocity_.z = velocityZ; }
 
-	float GetHp() { return hp_; }
+	float GetHp() const { return hp_; }
 	void SetHp(float hp) { hp_ = hp; }
 
 	bool IsDead() const { return isDead_; }
