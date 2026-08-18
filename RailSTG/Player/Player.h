@@ -47,9 +47,10 @@ public:
 	/// 回避行動
 	/// </summary>
 	void Evasion();
-	bool IsEvasion() { return isEvasion_; }
-	bool IsJustEvasion() { return isJustEvasion_; }
-	float GetJustEvasionDuration() { return justEvasionDuration_; }
+	bool IsEvasion() const { return isEvasion_; }
+	bool IsJustEvasion() const { return isJustEvasion_; }
+	float GetJustEvasionDuration() const { return justEvasionDuration_; }
+	void CollectJustEvasion(){ evasionDuration_ = kEvasionDuration / 3.0f; justEvasionDuration_ = kJustEvasionDuration / 3.0f; }
 
 	void LockOnMode();
 	void UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
@@ -143,7 +144,7 @@ private:
 	RyoEngine::OBB obb_{};
 
 	///仮ですぴーど(１秒あたり)
-	float speed_ = 12.0f;
+	float speed_ = 8.0f;
 
 	// カメラのローカル空間での自機のオフセット
 	RyoEngine::Vector3 followOffset_ = { 0.0f,0.0f,kFollowDistance };

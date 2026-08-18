@@ -5,6 +5,7 @@
 #include "../Player/Player.h"
 #include "../Enemy/BaseEnemy.h"
 #include "../Enemy/Mob/Mob.h"
+#include "../Enemy/HomingMob/HomingMob.h"
 #include "../Bullet/EnemyBullet/EnemyBullet.h"
 #include "../Bullet/PlayerBullet/PlayerBullet.h"
 #include "../Time/TimeManager.h"
@@ -39,6 +40,14 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		mobSpawnTimer_ = kMobSpawnTimer_;
 	}
 
+	// 追尾弾出す敵の出現
+	if (homingMobSpawnTimer_ > 0.0f) {
+		homingMobSpawnTimer_ -= TimeManager::GetDeltaTime();
+	} else {
+		HomingMobSpawn();
+		homingMobSpawnTimer_ = kHomingMobSpawnTimer_;
+	}
+
 	// プレイヤーの更新
 	player_->UpdatePlayer(camera, enemies_);
 
@@ -67,6 +76,31 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	ImGui::End();
 #endif
 
+#ifdef _DEBUG
+	ImGui::Begin("homingMobs");
+#endif
+	// 追尾弾出す敵の更新
+	for (auto& mob : homingMobs_) {
+		// プレイヤーの位置を保存（モブが撃つときプレイヤーに向けて発射するため）
+		mob->SetTargetPos(player_->GetWorldPos());
+		mob->Update(camera);
+		mob->UpdateDeflectedBullets([this](int32_t id) {return FindEnemyById(id);});
+
+#ifdef _DEBUG
+		// 座標表示
+		if (ImGui::TreeNodeEx("homingMob", ImGuiTreeNodeFlags_DefaultOpen)) {
+			Vector3 t = mob->GetWorldPos();
+			ImGui::Text("world: (%.2f, %.2f, %.2f)", t.x, t.y, t.z);
+			ImGui::Text("hp   : (%.2f)", mob->GetHp());
+			ImGui::Text("id   : (%d)", mob->GetEnemyId());
+			ImGui::TreePop();
+		}
+#endif
+	}
+#ifdef _DEBUG
+	ImGui::End();
+#endif
+
 	// 当たり判定
 	CheckAllCollision();
 
@@ -79,13 +113,19 @@ void Game::Update(const RyoEngine::Camera& camera) {
 
 	// 2. mobs_ のポインタリストは一度クリアして、生き残っているものだけで作り直す
 	mobs_.clear();
+	homingMobs_.clear();
+
 	for (auto& enemy : enemies_) {
-		// BaseEnemy* から Mob* へダウンキャストして再登録
-		Mob* mob = dynamic_cast<Mob*>(enemy.get());
-		if (mob) {
+		// Mob* へのキャスト
+		if (Mob* mob = dynamic_cast<Mob*>(enemy.get())) {
 			mobs_.push_back(mob);
 		}
+		// HomingMob* へのキャスト
+		else if (HomingMob* homingMob = dynamic_cast<HomingMob*>(enemy.get())) {
+			homingMobs_.push_back(homingMob);
+		}
 	}
+
 }
 
 void Game::Draw() {
@@ -94,10 +134,9 @@ void Game::Draw() {
 	// 当たり判定用の描画はデバッグ時のみのためここで描画
 	PrimitiveRenderer::DrawOBB(player_->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 
-	// モブの描画
-	for (auto& mob : mobs_) {
-		mob->Draw();
-		PrimitiveRenderer::DrawOBB(mob->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+	// 全敵の描画
+	for (auto& enemy : enemies_) {
+		enemy->Draw();PrimitiveRenderer::DrawOBB(enemy->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 	}
 }
 
@@ -113,42 +152,58 @@ void Game::MobSpawn() {
 	mobs_.push_back(static_cast<Mob*>(rawPtr));
 }
 
+void Game::HomingMobSpawn() {
+	// 追尾弾出す敵の生成
+	auto homingMob = std::make_unique<HomingMob>();
+	homingMob->SetFollowOffset({ 5.0f,0.0f,0.0f });
+	homingMob->Initialize();
+
+	// 追加
+	BaseEnemy* rawPtr = homingMob.get();
+	enemies_.push_back(std::move(homingMob));
+
+	homingMobs_.push_back(static_cast<HomingMob*>(rawPtr));
+}
+
 void Game::CheckAllCollision() {
 	// プレイヤーの弾取得
 	const auto& playerBullets = player_->GetBullets();
 	
-	for (auto& mob : mobs_) {
-		// モブと自弾の判定
+	for (auto& enemy : enemies_) {
+		// 敵と自弾の判定
 		for (auto& bullet : playerBullets) {
-			if (IsCollision(mob->GetOBB(), bullet->GetOBB())) {
+			if (IsCollision(enemy->GetOBB(), bullet->GetOBB())) {
 				// 敵の衝突コールバック
-				mob->OnCollision(bullet->GetDamage());
+				enemy->OnCollision(bullet->GetDamage());
 				// 当たったら弾の消滅
 				bullet->OnCollision();
 			}
 		}
-		// モブの弾
-		const auto& mobBullets = mob->GetBullets();
+		// 敵の弾
+		const auto& enemyBullets = enemy->GetBullets();
 
-		// モブ弾とプレイヤーの判定
-		for (auto& bullet : mobBullets) {
+		for (auto& bullet : enemyBullets) {
+			// 敵弾とプレイヤーの判定
 			if (IsCollision(player_->GetOBB(), bullet->GetOBB())) {
 				// プレイヤーの衝突コールバック
 				player_->OnCollision(bullet->GetDamage());
 
+				if (!player_->IsJustEvasion()) {
+					// ジャスト回避以外で弾の消滅
+					bullet->OnCollision();
+				}else
 				// ジャスト回避時
-				if (player_->IsJustEvasion()) {
+				{
 					// タイムマネージャーにジャスト回避を知らせる
 					TimeManager::SetTimeState(TimeState::JustEvasion);
 					// スローの解除を同期させるためにジャスト回避継続時間を知らせる
 					TimeManager::SetJustEvasionDuration(player_->GetJustEvasionDuration());
+					player_->CollectJustEvasion();
 
 					// 反射可能な弾か判定
 					if (bullet->IsDeflectable()) {
 						// 跳ね返されてない弾のみ
 						if (!bullet->IsDeflected()) {
-							// 速度の保存
-							bullet->CaptureSpeedForDeflection();
 							// 跳ね返されたことを伝える
 							bullet->SetIsDeflected(true);
 							// 寿命のリセット
@@ -159,24 +214,32 @@ void Game::CheckAllCollision() {
 					}
 				}
 
-				// 回避状態じゃないときだけ弾の消滅
-				if (!player_->IsEvasion() && !player_->IsJustEvasion()) {
-					// 当たったら弾の消滅
-					bullet->OnCollision();
+				//// 回避状態じゃないときだけ弾の消滅
+				//if (!player_->IsEvasion() && !player_->IsJustEvasion()) {
+				//	// 当たったら弾の消滅
+				//	bullet->OnCollision();
+				//}
+			}
+
+			// 自弾と撃ち落とせる弾の判定
+			if (bullet->IsDestructible()) {
+				for (auto& pBullet : playerBullets) {
+					if (IsCollision(pBullet->GetOBB(), bullet->GetOBB())) {
+						pBullet->OnCollision();
+						bullet->OnCollisionDestructibleBullet(pBullet->GetDamage());
+					}
 				}
 			}
-		}
 
-		// モブと跳ね返された弾の判定
-		for (auto& bullet : mobBullets) {
+			// 敵と跳ね返された弾の判定
 			// そもそも跳ね返せないものは無視
-			if (!bullet->IsDeflectable()) return;
+			if (!bullet->IsDeflectable()) continue;
 
 			// 跳ね返された弾で判定
 			if (bullet->IsDeflected()) {
-				if (IsCollision(mob->GetOBB(), bullet->GetOBB())) {
+				if (IsCollision(enemy->GetOBB(), bullet->GetOBB())) {
 					// モブにダメージ
-					mob->OnCollision(bullet->GetDamage());
+					enemy->OnCollision(bullet->GetDamage());
 					// 弾の消滅
 					bullet->OnCollision();
 				}

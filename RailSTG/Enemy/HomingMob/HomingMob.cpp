@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-#include "Mob.h"
+#include "HomingMob.h"
 #include "../BaseEnemy.h"
 #include "../../Bullet/EnemyBullet/EnemyBullet.h"
 #include "../../Time/TimeManager.h"
@@ -12,10 +12,10 @@
 
 using namespace RyoEngine;
 
-Mob::Mob() = default;
-Mob::~Mob() = default;
+HomingMob::HomingMob() = default;
+HomingMob::~HomingMob() = default;
 
-void Mob::Initialize() {
+void HomingMob::Initialize() {
 	// 生成
 	if (model_ == nullptr) {
 		model_ = Model::Create("resources/RailSTG/Enemy/enemy.obj");
@@ -40,9 +40,9 @@ void Mob::Initialize() {
 	state_ = MobState::Standard;
 }
 
-void Mob::Finalize(){}
+void HomingMob::Finalize() {}
 
-void Mob::Update(const RyoEngine::Camera& camera) {
+void HomingMob::Update(const RyoEngine::Camera& camera) {
 	// リクエストを反映
 	if (request_ != MobState::None) {
 		state_ = request_;
@@ -81,6 +81,10 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 	ImGui::Begin("enemyBullets");
 #endif
 	for (auto& bullet : bullets_) {
+		if (!bullet->IsDeflected()) {
+			// 反射前は毎フレームプレイヤーを追い続ける
+			bullet->SetTargetPos(targetPos_);
+		}
 		bullet->Update(camera);
 
 #ifdef _DEBUG
@@ -107,7 +111,7 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 	);
 }
 
-void Mob::Draw() {
+void HomingMob::Draw() {
 	for (auto& bullet : bullets_) {
 		bullet->Draw();
 	}
@@ -117,7 +121,7 @@ void Mob::Draw() {
 	BaseEnemy::DrawLockOnEffect();
 }
 
-void Mob::Shot() {
+void HomingMob::Shot() {
 	// メイン射撃のタイマー減少
 	if (shotInterval_ > 0) {
 		shotInterval_ -= TimeManager::GetDeltaTime();
@@ -141,7 +145,14 @@ void Mob::Shot() {
 		bullet->SetIsDeflectable(true);
 		bullet->SetDamage(kBulletDamage);
 		bullet->SetOwnerId(GetEnemyId());
-		bullet->SetOBBSize({ 0.5f,0.5f,0.5f });
+		bullet->SetLifeTime(100.0f);
+		bullet->SetOBBSize({ 2.0f,2.0f,2.0f });
+		// 撃ち落とし可能
+		bullet->SetIsDestructible(true);
+		// 体力の設定
+		bullet->SetHp(kHomingBulletHp);
+		// 発射直後からホーミング開始
+		bullet->SetTargetPos(targetPos_);
 
 		bullets_.push_back(std::move(bullet));
 
@@ -150,12 +161,12 @@ void Mob::Shot() {
 	}
 }
 
-void Mob::Move() {
+void HomingMob::Move() {
 	// 移動
 	followOffset_ += velocity_ * TimeManager::GetDeltaTime();
 }
 
-void Mob::UpdateDeflectedBullets(const std::function<BaseEnemy* (int32_t)>& enemyFinder) {
+void HomingMob::UpdateDeflectedBullets(const std::function<BaseEnemy* (int32_t)>& enemyFinder) {
 	for (auto& bullet : bullets_) {
 		if (bullet->IsDeflected()) {
 			BaseEnemy* owner = enemyFinder(bullet->GetOwnerId());

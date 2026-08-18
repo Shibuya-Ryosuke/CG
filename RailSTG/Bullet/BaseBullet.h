@@ -14,11 +14,18 @@ public:
 	void Update(const RyoEngine::Camera& camera) override {
 		(void)camera;
 
-		// 寿命で死亡
-		if (lifeTime_ > 0) {
-			lifeTime_ -= TimeManager::GetDeltaTime();
-		} else {
-			isDead_ = true;
+		if (!isDead_) {
+			// 寿命で死亡
+			if (lifeTime_ > 0) {
+				lifeTime_ -= TimeManager::GetDeltaTime();
+			} else {
+				isDead_ = true;
+			}
+
+			// ライフ0以下でも死亡
+			if (hp_ <= 0.0f) {
+				isDead_ = true;
+			}
 		}
 	}
 
@@ -35,7 +42,8 @@ public:
 	RyoEngine::Vector3 GetTranslate() const { return model_->GetTranslate(); }
 	RyoEngine::Vector3 GetVelocity() const { return velocity_; }
 	const RyoEngine::OBB& GetOBB() const { return obb_; }
-	
+	void SetOBBSize(const RyoEngine::Vector3& size) { obb_.size = size; }
+
 	/// <summary>
 	/// 座標のセット
 	/// </summary>
@@ -58,7 +66,7 @@ public:
 	/// </summary>
 	/// <param name="dead"></param>
 	void SetIsDead(bool dead) { isDead_ = dead; }
-
+	void SetHp(float hp) { hp_ = hp; }
 
 	// 方向ベクトルから、その方向を向くオイラー角(X:ピッチ, Y:ヨー, Z:0)を求める
 	inline void DirectionToRotate(const RyoEngine::Vector3& direction) {
@@ -73,11 +81,15 @@ public:
 	float GetDamage() { return damage_; }
 	void SetDamage(float damage) { damage_ = damage; }
 
+	void SetLifeTime(float lifeTime) { lifeTime_ = lifeTime; }
+	/// <summary>
+	/// 寿命の初期化（5.0f）
+	/// </summary>
 	void ResetLifeTime() { lifeTime_ = kLifeTime; }
 
 protected:
-	// 寿命(秒)
-	float kLifeTime = 3.0f;
+	// 初期寿命(秒)
+	float kLifeTime = 5.0f;
 
 
 protected:
@@ -95,4 +107,8 @@ protected:
 
 	// ダメージ
 	float damage_ = 0.0f;
+
+	// 弾自体の耐久値
+	// 破壊されないように1だけ入れておく
+	float hp_ = 1.0f;
 };

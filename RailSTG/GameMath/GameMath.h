@@ -94,11 +94,9 @@ inline void UpdateFollowTransform(
 /// </summary>
 /// <param name="obb">OBB</param>
 /// <param name="model">自身</param>
-/// <param name="size">サイズ</param>
-inline void UpdateOBB(RyoEngine::OBB& obb, const RyoEngine::Model* model, const RyoEngine::Vector3& size) {
+inline void UpdateOBB(RyoEngine::OBB& obb, const RyoEngine::Model* model) {
 	obb.center = model->GetWorldPos();
 	obb.orientations[0] = model->GetOrientationX();
 	obb.orientations[1] = model->GetOrientationY();
 	obb.orientations[2] = model->GetOrientationZ();
-	obb.size = size;
 }

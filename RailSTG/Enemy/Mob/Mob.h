@@ -45,7 +45,7 @@ public:
 
 	void UpdateDeflectedBullets(const std::function<BaseEnemy* (int32_t)>& enemyFinder);
 	
-	const std::vector<std::unique_ptr<EnemyBullet>>& GetBullets() const {
+	const std::vector<std::unique_ptr<EnemyBullet>>& GetBullets() const override {
 		return bullets_;
 	}
 

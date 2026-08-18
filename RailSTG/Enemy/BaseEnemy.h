@@ -3,6 +3,10 @@
 #include "../BaseObject/BaseObject.h"
 #include "EnemyEnum.h"
 #include <cstdint>
+#include <vector>
+#include <memory>
+
+class EnemyBullet;
 
 class BaseEnemy : public BaseObject {
 public:
@@ -33,6 +37,9 @@ public:
 	void SetLockOnState(LockOnState state) { lockOnState_ = state; }
 
 	int32_t GetEnemyId() const { return enemyId_; }
+
+	// 弾の取得関数
+	virtual const std::vector<std::unique_ptr<EnemyBullet>>& GetBullets() const = 0;
 
 	void DrawLockOnEffect() {
 		switch (lockOnState_) {

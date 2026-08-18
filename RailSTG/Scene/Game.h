@@ -9,6 +9,7 @@ namespace RyoEngine {
 class Player;
 class BaseEnemy;
 class Mob;
+class HomingMob;
 class Reticle;
 
 class Game {
@@ -39,6 +40,7 @@ public:
 	void Draw();
 
 	void MobSpawn();
+	void HomingMobSpawn();
 
 	void CheckAllCollision();
 
@@ -51,6 +53,8 @@ public:
 
 private:
 	float kMobSpawnTimer_ = 3.0f;
+	float kHomingMobSpawnTimer_ = 10.0f;
+
 private:
 	// プレイヤー
 	std::unique_ptr<Player> player_ = nullptr;
@@ -58,9 +62,12 @@ private:
 	std::unique_ptr<Reticle> reticle_ = nullptr;
 	// モブ
 	std::vector<Mob*> mobs_;
+	// 追尾弾出す敵
+	std::vector<HomingMob*> homingMobs_;
 	// 敵全体
 	std::vector<std::unique_ptr<BaseEnemy>> enemies_;
 	// スポーン時間
 	float mobSpawnTimer_ = kMobSpawnTimer_;
+	float homingMobSpawnTimer_ = kHomingMobSpawnTimer_;
 
 };

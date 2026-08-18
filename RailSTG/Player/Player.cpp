@@ -24,6 +24,8 @@ void Player::Initialize() {
 	model_ = Model::Create("resources/RailSTG/TR.obj");
 	model_->SetTranslate({ 0.0f,0.0f,0.0f });
 
+	obb_.size = { 1.0f,1.0f,1.0f };
+
 	// 初期ステート
 	state_ = PlayerState::Standard;
 
@@ -116,7 +118,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	// 座標更新
 	model_->Update(camera);
 	// obb
-	UpdateOBB(obb_, model_.get(), { 1.0f,1.0f,1.0f });
+	UpdateOBB(obb_, model_.get());
 	
 #ifdef _DEBUG
 	ImGui::Begin("player");
@@ -231,6 +233,8 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 			bullet->DirectionToRotate(direction);
 			// 位置のセット
 			bullet->SetTranslate(position);
+			// obbのサイズ
+			bullet->SetOBBSize({ 1.0f,1.0f,1.0f });
 			// ベクトルのセット
 			bullet->SetVelocity(direction * kBulletSpeed);
 			bullet->SetDamage(kBulletDamage);
@@ -413,6 +417,8 @@ void Player::ShootMissile(const RyoEngine::Camera& camera, const std::vector<std
 			// 初期化
 			missile->Initialize(spawnPos, target);
 			missile->SetDamage(kHomingMissileDamage);
+			missile->SetOBBSize({ 1.0f,1.0f,1.0f });
+
 
 			// ミサイルリストに追加
 			bullets_.push_back(std::move(missile));

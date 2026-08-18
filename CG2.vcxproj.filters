@@ -88,6 +88,9 @@
     <Filter Include="RailSTG\GameMath">
       <UniqueIdentifier>{31762e2c-956b-4db9-9ebb-8c7ac613480f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\Enemy\HomingMob">
+      <UniqueIdentifier>{4bcdbdcb-54f6-4791-bfb3-8e6bffd3dc9f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -233,6 +236,9 @@
     </ClCompile>
     <ClCompile Include="RailSTG\Particle\ParticleManager.cpp">
       <Filter>RailSTG\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Enemy\HomingMob\HomingMob.cpp">
+      <Filter>RailSTG\Enemy\HomingMob</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -445,6 +451,9 @@
     </ClInclude>
     <ClInclude Include="RailSTG\GameMath\GameMath.h">
       <Filter>RailSTG\GameMath</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Enemy\HomingMob\HomingMob.h">
+      <Filter>RailSTG\Enemy\HomingMob</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
