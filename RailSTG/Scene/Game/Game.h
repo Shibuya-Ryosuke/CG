@@ -43,10 +43,23 @@ public:
 	/// </summary>
 	void Draw();
 
-	void MobSpawn();
-	void HomingMobSpawn();
-	void MineSpawn();
-	void ReticleGunnerSpawn();
+	void MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera);
+	void HomingMobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera);
+	void MineSpawn(float randXMin, float randXMax, float randYMin, float randYMax, float randZMin, float randZMax, int32_t maxMines, const RyoEngine::Camera& camera);
+	void ReticleGunnerSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera);
+
+	/// <summary>
+	/// ファーストフェーズの敵スポーン
+	/// </summary>
+	void FirstPhaseSpawn(const RyoEngine::Camera& camera);
+	/// <summary>
+	/// セカンドフェーズ敵スポーン
+	/// </summary>
+	void SecondPhaseSpawn(const RyoEngine::Camera& camera);
+	/// <summary>
+	/// サードフェーズの敵スポーン
+	/// </summary>
+	void ThirdPhaseSpawn(const RyoEngine::Camera& camera);
 
 	void CheckAllCollision();
 
@@ -62,11 +75,17 @@ public:
 	void SetPhaseTimeLimits(const std::vector<float>& timeLimits) { phaseTimeLimits_ = timeLimits; }
 
 	void AdvanceToNextPhase();
-	void UpdatePhase();
+	void UpdatePhase(const RyoEngine::Camera& camera);
 
 private:
 	float kMobSpawnTimer_ = 3.0f;
 	float kHomingMobSpawnTimer_ = 10.0f;
+
+	float kEnemySpawnInterval_ = 0.6f;
+
+	int32_t kFirstSpawnEnemies_ = 6;
+	int32_t kSecondSpawnEnemies_ = 12;
+	int32_t kThirdSpawnEnemies_ = 20;
 
 private:
 	// プレイヤー
@@ -85,9 +104,19 @@ private:
 	float mobSpawnTimer_ = kMobSpawnTimer_;
 	float homingMobSpawnTimer_ = kHomingMobSpawnTimer_;
 
+	float enemySpawnTimer_ = kEnemySpawnInterval_;
+
 	// 開始はReadyから
 	Phase phase_ = Phase::First;
 	float phaseElapsedTime_ = 0.0f; // 現在フェーズの経過時間
 	std::vector<float> phaseTimeLimits_;
 
+	bool isFirstSpawning_ = false;
+	bool isSecondSpawning_ = false;
+	bool isThirdSpawning_ = false;
+
+	int32_t spawnEnemies_ = 0;
+	int32_t totalSpawnEnemies_ = 0;
+
+	RyoEngine::Vector3 spawnSpace_{};
 };

@@ -34,9 +34,6 @@ void Mob::Initialize() {
 	// 次に入れるIDのために1増やす
 	nextEnemyId_++;
 
-	// 距離を入れる
-	followOffset_.z = kFollowDistance;
-
 	// 初期ステート
 	state_ = MobState::Standard;
 }

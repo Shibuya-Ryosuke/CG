@@ -31,7 +31,6 @@ private:
     float kBulletSpeed = 20.0f;      // Mobより低速
     float kBulletDamage = 25.0f;     // Mobより高威力
     RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,6.0f };
-    float kFollowDistance = 60.0f;
     float kMaxHp_ = 100.0f;
     float kHomingBulletHp = 20.0f;
 private:

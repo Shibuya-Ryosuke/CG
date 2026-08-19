@@ -15,6 +15,7 @@
 #include "../../Time/TimeManager.h"
 #include "../../Time/TimeEnum.h"
 #include <random>
+#include <utility>
 
 using namespace RyoEngine;
 
@@ -30,7 +31,9 @@ void Game::Initialize() {
 	//MineSpawn();
 	//ReticleGunnerSpawn();
 
-	ReticleGunnerSpawn();
+	//ReticleGunnerSpawn();
+
+	isFirstSpawning_ = true;
 }
 
 void Game::Finalize() {
@@ -45,9 +48,17 @@ void Game::Update(const RyoEngine::Camera& camera) {
 
 #ifdef _DEBUG
 	ImGui::Begin("game");
-	ImGui::Text("phaseTime: %.2f", phaseElapsedTime_);
+	ImGui::Text("enemySpawnTimer: %.2f", enemySpawnTimer_);
+	ImGui::Text("spawnEnemies   : %d", spawnEnemies_);
+	ImGui::Text("totalSpawnEnemies   : %d", totalSpawnEnemies_);
+	ImGui::NewLine();
+
+	// フェーズごとの制限時間を持ってくる
+	size_t routeIndex = static_cast<size_t>(phase_) - static_cast<size_t>(Phase::First);
+	float timeLimit = phaseTimeLimits_[routeIndex];
+	ImGui::Text("phaseTime: %.2f / %.2f", phaseElapsedTime_, timeLimit);
 	ImGui::Text("phase    : %d", phase_);
-	ImGui::Spacing();
+	ImGui::NewLine();
 
 	ImGui::Text("cameraT: %.2f,%.2f,%.2f", camera.GetTranslate().x, camera.GetTranslate().y, camera.GetTranslate().z);
 	ImGui::End();
@@ -170,7 +181,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		}
 	}
 
-	UpdatePhase();
+	UpdatePhase(camera);
 }
 
 void Game::Draw() {
@@ -186,60 +197,120 @@ void Game::Draw() {
 	}
 }
 
-void Game::MobSpawn() {
+void Game::MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera) {
 	// モブの生成
 	auto mob = std::make_unique<Mob>();
 	mob->Initialize();
+	mob->SetFollowOffset(followoffset);
+	mob->Update(camera);
 
 	// 追加
 	BaseEnemy* rawPtr = mob.get();
 	enemies_.push_back(std::move(mob));
 
 	mobs_.push_back(static_cast<Mob*>(rawPtr));
+
+	spawnEnemies_++;
 }
 
-void Game::HomingMobSpawn() {
+void Game::HomingMobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera) {
 	// 追尾弾出す敵の生成
 	auto homingMob = std::make_unique<HomingMob>();
-	homingMob->SetFollowOffset({ 5.0f,0.0f,0.0f });
+	homingMob->SetFollowOffset(followoffset);
 	homingMob->Initialize();
+	homingMob->Update(camera);
 
 	// 追加
 	BaseEnemy* rawPtr = homingMob.get();
 	enemies_.push_back(std::move(homingMob));
 
 	homingMobs_.push_back(static_cast<HomingMob*>(rawPtr));
+
+	spawnEnemies_++;
 }
 
-void Game::MineSpawn() {
-	for (int i = 0; i < 5; ++i) {
+void Game::MineSpawn(float randXMin, float randXMax, float randYMin, float randYMax, float randZMin, float randZMax, int32_t maxMines, const RyoEngine::Camera& camera) {
+	for (int i = 0; i < maxMines; ++i) {
 		auto mine = std::make_unique<Mine>();
 		mine->Initialize();
 
+		// 順序が逆になっていたら自動で入れ替える安全策
+		float actualrandXMin = std::min(randXMin, randXMax);
+		float actualrandXMax = std::max(randXMin, randXMax);
+		float actualrandYMin = std::min(randYMin, randYMax);
+		float actualrandYMax = std::max(randYMin, randYMax);
+		float actualrandZMin = std::min(randZMin, randZMax);
+		float actualrandZMax = std::max(randZMin, randZMax);
+
 		// ランダムなx,y,zオフセットを散らす(範囲は要調整)
-		float randX = RandomFloat(-9.0f, 9.0f);
-		float randY = RandomFloat(-5.0f, 5.0f);
-		float randZ = RandomFloat(80.0f, 120.0f);
+		float randX = RandomFloat(actualrandXMin, actualrandXMax);
+		float randY = RandomFloat(actualrandYMin, actualrandYMax);
+		float randZ = RandomFloat(actualrandZMin, actualrandZMax);
 		mine->SetFollowOffset({ randX, randY, randZ});
+
+		mine->Update(camera);
 
 		BaseEnemy* rawPtr = mine.get();
 		enemies_.push_back(std::move(mine));
 
 		mines_.push_back(static_cast<Mine*>(rawPtr));
+
+		spawnEnemies_++;
 	}
 }
 
-void Game::ReticleGunnerSpawn() {
+void Game::ReticleGunnerSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera) {
 	// レティクルで攻撃する敵の生成
 	auto reticleGunner = std::make_unique<ReticleGunner>();
-	reticleGunner->SetFollowOffset({ -5.0f,0.0f,40.0f });
 	reticleGunner->Initialize();
+	reticleGunner->SetFollowOffset(followoffset);
+	reticleGunner->Update(camera);
 
 	// 追加
 	BaseEnemy* rawPtr = reticleGunner.get();
 	enemies_.push_back(std::move(reticleGunner));
 
 	reticleGunners_.push_back(static_cast<ReticleGunner*>(rawPtr));
+
+	spawnEnemies_++;
+}
+
+void Game::FirstPhaseSpawn(const RyoEngine::Camera& camera) {
+	if (!isFirstSpawning_)return;
+
+	enemySpawnTimer_ -= TimeManager::GetDeltaTime();
+
+	if (enemySpawnTimer_ <= 0.0f) {
+		// 3以上6未満
+		if (spawnEnemies_ >= 3 && spawnEnemies_ < 6) {
+			MobSpawn({ 9.0f,18.0f+spawnSpace_.y,60.0f },camera);
+			spawnSpace_.y += 8.0f;
+		}
+
+		// 3未満
+		if (spawnEnemies_ < 3) {
+			MobSpawn({ -9.0f,10.0f + spawnSpace_.y,60.0f },camera);
+			spawnSpace_.y -= 8.0f;
+		}
+
+		if (spawnEnemies_ >= kFirstSpawnEnemies_) {
+			isFirstSpawning_ = false;
+			totalSpawnEnemies_ += spawnEnemies_;
+			spawnEnemies_ = 0;
+			spawnSpace_ = { 0.0f,0.0f,0.0f };
+		}
+
+		// タイマーリセット
+		enemySpawnTimer_ = kEnemySpawnInterval_;
+	}
+}
+
+void Game::SecondPhaseSpawn(const RyoEngine::Camera& camera) {
+	(void)camera;
+}
+
+void Game::ThirdPhaseSpawn(const RyoEngine::Camera& camera) {
+	(void)camera;
 }
 
 void Game::CheckAllCollision() {
@@ -361,11 +432,13 @@ void Game::AdvanceToNextPhase() {
 	switch (phase_) {
 	case Phase::First:
 		phase_ = Phase::Second;
-		MobSpawn();
+		isSecondSpawning_ = true;
+		//MobSpawn();
 		break;
 	case Phase::Second:
 		phase_ = Phase::Third;
-		MineSpawn();
+		isThirdSpawning_ = true;
+		//MineSpawn();
 		break;
 	case Phase::Third:
 		phase_ = Phase::End;
@@ -379,7 +452,7 @@ void Game::AdvanceToNextPhase() {
 	// 次フェーズの敵を生成する処理をここに追加(既存の敵生成ロジックに合わせて)
 }
 
-void Game::UpdatePhase() {
+void Game::UpdatePhase(const RyoEngine::Camera& camera) {
 	if (phase_ != Phase::First && phase_ != Phase::Second && phase_ != Phase::Third) {
 		return; // Ready/Changing/Endではフェーズ判定不要
 	}
@@ -387,15 +460,37 @@ void Game::UpdatePhase() {
 	// フェーズの時間
 	phaseElapsedTime_ += TimeManager::GetDeltaTime();
 
+	// 敵のスポーン
+	switch (phase_) {
+	case Phase::First:
+		FirstPhaseSpawn(camera);
+		break;
+
+	case Phase::Second:
+		SecondPhaseSpawn(camera);
+		break;
+
+	case Phase::Third:
+		ThirdPhaseSpawn(camera);
+		break;
+
+	default:
+		break;
+	}
+
+	// フェーズごとの制限時間を持ってくる
 	size_t routeIndex = static_cast<size_t>(phase_) - static_cast<size_t>(Phase::First);
 	float timeLimit = phaseTimeLimits_[routeIndex];
 
-	// 時間切れと敵の全滅を確認
-	bool timeUp = phaseElapsedTime_ >= timeLimit;
-	bool allDefeated = enemies_.empty(); // 実際のコンテナ名/判定方法に合わせて調整
+	// スポーン処理中は無視
+	if (!isFirstSpawning_ && !isSecondSpawning_ && !isThirdSpawning_) {
+		// 時間切れと敵の全滅を確認
+		bool timeUp = phaseElapsedTime_ >= timeLimit;
+		bool allDefeated = enemies_.empty(); // 実際のコンテナ名/判定方法に合わせて調整
 
-	// どちらかを満たしていたら
-	if (timeUp || allDefeated) {
-		AdvanceToNextPhase();
+		// どちらかを満たしていたら
+		if (timeUp || allDefeated) {
+			AdvanceToNextPhase();
+		}
 	}
 }
