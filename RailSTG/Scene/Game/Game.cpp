@@ -27,8 +27,8 @@ void Game::Initialize() {
 	player_->Initialize();
 
 	// お試しで初期化時に出現
-	MineSpawn();
-	ReticleGunnerSpawn();
+	//MineSpawn();
+	//ReticleGunnerSpawn();
 }
 
 void Game::Finalize() {
@@ -41,21 +41,21 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		TimeManager::SetTimeState(TimeState::JustEvasion);
 	}
 
-	// モブの出現
-	if (mobSpawnTimer_ > 0.0f) {
-		mobSpawnTimer_ -= TimeManager::GetDeltaTime();
-	} else {
-		//MobSpawn();
-		mobSpawnTimer_ = kMobSpawnTimer_;
-	}
+	//// モブの出現
+	//if (mobSpawnTimer_ > 0.0f) {
+	//	mobSpawnTimer_ -= TimeManager::GetDeltaTime();
+	//} else {
+	//	//MobSpawn();
+	//	mobSpawnTimer_ = kMobSpawnTimer_;
+	//}
 
-	// 追尾弾出す敵の出現
-	if (homingMobSpawnTimer_ > 0.0f) {
-		homingMobSpawnTimer_ -= TimeManager::GetDeltaTime();
-	} else {
-		HomingMobSpawn();
-		homingMobSpawnTimer_ = kHomingMobSpawnTimer_;
-	}
+	//// 追尾弾出す敵の出現
+	//if (homingMobSpawnTimer_ > 0.0f) {
+	//	homingMobSpawnTimer_ -= TimeManager::GetDeltaTime();
+	//} else {
+	//	HomingMobSpawn();
+	//	homingMobSpawnTimer_ = kHomingMobSpawnTimer_;
+	//}
 
 	// プレイヤーの更新
 	player_->UpdatePlayer(camera, enemies_);
