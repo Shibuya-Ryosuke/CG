@@ -43,6 +43,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		TimeManager::SetTimeState(TimeState::JustEvasion);
 	}
 
+#ifdef _DEBUG
 	ImGui::Begin("game");
 	ImGui::Text("phaseTime: %.2f", phaseElapsedTime_);
 	ImGui::Text("phase    : %d", phase_);
@@ -50,6 +51,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 
 	ImGui::Text("cameraT: %.2f,%.2f,%.2f", camera.GetTranslate().x, camera.GetTranslate().y, camera.GetTranslate().z);
 	ImGui::End();
+#endif
 
 	//// モブの出現
 	//if (mobSpawnTimer_ > 0.0f) {
