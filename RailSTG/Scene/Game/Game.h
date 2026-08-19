@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <cstdint>
+#include "../SceneEnum.h"
 
 namespace RyoEngine {
 	class Camera;
@@ -62,8 +63,6 @@ private:
 private:
 	// プレイヤー
 	std::unique_ptr<Player> player_ = nullptr;
-	// レティクル
-	std::unique_ptr<Reticle> reticle_ = nullptr;
 	// モブ
 	std::vector<Mob*> mobs_;
 	// 追尾弾出す敵
@@ -78,4 +77,7 @@ private:
 	float mobSpawnTimer_ = kMobSpawnTimer_;
 	float homingMobSpawnTimer_ = kHomingMobSpawnTimer_;
 
+	// 開始はReadyから
+	Phase phase_ = Phase::Ready;
+	// 
 };

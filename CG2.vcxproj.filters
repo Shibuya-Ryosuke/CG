@@ -97,6 +97,9 @@
     <Filter Include="RailSTG\Enemy\ReticleGunner">
       <UniqueIdentifier>{89424d06-145b-4177-9975-6f206f4170fd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\Scene\Game">
+      <UniqueIdentifier>{1e015da6-2efa-498f-9d95-5ef183a5861f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -249,8 +252,8 @@
     <ClCompile Include="RailSTG\Enemy\ReticleGunner\ReticleGunner.cpp">
       <Filter>RailSTG\Enemy\ReticleGunner</Filter>
     </ClCompile>
-    <ClCompile Include="RailSTG\Scene\Game.cpp">
-      <Filter>RailSTG\Scene</Filter>
+    <ClCompile Include="RailSTG\Scene\Game\Game.cpp">
+      <Filter>RailSTG\Scene\Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -470,8 +473,8 @@
     <ClInclude Include="RailSTG\Enemy\ReticleGunner\ReticleGunner.h">
       <Filter>RailSTG\Enemy\ReticleGunner</Filter>
     </ClInclude>
-    <ClInclude Include="RailSTG\Scene\Game.h">
-      <Filter>RailSTG\Scene</Filter>
+    <ClInclude Include="RailSTG\Scene\Game\Game.h">
+      <Filter>RailSTG\Scene\Game</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

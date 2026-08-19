@@ -9,6 +9,7 @@
 #include "../Bullet/BaseBullet.h"
 #include "../Bullet/PlayerBullet/PlayerBullet.h"
 #include "../Bullet/HomingMissile/HomingMissile.h"
+#include "../Enemy/EnemyEnum.h"
 #include "../Input/InputManager.h"
 #include "../Time/TimeManager.h"
 #include "../Particle/ParticleManager.h"
@@ -50,8 +51,8 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	}
 
 	// スペシャル攻撃1クールタイム減少
-	if (specialAttack1CoolTime > 0.0f) {
-		specialAttack1CoolTime -= TimeManager::GetDeltaTime();
+	if (specialAttack1CoolTime_ > 0.0f) {
+		specialAttack1CoolTime_ -= TimeManager::GetDeltaTime();
 	}
 
 	// 回避クールタイム減少
@@ -152,7 +153,8 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	ImGui::Text("evasionCoolTime    : (%.4f)", evasionCoolTime_);
 	ImGui::NewLine();
 
-	ImGui::Text("specialAttack1 coolTime: (%.2f)", specialAttack1CoolTime);
+	ImGui::Text("specialAttack1 coolTime: (%.2f)", specialAttack1CoolTime_);
+	ImGui::Text("specialAttack1 guage   : (%.2f)", specialAttack1Guage_);
 	ImGui::End();
 #endif
 
@@ -162,6 +164,26 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 			[](const std::unique_ptr<BaseBullet>& b) { return b->IsDead(); }),
 		bullets_.end()
 	);
+
+	// ロックオン攻撃中は無視
+	if (state_ != PlayerState::SpecialAttack1) {
+		// 追尾弾が残ってるか調べる
+		bool hasFound = false;
+		for (auto& bullet : bullets_) {
+			if (dynamic_cast<HomingMissile*>(bullet.get()) != nullptr) {
+				hasFound = true;
+				break;
+			}
+		}
+		// ひとつもないならロックオン状態の敵を再度ロックオンできるように元に戻す
+		if (!hasFound) {
+			for (auto& enemy : enemies) {
+				if (enemy->GetLockOnState() == LockOnState::Locked) {
+					enemy->SetLockOnState(LockOnState::None);
+				}
+			}
+		}
+	}
 
 	// 弾の更新
 #ifdef _DEBUG
@@ -283,11 +305,13 @@ void Player::Evasion() {
 }
 
 void Player::LockOnMode() {
-	if (specialAttack1CoolTime <= 0.0f) {
-		// 右クリックでロックオンモードへ
-		if (Input::IsMousePush(1)) {
-			request_ = PlayerState::SpecialAttack1;
-			TimeManager::SetTimeState(TimeState::Targeting);
+	if (specialAttack1CoolTime_ <= 0.0f) {
+		if (specialAttack1Guage_ >= 100.0f) {
+			// 右クリックでロックオンモードへ
+			if (Input::IsMousePush(1)) {
+				request_ = PlayerState::SpecialAttack1;
+				TimeManager::SetTimeState(TimeState::Targeting);
+			}
 		}
 	}
 }
@@ -300,7 +324,7 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 		request_ = PlayerState::Standard;
 		TimeManager::SetTimeState(TimeState::Default);
 		// キャンセル時のクールタイムを代入
-		specialAttack1CoolTime = kSpecialAttack1CanceledCoolTime;
+		specialAttack1CoolTime_ = kSpecialAttack1CanceledCoolTime;
 
 		// 全敵のロックオン状態を解除
 		for (auto& enemy : enemies) {
@@ -371,8 +395,8 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 					TimeManager::SetTimeState(TimeState::Default);
 					request_ = PlayerState::Standard;
 
-					// スペシャル攻撃１のクールタイムを代入
-					specialAttack1CoolTime = kSpecialAttack1CoolTime;
+					// スペシャル攻撃１のゲージを0へ
+					specialAttack1Guage_ = 0.0f;
 					return;
 				}
 				break;

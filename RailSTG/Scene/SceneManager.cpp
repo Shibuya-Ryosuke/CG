@@ -1,5 +1,5 @@
 #include "SceneManager.h"
-#include "Game.h"
+#include "Game/Game.h"
 #include "../Particle/ParticleManager.h"
 
 using namespace RyoEngine;

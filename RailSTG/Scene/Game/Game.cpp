@@ -2,18 +2,18 @@
 #include <imgui.h>
 #endif
 
-#include "../../Original/RyoEngine.h"
+#include "../../../Original/RyoEngine.h"
 #include "Game.h"
-#include "../Player/Player.h"
-#include "../Enemy/BaseEnemy.h"
-#include "../Enemy/Mob/Mob.h"
-#include "../Enemy/HomingMob/HomingMob.h"
-#include "../Enemy/Mine/Mine.h"
-#include "../Enemy/ReticleGunner/ReticleGunner.h"
-#include "../Bullet/EnemyBullet/EnemyBullet.h"
-#include "../Bullet/PlayerBullet/PlayerBullet.h"
-#include "../Time/TimeManager.h"
-#include "../Time/TimeEnum.h"
+#include "../../Player/Player.h"
+#include "../../Enemy/BaseEnemy.h"
+#include "../../Enemy/Mob/Mob.h"
+#include "../../Enemy/HomingMob/HomingMob.h"
+#include "../../Enemy/Mine/Mine.h"
+#include "../../Enemy/ReticleGunner/ReticleGunner.h"
+#include "../../Bullet/EnemyBullet/EnemyBullet.h"
+#include "../../Bullet/PlayerBullet/PlayerBullet.h"
+#include "../../Time/TimeManager.h"
+#include "../../Time/TimeEnum.h"
 #include <random>
 
 using namespace RyoEngine;
@@ -239,6 +239,8 @@ void Game::CheckAllCollision() {
 			if (IsCollision(enemy->GetOBB(), bullet->GetOBB())) {
 				// 敵の衝突コールバック
 				enemy->OnCollision(bullet->GetDamage());
+				// スペシャル攻撃のゲージをためる
+				player_->ChargeGuage();
 				// 当たったら弾の消滅
 				bullet->OnCollision();
 			}
@@ -307,6 +309,7 @@ void Game::CheckAllCollision() {
 			if (bullet->IsDestructible()) {
 				for (auto& pBullet : playerBullets) {
 					if (IsCollision(pBullet->GetOBB(), bullet->GetOBB())) {
+						player_->ChargeGuage();
 						pBullet->OnCollision();
 						bullet->OnCollisionDestructibleBullet(pBullet->GetDamage());
 					}

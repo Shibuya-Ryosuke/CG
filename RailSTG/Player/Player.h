@@ -57,6 +57,11 @@ public:
 	void ShootMissile(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
 
 	void OnCollision(float damage);
+	void ChargeGuage() {
+		if (specialAttack1Guage_ < 100.0f) {
+			specialAttack1Guage_ += kHitChargeGauge;
+		} 
+	}
 
 	const RyoEngine::OBB& GetOBB() const { return obb_; }
 	const std::vector<std::unique_ptr<BaseBullet>>& GetBullets() const {
@@ -89,14 +94,15 @@ private:
 	float kBulletSpeed = 260.0f;
 	float kBulletDamage = 5.0f;
 	float kHomingMissileDamage = 20.0f;
-
+	float kHitChargeGauge = 5.0f;
+	
 	// カメラからどれだけ前方の位置に留まるか(この距離の平面上をカメラ基準でスライドする)
 	float kFollowDistance = 25.0f;
 	// 画面端ぎりぎりに張り付かないようにするための余白(ワールド単位)
 	float kClampMargin = 0.5f;
 
 
-	float kSpecialAttack1CoolTime = 4.0f;
+	
 	float kSpecialAttack1CanceledCoolTime = 0.8f;
 
 	// 回避持続時間は13F(概算)
@@ -155,5 +161,7 @@ private:
 	RyoEngine::Vector3 followOffset_ = { 0.0f,0.0f,kFollowDistance };
 
 	// スペシャル攻撃１（ロックオンミサイル）クールタイム
-	float specialAttack1CoolTime = kSpecialAttack1CoolTime;
+	float specialAttack1CoolTime_ = 0.0f;
+	// スペシャル攻撃１を使うために必要なゲージ
+	float specialAttack1Guage_ = 0.0f;
 };

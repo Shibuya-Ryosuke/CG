@@ -51,6 +51,8 @@ void HomingMissile::Update(const RyoEngine::Camera& camera) {
 
 		// 4. 速度ベクトルを更新
 		velocity_ = newDir * speed_;
+	} else {
+		targetEnemy_ = nullptr;
 	}
 	// ※もし途中でターゲットが消滅したら、最後の velocity_ のまま直進します
 
