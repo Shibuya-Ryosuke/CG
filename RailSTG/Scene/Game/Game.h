@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <cstdint>
+#include <vector>
 #include "PhaseRoute.h"
 
 namespace RyoEngine {
@@ -58,6 +59,11 @@ public:
 
 	Phase GetPhase()const { return phase_; }
 
+	void SetPhaseTimeLimits(const std::vector<float>& timeLimits) { phaseTimeLimits_ = timeLimits; }
+
+	void AdvanceToNextPhase();
+	void UpdatePhase();
+
 private:
 	float kMobSpawnTimer_ = 3.0f;
 	float kHomingMobSpawnTimer_ = 10.0f;
@@ -81,4 +87,7 @@ private:
 
 	// 開始はReadyから
 	Phase phase_ = Phase::Ready;
+	float phaseElapsedTime_ = 0.0f; // 現在フェーズの経過時間
+	std::vector<float> phaseTimeLimits_;
+
 };

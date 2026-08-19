@@ -45,6 +45,12 @@ public:
 	/// </summary>
 	bool IsFinished() const;
 
+	/// <summary>
+	/// 現在の実位置を起点として、次の経路へ動的に接続する
+	/// </summary>
+	/// <param name="nextWayPoints">接続先の経路(次フェーズのウェイポイント)</param>
+	void ConnectToNextPhase(const std::vector<RyoEngine::Vector3>& nextWayPoints);
+
 private:
 	/// <summary>
 	/// 現在区間内の進行度を進め、区間をまたいだらインデックスを送る

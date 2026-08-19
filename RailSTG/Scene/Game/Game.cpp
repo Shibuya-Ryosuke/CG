@@ -341,3 +341,41 @@ BaseEnemy* Game::FindEnemyById(int32_t enemyId) const {
 	}
 	return nullptr; // 死亡済み、またはそもそも存在しないID
 }
+
+void Game::AdvanceToNextPhase() {
+	phaseElapsedTime_ = 0.0f;
+
+	switch (phase_) {
+	case Phase::First:
+		phase_ = Phase::Second;
+		break;
+	case Phase::Second:
+		phase_ = Phase::Third;
+		break;
+	case Phase::Third:
+		phase_ = Phase::End;
+		break;
+	default:
+		break;
+	}
+
+	// 次フェーズの敵を生成する処理をここに追加(既存の敵生成ロジックに合わせて)
+}
+
+void Game::UpdatePhase() {
+	if (phase_ != Phase::First && phase_ != Phase::Second && phase_ != Phase::Third) {
+		return; // Ready/Changing/Endではフェーズ判定不要
+	}
+
+	phaseElapsedTime_ += TimeManager::GetDeltaTime();
+
+	size_t routeIndex = static_cast<size_t>(phase_) - static_cast<size_t>(Phase::First);
+	float timeLimit = phaseTimeLimits_[routeIndex];
+
+	bool timeUp = phaseElapsedTime_ >= timeLimit;
+	bool allDefeated = enemies_.empty(); // 実際のコンテナ名/判定方法に合わせて調整
+
+	if (timeUp || allDefeated) {
+		AdvanceToNextPhase();
+	}
+}

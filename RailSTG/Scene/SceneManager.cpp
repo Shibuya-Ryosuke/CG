@@ -61,6 +61,12 @@ void SceneManager::Initialize(Scene sceneState) {
     // シーン別
     game_ = std::make_unique<Game>();
     game_->Initialize();
+    // フェーズ別制限時間のセット
+    std::vector<float> timeLimits;
+    for (const auto& route : phaseRoutes_) {
+        timeLimits.push_back(route.timeLimit);
+    }
+    game_->SetPhaseTimeLimits(timeLimits);
 }
 
 void SceneManager::Finalize() {
@@ -159,6 +165,6 @@ void SceneManager::CheckPhaseChange() {
 
     // 経路を持つのはFirst~Thirdのみ(Ready/Changing/Endは対象外)
     if (currentPhase == Phase::First || currentPhase == Phase::Second || currentPhase == Phase::Third) {
-        camera_->SetWayPoints(phaseRoutes_[PhaseToRouteIndex(currentPhase)].wayPoints);
+        camera_->ConnectToNextPhase(phaseRoutes_[PhaseToRouteIndex(currentPhase)].wayPoints); // SetWayPointsから変更
     }
 }

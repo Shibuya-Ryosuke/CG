@@ -46,6 +46,21 @@ bool RailCameraController::IsFinished() const {
 	return (currentIndex_ + 2 >= wayPoints_.size()) && (segmentT_ >= 1.0f);
 }
 
+void RailCameraController::ConnectToNextPhase(const std::vector<RyoEngine::Vector3>& nextWayPoints) {
+	if (nextWayPoints.empty()) {
+		return;
+	}
+
+	std::vector<Vector3> newWayPoints;
+	newWayPoints.reserve(nextWayPoints.size() + 1);
+	newWayPoints.push_back(translate_); // 現在の実位置を起点に追加
+	newWayPoints.insert(newWayPoints.end(), nextWayPoints.begin(), nextWayPoints.end());
+
+	wayPoints_ = std::move(newWayPoints);
+	currentIndex_ = 0;
+	segmentT_ = 0.0f;
+}
+
 void RailCameraController::AdvanceProgress() {
 	if (wayPoints_.size() < 2) {
 		return;
@@ -69,7 +84,7 @@ void RailCameraController::AdvanceProgress() {
 	}
 
 	// 1. TimeManagerからスロー反映済みのDeltaTimeを取得する
-	float deltaTime = TimeManager::GetInstance().GetDeltaTime();
+	float deltaTime = TimeManager::GetDeltaTime();
 
 	// 2. 移動量に deltaTime を掛ける
 	// （※これに合わせて moveSpeed_ の数値の大きさの調整が必要になる場合があります）
