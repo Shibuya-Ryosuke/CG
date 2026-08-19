@@ -359,15 +359,17 @@ void Game::AdvanceToNextPhase() {
 	switch (phase_) {
 	case Phase::First:
 		phase_ = Phase::Second;
-		MineSpawn();
+		MobSpawn();
 		break;
 	case Phase::Second:
 		phase_ = Phase::Third;
-		MobSpawn();
+		MineSpawn();
 		break;
 	case Phase::Third:
 		phase_ = Phase::End;
 		break;
+	case Phase::Changing:
+
 	default:
 		break;
 	}

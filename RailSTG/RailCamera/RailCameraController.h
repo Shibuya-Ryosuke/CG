@@ -51,6 +51,12 @@ public:
 	/// <param name="nextWayPoints">接続先の経路(次フェーズのウェイポイント)</param>
 	void ConnectToNextPhase(const std::vector<RyoEngine::Vector3>& relativeWayPoints);
 
+	/// <summary>
+	/// Changing演出用: 現在位置から現在の進行方向へ直進する経路を組む
+	/// </summary>
+	/// <param name="duration">直進させたい時間(秒)。moveSpeed_×durationの距離だけ直進する</param>
+	void EnterChangingStraight(float duration);
+
 private:
 	/// <summary>
 	/// 現在区間内の進行度を進め、区間をまたいだらインデックスを送る
@@ -69,4 +75,10 @@ private:
 
 	// 1秒あたりに進むワールド距離
 	float moveSpeed_ = 30.0f;
+
+	// 直近フレームで計算した進行方向(単位ベクトル)。ConnectToNextPhaseで仮想P0を作る際に使う
+	RyoEngine::Vector3 currentDirection_ = { 0.0f, 0.0f, 1.0f };
+
+	// 仮想P0を置く距離を「次区間長の何割にするか」
+	static constexpr float kVirtualP0Ratio_ = 1.0f;
 };

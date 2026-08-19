@@ -1,4 +1,5 @@
 #include <cmath>
+#include <utility>
 
 #include "RailCameraController.h"
 #include "../Time/TimeManager.h"
@@ -47,22 +48,59 @@ bool RailCameraController::IsFinished() const {
 }
 
 void RailCameraController::ConnectToNextPhase(const std::vector<RyoEngine::Vector3>& relativeWayPoints) {
-	 if (relativeWayPoints.empty()) {
-        return;
-    }
+	if (relativeWayPoints.empty()) {
+		return;
+	}
 
-    // 現在の実位置を「次フェーズのローカル原点(0,0,0)」に対応させるオフセットとして使う
-    const Vector3 offset = translate_;
+	// 現在の実位置を「次フェーズのローカル原点(0,0,0)」に対応させるオフセットとして使う
+	const Vector3 offset = translate_;
 
-    std::vector<Vector3> newWayPoints;
-    newWayPoints.reserve(relativeWayPoints.size());
-    for (const auto& relativePoint : relativeWayPoints) {
-        newWayPoints.push_back(relativePoint + offset);
-    }
+	// 次区間(現在位置→次フェーズ2点目)の長さを求め、仮想P0を置く距離の基準にする
+	float nextSegmentLength = 1.0f; // フォールバック(2点目が無い場合など)
+	if (relativeWayPoints.size() >= 2) {
+		const Vector3 p1 = relativeWayPoints[0] + offset; // 通常は現在位置と一致する
+		const Vector3 p2 = relativeWayPoints[1] + offset;
+		float length = Length(p2 - p1);
+		if (length > 0.0001f) {
+			nextSegmentLength = length;
+		}
+	}
+	const float virtualP0Distance = nextSegmentLength * kVirtualP0Ratio_;
 
-    wayPoints_ = std::move(newWayPoints);
-    currentIndex_ = 0;
-    segmentT_ = 0.0f;
+	// 直前の進行方向を逆に延ばした点を仮想P0として先頭に置く
+	// (これにより、切替直後の接線計算に「直前の進行方向」が反映され、向きが滑らかに繋がる)
+	const Vector3 virtualP0 = translate_ - currentDirection_ * virtualP0Distance;
+
+	std::vector<Vector3> newWayPoints;
+	newWayPoints.reserve(relativeWayPoints.size() + 1);
+	newWayPoints.push_back(virtualP0);
+	for (const auto& relativePoint : relativeWayPoints) {
+		newWayPoints.push_back(relativePoint + offset);
+	}
+
+	wayPoints_ = std::move(newWayPoints);
+	currentIndex_ = 1; // P1 = 現在位置(実際の経路の始点)。P0(=仮想P0)はwayPoints_[0]
+	segmentT_ = 0.0f;
+}
+
+void RailCameraController::EnterChangingStraight(float duration) {
+	// 直進させたい距離(時間切れちょうどで終点に到達するよう計算。多少余裕を持たせたい場合は
+	// 呼び出し側でdurationを少し多めに渡してもOK)
+	float distance = moveSpeed_ * duration;
+	if (distance <= 0.0001f) {
+		distance = 1.0f; // 0除算・ゼロ距離を避ける
+	}
+
+	// 現在位置から進行方向へdistance分進んだ点を終点とする、2点だけの直線経路
+	// (ConnectToNextPhaseは「相対座標」を受け取る仕様なので、先頭は{0,0,0}=現在位置、
+	//  2点目は現在位置からのオフセット量で表す)
+	std::vector<Vector3> straightRelativeWayPoints = {
+		{ 0.0f, 0.0f, 0.0f },
+		currentDirection_ * distance,
+	};
+
+	// 仮想P0(直前方向の延長)を含めた滑らかな接続は ConnectToNextPhase がそのまま面倒を見てくれる
+	ConnectToNextPhase(straightRelativeWayPoints);
 }
 
 void RailCameraController::AdvanceProgress() {
@@ -132,6 +170,7 @@ void RailCameraController::Update() {
 		// 区間の切り替わりでも接線が連続的に変化するので、以前のような
 		// 「区間ごとの向きがカクッと切り替わる」現象が起きなくなる。
 		Vector3 direction = Normalize(CatmullRomTangent(p0, p1, p2, p3, segmentT_));
+		currentDirection_ = direction;
 		rotate_.y = atan2f(direction.x, direction.z);
 		float horizontalLength = sqrtf(direction.x * direction.x + direction.z * direction.z);
 		rotate_.x = atan2f(-direction.y, horizontalLength);
