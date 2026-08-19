@@ -150,6 +150,7 @@ private:
 
 	// 衝突判定用
 	RyoEngine::OBB obb_{};
+	RyoEngine::Vector3 baseObbSize_{};
 
 	///仮ですぴーど(１秒あたり)
 	float speed_ = 8.0f;

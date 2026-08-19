@@ -33,7 +33,7 @@ void PlayerBullet::Update(const RyoEngine::Camera& camera) {
 	model_->Update(camera);
 
 	// obb
-	UpdateOBB(obb_, model_.get());
+	UpdateOBB(obb_, baseObbSize_, model_.get());
 }
 
 void PlayerBullet::Draw() {

@@ -179,6 +179,7 @@ namespace RyoEngine {
         void SetTransform(const Transform& transform) { transform_ = transform; }
         void SetScale(const Vector3& scale) { transform_.scale = scale; }
         void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
+        void SetRotateY(float rotateY) { transform_.rotate.y = rotateY; }
         void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
         void SetTranslateX(float translateX) { transform_.translate.x = translateX; }
         void SetTranslateY(float translateY) { transform_.translate.y = translateY; }

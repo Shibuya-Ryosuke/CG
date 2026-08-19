@@ -42,7 +42,7 @@ public:
 	RyoEngine::Vector3 GetTranslate() const { return model_->GetTranslate(); }
 	RyoEngine::Vector3 GetVelocity() const { return velocity_; }
 	const RyoEngine::OBB& GetOBB() const { return obb_; }
-	void SetOBBSize(const RyoEngine::Vector3& size) { obb_.size = size; }
+	void SetOBBSize(const RyoEngine::Vector3& size) { baseObbSize_ = size; obb_.size = baseObbSize_; }
 
 	/// <summary>
 	/// 座標のセット
@@ -104,6 +104,7 @@ protected:
 
 	// 衝突判定用
 	RyoEngine::OBB obb_{};
+	RyoEngine::Vector3 baseObbSize_{};
 
 	// ダメージ
 	float damage_ = 0.0f;

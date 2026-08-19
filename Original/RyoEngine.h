@@ -1,4 +1,5 @@
 #pragma once
+#define _USE_MATH_DEFINES
 #include "Base/WinApp.h"
 #include "Base/DirectXCommon.h"
 #include "Base/Logger.h"
@@ -14,6 +15,7 @@
 //#include "Reflect/ReflectCommon.h"
 //#include "Reflect/ReflectModel.h"
 #include "Audio/Audio.h"
+#include "Easing/Easing.h"
 #include "Math/Math.h"
 #include "Math/Collision.h"
 #include "Camera/Camera.h"

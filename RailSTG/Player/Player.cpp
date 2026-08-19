@@ -25,7 +25,8 @@ void Player::Initialize() {
 	model_ = Model::Create("resources/RailSTG/TR.obj");
 	model_->SetTranslate({ 0.0f,0.0f,0.0f });
 
-	obb_.size = { 1.0f,1.0f,1.0f };
+	baseObbSize_ = { 1.0f,1.0f,1.0f };
+	obb_.size = baseObbSize_;
 
 	// 初期ステート
 	state_ = PlayerState::Standard;
@@ -121,7 +122,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	screenPos_ = WorldToScreen(model_->GetWorldPos(), camera.GetViewMatrix(), camera.GetProjectionMatrix());
 
 	// obb
-	UpdateOBB(obb_, model_.get());
+	UpdateOBB(obb_, baseObbSize_, model_.get());
 	
 #ifdef _DEBUG
 	ImGui::Begin("player");

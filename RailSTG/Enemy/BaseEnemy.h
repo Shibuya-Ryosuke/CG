@@ -1,10 +1,12 @@
 #pragma once
-#include "../../Original/RyoEngine.h"
-#include "../BaseObject/BaseObject.h"
-#include "EnemyEnum.h"
+#include <cmath>
 #include <cstdint>
 #include <vector>
 #include <memory>
+#include "../../Original/RyoEngine.h"
+#include "../BaseObject/BaseObject.h"
+#include "../Time/TimeManager.h"
+#include "EnemyEnum.h"
 
 class EnemyBullet;
 
@@ -64,6 +66,27 @@ public:
 		}
 	}
 
+	void SpawnAnimation() {
+		if (isSpawning_) {
+			spawnAnimTimer_ += TimeManager::GetDeltaTime();
+			float t = spawnAnimTimer_ / kSpawnAnimDuration_; // 1.0秒で正規化 (0.0 ～ 1.0)
+
+			if (t >= 1.0f) {
+				t = 1.0f;
+				isSpawning_ = false; // 演出終了
+			}
+
+			// 1. スケール用イージング（はじめ遅く終わり早く ＝ easeIn など。例えば t * t）
+			float easeScale = RyoEngine::EaseInQuart(t, 0.0f, 1.0f);
+			// スケールを 0 から 1 へ
+			model_->SetScale({ easeScale, easeScale, easeScale });
+
+			// 2. 回転させる
+			float currentRotationY = RyoEngine::EaseOutQuad(t, 0.0f, 10.0f * 2.0f * static_cast<float>(M_PI));
+			model_->SetRotateY(currentRotationY); // Ｙ軸回転の場合の例
+		}
+	}
+
 protected:
 	// ID
 	int32_t enemyId_ = -1;
@@ -82,10 +105,16 @@ protected:
 
 	// 衝突判定用
 	RyoEngine::OBB obb_{};
+	RyoEngine::Vector3 baseObbSize_{};
 
 	// ロックオンステート
 	LockOnState lockOnState_ = LockOnState::None;
 
 	// カメラ追従オフセット
 	RyoEngine::Vector3 followOffset_{};
+
+	// スポーンアニメーション
+	float spawnAnimTimer_ = 0.0f;
+	bool isSpawning_ = true;
+	float kSpawnAnimDuration_ = 1.5f;
 };

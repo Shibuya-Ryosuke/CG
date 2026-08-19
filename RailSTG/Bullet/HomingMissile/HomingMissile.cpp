@@ -64,7 +64,7 @@ void HomingMissile::Update(const RyoEngine::Camera& camera) {
 	model_->Update(camera);
 
 	// OBBの更新
-	UpdateOBB(obb_, model_.get());
+	UpdateOBB(obb_, baseObbSize_, model_.get());
 }
 
 void HomingMissile::Draw() {

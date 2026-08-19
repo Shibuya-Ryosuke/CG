@@ -15,7 +15,8 @@ void ReticleGunner::Initialize() {
         model_->SetTex("resources/RailSTG/Enemy/ReticleGunner/checkerBoard.png");
     }
 
-    obb_.size = { 1.0f,1.0f,1.0f };
+    baseObbSize_ = { 1.0f,1.0f,1.0f };
+    obb_.size = baseObbSize_;
 
     // ID格納
     enemyId_ = nextEnemyId_;
@@ -27,10 +28,17 @@ void ReticleGunner::Initialize() {
 void ReticleGunner::Finalize() {}
 
 void ReticleGunner::Update(const RyoEngine::Camera& camera) {
+
     // 自機本体の更新(移動が要るならここに追加。今回はその場に留まる想定なので座標更新のみ)
     UpdateFollowTransform(model_.get(), camera, followOffset_);
+    // アニメーション
+    BaseEnemy::SpawnAnimation();
     model_->Update(camera);
-    UpdateOBB(obb_, model_.get());
+    UpdateOBB(obb_, baseObbSize_, model_.get());
+
+    
+    // アニメーション中は攻撃しない
+    if (isSpawning_)return;
 
     // レティクルの状態を進行させる
     UpdateReticles(camera);

@@ -26,7 +26,8 @@ void Mob::Initialize() {
 	// hpセット
 	SetHp(kMaxHp_);
 
-	obb_.size = { 1.0f,1.0f,1.0f };
+	baseObbSize_ = { 1.0f,1.0f,1.0f };
+	obb_.size = baseObbSize_;
 
 	// ID格納
 	enemyId_ = nextEnemyId_;
@@ -43,6 +44,7 @@ void Mob::Initialize() {
 void Mob::Finalize(){}
 
 void Mob::Update(const RyoEngine::Camera& camera) {
+
 	// リクエストを反映
 	if (request_ != MobState::None) {
 		state_ = request_;
@@ -55,14 +57,19 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 	// カメラに追従
 	UpdateFollowTransform(model_.get(), camera, followOffset_);
 
+	// アニメーション
+	BaseEnemy::SpawnAnimation();
 	// 更新
 	model_->Update(camera);
 	// obb
-	UpdateOBB(obb_, model_.get());
+	UpdateOBB(obb_, baseObbSize_, model_.get());
 
 	if (followOffset_.z > 130.0f) {
 		isDead_ = true;
 	}
+
+	// アニメーション中は攻撃しない
+	if (isSpawning_)return;
 
 	// 状態別処理
 	switch (state_) {
