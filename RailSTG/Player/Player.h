@@ -93,7 +93,7 @@ private:
 	float kMainShotInterval = 0.08f;
 	float kBulletSpeed = 260.0f;
 	float kBulletDamage = 5.0f;
-	float kHomingMissileDamage = 20.0f;
+	float kHomingMissileDamage = 50.0f;
 	float kHitChargeGauge = 5.0f;
 	
 	// カメラからどれだけ前方の位置に留まるか(この距離の平面上をカメラ基準でスライドする)

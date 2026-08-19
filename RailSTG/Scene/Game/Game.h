@@ -81,11 +81,13 @@ private:
 	float kMobSpawnTimer_ = 3.0f;
 	float kHomingMobSpawnTimer_ = 10.0f;
 
-	float kEnemySpawnInterval_ = 0.6f;
+	float kFirstSpawnInterval_ = 0.6f;
+	float kSecondSpawnInterval_ = 3.0f;
+	float kThirdSpawnInterval_ = 5.0f;
 
 	int32_t kFirstSpawnEnemies_ = 6;
 	int32_t kSecondSpawnEnemies_ = 12;
-	int32_t kThirdSpawnEnemies_ = 20;
+	int32_t kThirdSpawnEnemies_ = 24;
 
 private:
 	// プレイヤー
@@ -104,16 +106,16 @@ private:
 	float mobSpawnTimer_ = kMobSpawnTimer_;
 	float homingMobSpawnTimer_ = kHomingMobSpawnTimer_;
 
-	float enemySpawnTimer_ = kEnemySpawnInterval_;
+	float enemySpawnTimer_ = kFirstSpawnInterval_;
 
 	// 開始はReadyから
-	Phase phase_ = Phase::First;
+	Phase phase_ = Phase::Third;
 	float phaseElapsedTime_ = 0.0f; // 現在フェーズの経過時間
 	std::vector<float> phaseTimeLimits_;
 
 	bool isFirstSpawning_ = false;
 	bool isSecondSpawning_ = false;
-	bool isThirdSpawning_ = false;
+	bool isThirdSpawning_ = true;
 
 	int32_t spawnEnemies_ = 0;
 	int32_t totalSpawnEnemies_ = 0;

@@ -32,8 +32,6 @@ void Game::Initialize() {
 	//ReticleGunnerSpawn();
 
 	//ReticleGunnerSpawn();
-
-	isFirstSpawning_ = true;
 }
 
 void Game::Finalize() {
@@ -54,9 +52,11 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	ImGui::NewLine();
 
 	// フェーズごとの制限時間を持ってくる
-	size_t routeIndex = static_cast<size_t>(phase_) - static_cast<size_t>(Phase::First);
-	float timeLimit = phaseTimeLimits_[routeIndex];
-	ImGui::Text("phaseTime: %.2f / %.2f", phaseElapsedTime_, timeLimit);
+	if (phase_ == Phase::First || phase_ == Phase::Second || phase_ == Phase::Third) {
+		size_t routeIndex = static_cast<size_t>(phase_) - static_cast<size_t>(Phase::First);
+		float timeLimit = phaseTimeLimits_[routeIndex];
+		ImGui::Text("phaseTime: %.2f / %.2f", phaseElapsedTime_, timeLimit);
+	}
 	ImGui::Text("phase    : %d", phase_);
 	ImGui::NewLine();
 
@@ -281,8 +281,8 @@ void Game::FirstPhaseSpawn(const RyoEngine::Camera& camera) {
 	enemySpawnTimer_ -= TimeManager::GetDeltaTime();
 
 	if (enemySpawnTimer_ <= 0.0f) {
-		// 3以上6未満
-		if (spawnEnemies_ >= 3 && spawnEnemies_ < 6) {
+		// 3以上(6未満)
+		if (spawnEnemies_ >= 3) {
 			MobSpawn({ 9.0f,18.0f+spawnSpace_.y,60.0f },camera);
 			spawnSpace_.y += 8.0f;
 		}
@@ -301,16 +301,96 @@ void Game::FirstPhaseSpawn(const RyoEngine::Camera& camera) {
 		}
 
 		// タイマーリセット
-		enemySpawnTimer_ = kEnemySpawnInterval_;
+		enemySpawnTimer_ = kFirstSpawnInterval_;
 	}
 }
 
 void Game::SecondPhaseSpawn(const RyoEngine::Camera& camera) {
-	(void)camera;
+	if (!isSecondSpawning_)return;
+
+	enemySpawnTimer_ -= TimeManager::GetDeltaTime();
+
+	if (enemySpawnTimer_ <= 0.0f) {
+		switch (spawnEnemies_) {
+		case 0:
+			MobSpawn({ -15.0f,-9.0f,60.0f }, camera);
+			MobSpawn({ 15.0f,-9.0f,60.0f }, camera);
+			break;
+
+		case 2:
+			MobSpawn({ -5.0f,-9.0f,70.0f }, camera);
+			MobSpawn({ 5.0f,-9.0f,70.0f }, camera);
+			break;
+
+		case 4:
+			HomingMobSpawn({ -6.0f,9.0f,60.0f }, camera);
+			MobSpawn({ 0.0f,9.0f,70.0f }, camera);
+			HomingMobSpawn({ 6.0f,9.0f,60.0f }, camera);
+			break;
+
+		default:
+			MineSpawn(-12.0f, 12.0f, -8.0f, 8.0f, 70.0f, 90.0f, 5, camera);
+			break;
+		}
+
+		if (spawnEnemies_ >= kSecondSpawnEnemies_) {
+			isSecondSpawning_ = false;
+			totalSpawnEnemies_ += spawnEnemies_;
+			spawnEnemies_ = 0;
+			spawnSpace_ = { 0.0f,0.0f,0.0f };
+		}
+
+		// タイマーリセット
+		enemySpawnTimer_ = kSecondSpawnInterval_;
+	}
 }
 
 void Game::ThirdPhaseSpawn(const RyoEngine::Camera& camera) {
-	(void)camera;
+	if (!isThirdSpawning_)return;
+
+	enemySpawnTimer_ -= TimeManager::GetDeltaTime();
+
+	if (enemySpawnTimer_ <= 0.0f) {
+
+		switch (spawnEnemies_) {
+		case 0:
+			MineSpawn(-10.0f, 10.0f, -7.0f, 7.0f, 70.0f, 90.0f, 14, camera);
+			break;
+
+		case 14:
+			MobSpawn({ -10.0f,0.0f,60.0f }, camera);
+			HomingMobSpawn({ 10.0f,0.0f,60.0f }, camera);
+			break;
+
+		case 16:
+			MobSpawn({ -4.0f,8.0f,60.0f }, camera);
+			ReticleGunnerSpawn({ 0.0f,8.0f,60.0f }, camera);
+			MobSpawn({ 4.0f,8.0f,60.0f }, camera);
+			break;
+
+		case 19:
+			HomingMobSpawn({ -5.0f,0.0f,60.0f }, camera);
+			MobSpawn({ 5.0f,0.0f,60.0f }, camera);
+			break;
+
+		default:
+			MobSpawn({ -4.0f,-8.0f,60.0f }, camera);
+			ReticleGunnerSpawn({ 0.0f,-8.0f,60.0f }, camera);
+			MobSpawn({ 4.0f,-8.0f,60.0f }, camera);
+			break;
+		}
+		
+
+		if (spawnEnemies_ >= kThirdSpawnEnemies_) {
+			isThirdSpawning_ = false;
+			totalSpawnEnemies_ += spawnEnemies_;
+			spawnEnemies_ = 0;
+			spawnSpace_ = { 0.0f,0.0f,0.0f };
+		}
+
+		// タイマーリセット
+		enemySpawnTimer_ = kThirdSpawnInterval_;
+	}
 }
 
 void Game::CheckAllCollision() {

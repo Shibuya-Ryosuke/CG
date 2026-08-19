@@ -47,8 +47,8 @@ private:
     float kLockedWaitDuration_ = 1.0f;  // 3個目Locked後、Readyになるまでの待機時間(仮)
     float kReadyDuration_ = 0.5f; // 仮値：予告SEからダメージ判定までの秒数
     float kShotDuration_ = 0.3f;
-    float kEndDuration_ = 3.0f;
-    float kMaxHp_ = 80.0f;
+    float kEndDuration_ = 4.0f;
+    float kMaxHp_ = 150.0f;
     float kHitRadius_ = 20.0f; // 仮値：レティクルの当たり判定半径(スクリーン座標系のピクセル数)
     float kDamage_ = 30.0f;
 

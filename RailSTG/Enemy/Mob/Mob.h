@@ -56,7 +56,7 @@ private:
 	float kBulletSpeed = 60.0f;
 	RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,0.0f };
 
-	float kMaxHp_ = 100.0f;
+	float kMaxHp_ = 50.0f;
 
 	float kBulletDamage = 10.0f;
 
