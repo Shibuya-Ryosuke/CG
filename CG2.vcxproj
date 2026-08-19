@@ -183,6 +183,7 @@
     <ClInclude Include="RailSTG\RailCamera\RailCameraController.h" />
     <ClInclude Include="RailSTG\Reticle\Reticle.h" />
     <ClInclude Include="RailSTG\Scene\Game\Game.h" />
+    <ClInclude Include="RailSTG\Scene\Game\PhaseRoute.h" />
     <ClInclude Include="RailSTG\Scene\Result.h" />
     <ClInclude Include="RailSTG\Scene\SceneEnum.h" />
     <ClInclude Include="RailSTG\Scene\SceneManager.h" />

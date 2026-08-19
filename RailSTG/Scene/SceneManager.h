@@ -1,8 +1,10 @@
 #pragma once
 #include "../../Original/RyoEngine.h"
 #include <memory>
+#include <vector>
 
 #include "SceneEnum.h"
+#include "Game/PhaseRoute.h"
 #include "../RailCamera/RailCameraController.h"
 
 class Game;
@@ -41,6 +43,15 @@ private:
 	void UpdateCamera();
 
 private:
+	// Phase(First~Third)をphaseRoutes_の添字に変換する
+	static size_t PhaseToRouteIndex(Phase phase) {
+		return static_cast<size_t>(phase) - static_cast<size_t>(Phase::First);
+	}
+
+	// フェーズ変化を検知するための比較用メソッド
+	void CheckPhaseChange();
+
+private:
 	// カメラ(レールに沿って自動移動するゲーム用カメラ)
 	std::unique_ptr<RailCameraController> camera_ = nullptr;
 	std::unique_ptr<RyoEngine::DebugCamera> debugCamera_ = nullptr;
@@ -48,6 +59,10 @@ private:
 
 	// シーン（enum）
 	Scene scene_ = Scene::None;
+	// 各フェーズの経路と制限時間をまとめたもの
+	std::vector<PhaseRoute> phaseRoutes_;
+	// 前フレームまでに把握していたフェーズ(初期値はFirst。Initializeで既にFirstの経路をセット済みのため)
+	Phase lastPhase_ = Phase::First;
 
 	// シーン別保持
 	std::unique_ptr<Game> game_ = nullptr;

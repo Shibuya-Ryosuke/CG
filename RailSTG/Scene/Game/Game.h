@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <cstdint>
-#include "../SceneEnum.h"
+#include "PhaseRoute.h"
 
 namespace RyoEngine {
 	class Camera;
@@ -56,6 +56,8 @@ public:
 	/// </summary>
 	BaseEnemy* FindEnemyById(int32_t enemyId) const;
 
+	Phase GetPhase()const { return phase_; }
+
 private:
 	float kMobSpawnTimer_ = 3.0f;
 	float kHomingMobSpawnTimer_ = 10.0f;
@@ -79,5 +81,4 @@ private:
 
 	// 開始はReadyから
 	Phase phase_ = Phase::Ready;
-	// 
 };

@@ -5,12 +5,3 @@ enum class Scene {
 	Game,
 	Result,
 };
-
-enum class Phase {
-	Changing,
-	Ready,
-	First,
-	Second,
-	Third,
-	End,
-};

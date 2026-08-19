@@ -476,6 +476,9 @@
     <ClInclude Include="RailSTG\Scene\Game\Game.h">
       <Filter>RailSTG\Scene\Game</Filter>
     </ClInclude>
+    <ClInclude Include="RailSTG\Scene\Game\PhaseRoute.h">
+      <Filter>RailSTG\Scene\Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Sprite\Sprite.hlsli">

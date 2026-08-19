@@ -13,18 +13,30 @@ void SceneManager::Initialize(Scene sceneState) {
     camera_->Initialize();
     camera_->SetActive(true);
 
-    // 軌道のウェイポイント(仮の値。旧来のSetTranslateY(153.0f)/SetTranslateZ(-25.0f)相当の
-    // 開始位置を先頭に置いてある。実際のステージレイアウトに合わせて後で調整する)
-    camera_->SetWayPoints({
-        {   0.0f, 153.0f,   -25.0f }, // 0: スタート
-        {   0.0f, 153.0f,   100.0f }, // 1: まっすぐ進む
-        {  40.0f, 160.0f,   300.0f }, // 2: 大きく右へ曲がりながら少し上昇
-        { -40.0f, 150.0f,   500.0f }, // 3: 今度は大きく左へカーブして下降
-        {   0.0f, 153.0f,   700.0f }, // 4: 中央に戻ってくる
-        {   0.0f, 180.0f,  1000.0f }, // 5: 一気に上空高くへ駆け上がる
-        {   0.0f, 153.0f,  1300.0f }, // 6: ゴール・着地
-        });
-    // 1フレームあたりに進むワールド距離(仮の値)
+    // 追加: フェーズごとの経路データを構築(仮の値。実レイアウトに合わせて後で調整)
+    phaseRoutes_ = {
+        // First
+        { {
+            {   0.0f, 153.0f,   -25.0f },
+            {   0.0f, 153.0f,   100.0f },
+            {  40.0f, 160.0f,   300.0f },
+        }, /*timeLimit=*/ 60.0f },
+        // Second
+        { {
+            {  40.0f, 160.0f,   300.0f }, // 前フェーズの終点と同じ座標から始める
+            { -40.0f, 150.0f,   500.0f },
+            {   0.0f, 153.0f,   700.0f },
+        }, /*timeLimit=*/ 60.0f },
+        // Third
+        { {
+            {   0.0f, 153.0f,   700.0f }, // 前フェーズの終点と同じ座標から始める
+            {   0.0f, 180.0f,  1000.0f },
+            {   0.0f, 153.0f,  1300.0f },
+        }, /*timeLimit=*/ 60.0f },
+    };
+
+    // 最初のフェーズ(First)の経路をセット(スタートなので今まで通りSetWayPointsでOK)
+    camera_->SetWayPoints(phaseRoutes_[PhaseToRouteIndex(Phase::First)].wayPoints);
 
     // デバッグカメラ
     debugCamera_ = std::make_unique<DebugCamera>();
@@ -70,6 +82,7 @@ void SceneManager::Update() {
 
     case Scene::Game:
         game_->Update(*activeCamera_);
+        CheckPhaseChange(); // game更新後にフェーズ変化をチェック
         break;
 
     case Scene::Result:
@@ -135,4 +148,17 @@ void SceneManager::UpdateCamera() {
 #endif
     // 即時描画のカメラ指定
     PrimitiveRenderer::SetCamera(*activeCamera_);
+}
+
+void SceneManager::CheckPhaseChange() {
+    Phase currentPhase = game_->GetPhase();
+    if (currentPhase == lastPhase_) {
+        return; // 変化なし
+    }
+    lastPhase_ = currentPhase;
+
+    // 経路を持つのはFirst~Thirdのみ(Ready/Changing/Endは対象外)
+    if (currentPhase == Phase::First || currentPhase == Phase::Second || currentPhase == Phase::Third) {
+        camera_->SetWayPoints(phaseRoutes_[PhaseToRouteIndex(currentPhase)].wayPoints);
+    }
 }
