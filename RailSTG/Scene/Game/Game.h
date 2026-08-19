@@ -86,7 +86,7 @@ private:
 	float homingMobSpawnTimer_ = kHomingMobSpawnTimer_;
 
 	// 開始はReadyから
-	Phase phase_ = Phase::Ready;
+	Phase phase_ = Phase::First;
 	float phaseElapsedTime_ = 0.0f; // 現在フェーズの経過時間
 	std::vector<float> phaseTimeLimits_;
 

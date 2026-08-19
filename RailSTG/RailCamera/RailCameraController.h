@@ -49,7 +49,7 @@ public:
 	/// 現在の実位置を起点として、次の経路へ動的に接続する
 	/// </summary>
 	/// <param name="nextWayPoints">接続先の経路(次フェーズのウェイポイント)</param>
-	void ConnectToNextPhase(const std::vector<RyoEngine::Vector3>& nextWayPoints);
+	void ConnectToNextPhase(const std::vector<RyoEngine::Vector3>& relativeWayPoints);
 
 private:
 	/// <summary>

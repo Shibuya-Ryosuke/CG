@@ -46,19 +46,23 @@ bool RailCameraController::IsFinished() const {
 	return (currentIndex_ + 2 >= wayPoints_.size()) && (segmentT_ >= 1.0f);
 }
 
-void RailCameraController::ConnectToNextPhase(const std::vector<RyoEngine::Vector3>& nextWayPoints) {
-	if (nextWayPoints.empty()) {
-		return;
-	}
+void RailCameraController::ConnectToNextPhase(const std::vector<RyoEngine::Vector3>& relativeWayPoints) {
+	 if (relativeWayPoints.empty()) {
+        return;
+    }
 
-	std::vector<Vector3> newWayPoints;
-	newWayPoints.reserve(nextWayPoints.size() + 1);
-	newWayPoints.push_back(translate_); // 現在の実位置を起点に追加
-	newWayPoints.insert(newWayPoints.end(), nextWayPoints.begin(), nextWayPoints.end());
+    // 現在の実位置を「次フェーズのローカル原点(0,0,0)」に対応させるオフセットとして使う
+    const Vector3 offset = translate_;
 
-	wayPoints_ = std::move(newWayPoints);
-	currentIndex_ = 0;
-	segmentT_ = 0.0f;
+    std::vector<Vector3> newWayPoints;
+    newWayPoints.reserve(relativeWayPoints.size());
+    for (const auto& relativePoint : relativeWayPoints) {
+        newWayPoints.push_back(relativePoint + offset);
+    }
+
+    wayPoints_ = std::move(newWayPoints);
+    currentIndex_ = 0;
+    segmentT_ = 0.0f;
 }
 
 void RailCameraController::AdvanceProgress() {

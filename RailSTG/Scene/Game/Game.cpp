@@ -29,6 +29,8 @@ void Game::Initialize() {
 	// お試しで初期化時に出現
 	//MineSpawn();
 	//ReticleGunnerSpawn();
+
+	ReticleGunnerSpawn();
 }
 
 void Game::Finalize() {
@@ -40,6 +42,14 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	if (Input::TriggerKey(DIK_M)) {
 		TimeManager::SetTimeState(TimeState::JustEvasion);
 	}
+
+	ImGui::Begin("game");
+	ImGui::Text("phaseTime: %.2f", phaseElapsedTime_);
+	ImGui::Text("phase    : %d", phase_);
+	ImGui::Spacing();
+
+	ImGui::Text("cameraT: %.2f,%.2f,%.2f", camera.GetTranslate().x, camera.GetTranslate().y, camera.GetTranslate().z);
+	ImGui::End();
 
 	//// モブの出現
 	//if (mobSpawnTimer_ > 0.0f) {
@@ -158,6 +168,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		}
 	}
 
+	UpdatePhase();
 }
 
 void Game::Draw() {
@@ -348,9 +359,11 @@ void Game::AdvanceToNextPhase() {
 	switch (phase_) {
 	case Phase::First:
 		phase_ = Phase::Second;
+		MineSpawn();
 		break;
 	case Phase::Second:
 		phase_ = Phase::Third;
+		MobSpawn();
 		break;
 	case Phase::Third:
 		phase_ = Phase::End;
@@ -367,14 +380,17 @@ void Game::UpdatePhase() {
 		return; // Ready/Changing/Endではフェーズ判定不要
 	}
 
+	// フェーズの時間
 	phaseElapsedTime_ += TimeManager::GetDeltaTime();
 
 	size_t routeIndex = static_cast<size_t>(phase_) - static_cast<size_t>(Phase::First);
 	float timeLimit = phaseTimeLimits_[routeIndex];
 
+	// 時間切れと敵の全滅を確認
 	bool timeUp = phaseElapsedTime_ >= timeLimit;
 	bool allDefeated = enemies_.empty(); // 実際のコンテナ名/判定方法に合わせて調整
 
+	// どちらかを満たしていたら
 	if (timeUp || allDefeated) {
 		AdvanceToNextPhase();
 	}
