@@ -117,7 +117,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 
 	// 座標更新
 	model_->Update(camera);
-	WorldToScreen(model_->GetWorldPos(), camera.GetViewMatrix(), camera.GetProjectionMatrix());
+	screenPos_ = WorldToScreen(model_->GetWorldPos(), camera.GetViewMatrix(), camera.GetProjectionMatrix());
 
 	// obb
 	UpdateOBB(obb_, model_.get());

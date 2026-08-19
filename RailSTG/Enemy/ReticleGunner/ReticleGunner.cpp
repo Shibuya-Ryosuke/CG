@@ -51,12 +51,9 @@ bool ReticleGunner::TryJudgeHit(const RyoEngine::Vector2& playerScreenPos) {
 
         if (distSq <= kHitRadius_ * kHitRadius_) {
             hit = true;
-            // break; // 1つでも命中していればダメージは1回でよい
+            break; // 1つでも命中していればダメージは1回でよい
         }
         // 状態をEndにするのは、描画用に1f遅らせた次のフレームの初め
-
-        // stateTimerを0に
-        r.stateTimer = 0.0f;
     }
 
     return hit;
@@ -166,7 +163,9 @@ void ReticleGunner::UpdateAllLockedPhase() {
         if (allLockedTimer_ >= kReadyDuration_) {
             for (auto& r : reticles_) {
                 r.state = ReticleState::Shot;
+                r.stateTimer = 0.0f;
             }
+            judged_ = false;
             // 判定処理は次のステップでGame側に実装
         }
         break;

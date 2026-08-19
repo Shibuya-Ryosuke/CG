@@ -45,7 +45,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	if (mobSpawnTimer_ > 0.0f) {
 		mobSpawnTimer_ -= TimeManager::GetDeltaTime();
 	} else {
-		MobSpawn();
+		//MobSpawn();
 		mobSpawnTimer_ = kMobSpawnTimer_;
 	}
 
@@ -260,7 +260,7 @@ void Game::CheckAllCollision() {
 				player_->OnCollision(gunner->GetDamage());
 			}
 		}
-
+		
 		// 敵の弾
 		const auto& enemyBullets = enemy->GetBullets();
 
