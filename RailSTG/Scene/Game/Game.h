@@ -109,13 +109,13 @@ private:
 	float enemySpawnTimer_ = kFirstSpawnInterval_;
 
 	// 開始はReadyから
-	Phase phase_ = Phase::Third;
+	Phase phase_ = Phase::First;
 	float phaseElapsedTime_ = 0.0f; // 現在フェーズの経過時間
 	std::vector<float> phaseTimeLimits_;
 
-	bool isFirstSpawning_ = false;
+	bool isFirstSpawning_ = true;
 	bool isSecondSpawning_ = false;
-	bool isThirdSpawning_ = true;
+	bool isThirdSpawning_ = false;
 
 	int32_t spawnEnemies_ = 0;
 	int32_t totalSpawnEnemies_ = 0;
