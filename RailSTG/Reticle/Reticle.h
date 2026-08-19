@@ -19,6 +19,6 @@ public:
     RyoEngine::Vector2 GetPosition() const { return position_; }
 
 private:
-    RyoEngine::Vector2 position_; // 画面上の2Dピクセル座標
+    RyoEngine::Vector2 position_{}; // 画面上の2Dピクセル座標
     std::unique_ptr<RyoEngine::Sprite> sprite_; // 2Dスプライト（エンジンにSpriteがあれば）
 };

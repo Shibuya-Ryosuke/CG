@@ -77,6 +77,8 @@ public:
 	/// <returns></returns>
 	float GetDeflectedDamageScale() const { return kDeflectedDamageScale; }
 
+	RyoEngine::Vector2 GetScreenPos()const { return screenPos_; }
+
 private:
 
 private:
@@ -145,6 +147,9 @@ private:
 
 	///仮ですぴーど(１秒あたり)
 	float speed_ = 8.0f;
+
+	// スクリーン座標
+	RyoEngine::Vector2 screenPos_{};
 
 	// カメラのローカル空間での自機のオフセット
 	RyoEngine::Vector3 followOffset_ = { 0.0f,0.0f,kFollowDistance };

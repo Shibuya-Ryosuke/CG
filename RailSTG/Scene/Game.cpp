@@ -9,6 +9,7 @@
 #include "../Enemy/Mob/Mob.h"
 #include "../Enemy/HomingMob/HomingMob.h"
 #include "../Enemy/Mine/Mine.h"
+#include "../Enemy/ReticleGunner/ReticleGunner.h"
 #include "../Bullet/EnemyBullet/EnemyBullet.h"
 #include "../Bullet/PlayerBullet/PlayerBullet.h"
 #include "../Time/TimeManager.h"
@@ -27,6 +28,7 @@ void Game::Initialize() {
 
 	// お試しで初期化時に出現
 	MineSpawn();
+	ReticleGunnerSpawn();
 }
 
 void Game::Finalize() {
@@ -113,6 +115,14 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		mine->Update(camera);
 	}
 
+	// レティクルで攻撃する敵の更新
+	for (auto& reticleGunner : reticleGunners_) {
+		reticleGunner->SetPlayerWorldPos(player_->GetWorldPos());
+		reticleGunner->Update(camera);
+		
+	}
+	
+
 	// 当たり判定
 	CheckAllCollision();
 
@@ -127,6 +137,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	mobs_.clear();
 	homingMobs_.clear();
 	mines_.clear();
+	reticleGunners_.clear();
 
 	for (auto& enemy : enemies_) {
 		// Mob* へのキャスト
@@ -140,6 +151,10 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		// Mine* へのキャスト
 		else if (Mine* mine = dynamic_cast<Mine*>(enemy.get())) {
 			mines_.push_back(mine);
+		}
+		// ReticleGunner* へのキャスト
+		else if (ReticleGunner* reticleGunner = dynamic_cast<ReticleGunner*>(enemy.get())) {
+			reticleGunners_.push_back(reticleGunner);
 		}
 	}
 
@@ -201,12 +216,25 @@ void Game::MineSpawn() {
 	}
 }
 
+void Game::ReticleGunnerSpawn() {
+	// レティクルで攻撃する敵の生成
+	auto reticleGunner = std::make_unique<ReticleGunner>();
+	reticleGunner->SetFollowOffset({ -5.0f,0.0f,40.0f });
+	reticleGunner->Initialize();
+
+	// 追加
+	BaseEnemy* rawPtr = reticleGunner.get();
+	enemies_.push_back(std::move(reticleGunner));
+
+	reticleGunners_.push_back(static_cast<ReticleGunner*>(rawPtr));
+}
+
 void Game::CheckAllCollision() {
 	// プレイヤーの弾取得
 	const auto& playerBullets = player_->GetBullets();
 	
 	for (auto& enemy : enemies_) {
-		// 敵と自弾の判定
+		// 敵全体と自弾の判定
 		for (auto& bullet : playerBullets) {
 			if (IsCollision(enemy->GetOBB(), bullet->GetOBB())) {
 				// 敵の衝突コールバック
@@ -223,6 +251,13 @@ void Game::CheckAllCollision() {
 				player_->OnCollision(mine->GetDamage());
 				// 機雷死亡
 				mine->OnPlayerCollision();
+			}
+		}
+
+		// レティクルで攻撃してくる敵のレティクルと自機の判定
+		if (ReticleGunner* gunner = dynamic_cast<ReticleGunner*>(enemy.get())) {
+			if (gunner->TryJudgeHit(player_->GetScreenPos())) {
+				player_->OnCollision(gunner->GetDamage());
 			}
 		}
 

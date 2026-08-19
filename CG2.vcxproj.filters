@@ -94,6 +94,9 @@
     <Filter Include="RailSTG\Enemy\Mine">
       <UniqueIdentifier>{01ec91f7-3a89-4bd9-a78c-337eb48f5cbc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\Enemy\ReticleGunner">
+      <UniqueIdentifier>{89424d06-145b-4177-9975-6f206f4170fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -245,6 +248,9 @@
     </ClCompile>
     <ClCompile Include="RailSTG\Enemy\Mine\Mine.cpp">
       <Filter>RailSTG\Enemy\Mine</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Enemy\ReticleGunner\ReticleGunner.cpp">
+      <Filter>RailSTG\Enemy\ReticleGunner</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -463,6 +469,9 @@
     </ClInclude>
     <ClInclude Include="RailSTG\Enemy\Mine\Mine.h">
       <Filter>RailSTG\Enemy\Mine</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Enemy\ReticleGunner\ReticleGunner.h">
+      <Filter>RailSTG\Enemy\ReticleGunner</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
