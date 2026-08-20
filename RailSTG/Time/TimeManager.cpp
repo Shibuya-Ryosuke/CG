@@ -38,6 +38,10 @@ void TimeManager::Update() {
 	case TimeState::Targeting:
 		GetInstance().timeScale_ = 0.025f;
 		break;
+
+	case TimeState::Ready:
+		GetInstance().timeScale_ = 0.0f;
+		break;
 	}
 
 	// ゲームで使うdeltaタイム

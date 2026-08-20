@@ -81,6 +81,8 @@ public:
 	void AdvanceToNextPhase();
 	void UpdatePhase(const RyoEngine::Camera& camera);
 
+	void SetChangingDuration(float duration) { changingDuration_ = duration; }
+
 private:
 	float kMobSpawnTimer_ = 3.0f;
 	float kHomingMobSpawnTimer_ = 10.0f;
@@ -114,6 +116,10 @@ private:
 
 	// 開始はReadyから
 	Phase phase_ = Phase::First;
+	Phase nextPhase_ = Phase::Ready;   // Changing中に「終わったら何のフェーズへ行くか」を覚えておく
+	float changingElapsedTime_ = 0.0f; // Changingに入ってからの経過時間
+	float changingDuration_ = 0.0f;    // Changingの長さ(SceneManagerからセットされる)
+
 	float phaseElapsedTime_ = 0.0f; // 現在フェーズの経過時間
 	std::vector<float> phaseTimeLimits_;
 

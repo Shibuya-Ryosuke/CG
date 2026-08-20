@@ -664,28 +664,49 @@ void Game::AdvanceToNextPhase() {
 
 	switch (phase_) {
 	case Phase::First:
-		phase_ = Phase::Second;
-		isSecondSpawning_ = true;
-		//MobSpawn();
+		nextPhase_ = Phase::Second;
 		break;
 	case Phase::Second:
-		phase_ = Phase::Third;
-		isThirdSpawning_ = true;
-		//MineSpawn();
+		nextPhase_ = Phase::Third;
 		break;
 	case Phase::Third:
-		phase_ = Phase::End;
+		nextPhase_ = Phase::End;
 		break;
-	case Phase::Changing:
-
 	default:
-		break;
+		return; // Changing以外から呼ばれる想定が無いので、それ以外は何もしない
 	}
 
-	// 次フェーズの敵を生成する処理をここに追加(既存の敵生成ロジックに合わせて)
+	phase_ = Phase::Changing;
+	changingElapsedTime_ = 0.0f;
 }
 
 void Game::UpdatePhase(const RyoEngine::Camera& camera) {
+	if (phase_ == Phase::Changing) {
+		changingElapsedTime_ += TimeManager::GetDeltaTime();
+		if (changingElapsedTime_ >= changingDuration_) {
+			phase_ = nextPhase_; // 本来の次フェーズへ切り替え
+
+			// ここで次フェーズの敵スポーンを開始するフラグを立てる
+			switch (phase_) {
+			case Phase::First:
+				isFirstSpawning_ = true;
+				break;
+
+			case Phase::Second:
+				isSecondSpawning_ = true;
+				break;
+
+			case Phase::Third:
+				isThirdSpawning_ = true;
+				break;
+
+			default:
+				break;
+			}
+		}
+		return;
+	}
+
 	if (phase_ != Phase::First && phase_ != Phase::Second && phase_ != Phase::Third) {
 		return; // Ready/Changing/Endではフェーズ判定不要
 	}

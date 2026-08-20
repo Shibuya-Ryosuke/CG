@@ -76,6 +76,7 @@ void SceneManager::Initialize(Scene sceneState) {
         timeLimits.push_back(route.timeLimit);
     }
     game_->SetPhaseTimeLimits(timeLimits);
+    game_->SetChangingDuration(kChangingDuration_);
 }
 
 void SceneManager::Finalize() {
@@ -172,8 +173,9 @@ void SceneManager::CheckPhaseChange() {
     }
     lastPhase_ = currentPhase;
 
-    // 経路を持つのはFirst~Thirdのみ(Ready/Changing/Endは対象外)
-    if (currentPhase == Phase::First || currentPhase == Phase::Second || currentPhase == Phase::Third) {
-        camera_->ConnectToNextPhase(phaseRoutes_[PhaseToRouteIndex(currentPhase)].wayPoints); // SetWayPointsから変更
+    if (currentPhase == Phase::Changing) {
+        camera_->EnterChangingStraight(kChangingDuration_); // 追加: 直進演出開始
+    } else if (currentPhase == Phase::First || currentPhase == Phase::Second || currentPhase == Phase::Third) {
+        camera_->ConnectToNextPhase(phaseRoutes_[PhaseToRouteIndex(currentPhase)].wayPoints);
     }
 }

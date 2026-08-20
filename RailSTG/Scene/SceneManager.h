@@ -63,6 +63,7 @@ private:
 	std::vector<PhaseRoute> phaseRoutes_;
 	// 前フレームまでに把握していたフェーズ(初期値はFirst。Initializeで既にFirstの経路をセット済みのため)
 	Phase lastPhase_ = Phase::First;
+	float kChangingDuration_ = 5.0f; // Changingの長さ(仮。演出時間に合わせて調整)
 
 	// シーン別保持
 	std::unique_ptr<Game> game_ = nullptr;
