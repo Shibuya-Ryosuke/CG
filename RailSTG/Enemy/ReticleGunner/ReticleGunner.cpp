@@ -34,8 +34,10 @@ void ReticleGunner::Update(const RyoEngine::Camera& camera) {
 
     // 自機本体の更新(移動が要るならここに追加。今回はその場に留まる想定なので座標更新のみ)
     UpdateFollowTransform(model_.get(), camera, followOffset_);
+
     // アニメーション
     BaseEnemy::SpawnAnimation();
+    BaseEnemy::DespawnAnimation();
     model_->Update(camera);
     UpdateOBB(obb_, baseObbSize_, model_.get());
 

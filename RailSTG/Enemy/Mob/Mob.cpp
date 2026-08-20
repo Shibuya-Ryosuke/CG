@@ -56,6 +56,7 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 
 	// アニメーション
 	BaseEnemy::SpawnAnimation();
+	BaseEnemy::DespawnAnimation();
 	// 更新
 	model_->Update(camera);
 	// obb

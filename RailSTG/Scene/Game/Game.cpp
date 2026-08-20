@@ -263,6 +263,7 @@ void Game::MineSpawn(float randXMin, float randXMax, float randYMin, float randY
 
 		mines_.push_back(static_cast<Mine*>(rawPtr));
 
+		// Mineも一応入れておく
 		spawnEnemies_++;
 	}
 }
@@ -509,7 +510,7 @@ void Game::ThirdPhaseSpawn(const RyoEngine::Camera& camera) {
 
 		switch (spawnEnemies_) {
 		case 0:
-			MineSpawn(-13.0f, 13.0f, -7.0f, 7.0f, 70.0f, 170.0f, 14, camera); // 18~31
+			MineSpawn(-13.0f, 13.0f, -7.0f, 7.0f, 70.0f, 270.0f, 14, camera); // 18~31
 			break;
 
 		case 14:
@@ -557,7 +558,10 @@ void Game::CheckAllCollision() {
 		for (auto& bullet : playerBullets) {
 			if (IsCollision(enemy->GetOBB(), bullet->GetOBB())) {
 				// 敵の衝突コールバック
-				enemy->OnCollision(bullet->GetDamage());
+				if (enemy->OnCollision(bullet->GetDamage())) {
+					// プレイヤーが撃破したので加算
+					totalDestroyEnemies_++;
+				};
 				// スペシャル攻撃のゲージをためる
 				player_->ChargeGuage();
 				// 当たったら弾の消滅
@@ -713,13 +717,18 @@ void Game::UpdatePhase(const RyoEngine::Camera& camera) {
 
 	// スポーン処理中は無視
 	if (!isFirstSpawning_ && !isSecondSpawning_ && !isThirdSpawning_) {
-		// 時間切れと敵の全滅を確認
-		bool timeUp = phaseElapsedTime_ >= timeLimit;
-		bool allDefeated = enemies_.empty(); // 実際のコンテナ名/判定方法に合わせて調整
-
-		// どちらかを満たしていたら
-		if (timeUp || allDefeated) {
+		// 敵の全滅してたらフェーズチェンジ
+		if (enemies_.empty()) {
 			AdvanceToNextPhase();
+			return;
+		}
+
+		// 時間切れしてたらデスポーンアニメーションさせる
+		if (phaseElapsedTime_ >= timeLimit) {
+			for (auto& enemy : enemies_) {
+				if (enemy->IsDespawning())continue;
+				enemy->DespawnStart();
+			}
 		}
 	}
 }

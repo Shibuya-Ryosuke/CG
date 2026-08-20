@@ -38,6 +38,7 @@ void Mine::Update(const RyoEngine::Camera& camera) {
 	UpdateFollowTransform(model_.get(), camera, followOffset_);
 	// アニメーション
 	BaseEnemy::SpawnAnimation();
+	BaseEnemy::DespawnAnimation();
 	// 回転速度をランダムに加算
 	rotation_.x += RandomFloat(-10.0f, 10.0f) * TimeManager::GetDeltaTime();
 	rotation_.y += RandomFloat(-10.0f, 10.0f) * TimeManager::GetDeltaTime();

@@ -42,6 +42,18 @@ public:
 
 	int32_t GetEnemyId() const { return enemyId_; }
 
+	bool IsDespawning() { return isDespawning_; }
+
+	/// <summary>
+	/// デスポーンの開始
+	/// </summary>
+	void DespawnStart() {
+		isDespawning_ = true;
+		animTimer_ = kAnimDuration_;
+		// 停止
+		velocity_ = { 0.0f,0.0f,0.0f };
+	}
+
 	// 弾の取得関数
 	virtual const std::vector<std::unique_ptr<EnemyBullet>>& GetBullets() const = 0;
 
@@ -61,34 +73,66 @@ public:
 		}
 	}
 
-	void OnCollision(float damage) {
+	bool OnCollision(float damage) {
+		// 既に死亡しているなら無視
+		if (isDead_) return false;
+
+		// ダメージ処理
 		hp_ -= damage;
+
+		// hpが0以下なら死亡、このヒットで撃破されたことを返す
 		if (hp_ <= 0.0f) {
 			isDead_ = true;
+			return true;
 		}
+
+		// そうでなければfalse
+		return false;
 	}
 
 	void SpawnAnimation() {
-		if (isSpawning_) {
-			spawnAnimTimer_ += TimeManager::GetDeltaTime();
-			float t = spawnAnimTimer_ / kSpawnAnimDuration_; // 1.0秒で正規化 (0.0 ～ 1.0)
+		if (!isSpawning_)return;
 
-			if (t >= 1.0f) {
-				t = 1.0f;
-				isSpawning_ = false; // 演出終了
-			}
+		animTimer_ += TimeManager::GetDeltaTime();
+		float t = animTimer_ / kAnimDuration_; // 1.0秒で正規化 (0.0 ～ 1.0)
 
-			// 1. スケール用イージング（はじめ遅く終わり早く ＝ easeIn など。例えば t * t）
-			float easeScale = RyoEngine::EaseInQuart(t, 0.0f, 1.0f);
-			// スケールを 0 から 1 へ
-			model_->SetScale({ easeScale, easeScale, easeScale });
-
-			// 2. 回転させる
-			float currentRotationY = RyoEngine::EaseOutQuad(t, 0.0f, 10.0f * 2.0f * static_cast<float>(M_PI));
-			model_->SetRotateY(currentRotationY); // Ｙ軸回転の場合の例
+		if (t >= 1.0f) {
+			t = 1.0f;
+			isSpawning_ = false; // 演出終了
 		}
+
+		// 1. スケール用イージング（はじめ遅く終わり早く ＝ easeIn など。例えば t * t）
+		float easeScale = RyoEngine::EaseInQuart(t, 0.0f, 1.0f);
+		// スケールを 0 から 1 へ
+		model_->SetScale({ easeScale, easeScale, easeScale });
+
+		// 2. 回転させる
+		float currentRotationY = RyoEngine::EaseOutQuad(t, 0.0f, 10.0f * 2.0f * static_cast<float>(M_PI));
+		model_->SetRotateY(currentRotationY); // Ｙ軸回転の場合の例
 	}
 
+	void DespawnAnimation() {
+		if (!isDespawning_)return;
+
+		// スケールを1から0にするのでタイムは減算させる
+		animTimer_ -= TimeManager::GetDeltaTime();
+		float t = animTimer_ / kAnimDuration_;
+
+		if (t <= 0.0f) {
+			t = 0.0f;
+			isDespawning_ = false; // 演出終了
+			isDead_ = true; // 死亡
+		}
+
+		// 1. スケール用イージング
+		float easeScale = RyoEngine::EaseOutQuart(t, 0.0f, 1.0f);
+		// スケールを 0 から 1 へ
+		model_->SetScale({ easeScale, easeScale, easeScale });
+
+		// 2. 回転させる
+		float currentRotationY = RyoEngine::EaseOutQuad(t, 0.0f, 10.0f * 2.0f * static_cast<float>(M_PI));
+		model_->SetRotateY(currentRotationY); // Ｙ軸回転の場合の例
+	}
 
 protected:
 	// ID
@@ -117,7 +161,8 @@ protected:
 	RyoEngine::Vector3 followOffset_{};
 
 	// スポーンアニメーション
-	float spawnAnimTimer_ = 0.0f;
+	float animTimer_ = 0.0f;
+	float kAnimDuration_ = 1.5f;
 	bool isSpawning_ = true;
-	float kSpawnAnimDuration_ = 1.5f;
+	bool isDespawning_ = false;
 };

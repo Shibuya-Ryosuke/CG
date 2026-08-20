@@ -123,6 +123,7 @@ private:
 
 	int32_t spawnEnemies_ = 0;
 	int32_t totalSpawnEnemies_ = 0;
+	int32_t totalDestroyEnemies_ = 0;
 
 	RyoEngine::Vector3 spawnSpace_{};
 };
