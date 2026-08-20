@@ -461,12 +461,6 @@ void Game::CheckAllCollision() {
 						}
 					}
 				}
-
-				//// 回避状態じゃないときだけ弾の消滅
-				//if (!player_->IsEvasion() && !player_->IsJustEvasion()) {
-				//	// 当たったら弾の消滅
-				//	bullet->OnCollision();
-				//}
 			}
 
 			// 自弾と撃ち落とせる弾の判定
