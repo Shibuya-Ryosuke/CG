@@ -52,8 +52,8 @@ public:
 	void SetTargetPos(const RyoEngine::Vector3& targetPos) { targetPos_ = targetPos; }
 
 private:
-	float kShotInterval = 2.0f;
-	float kBulletSpeed = 38.0f;
+	float kShotInterval = 2.5f;
+	float kBulletSpeed = 36.0f;
 	RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,0.0f };
 
 	float kMaxHp_ = 50.0f;

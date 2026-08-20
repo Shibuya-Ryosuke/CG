@@ -86,8 +86,8 @@ private:
 	float kHomingMobSpawnTimer_ = 10.0f;
 
 	float kFirstSpawnInterval_ = 0.6f;
-	float kSecondSpawnInterval_ = 3.0f;
-	float kThirdSpawnInterval_ = 5.0f;
+	float kSecondSpawnInterval_ = 2.0f;
+	float kThirdSpawnInterval_ = 2.8f;
 
 	int32_t kFirstSpawnEnemies_ = 6;
 	int32_t kSecondSpawnEnemies_ = 12;

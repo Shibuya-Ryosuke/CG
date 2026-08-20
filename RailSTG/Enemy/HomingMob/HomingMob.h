@@ -27,7 +27,7 @@ public:
     void SetTargetPos(const RyoEngine::Vector3& targetPos) { targetPos_ = targetPos; }
 
 private:
-    float kShotInterval = 3.0f;
+    float kShotInterval = 3.2f;
     float kBulletSpeed = 20.0f;      // Mobより低速
     float kBulletDamage = 25.0f;     // Mobより高威力
     RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,0.0f };

@@ -77,6 +77,10 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		SecondPhaseMoveEnemy();
 		break;
 
+	case Phase::Third:
+		ThirdPhaseMoveEnemy();
+		break;
+
 	default:
 		break;
 	}
@@ -366,6 +370,64 @@ void Game::SecondPhaseMoveEnemy() {
 	}
 }
 
+void Game::ThirdPhaseMoveEnemy() {
+	for (auto& enemy : enemies_) {
+		Vector3 offset = enemy->GetFollowOffset();
+		int32_t id = enemy->GetEnemyId();
+
+		// Mine（機雷）は動かさない（z軸の自然な流ればかりはカメラ追従側やそれぞれの処理に任せる場合、ここではスキップ）
+		if (dynamic_cast<Mine*>(enemy.get())) {
+			continue;
+		}
+
+		// 共通ルール：Z方向の移動は強制的に0にする（奥へ進ませない）
+		Vector3 vel = enemy->GetVelocity();
+		vel.z = 0.0f;
+
+		// 速度上限 3.0f を超えないようにクランプ（または最初から3以下で設定）
+		float maxSpeed = 3.0f;
+		if (std::abs(vel.x) > maxSpeed) vel.x = (vel.x > 0.0f) ? maxSpeed : -maxSpeed;
+		if (std::abs(vel.y) > maxSpeed) vel.y = (vel.y > 0.0f) ? maxSpeed : -maxSpeed;
+
+		// ID 32, 33: 左右の端で往復 (X: -12 ~ 12)
+		if (id == 32 || id == 33) {
+			if (offset.x <= -12.0f) {
+				vel.x = 2.5f; // 右へ
+			} else if (offset.x >= 12.0f) {
+				vel.x = -2.5f; // 左へ
+			}
+			vel.y = 0.0f;
+		}
+		// ID 34 ~ 36: 上部で左右に往復しつつ少し上下するジグザグ
+		else if (id >= 34 && id <= 36) {
+			if (offset.x <= -8.0f) {
+				vel = { 2.0f, 1.5f, 0.0f }; // 右上へ
+			} else if (offset.x >= 8.0f) {
+				vel = { -2.0f, -1.5f, 0.0f }; // 左下へ
+			}
+		}
+		// ID 37, 38: 左右から中央へ向かうような往復
+		else if (id == 37 || id == 38) {
+			if (offset.x <= -10.0f) {
+				vel = { 2.5f, -1.0f, 0.0f }; // 右下へ
+			} else if (offset.x >= 10.0f) {
+				vel = { -2.5f, 1.0f, 0.0f }; // 左上へ
+			}
+		}
+		// ID 39 ~ 41: 下部で往復するグループ
+		else if (id >= 39 && id <= 41) {
+			if (offset.x <= -7.0f) {
+				vel = { 2.0f, -1.5f, 0.0f }; // 右下へ
+			} else if (offset.x >= 7.0f) {
+				vel = { -2.0f, 1.5f, 0.0f }; // 左上へ
+			}
+		}
+
+		// 最終的な速度を適用
+		enemy->SetVelocity(vel);
+	}
+}
+
 void Game::FirstPhaseSpawn(const RyoEngine::Camera& camera) {
 	if (!isFirstSpawning_)return;
 
@@ -447,11 +509,11 @@ void Game::ThirdPhaseSpawn(const RyoEngine::Camera& camera) {
 
 		switch (spawnEnemies_) {
 		case 0:
-			MineSpawn(-10.0f, 10.0f, -7.0f, 7.0f, 70.0f, 90.0f, 14, camera); // 18~31
+			MineSpawn(-13.0f, 13.0f, -7.0f, 7.0f, 70.0f, 170.0f, 14, camera); // 18~31
 			break;
 
 		case 14:
-			MobSpawn({ -10.0f,0.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 32
+			HomingMobSpawn({ -10.0f,0.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 32
 			HomingMobSpawn({ 10.0f,0.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 33
 			break;
 
@@ -463,7 +525,7 @@ void Game::ThirdPhaseSpawn(const RyoEngine::Camera& camera) {
 
 		case 19:
 			HomingMobSpawn({ -5.0f,0.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 37
-			MobSpawn({ 5.0f,0.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 38
+			HomingMobSpawn({ 5.0f,0.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 38
 			break;
 
 		default:
