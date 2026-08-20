@@ -1,6 +1,9 @@
 #include "SceneManager.h"
+#include "Title/Title.h"
 #include "Game/Game.h"
+#include "Result/Result.h"
 #include "../Particle/ParticleManager.h"
+#include "../Time/TimeManager.h"
 
 using namespace RyoEngine;
 
@@ -61,13 +64,21 @@ void SceneManager::Initialize(Scene sceneState) {
     // 地面
     ground_ = Model::Create("resources/RailSTG/Ground/ground.obj");
     //ground_->SetScale({ 10.0f,10.0f,10.0f });
-    // 
+     
     // パーティクルマネージャー
     ParticleManager::GetInstance().Initialize();
     // シーン（enum）
     scene_ = sceneState;
 
+    // 起動時(Title)はフェードインから始める
+    fade_.StartFadeIn(kFadeInDurationFrames_);
+
     // シーン別
+    // タイトル
+    title_ = std::make_unique<Title>();
+    title_->Initialize();
+
+    // ゲーム
     game_ = std::make_unique<Game>();
     game_->Initialize();
     // フェーズ別制限時間のセット
@@ -77,6 +88,11 @@ void SceneManager::Initialize(Scene sceneState) {
     }
     game_->SetPhaseTimeLimits(timeLimits);
     game_->SetChangingDuration(kChangingDuration_);
+
+    // リザルト
+    result_ = std::make_unique<Result>();
+    result_->Initialize();
+
 }
 
 void SceneManager::Finalize() {
@@ -84,6 +100,16 @@ void SceneManager::Finalize() {
 }
 
 void SceneManager::Update() {
+    TimeManager::Update();
+
+    fade_.Update();
+
+    // フェードアウトが完了した瞬間に実際のシーン切り替えを行う
+    if (fade_.IsFadeOutJustFinished()) {
+        scene_ = pendingScene_;
+        fade_.StartFadeIn(kFadeInDurationFrames_);
+    }
+
     // アクティブカメラの決定とその更新
     UpdateCamera();
 
@@ -94,14 +120,30 @@ void SceneManager::Update() {
 
     switch (scene_) {
     case Scene::Title:
+        // フェード中でない(=遷移待ちでない)ときだけ入力を受け付ける
+        if (fade_.IsIdle() && Input::TriggerKey(DIK_SPACE)) {
+            pendingScene_ = Scene::Game;
+            fade_.StartFadeOut(kFadeOutDurationFrames_);
+        }
         break;
 
     case Scene::Game:
         game_->Update(*activeCamera_);
         CheckPhaseChange(); // game更新後にフェーズ変化をチェック
+
+        // 追加: Third終了(End)またはHP0でResultへ
+        if (fade_.IsIdle() && (game_->GetPhase() == Phase::End || game_->IsPlayerDead())) {
+            pendingScene_ = Scene::Result;
+            fade_.StartFadeOut(kFadeOutDurationFrames_);
+        }
         break;
 
     case Scene::Result:
+        // フェード中でない(=遷移待ちでない)ときだけ入力を受け付ける
+        if (fade_.IsIdle() && Input::TriggerKey(DIK_SPACE)) {
+            pendingScene_ = Scene::Title;
+            fade_.StartFadeOut(kFadeOutDurationFrames_);
+        }
         break;
 
     case Scene::None:
@@ -118,6 +160,7 @@ void SceneManager::Draw() {
 
     switch (scene_) {
     case Scene::Title:
+        title_->Draw();
         break;
 
     case Scene::Game:
@@ -125,12 +168,15 @@ void SceneManager::Draw() {
         break;
 
     case Scene::Result:
+        result_->Draw();
         break;
 
     case Scene::None:
     default:
         break;
     }
+
+    fade_.Draw(); // 最前面に重ねて描画
 }
 
 void SceneManager::UpdateCamera() {

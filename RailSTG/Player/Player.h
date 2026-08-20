@@ -84,6 +84,8 @@ public:
 
 	RyoEngine::Vector2 GetScreenPos()const { return screenPos_; }
 
+	float GetHp() { return hp_; }
+
 private:
 
 private:

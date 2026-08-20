@@ -112,7 +112,10 @@
     <ClCompile Include="RailSTG\RailCamera\RailCameraController.cpp" />
     <ClCompile Include="RailSTG\Reticle\Reticle.cpp" />
     <ClCompile Include="RailSTG\Scene\Game\Game.cpp" />
+    <ClCompile Include="RailSTG\Scene\Result\Result.cpp" />
+    <ClCompile Include="RailSTG\Scene\SceneFade\SceneFade.cpp" />
     <ClCompile Include="RailSTG\Scene\SceneManager.cpp" />
+    <ClCompile Include="RailSTG\Scene\Title\Title.cpp" />
     <ClCompile Include="RailSTG\Time\TimeManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -186,6 +189,7 @@
     <ClInclude Include="RailSTG\Scene\Game\PhaseRoute.h" />
     <ClInclude Include="RailSTG\Scene\Result\Result.h" />
     <ClInclude Include="RailSTG\Scene\SceneEnum.h" />
+    <ClInclude Include="RailSTG\Scene\SceneFade\SceneFade.h" />
     <ClInclude Include="RailSTG\Scene\SceneManager.h" />
     <ClInclude Include="RailSTG\Scene\Title\Title.h" />
     <ClInclude Include="RailSTG\Time\TimeEnum.h" />

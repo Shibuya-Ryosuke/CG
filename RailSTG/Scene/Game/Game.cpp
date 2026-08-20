@@ -27,11 +27,6 @@ void Game::Initialize() {
 	player_ = std::make_unique<Player>();
 	player_->Initialize();
 
-	// お試しで初期化時に出現
-	//MineSpawn();
-	//ReticleGunnerSpawn();
-
-	//ReticleGunnerSpawn();
 }
 
 void Game::Finalize() {
@@ -39,11 +34,6 @@ void Game::Finalize() {
 }
 
 void Game::Update(const RyoEngine::Camera& camera) {
-	TimeManager::Update();
-	if (Input::TriggerKey(DIK_M)) {
-		TimeManager::SetTimeState(TimeState::JustEvasion);
-	}
-
 #ifdef _DEBUG
 	ImGui::Begin("game");
 	ImGui::Text("enemySpawnTimer: %.2f", enemySpawnTimer_);
@@ -771,4 +761,8 @@ void Game::UpdatePhase(const RyoEngine::Camera& camera) {
 			}
 		}
 	}
+}
+
+bool Game::IsPlayerDead() const {
+	return player_->GetHp() <= 0.0f;
 }

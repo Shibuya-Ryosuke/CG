@@ -83,6 +83,8 @@ public:
 
 	void SetChangingDuration(float duration) { changingDuration_ = duration; }
 
+	bool IsPlayerDead() const;
+
 private:
 	float kMobSpawnTimer_ = 3.0f;
 	float kHomingMobSpawnTimer_ = 10.0f;

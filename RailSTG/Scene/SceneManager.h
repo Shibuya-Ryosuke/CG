@@ -2,12 +2,16 @@
 #include "../../Original/RyoEngine.h"
 #include <memory>
 #include <vector>
+#include <cstdint>
 
+#include "SceneFade/SceneFade.h"
 #include "SceneEnum.h"
 #include "Game/PhaseRoute.h"
 #include "../RailCamera/RailCameraController.h"
 
+class Title;
 class Game;
+class Result;
 
 class SceneManager {
 public:
@@ -65,8 +69,16 @@ private:
 	Phase lastPhase_ = Phase::Ready;
 	float kChangingDuration_ = 4.0f; // Changingの長さ(仮。演出時間に合わせて調整)
 
+	// シーン切り替えのフェード処理
+	SceneFade fade_;
+	Scene pendingScene_ = Scene::None; // フェードアウト完了後に切り替える先のシーン
+	static constexpr int32_t kFadeInDurationFrames_ = 90;  // 1秒 @60fps
+	static constexpr int32_t kFadeOutDurationFrames_ = 90; // 1秒 @60fps
+
 	// シーン別保持
+	std::unique_ptr<Title> title_ = nullptr;
 	std::unique_ptr<Game> game_ = nullptr;
+	std::unique_ptr<Result> result_ = nullptr;
 
 	// 天球
 	std::unique_ptr<RyoEngine::Model> skydome_ = nullptr;

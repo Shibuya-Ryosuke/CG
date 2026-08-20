@@ -103,8 +103,11 @@
     <Filter Include="RailSTG\Scene\Result">
       <UniqueIdentifier>{a4fb34f8-9fd4-430e-b5d0-18abed080341}</UniqueIdentifier>
     </Filter>
-    <Filter Include="RailSTG\Scene\Game\Title">
+    <Filter Include="RailSTG\Scene\Title">
       <UniqueIdentifier>{1995bbef-1be7-4bde-befc-d28cbb81638a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG\Scene\SceneFade">
+      <UniqueIdentifier>{f944dbba-e2c4-4168-b93b-6fd0312fe342}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -260,6 +263,15 @@
     </ClCompile>
     <ClCompile Include="RailSTG\Scene\Game\Game.cpp">
       <Filter>RailSTG\Scene\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Scene\SceneFade\SceneFade.cpp">
+      <Filter>RailSTG\Scene\SceneFade</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Scene\Title\Title.cpp">
+      <Filter>RailSTG\Scene\Title</Filter>
+    </ClCompile>
+    <ClCompile Include="RailSTG\Scene\Result\Result.cpp">
+      <Filter>RailSTG\Scene\Result</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -480,10 +492,13 @@
       <Filter>RailSTG\Scene\Game</Filter>
     </ClInclude>
     <ClInclude Include="RailSTG\Scene\Title\Title.h">
-      <Filter>RailSTG\Scene\Game\Title</Filter>
+      <Filter>RailSTG\Scene\Title</Filter>
     </ClInclude>
     <ClInclude Include="RailSTG\Scene\Result\Result.h">
       <Filter>RailSTG\Scene\Result</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Scene\SceneFade\SceneFade.h">
+      <Filter>RailSTG\Scene\SceneFade</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
