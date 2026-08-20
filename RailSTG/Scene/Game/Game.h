@@ -43,10 +43,14 @@ public:
 	/// </summary>
 	void Draw();
 
-	void MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera);
-	void HomingMobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera);
+	void MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera);
+	void HomingMobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera);
 	void MineSpawn(float randXMin, float randXMax, float randYMin, float randYMax, float randZMin, float randZMax, int32_t maxMines, const RyoEngine::Camera& camera);
-	void ReticleGunnerSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera);
+	void ReticleGunnerSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera);
+
+	void FirstPhaseMoveEnemy();
+	void SecondPhaseMoveEnemy();
+	void ThirdPhaseMoveEnemy();
 
 	/// <summary>
 	/// ファーストフェーズの敵スポーン
@@ -82,8 +86,8 @@ private:
 	float kHomingMobSpawnTimer_ = 10.0f;
 
 	float kFirstSpawnInterval_ = 0.6f;
-	float kSecondSpawnInterval_ = 3.0f;
-	float kThirdSpawnInterval_ = 5.0f;
+	float kSecondSpawnInterval_ = 2.0f;
+	float kThirdSpawnInterval_ = 2.8f;
 
 	int32_t kFirstSpawnEnemies_ = 6;
 	int32_t kSecondSpawnEnemies_ = 12;

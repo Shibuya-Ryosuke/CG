@@ -31,7 +31,7 @@ public:
 
 private:
     float kApproachSpeed_ = 8.0f;   // カメラに近づく速度
-    float kDespawnZ_ = -10.0f;      // これを下回ったら消去(カメラを通り過ぎた)
+    float kDespawnZ_ = -5.0f;      // これを下回ったら消去(カメラを通り過ぎた)
     float kMaxHp_ = 60.0f;
     float kDamage_ = 50.0f;
 

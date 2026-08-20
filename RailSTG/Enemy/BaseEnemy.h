@@ -24,8 +24,10 @@ public:
 	void SetTranslate(const RyoEngine::Vector3 translate) { model_->SetTranslate(translate); }
 	void SetTranslateY(const float y) { model_->SetTranslateY(y); }
 
+	RyoEngine::Vector3 GetFollowOffset() { return followOffset_; }
 	void SetFollowOffset(const RyoEngine::Vector3& offset) { followOffset_ = offset; }
 
+	RyoEngine::Vector3 GetVelocity() { return velocity_; }
 	void SetVelocity(const RyoEngine::Vector3 velocity) { velocity_ = velocity; }
 	void SetVelocityZ(const float velocityZ) { velocity_.z = velocityZ; }
 
@@ -86,6 +88,7 @@ public:
 			model_->SetRotateY(currentRotationY); // Ｙ軸回転の場合の例
 		}
 	}
+
 
 protected:
 	// ID
