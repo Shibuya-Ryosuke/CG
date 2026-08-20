@@ -100,6 +100,12 @@
     <Filter Include="RailSTG\Scene\Game">
       <UniqueIdentifier>{1e015da6-2efa-498f-9d95-5ef183a5861f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\Scene\Result">
+      <UniqueIdentifier>{a4fb34f8-9fd4-430e-b5d0-18abed080341}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailSTG\Scene\Game\Title">
+      <UniqueIdentifier>{1995bbef-1be7-4bde-befc-d28cbb81638a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -422,12 +428,6 @@
     <ClInclude Include="RailSTG\Enemy\BaseEnemy.h">
       <Filter>RailSTG\Enemy</Filter>
     </ClInclude>
-    <ClInclude Include="RailSTG\Scene\Title.h">
-      <Filter>RailSTG\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="RailSTG\Scene\Result.h">
-      <Filter>RailSTG\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="RailSTG\Scene\SceneManager.h">
       <Filter>RailSTG\Scene</Filter>
     </ClInclude>
@@ -478,6 +478,12 @@
     </ClInclude>
     <ClInclude Include="RailSTG\Scene\Game\PhaseRoute.h">
       <Filter>RailSTG\Scene\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Scene\Title\Title.h">
+      <Filter>RailSTG\Scene\Game\Title</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\Scene\Result\Result.h">
+      <Filter>RailSTG\Scene\Result</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -95,6 +95,8 @@ private:
 	int32_t kSecondSpawnEnemies_ = 12;
 	int32_t kThirdSpawnEnemies_ = 24;
 
+	int32_t kReadyFrames_ = 210;
+
 private:
 	// プレイヤー
 	std::unique_ptr<Player> player_ = nullptr;
@@ -115,10 +117,12 @@ private:
 	float enemySpawnTimer_ = kFirstSpawnInterval_;
 
 	// 開始はReadyから
-	Phase phase_ = Phase::First;
-	Phase nextPhase_ = Phase::Ready;   // Changing中に「終わったら何のフェーズへ行くか」を覚えておく
+	Phase phase_ = Phase::Ready;
+	Phase nextPhase_ = Phase::First;   // Changing中に「終わったら何のフェーズへ行くか」を覚えておく
 	float changingElapsedTime_ = 0.0f; // Changingに入ってからの経過時間
 	float changingDuration_ = 0.0f;    // Changingの長さ(SceneManagerからセットされる)
+
+	int32_t readyFrameCount_ = 0;
 
 	float phaseElapsedTime_ = 0.0f; // 現在フェーズの経過時間
 	std::vector<float> phaseTimeLimits_;

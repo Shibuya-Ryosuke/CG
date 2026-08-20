@@ -184,10 +184,10 @@
     <ClInclude Include="RailSTG\Reticle\Reticle.h" />
     <ClInclude Include="RailSTG\Scene\Game\Game.h" />
     <ClInclude Include="RailSTG\Scene\Game\PhaseRoute.h" />
-    <ClInclude Include="RailSTG\Scene\Result.h" />
+    <ClInclude Include="RailSTG\Scene\Result\Result.h" />
     <ClInclude Include="RailSTG\Scene\SceneEnum.h" />
     <ClInclude Include="RailSTG\Scene\SceneManager.h" />
-    <ClInclude Include="RailSTG\Scene\Title.h" />
+    <ClInclude Include="RailSTG\Scene\Title\Title.h" />
     <ClInclude Include="RailSTG\Time\TimeEnum.h" />
     <ClInclude Include="RailSTG\Time\TimeManager.h" />
   </ItemGroup>

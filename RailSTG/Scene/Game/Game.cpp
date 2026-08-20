@@ -201,6 +201,11 @@ void Game::Draw() {
 		enemy->Draw();
 		PrimitiveRenderer::DrawOBB(enemy->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 	}
+
+	if (phase_ == Phase::Ready) {
+		PrimitiveRenderer::DrawRect2D({ 640.0f,360.0f }, { 1280.0f,720.0f }, 0.0f, { 0.0f, 0.0f, 0.0f, 0.6f }, PrimitiveDrawMode::Fill);
+	}
+
 }
 
 void Game::MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera) {
@@ -663,6 +668,10 @@ void Game::AdvanceToNextPhase() {
 	phaseElapsedTime_ = 0.0f;
 
 	switch (phase_) {
+	case Phase::Ready:
+		nextPhase_ = Phase::First;
+		TimeManager::SetTimeState(TimeState::Default);
+		break;
 	case Phase::First:
 		nextPhase_ = Phase::Second;
 		break;
@@ -681,6 +690,16 @@ void Game::AdvanceToNextPhase() {
 }
 
 void Game::UpdatePhase(const RyoEngine::Camera& camera) {
+	if (phase_ == Phase::Ready) {
+		TimeManager::SetTimeState(TimeState::Ready);
+
+		readyFrameCount_++;
+		if (readyFrameCount_ >= kReadyFrames_) {
+			AdvanceToNextPhase();
+		}
+		return;
+	}
+
 	if (phase_ == Phase::Changing) {
 		changingElapsedTime_ += TimeManager::GetDeltaTime();
 		if (changingElapsedTime_ >= changingDuration_) {
