@@ -14,6 +14,11 @@ void Mine::Initialize() {
 		model_->SetTex("resources/RailSTG/Enemy/Mine/monsterBall.png");
 	}
 
+	// ID格納
+	enemyId_ = nextEnemyId_;
+	// 次に入れるIDのために1増やす
+	nextEnemyId_++;
+
 	baseObbSize_ = { 1.0f,1.0f,1.0f };
 	obb_.size = baseObbSize_;
 

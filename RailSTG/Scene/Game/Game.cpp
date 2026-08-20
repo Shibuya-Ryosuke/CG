@@ -64,24 +64,22 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	ImGui::End();
 #endif
 
-	//// モブの出現
-	//if (mobSpawnTimer_ > 0.0f) {
-	//	mobSpawnTimer_ -= TimeManager::GetDeltaTime();
-	//} else {
-	//	//MobSpawn();
-	//	mobSpawnTimer_ = kMobSpawnTimer_;
-	//}
-
-	//// 追尾弾出す敵の出現
-	//if (homingMobSpawnTimer_ > 0.0f) {
-	//	homingMobSpawnTimer_ -= TimeManager::GetDeltaTime();
-	//} else {
-	//	HomingMobSpawn();
-	//	homingMobSpawnTimer_ = kHomingMobSpawnTimer_;
-	//}
-
 	// プレイヤーの更新
 	player_->UpdatePlayer(camera, enemies_);
+
+	// velocityの代入
+	switch (phase_) {
+	case Phase::First:
+		FirstPhaseMoveEnemy();
+		break;
+
+	case Phase::Second:
+		SecondPhaseMoveEnemy();
+		break;
+
+	default:
+		break;
+	}
 
 #ifdef _DEBUG
 	ImGui::Begin("mobs");
@@ -98,6 +96,10 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		if (ImGui::TreeNodeEx("mob", ImGuiTreeNodeFlags_DefaultOpen)) {
 			Vector3 t = mob->GetWorldPos();
 			ImGui::Text("world: (%.2f, %.2f, %.2f)", t.x, t.y, t.z);
+			Vector3 v = mob->GetVelocity();
+			ImGui::Text("velocity: (%.2f, %.2f, %.2f)", v.x, v.y, v.z);
+			Vector3 o = mob->GetFollowOffset();
+			ImGui::Text("offset: (%.2f, %.2f, %.2f)", o.x, o.y, o.z);
 			ImGui::Text("hp   : (%.2f)", mob->GetHp());
 			ImGui::Text("id   : (%d)", mob->GetEnemyId());
 			ImGui::TreePop();
@@ -197,10 +199,11 @@ void Game::Draw() {
 	}
 }
 
-void Game::MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera) {
+void Game::MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera) {
 	// モブの生成
 	auto mob = std::make_unique<Mob>();
 	mob->Initialize();
+	mob->SetVelocity(velocity);
 	mob->SetFollowOffset(followoffset);
 	mob->Update(camera);
 
@@ -213,11 +216,12 @@ void Game::MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Came
 	spawnEnemies_++;
 }
 
-void Game::HomingMobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera) {
+void Game::HomingMobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera) {
 	// 追尾弾出す敵の生成
 	auto homingMob = std::make_unique<HomingMob>();
 	homingMob->SetFollowOffset(followoffset);
 	homingMob->Initialize();
+	homingMob->SetVelocity(velocity);
 	homingMob->Update(camera);
 
 	// 追加
@@ -259,10 +263,11 @@ void Game::MineSpawn(float randXMin, float randXMax, float randYMin, float randY
 	}
 }
 
-void Game::ReticleGunnerSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Camera& camera) {
+void Game::ReticleGunnerSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera) {
 	// レティクルで攻撃する敵の生成
 	auto reticleGunner = std::make_unique<ReticleGunner>();
 	reticleGunner->Initialize();
+	reticleGunner->SetVelocity(velocity);
 	reticleGunner->SetFollowOffset(followoffset);
 	reticleGunner->Update(camera);
 
@@ -275,6 +280,92 @@ void Game::ReticleGunnerSpawn(const RyoEngine::Vector3 followoffset, const RyoEn
 	spawnEnemies_++;
 }
 
+void Game::FirstPhaseMoveEnemy() {
+	for (auto& enemy : enemies_) {
+		// BaseEnemyに GetFollowOffset() のゲッターがない場合、
+		// 必要に応じて公開するか、Mob/HomingMob等で個別に取得してください。
+		Vector3 offset = enemy->GetFollowOffset();
+
+		int32_t id = enemy->GetEnemyId();
+
+		// ID 0~2: -14 ～ -4 の範囲で往復
+		if (id >= 0 && id <= 2) {
+			if (offset.x <= -14.0f) {
+				enemy->SetVelocity({ 2.0f, 0.0f, 0.0f });
+			} else if (offset.x >= -4.0f) {
+				enemy->SetVelocity({ -2.0f, 0.0f, 0.0f });
+			}
+		}
+		// ID 3~5: 4 ～ 14 の範囲で往復
+		else if (id >= 3 && id <= 5) {
+			if (offset.x <= 4.0f) {
+				enemy->SetVelocity({ 2.0f, 0.0f, 0.0f });
+			} else if (offset.x >= 14.0f) {
+				enemy->SetVelocity({ -2.0f, 0.0f, 0.0f });
+			}
+		}
+	}
+}
+
+void Game::SecondPhaseMoveEnemy() {
+	for (auto& enemy : enemies_) {
+		Vector3 offset = enemy->GetFollowOffset();
+		int32_t id = enemy->GetEnemyId();
+		Vector3 vel = enemy->GetVelocity();
+
+		// ID 6, 7: Y軸で -9.0 ～ 9.0 を往復
+		if (id == 6 || id == 7) {
+			if (offset.y <= -9.0f) enemy->SetVelocity({ 0.0f, 2.0f, 0.0f });
+			else if (offset.y >= 9.0f) enemy->SetVelocity({ 0.0f, -2.0f, 0.0f });
+
+		}
+
+		// ID 8: Y(-9 ~ 2) の範囲で往復（Xも連動して動くジグザグ）
+		else if (id == 8) {
+			if (offset.y <= -9.0f) {
+				// 下端に達したら右上へ（Xは右へ移動開始）
+				enemy->SetVelocity({ -2.0f, 2.0f, 0.0f });
+			} else if (offset.y >= 2.0f) {
+				// 上端に達したら左下へ（Xは左へ移動開始）
+				enemy->SetVelocity({ 2.0f, -2.0f, 0.0f });
+			}
+		}
+
+		// ID 9: 8の逆の斜め方向（Y(-9 ~ 2) の範囲で往復）
+		else if (id == 9) {
+			if (offset.y <= -9.0f) {
+				// 下端に達したら右下へ（あえてYを戻すのではなく、Xを右に動かして斜めを維持）
+				// ※右下へ向かわせるためにXをプラスにする
+				enemy->SetVelocity({ 2.0f, 2.0f, 0.0f });
+			} else if (offset.y >= 2.0f) {
+				// 上端に達したら左上へ
+				enemy->SetVelocity({ -2.0f, -2.0f, 0.0f });
+			}
+		}
+
+		// ID 10, 11: 
+		else if (id == 10 || id == 11) {
+			// X方向の往復判定
+			if (offset.x <= -6.0f) {
+				// 右へ移動
+				enemy->SetVelocity({ 3.0f, enemy->GetVelocity().y, 0.0f});
+			} else if (offset.x >= 6.0f) {
+				// 左へ移動
+				enemy->SetVelocity({ -3.0f, enemy->GetVelocity().y, 0.0f });
+			}
+
+			// Y方向の往復判定
+			if (offset.y <= 3.0f) {
+				// 上へ移動
+				enemy->SetVelocity({ enemy->GetVelocity().x, 1.5f, 0.0f });
+			} else if (offset.y >= 9.0f) {
+				// 下へ移動
+				enemy->SetVelocity({ enemy->GetVelocity().x, -1.5f, 0.0f });
+			}
+		}
+	}
+}
+
 void Game::FirstPhaseSpawn(const RyoEngine::Camera& camera) {
 	if (!isFirstSpawning_)return;
 
@@ -283,13 +374,15 @@ void Game::FirstPhaseSpawn(const RyoEngine::Camera& camera) {
 	if (enemySpawnTimer_ <= 0.0f) {
 		// 3以上(6未満)
 		if (spawnEnemies_ >= 3) {
-			MobSpawn({ 9.0f,18.0f+spawnSpace_.y,60.0f },camera);
+			MobSpawn({ 9.0f + spawnSpace_.x,18.0f + spawnSpace_.y,60.0f }, {2.0f,0.0f,0.0f}, camera); // 3~5
+			spawnSpace_.x += 1.5f;
 			spawnSpace_.y += 8.0f;
 		}
 
 		// 3未満
 		if (spawnEnemies_ < 3) {
-			MobSpawn({ -9.0f,10.0f + spawnSpace_.y,60.0f },camera);
+			MobSpawn({ -9.0f + spawnSpace_.x,10.0f + spawnSpace_.y,60.0f }, { -2.0f,0.0f,0.0f }, camera); // id 0~2
+			spawnSpace_.x += 1.5f;
 			spawnSpace_.y -= 8.0f;
 		}
 
@@ -313,23 +406,23 @@ void Game::SecondPhaseSpawn(const RyoEngine::Camera& camera) {
 	if (enemySpawnTimer_ <= 0.0f) {
 		switch (spawnEnemies_) {
 		case 0:
-			MobSpawn({ -15.0f,-9.0f,60.0f }, camera);
-			MobSpawn({ 15.0f,-9.0f,60.0f }, camera);
+			MobSpawn({ -15.0f,-9.0f,60.0f }, { 0.0f,2.0f,0.0f }, camera); // 6
+			MobSpawn({ 15.0f,-9.0f,60.0f }, { 0.0f,2.0f,0.0f }, camera); // 7
 			break;
 
 		case 2:
-			MobSpawn({ -5.0f,-9.0f,70.0f }, camera);
-			MobSpawn({ 5.0f,-9.0f,70.0f }, camera);
+			MobSpawn({ -5.0f,-9.0f,70.0f }, { -2.0f,2.0f,0.0f }, camera); // 8
+			MobSpawn({ 5.0f,-9.0f,70.0f }, { 2.0f,2.0f,0.0f }, camera); // 9
 			break;
 
 		case 4:
-			HomingMobSpawn({ -6.0f,9.0f,60.0f }, camera);
-			MobSpawn({ 0.0f,9.0f,70.0f }, camera);
-			HomingMobSpawn({ 6.0f,9.0f,60.0f }, camera);
+			HomingMobSpawn({ -6.0f,9.0f,60.0f }, { -3.0f,1.5f,1.0f }, camera); // 10
+			HomingMobSpawn({ 6.0f,9.0f,60.0f }, { 3.0f,1.5f,1.0f }, camera); // 11
+			MobSpawn({ 0.0f,9.0f,70.0f }, { 0.0f,0.0f,0.0f }, camera); // 12
 			break;
 
 		default:
-			MineSpawn(-12.0f, 12.0f, -8.0f, 8.0f, 70.0f, 90.0f, 5, camera);
+			MineSpawn(-10.0f, 10.0f, -7.0f, 7.0f, 70.0f, 90.0f, 1, camera); // 13~17
 			break;
 		}
 
@@ -354,29 +447,29 @@ void Game::ThirdPhaseSpawn(const RyoEngine::Camera& camera) {
 
 		switch (spawnEnemies_) {
 		case 0:
-			MineSpawn(-10.0f, 10.0f, -7.0f, 7.0f, 70.0f, 90.0f, 14, camera);
+			MineSpawn(-10.0f, 10.0f, -7.0f, 7.0f, 70.0f, 90.0f, 14, camera); // 18~31
 			break;
 
 		case 14:
-			MobSpawn({ -10.0f,0.0f,60.0f }, camera);
-			HomingMobSpawn({ 10.0f,0.0f,60.0f }, camera);
+			MobSpawn({ -10.0f,0.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 32
+			HomingMobSpawn({ 10.0f,0.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 33
 			break;
 
 		case 16:
-			MobSpawn({ -4.0f,8.0f,60.0f }, camera);
-			ReticleGunnerSpawn({ 0.0f,8.0f,60.0f }, camera);
-			MobSpawn({ 4.0f,8.0f,60.0f }, camera);
+			MobSpawn({ -4.0f,8.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 34
+			ReticleGunnerSpawn({ 0.0f,8.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 35
+			MobSpawn({ 4.0f,8.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 36
 			break;
 
 		case 19:
-			HomingMobSpawn({ -5.0f,0.0f,60.0f }, camera);
-			MobSpawn({ 5.0f,0.0f,60.0f }, camera);
+			HomingMobSpawn({ -5.0f,0.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 37
+			MobSpawn({ 5.0f,0.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 38
 			break;
 
 		default:
-			MobSpawn({ -4.0f,-8.0f,60.0f }, camera);
-			ReticleGunnerSpawn({ 0.0f,-8.0f,60.0f }, camera);
-			MobSpawn({ 4.0f,-8.0f,60.0f }, camera);
+			MobSpawn({ -4.0f,-8.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 39
+			ReticleGunnerSpawn({ 0.0f,-8.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 40
+			MobSpawn({ 4.0f,-8.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 41
 			break;
 		}
 		
