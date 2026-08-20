@@ -88,7 +88,7 @@ private:
 
 private:
 	// 定数（まだデータドリブンにしてないのでいったんここ）
-	float kMaxHp = 100.0f;
+	float kMaxHp = 500.0f;
 	float kInvincibleTimer = 2.0f;
 	float kMainShotInterval = 0.08f;
 	float kBulletSpeed = 260.0f;

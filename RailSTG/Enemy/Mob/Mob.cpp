@@ -85,6 +85,9 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 	ImGui::Begin("enemyBullets");
 #endif
 	for (auto& bullet : bullets_) {
+		if (!bullet->IsDeflected()) {
+			bullet->SetTargetPos(targetPos_);
+		}
 		bullet->Update(camera);
 
 #ifdef _DEBUG
@@ -146,6 +149,8 @@ void Mob::Shot() {
 		bullet->SetDamage(kBulletDamage);
 		bullet->SetOwnerId(GetEnemyId());
 		bullet->SetOBBSize({ 0.5f,0.5f,0.5f });
+		bullet->SetTargetPos(targetPos_);     // 追加: 発射直後から追尾開始
+		bullet->SetTurnRate(kBulletTurnRate); // 追加: 追尾の強さを指定
 
 		bullets_.push_back(std::move(bullet));
 

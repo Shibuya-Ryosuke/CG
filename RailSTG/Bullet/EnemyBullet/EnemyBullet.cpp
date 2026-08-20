@@ -33,8 +33,11 @@ void EnemyBullet::Update(const RyoEngine::Camera& camera) {
 		if (isDeflected_) {
 			velocity_ = direction * kDeflectedSpeed;
 		} else {
+			// 通常弾はturnRate_の分だけ少しずつ狙いを補正(HomingMissileと同じ考え方、弱め)
 			float speed = Length(velocity_);
-			velocity_ = direction * speed;
+			Vector3 currentDir = Normalize(velocity_);
+			Vector3 newDir = Normalize(currentDir + (direction - currentDir) * turnRate_);
+			velocity_ = newDir * speed;
 		}
 		
 
@@ -42,6 +45,18 @@ void EnemyBullet::Update(const RyoEngine::Camera& camera) {
 		// 跳ね返されたときだけ色の変更
 		if (isDeflected_) {
 			model_->SetColor({ 1.0f,0.0f,0.0f,1.0f });
+		}
+
+		// プレイヤーに対しての追従（至近距離で追尾打ち切り）
+		if (!isDeflected_ && !isHomingDisabled_) {
+			// ターゲットとの距離が kTargetDistance より近くなったら追尾をやめる
+			Vector3 displacement = GetTranslate() - targetPos_;
+			float distance = Length(displacement); // 2点間の距離を計算
+
+			if (distance <= kTargetDistance) {
+				hasTarget_ = false;
+				isHomingDisabled_ = true;
+			}
 		}
 	}
 

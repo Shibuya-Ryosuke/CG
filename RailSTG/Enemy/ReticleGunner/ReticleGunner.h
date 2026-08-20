@@ -49,8 +49,8 @@ private:
     float kShotDuration_ = 0.3f;
     float kEndDuration_ = 4.0f;
     float kMaxHp_ = 150.0f;
-    float kHitRadius_ = 20.0f; // 仮値：レティクルの当たり判定半径(スクリーン座標系のピクセル数)
-    float kDamage_ = 30.0f;
+    float kHitRadius_ = 25.0f; // 仮値：レティクルの当たり判定半径(スクリーン座標系のピクセル数)
+    float kDamage_ = 40.0f;
 
 private:
     std::array<ReticleData, 3> reticles_{};

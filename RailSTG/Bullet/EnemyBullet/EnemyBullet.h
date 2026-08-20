@@ -17,7 +17,12 @@ public:
 	void Draw() override;
 
 	void SetIsDeflectable(bool isDefrectable) { isDeflectable_ = isDefrectable; }
-	void SetIsDeflected(bool isDefrected) { isDeflected_ = isDefrected; }
+	void SetIsDeflected(bool isDefrected) {
+		isDeflected_ = isDefrected;
+		if (isDefrected) {
+			isHomingDisabled_ = false;
+		}
+	}
 
 	bool IsDeflectable() const { return isDeflectable_; }
 	bool IsDeflected() const { return isDeflected_; }
@@ -25,13 +30,19 @@ public:
 	void SetOwnerId(int32_t id) { ownerId_ = id; }
 	int32_t GetOwnerId() const { return ownerId_; }
 
-	void SetTargetPos(const RyoEngine::Vector3& pos) { targetPos_ = pos; hasTarget_ = true; }
+	void SetTargetPos(const RyoEngine::Vector3& pos) {
+		if (isHomingDisabled_) return; // 追尾終了後は外部からの再セットを無視
+		targetPos_ = pos;
+		hasTarget_ = true;
+	}
 	void ClearTarget() { hasTarget_ = false; }
 
 	void SetIsDestructible(bool isDestructible) { isDestructible_ = isDestructible; }
 	bool IsDestructible() const { return isDestructible_; }
 
 	void OnCollisionDestructibleBullet(float damage = 0.0f) { hp_ -= damage; }
+
+	void SetTurnRate(float turnRate) { turnRate_ = turnRate; }
 
 private:
 	// プレイヤーが反射可能か
@@ -51,4 +62,12 @@ private:
 
 	// 跳ね返されたときの速度
 	float kDeflectedSpeed = 180.0f;
+
+	// 通常弾の追尾の強さ
+	float turnRate_ = 0.1f;
+
+	// ターゲットを通り過ぎたと判定する距離
+	float kTargetDistance = 5.0f;
+
+	bool isHomingDisabled_ = false;
 };
