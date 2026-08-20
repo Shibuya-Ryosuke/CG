@@ -53,7 +53,7 @@ public:
 
 private:
 	float kShotInterval = 2.0f;
-	float kBulletSpeed = 45.0f;
+	float kBulletSpeed = 38.0f;
 	RyoEngine::Vector3 kVelocity{ 0.0f,0.0f,0.0f };
 
 	float kMaxHp_ = 50.0f;
