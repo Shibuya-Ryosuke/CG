@@ -27,6 +27,8 @@ void Game::Initialize() {
 
 	BaseEnemy::ResetIdCounter(); // 敵IDの採番を0から再開
 
+	pause_.Initialize("resources/RailSTG/UI/Game/pause.png",{640.0f,360.0f});
+
 	// プレイヤーの作成
 	state_.player = std::make_unique<Player>();
 	state_.player->Initialize();
@@ -53,12 +55,38 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	ImGui::Text("phase    : %d", state_.phase);
 	ImGui::NewLine();
 
+	ImGui::Text("backGame: %d", state_.isBackToGame);
+	ImGui::Text("backTitle: %d", state_.isBackToTitle);
+
+
 	ImGui::Text("cameraT: %.2f,%.2f,%.2f", camera.GetTranslate().x, camera.GetTranslate().y, camera.GetTranslate().z);
 	ImGui::End();
 #endif
 
-	// プレイヤーの更新
-	state_.player->UpdatePlayer(camera, state_.enemies);
+	if (Input::TriggerKey(DIK_TAB)) {
+		state_.isBackToGame = true;
+		state_.isPause = !state_.isPause;
+		TimeManager::SetTimeState(state_.isPause ? TimeState::Pause : TimeState::Default);
+	}
+
+	if (state_.isPause) {
+		if (Input::TriggerKey(DIK_W) || Input::TriggerKey(DIK_S)) {
+			state_.isBackToGame = !state_.isBackToGame;
+		}
+
+		if (Input::TriggerKey(DIK_SPACE) || Input::TriggerKey(DIK_RETURN)) {
+			if (state_.isBackToGame) {
+				state_.isPause = false;
+				TimeManager::SetTimeState(TimeState::Default);
+			} else {
+				// タイトルに戻ることを確定させる
+				state_.isBackToTitle = true;
+			}
+		}
+	} else {
+		// プレイヤーの更新
+		state_.player->UpdatePlayer(camera, state_.enemies);
+	}
 
 	// velocityの代入
 	switch (state_.phase) {
@@ -178,6 +206,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 		}
 	}
 
+	UpdateSprite();
 	UpdatePhase(camera);
 }
 
@@ -195,6 +224,10 @@ void Game::Draw() {
 
 	if (state_.phase == Phase::Ready) {
 		PrimitiveRenderer::DrawRect2D({ 640.0f,360.0f }, { 1280.0f,720.0f }, 0.0f, { 0.0f, 0.0f, 0.0f, 0.6f }, PrimitiveDrawMode::Fill);
+	}
+
+	if (state_.isPause) {
+		pause_.Draw();
 	}
 }
 
@@ -666,7 +699,7 @@ void Game::AdvanceToNextPhase() {
 }
 
 void Game::UpdatePhase(const RyoEngine::Camera& camera) {
-	if (state_.phase == Phase::Ready) {
+	if (state_.phase == Phase::Ready && !state_.isPause) {
 		TimeManager::SetTimeState(TimeState::Ready);
 
 		state_.readyFrameCount++;
@@ -751,4 +784,8 @@ void Game::UpdatePhase(const RyoEngine::Camera& camera) {
 
 bool Game::IsPlayerDead() const {
 	return state_.player->GetHp() <= 0.0f;
+}
+
+void Game::UpdateSprite() {
+	pause_.Update();
 }

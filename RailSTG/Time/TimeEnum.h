@@ -7,4 +7,5 @@ enum class TimeState : int32_t {
 	JustEvasion,      // ジャスト回避時
 	Targeting,        // プレイヤーの特殊攻撃においてターゲティングしている時
 	Ready,            // ゲーム開始時
+	Pause,
 };

@@ -42,6 +42,13 @@ void TimeManager::Update() {
 	case TimeState::Ready:
 		GetInstance().timeScale_ = 0.0f;
 		break;
+
+	case TimeState::Pause:
+		GetInstance().timeScale_ = 0.0f;
+		break;
+
+	default:
+		break;
 	}
 
 	// ゲームで使うdeltaタイム

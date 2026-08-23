@@ -138,6 +138,13 @@ void SceneManager::Update() {
             result_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
         }
+
+        // タイトルへ
+        if (game_->IsBackToTitle()) {
+            pendingScene_ = Scene::Title;
+            title_->Initialize();
+            fade_.StartFadeOut(kFadeOutDurationFrames_);
+        }
         break;
 
     case Scene::Result:

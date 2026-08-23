@@ -84,6 +84,10 @@ public:
 
 	bool IsPlayerDead() const;
 
+	void UpdateSprite();
+
+	bool IsBackToTitle() const { return state_.isBackToTitle; }
+
 private:
 	// 変化しない設定値(RuntimeStateのデフォルト初期化から参照するためstatic constexprにしている)
 	static constexpr float kMobSpawnTimer_ = 3.0f;
@@ -103,6 +107,13 @@ private:
 	// 1プレイ分でリセットしたい実行時状態をまとめたもの。
 	// Initialize()で state_ = RuntimeState{}; とするだけで全部デフォルトに戻せる。
 	struct RuntimeState {
+		RuntimeState() = default;
+		~RuntimeState() = default;
+		RuntimeState(const RuntimeState&) = delete;
+		RuntimeState& operator=(const RuntimeState&) = delete;
+		RuntimeState(RuntimeState&&) = default;
+		RuntimeState& operator=(RuntimeState&&) = default;
+
 		std::unique_ptr<Player> player = nullptr;
 
 		std::vector<Mob*> mobs;
@@ -133,9 +144,15 @@ private:
 		int32_t totalDestroyEnemies = 0;
 
 		RyoEngine::Vector3 spawnSpace{};
+
+		bool isPause = false;
+		bool isBackToGame = true;
+		bool isBackToTitle = false;
 	};
 
 	RuntimeState state_;
+
+	RyoEngine::Sprite pause_;
 
 	// SceneManagerから一度だけセットされ、リプレイ時も保持したい値(RuntimeStateには含めない)
 	std::vector<float> phaseTimeLimits_;
