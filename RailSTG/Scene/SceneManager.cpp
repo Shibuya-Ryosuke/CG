@@ -123,6 +123,7 @@ void SceneManager::Update() {
         // フェード中でない(=遷移待ちでない)ときだけ入力を受け付ける
         if (fade_.IsIdle() && Input::TriggerKey(DIK_SPACE)) {
             pendingScene_ = Scene::Game;
+            game_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
         }
         break;
@@ -134,6 +135,7 @@ void SceneManager::Update() {
         // 追加: Third終了(End)またはHP0でResultへ
         if (fade_.IsIdle() && (game_->GetPhase() == Phase::End || game_->IsPlayerDead())) {
             pendingScene_ = Scene::Result;
+            result_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
         }
         break;
@@ -142,6 +144,7 @@ void SceneManager::Update() {
         // フェード中でない(=遷移待ちでない)ときだけ入力を受け付ける
         if (fade_.IsIdle() && Input::TriggerKey(DIK_SPACE)) {
             pendingScene_ = Scene::Title;
+            title_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
         }
         break;

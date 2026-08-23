@@ -23,10 +23,13 @@ Game::Game() = default;
 Game::~Game() = default;
 
 void Game::Initialize() {
-	// プレイヤーの作成
-	player_ = std::make_unique<Player>();
-	player_->Initialize();
+	state_ = RuntimeState{}; // 1プレイ分の状態を全部デフォルトへ戻す
 
+	BaseEnemy::ResetIdCounter(); // 敵IDの採番を0から再開
+
+	// プレイヤーの作成
+	state_.player = std::make_unique<Player>();
+	state_.player->Initialize();
 }
 
 void Game::Finalize() {
@@ -36,18 +39,18 @@ void Game::Finalize() {
 void Game::Update(const RyoEngine::Camera& camera) {
 #ifdef _DEBUG
 	ImGui::Begin("game");
-	ImGui::Text("enemySpawnTimer: %.2f", enemySpawnTimer_);
-	ImGui::Text("spawnEnemies   : %d", spawnEnemies_);
-	ImGui::Text("totalSpawnEnemies   : %d", totalSpawnEnemies_);
+	ImGui::Text("enemySpawnTimer: %.2f", state_.enemySpawnTimer);
+	ImGui::Text("spawnEnemies   : %d", state_.spawnEnemies);
+	ImGui::Text("totalSpawnEnemies   : %d", state_.totalSpawnEnemies);
 	ImGui::NewLine();
 
 	// フェーズごとの制限時間を持ってくる
-	if (phase_ == Phase::First || phase_ == Phase::Second || phase_ == Phase::Third) {
-		size_t routeIndex = static_cast<size_t>(phase_) - static_cast<size_t>(Phase::First);
+	if (state_.phase == Phase::First || state_.phase == Phase::Second || state_.phase == Phase::Third) {
+		size_t routeIndex = static_cast<size_t>(state_.phase) - static_cast<size_t>(Phase::First);
 		float timeLimit = phaseTimeLimits_[routeIndex];
-		ImGui::Text("phaseTime: %.2f / %.2f", phaseElapsedTime_, timeLimit);
+		ImGui::Text("phaseTime: %.2f / %.2f", state_.phaseElapsedTime, timeLimit);
 	}
-	ImGui::Text("phase    : %d", phase_);
+	ImGui::Text("phase    : %d", state_.phase);
 	ImGui::NewLine();
 
 	ImGui::Text("cameraT: %.2f,%.2f,%.2f", camera.GetTranslate().x, camera.GetTranslate().y, camera.GetTranslate().z);
@@ -55,10 +58,10 @@ void Game::Update(const RyoEngine::Camera& camera) {
 #endif
 
 	// プレイヤーの更新
-	player_->UpdatePlayer(camera, enemies_);
+	state_.player->UpdatePlayer(camera, state_.enemies);
 
 	// velocityの代入
-	switch (phase_) {
+	switch (state_.phase) {
 	case Phase::First:
 		FirstPhaseMoveEnemy();
 		break;
@@ -79,9 +82,9 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	ImGui::Begin("mobs");
 #endif
 	// モブの更新
-	for (auto& mob : mobs_) {
+	for (auto& mob : state_.mobs) {
 		// プレイヤーの位置を保存（モブが撃つときプレイヤーに向けて発射するため）
-		mob->SetTargetPos(player_->GetWorldPos());
+		mob->SetTargetPos(state_.player->GetWorldPos());
 		mob->Update(camera);
 		mob->UpdateDeflectedBullets([this](int32_t id) {return FindEnemyById(id);});
 
@@ -108,9 +111,9 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	ImGui::Begin("homingMobs");
 #endif
 	// 追尾弾出す敵の更新
-	for (auto& mob : homingMobs_) {
+	for (auto& mob : state_.homingMobs) {
 		// プレイヤーの位置を保存（モブが撃つときプレイヤーに向けて発射するため）
-		mob->SetTargetPos(player_->GetWorldPos());
+		mob->SetTargetPos(state_.player->GetWorldPos());
 		mob->Update(camera);
 		mob->UpdateDeflectedBullets([this](int32_t id) {return FindEnemyById(id);});
 
@@ -130,50 +133,48 @@ void Game::Update(const RyoEngine::Camera& camera) {
 #endif
 
 	// 機雷の更新
-	for (auto& mine : mines_) {
+	for (auto& mine : state_.mines) {
 		mine->Update(camera);
 	}
 
 	// レティクルで攻撃する敵の更新
-	for (auto& reticleGunner : reticleGunners_) {
-		reticleGunner->SetPlayerWorldPos(player_->GetWorldPos());
+	for (auto& reticleGunner : state_.reticleGunners) {
+		reticleGunner->SetPlayerWorldPos(state_.player->GetWorldPos());
 		reticleGunner->Update(camera);
-		
 	}
-	
 
 	// 当たり判定
 	CheckAllCollision();
 
-	// 1. まず実体（enemies_）側で死んだものを削除する
-	enemies_.erase(
-		std::remove_if(enemies_.begin(), enemies_.end(),
+	// 1. まず実体（enemies）側で死んだものを削除する
+	state_.enemies.erase(
+		std::remove_if(state_.enemies.begin(), state_.enemies.end(),
 			[](const std::unique_ptr<BaseEnemy>& enemy) { return enemy->IsDead(); }),
-		enemies_.end()
+		state_.enemies.end()
 	);
 
-	// 2. mobs_ のポインタリストは一度クリアして、生き残っているものだけで作り直す
-	mobs_.clear();
-	homingMobs_.clear();
-	mines_.clear();
-	reticleGunners_.clear();
+	// 2. mobs等のポインタリストは一度クリアして、生き残っているものだけで作り直す
+	state_.mobs.clear();
+	state_.homingMobs.clear();
+	state_.mines.clear();
+	state_.reticleGunners.clear();
 
-	for (auto& enemy : enemies_) {
+	for (auto& enemy : state_.enemies) {
 		// Mob* へのキャスト
 		if (Mob* mob = dynamic_cast<Mob*>(enemy.get())) {
-			mobs_.push_back(mob);
+			state_.mobs.push_back(mob);
 		}
 		// HomingMob* へのキャスト
 		else if (HomingMob* homingMob = dynamic_cast<HomingMob*>(enemy.get())) {
-			homingMobs_.push_back(homingMob);
+			state_.homingMobs.push_back(homingMob);
 		}
 		// Mine* へのキャスト
 		else if (Mine* mine = dynamic_cast<Mine*>(enemy.get())) {
-			mines_.push_back(mine);
+			state_.mines.push_back(mine);
 		}
 		// ReticleGunner* へのキャスト
 		else if (ReticleGunner* reticleGunner = dynamic_cast<ReticleGunner*>(enemy.get())) {
-			reticleGunners_.push_back(reticleGunner);
+			state_.reticleGunners.push_back(reticleGunner);
 		}
 	}
 
@@ -182,20 +183,19 @@ void Game::Update(const RyoEngine::Camera& camera) {
 
 void Game::Draw() {
 	// プレイヤーの描画
-	player_->Draw();
+	state_.player->Draw();
 	// 当たり判定用の描画はデバッグ時のみのためここで描画
-	PrimitiveRenderer::DrawOBB(player_->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+	PrimitiveRenderer::DrawOBB(state_.player->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 
 	// 全敵の描画
-	for (auto& enemy : enemies_) {
+	for (auto& enemy : state_.enemies) {
 		enemy->Draw();
 		PrimitiveRenderer::DrawOBB(enemy->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 	}
 
-	if (phase_ == Phase::Ready) {
+	if (state_.phase == Phase::Ready) {
 		PrimitiveRenderer::DrawRect2D({ 640.0f,360.0f }, { 1280.0f,720.0f }, 0.0f, { 0.0f, 0.0f, 0.0f, 0.6f }, PrimitiveDrawMode::Fill);
 	}
-
 }
 
 void Game::MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera) {
@@ -208,11 +208,11 @@ void Game::MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vect
 
 	// 追加
 	BaseEnemy* rawPtr = mob.get();
-	enemies_.push_back(std::move(mob));
+	state_.enemies.push_back(std::move(mob));
 
-	mobs_.push_back(static_cast<Mob*>(rawPtr));
+	state_.mobs.push_back(static_cast<Mob*>(rawPtr));
 
-	spawnEnemies_++;
+	state_.spawnEnemies++;
 }
 
 void Game::HomingMobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera) {
@@ -225,11 +225,11 @@ void Game::HomingMobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine
 
 	// 追加
 	BaseEnemy* rawPtr = homingMob.get();
-	enemies_.push_back(std::move(homingMob));
+	state_.enemies.push_back(std::move(homingMob));
 
-	homingMobs_.push_back(static_cast<HomingMob*>(rawPtr));
+	state_.homingMobs.push_back(static_cast<HomingMob*>(rawPtr));
 
-	spawnEnemies_++;
+	state_.spawnEnemies++;
 }
 
 void Game::MineSpawn(float randXMin, float randXMax, float randYMin, float randYMax, float randZMin, float randZMax, int32_t maxMines, const RyoEngine::Camera& camera) {
@@ -249,17 +249,17 @@ void Game::MineSpawn(float randXMin, float randXMax, float randYMin, float randY
 		float randX = RandomFloat(actualrandXMin, actualrandXMax);
 		float randY = RandomFloat(actualrandYMin, actualrandYMax);
 		float randZ = RandomFloat(actualrandZMin, actualrandZMax);
-		mine->SetFollowOffset({ randX, randY, randZ});
+		mine->SetFollowOffset({ randX, randY, randZ });
 
 		mine->Update(camera);
 
 		BaseEnemy* rawPtr = mine.get();
-		enemies_.push_back(std::move(mine));
+		state_.enemies.push_back(std::move(mine));
 
-		mines_.push_back(static_cast<Mine*>(rawPtr));
+		state_.mines.push_back(static_cast<Mine*>(rawPtr));
 
 		// Mineも一応入れておく
-		spawnEnemies_++;
+		state_.spawnEnemies++;
 	}
 }
 
@@ -273,19 +273,16 @@ void Game::ReticleGunnerSpawn(const RyoEngine::Vector3 followoffset, const RyoEn
 
 	// 追加
 	BaseEnemy* rawPtr = reticleGunner.get();
-	enemies_.push_back(std::move(reticleGunner));
+	state_.enemies.push_back(std::move(reticleGunner));
 
-	reticleGunners_.push_back(static_cast<ReticleGunner*>(rawPtr));
+	state_.reticleGunners.push_back(static_cast<ReticleGunner*>(rawPtr));
 
-	spawnEnemies_++;
+	state_.spawnEnemies++;
 }
 
 void Game::FirstPhaseMoveEnemy() {
-	for (auto& enemy : enemies_) {
-		// BaseEnemyに GetFollowOffset() のゲッターがない場合、
-		// 必要に応じて公開するか、Mob/HomingMob等で個別に取得してください。
+	for (auto& enemy : state_.enemies) {
 		Vector3 offset = enemy->GetFollowOffset();
-
 		int32_t id = enemy->GetEnemyId();
 
 		// ID 0~2: -14 ～ -4 の範囲で往復
@@ -308,7 +305,7 @@ void Game::FirstPhaseMoveEnemy() {
 }
 
 void Game::SecondPhaseMoveEnemy() {
-	for (auto& enemy : enemies_) {
+	for (auto& enemy : state_.enemies) {
 		Vector3 offset = enemy->GetFollowOffset();
 		int32_t id = enemy->GetEnemyId();
 		Vector3 vel = enemy->GetVelocity();
@@ -317,16 +314,13 @@ void Game::SecondPhaseMoveEnemy() {
 		if (id == 6 || id == 7) {
 			if (offset.y <= -9.0f) enemy->SetVelocity({ 0.0f, 2.0f, 0.0f });
 			else if (offset.y >= 9.0f) enemy->SetVelocity({ 0.0f, -2.0f, 0.0f });
-
 		}
 
 		// ID 8: Y(-9 ~ 2) の範囲で往復（Xも連動して動くジグザグ）
 		else if (id == 8) {
 			if (offset.y <= -9.0f) {
-				// 下端に達したら右上へ（Xは右へ移動開始）
 				enemy->SetVelocity({ -2.0f, 2.0f, 0.0f });
 			} else if (offset.y >= 2.0f) {
-				// 上端に達したら左下へ（Xは左へ移動開始）
 				enemy->SetVelocity({ 2.0f, -2.0f, 0.0f });
 			}
 		}
@@ -334,11 +328,8 @@ void Game::SecondPhaseMoveEnemy() {
 		// ID 9: 8の逆の斜め方向（Y(-9 ~ 2) の範囲で往復）
 		else if (id == 9) {
 			if (offset.y <= -9.0f) {
-				// 下端に達したら右下へ（あえてYを戻すのではなく、Xを右に動かして斜めを維持）
-				// ※右下へ向かわせるためにXをプラスにする
 				enemy->SetVelocity({ 2.0f, 2.0f, 0.0f });
 			} else if (offset.y >= 2.0f) {
-				// 上端に達したら左上へ
 				enemy->SetVelocity({ -2.0f, -2.0f, 0.0f });
 			}
 		}
@@ -347,19 +338,15 @@ void Game::SecondPhaseMoveEnemy() {
 		else if (id == 10 || id == 11) {
 			// X方向の往復判定
 			if (offset.x <= -6.0f) {
-				// 右へ移動
-				enemy->SetVelocity({ 3.0f, enemy->GetVelocity().y, 0.0f});
+				enemy->SetVelocity({ 3.0f, enemy->GetVelocity().y, 0.0f });
 			} else if (offset.x >= 6.0f) {
-				// 左へ移動
 				enemy->SetVelocity({ -3.0f, enemy->GetVelocity().y, 0.0f });
 			}
 
 			// Y方向の往復判定
 			if (offset.y <= 3.0f) {
-				// 上へ移動
 				enemy->SetVelocity({ enemy->GetVelocity().x, 1.5f, 0.0f });
 			} else if (offset.y >= 9.0f) {
-				// 下へ移動
 				enemy->SetVelocity({ enemy->GetVelocity().x, -1.5f, 0.0f });
 			}
 		}
@@ -367,11 +354,11 @@ void Game::SecondPhaseMoveEnemy() {
 }
 
 void Game::ThirdPhaseMoveEnemy() {
-	for (auto& enemy : enemies_) {
+	for (auto& enemy : state_.enemies) {
 		Vector3 offset = enemy->GetFollowOffset();
 		int32_t id = enemy->GetEnemyId();
 
-		// Mine（機雷）は動かさない（z軸の自然な流ればかりはカメラ追従側やそれぞれの処理に任せる場合、ここではスキップ）
+		// Mine（機雷）は動かさない
 		if (dynamic_cast<Mine*>(enemy.get())) {
 			continue;
 		}
@@ -380,7 +367,7 @@ void Game::ThirdPhaseMoveEnemy() {
 		Vector3 vel = enemy->GetVelocity();
 		vel.z = 0.0f;
 
-		// 速度上限 3.0f を超えないようにクランプ（または最初から3以下で設定）
+		// 速度上限 3.0f を超えないようにクランプ
 		float maxSpeed = 3.0f;
 		if (std::abs(vel.x) > maxSpeed) vel.x = (vel.x > 0.0f) ? maxSpeed : -maxSpeed;
 		if (std::abs(vel.y) > maxSpeed) vel.y = (vel.y > 0.0f) ? maxSpeed : -maxSpeed;
@@ -388,34 +375,34 @@ void Game::ThirdPhaseMoveEnemy() {
 		// ID 32, 33: 左右の端で往復 (X: -12 ~ 12)
 		if (id == 32 || id == 33) {
 			if (offset.x <= -12.0f) {
-				vel.x = 2.5f; // 右へ
+				vel.x = 2.5f;
 			} else if (offset.x >= 12.0f) {
-				vel.x = -2.5f; // 左へ
+				vel.x = -2.5f;
 			}
 			vel.y = 0.0f;
 		}
 		// ID 34 ~ 36: 上部で左右に往復しつつ少し上下するジグザグ
 		else if (id >= 34 && id <= 36) {
 			if (offset.x <= -8.0f) {
-				vel = { 2.0f, 1.5f, 0.0f }; // 右上へ
+				vel = { 2.0f, 1.5f, 0.0f };
 			} else if (offset.x >= 8.0f) {
-				vel = { -2.0f, -1.5f, 0.0f }; // 左下へ
+				vel = { -2.0f, -1.5f, 0.0f };
 			}
 		}
 		// ID 37, 38: 左右から中央へ向かうような往復
 		else if (id == 37 || id == 38) {
 			if (offset.x <= -10.0f) {
-				vel = { 2.5f, -1.0f, 0.0f }; // 右下へ
+				vel = { 2.5f, -1.0f, 0.0f };
 			} else if (offset.x >= 10.0f) {
-				vel = { -2.5f, 1.0f, 0.0f }; // 左上へ
+				vel = { -2.5f, 1.0f, 0.0f };
 			}
 		}
 		// ID 39 ~ 41: 下部で往復するグループ
 		else if (id >= 39 && id <= 41) {
 			if (offset.x <= -7.0f) {
-				vel = { 2.0f, -1.5f, 0.0f }; // 右下へ
+				vel = { 2.0f, -1.5f, 0.0f };
 			} else if (offset.x >= 7.0f) {
-				vel = { -2.0f, 1.5f, 0.0f }; // 左上へ
+				vel = { -2.0f, 1.5f, 0.0f };
 			}
 		}
 
@@ -425,44 +412,44 @@ void Game::ThirdPhaseMoveEnemy() {
 }
 
 void Game::FirstPhaseSpawn(const RyoEngine::Camera& camera) {
-	if (!isFirstSpawning_)return;
+	if (!state_.isFirstSpawning) return;
 
-	enemySpawnTimer_ -= TimeManager::GetDeltaTime();
+	state_.enemySpawnTimer -= TimeManager::GetDeltaTime();
 
-	if (enemySpawnTimer_ <= 0.0f) {
+	if (state_.enemySpawnTimer <= 0.0f) {
 		// 3以上(6未満)
-		if (spawnEnemies_ >= 3) {
-			MobSpawn({ 9.0f + spawnSpace_.x,18.0f + spawnSpace_.y,60.0f }, {2.0f,0.0f,0.0f}, camera); // 3~5
-			spawnSpace_.x += 1.5f;
-			spawnSpace_.y += 8.0f;
+		if (state_.spawnEnemies >= 3) {
+			MobSpawn({ 9.0f + state_.spawnSpace.x,18.0f + state_.spawnSpace.y,60.0f }, { 2.0f,0.0f,0.0f }, camera); // 3~5
+			state_.spawnSpace.x += 1.5f;
+			state_.spawnSpace.y += 8.0f;
 		}
 
 		// 3未満
-		if (spawnEnemies_ < 3) {
-			MobSpawn({ -9.0f + spawnSpace_.x,10.0f + spawnSpace_.y,60.0f }, { -2.0f,0.0f,0.0f }, camera); // id 0~2
-			spawnSpace_.x += 1.5f;
-			spawnSpace_.y -= 8.0f;
+		if (state_.spawnEnemies < 3) {
+			MobSpawn({ -9.0f + state_.spawnSpace.x,10.0f + state_.spawnSpace.y,60.0f }, { -2.0f,0.0f,0.0f }, camera); // id 0~2
+			state_.spawnSpace.x += 1.5f;
+			state_.spawnSpace.y -= 8.0f;
 		}
 
-		if (spawnEnemies_ >= kFirstSpawnEnemies_) {
-			isFirstSpawning_ = false;
-			totalSpawnEnemies_ += spawnEnemies_;
-			spawnEnemies_ = 0;
-			spawnSpace_ = { 0.0f,0.0f,0.0f };
+		if (state_.spawnEnemies >= kFirstSpawnEnemies_) {
+			state_.isFirstSpawning = false;
+			state_.totalSpawnEnemies += state_.spawnEnemies;
+			state_.spawnEnemies = 0;
+			state_.spawnSpace = { 0.0f,0.0f,0.0f };
 		}
 
 		// タイマーリセット
-		enemySpawnTimer_ = kFirstSpawnInterval_;
+		state_.enemySpawnTimer = kFirstSpawnInterval_;
 	}
 }
 
 void Game::SecondPhaseSpawn(const RyoEngine::Camera& camera) {
-	if (!isSecondSpawning_)return;
+	if (!state_.isSecondSpawning) return;
 
-	enemySpawnTimer_ -= TimeManager::GetDeltaTime();
+	state_.enemySpawnTimer -= TimeManager::GetDeltaTime();
 
-	if (enemySpawnTimer_ <= 0.0f) {
-		switch (spawnEnemies_) {
+	if (state_.enemySpawnTimer <= 0.0f) {
+		switch (state_.spawnEnemies) {
 		case 0:
 			MobSpawn({ -15.0f,-9.0f,60.0f }, { 0.0f,2.0f,0.0f }, camera); // 6
 			MobSpawn({ 15.0f,-9.0f,60.0f }, { 0.0f,2.0f,0.0f }, camera); // 7
@@ -484,26 +471,26 @@ void Game::SecondPhaseSpawn(const RyoEngine::Camera& camera) {
 			break;
 		}
 
-		if (spawnEnemies_ >= kSecondSpawnEnemies_) {
-			isSecondSpawning_ = false;
-			totalSpawnEnemies_ += spawnEnemies_;
-			spawnEnemies_ = 0;
-			spawnSpace_ = { 0.0f,0.0f,0.0f };
+		if (state_.spawnEnemies >= kSecondSpawnEnemies_) {
+			state_.isSecondSpawning = false;
+			state_.totalSpawnEnemies += state_.spawnEnemies;
+			state_.spawnEnemies = 0;
+			state_.spawnSpace = { 0.0f,0.0f,0.0f };
 		}
 
 		// タイマーリセット
-		enemySpawnTimer_ = kSecondSpawnInterval_;
+		state_.enemySpawnTimer = kSecondSpawnInterval_;
 	}
 }
 
 void Game::ThirdPhaseSpawn(const RyoEngine::Camera& camera) {
-	if (!isThirdSpawning_)return;
+	if (!state_.isThirdSpawning) return;
 
-	enemySpawnTimer_ -= TimeManager::GetDeltaTime();
+	state_.enemySpawnTimer -= TimeManager::GetDeltaTime();
 
-	if (enemySpawnTimer_ <= 0.0f) {
+	if (state_.enemySpawnTimer <= 0.0f) {
 
-		switch (spawnEnemies_) {
+		switch (state_.spawnEnemies) {
 		case 0:
 			MineSpawn(-13.0f, 13.0f, -7.0f, 7.0f, 70.0f, 270.0f, 14, camera); // 18~31
 			break;
@@ -530,35 +517,34 @@ void Game::ThirdPhaseSpawn(const RyoEngine::Camera& camera) {
 			MobSpawn({ 4.0f,-8.0f,60.0f }, { 4.0f,0.0f,0.0f }, camera); // 41
 			break;
 		}
-		
 
-		if (spawnEnemies_ >= kThirdSpawnEnemies_) {
-			isThirdSpawning_ = false;
-			totalSpawnEnemies_ += spawnEnemies_;
-			spawnEnemies_ = 0;
-			spawnSpace_ = { 0.0f,0.0f,0.0f };
+		if (state_.spawnEnemies >= kThirdSpawnEnemies_) {
+			state_.isThirdSpawning = false;
+			state_.totalSpawnEnemies += state_.spawnEnemies;
+			state_.spawnEnemies = 0;
+			state_.spawnSpace = { 0.0f,0.0f,0.0f };
 		}
 
 		// タイマーリセット
-		enemySpawnTimer_ = kThirdSpawnInterval_;
+		state_.enemySpawnTimer = kThirdSpawnInterval_;
 	}
 }
 
 void Game::CheckAllCollision() {
 	// プレイヤーの弾取得
-	const auto& playerBullets = player_->GetBullets();
-	
-	for (auto& enemy : enemies_) {
+	const auto& playerBullets = state_.player->GetBullets();
+
+	for (auto& enemy : state_.enemies) {
 		// 敵全体と自弾の判定
 		for (auto& bullet : playerBullets) {
 			if (IsCollision(enemy->GetOBB(), bullet->GetOBB())) {
 				// 敵の衝突コールバック
 				if (enemy->OnCollision(bullet->GetDamage())) {
 					// プレイヤーが撃破したので加算
-					totalDestroyEnemies_++;
+					state_.totalDestroyEnemies++;
 				};
 				// スペシャル攻撃のゲージをためる
-				player_->ChargeGuage();
+				state_.player->ChargeGuage();
 				// 当たったら弾の消滅
 				bullet->OnCollision();
 			}
@@ -566,9 +552,9 @@ void Game::CheckAllCollision() {
 
 		// 機雷と自機の判定
 		if (Mine* mine = dynamic_cast<Mine*>(enemy.get())) {
-			if (IsCollision(player_->GetOBB(), mine->GetOBB())) {
+			if (IsCollision(state_.player->GetOBB(), mine->GetOBB())) {
 				// 機雷のダメージを受ける
-				player_->OnCollision(mine->GetDamage());
+				state_.player->OnCollision(mine->GetDamage());
 				// 機雷死亡
 				mine->OnPlayerCollision();
 			}
@@ -576,31 +562,31 @@ void Game::CheckAllCollision() {
 
 		// レティクルで攻撃してくる敵のレティクルと自機の判定
 		if (ReticleGunner* gunner = dynamic_cast<ReticleGunner*>(enemy.get())) {
-			if (gunner->TryJudgeHit(player_->GetScreenPos())) {
-				player_->OnCollision(gunner->GetDamage());
+			if (gunner->TryJudgeHit(state_.player->GetScreenPos())) {
+				state_.player->OnCollision(gunner->GetDamage());
 			}
 		}
-		
+
 		// 敵の弾
 		const auto& enemyBullets = enemy->GetBullets();
 
 		for (auto& bullet : enemyBullets) {
 			// 敵弾とプレイヤーの判定
-			if (IsCollision(player_->GetOBB(), bullet->GetOBB())) {
+			if (IsCollision(state_.player->GetOBB(), bullet->GetOBB())) {
 				// プレイヤーの衝突コールバック
-				player_->OnCollision(bullet->GetDamage());
+				state_.player->OnCollision(bullet->GetDamage());
 
-				if (!player_->IsJustEvasion()) {
+				if (!state_.player->IsJustEvasion()) {
 					// ジャスト回避以外で弾の消滅
 					bullet->OnCollision();
-				}else
-				// ジャスト回避時
+				} else
+					// ジャスト回避時
 				{
 					// タイムマネージャーにジャスト回避を知らせる
 					TimeManager::SetTimeState(TimeState::JustEvasion);
 					// スローの解除を同期させるためにジャスト回避継続時間を知らせる
-					TimeManager::SetJustEvasionDuration(player_->GetJustEvasionDuration());
-					player_->CollectJustEvasion();
+					TimeManager::SetJustEvasionDuration(state_.player->GetJustEvasionDuration());
+					state_.player->CollectJustEvasion();
 
 					// 反射可能な弾か判定
 					if (bullet->IsDeflectable()) {
@@ -611,7 +597,7 @@ void Game::CheckAllCollision() {
 							// 寿命のリセット
 							bullet->ResetLifeTime();
 							// ダメージ増加
-							bullet->SetDamage(bullet->GetDamage() * player_->GetDeflectedDamageScale());
+							bullet->SetDamage(bullet->GetDamage() * state_.player->GetDeflectedDamageScale());
 						}
 					}
 				}
@@ -621,7 +607,7 @@ void Game::CheckAllCollision() {
 			if (bullet->IsDestructible()) {
 				for (auto& pBullet : playerBullets) {
 					if (IsCollision(pBullet->GetOBB(), bullet->GetOBB())) {
-						player_->ChargeGuage();
+						state_.player->ChargeGuage();
 						pBullet->OnCollision();
 						bullet->OnCollisionDestructibleBullet(pBullet->GetDamage());
 					}
@@ -646,7 +632,7 @@ void Game::CheckAllCollision() {
 }
 
 BaseEnemy* Game::FindEnemyById(int32_t enemyId) const {
-	for (const auto& enemy : enemies_) {
+	for (const auto& enemy : state_.enemies) {
 		if (enemy->GetEnemyId() == enemyId) {
 			return enemy.get();
 		}
@@ -655,58 +641,58 @@ BaseEnemy* Game::FindEnemyById(int32_t enemyId) const {
 }
 
 void Game::AdvanceToNextPhase() {
-	phaseElapsedTime_ = 0.0f;
+	state_.phaseElapsedTime = 0.0f;
 
-	switch (phase_) {
+	switch (state_.phase) {
 	case Phase::Ready:
-		nextPhase_ = Phase::First;
+		state_.nextPhase = Phase::First;
 		TimeManager::SetTimeState(TimeState::Default);
 		break;
 	case Phase::First:
-		nextPhase_ = Phase::Second;
+		state_.nextPhase = Phase::Second;
 		break;
 	case Phase::Second:
-		nextPhase_ = Phase::Third;
+		state_.nextPhase = Phase::Third;
 		break;
 	case Phase::Third:
-		nextPhase_ = Phase::End;
+		state_.nextPhase = Phase::End;
 		break;
 	default:
 		return; // Changing以外から呼ばれる想定が無いので、それ以外は何もしない
 	}
 
-	phase_ = Phase::Changing;
-	changingElapsedTime_ = 0.0f;
+	state_.phase = Phase::Changing;
+	state_.changingElapsedTime = 0.0f;
 }
 
 void Game::UpdatePhase(const RyoEngine::Camera& camera) {
-	if (phase_ == Phase::Ready) {
+	if (state_.phase == Phase::Ready) {
 		TimeManager::SetTimeState(TimeState::Ready);
 
-		readyFrameCount_++;
-		if (readyFrameCount_ >= kReadyFrames_) {
+		state_.readyFrameCount++;
+		if (state_.readyFrameCount >= kReadyFrames_) {
 			AdvanceToNextPhase();
 		}
 		return;
 	}
 
-	if (phase_ == Phase::Changing) {
-		changingElapsedTime_ += TimeManager::GetDeltaTime();
-		if (changingElapsedTime_ >= changingDuration_) {
-			phase_ = nextPhase_; // 本来の次フェーズへ切り替え
+	if (state_.phase == Phase::Changing) {
+		state_.changingElapsedTime += TimeManager::GetDeltaTime();
+		if (state_.changingElapsedTime >= changingDuration_) {
+			state_.phase = state_.nextPhase; // 本来の次フェーズへ切り替え
 
 			// ここで次フェーズの敵スポーンを開始するフラグを立てる
-			switch (phase_) {
+			switch (state_.phase) {
 			case Phase::First:
-				isFirstSpawning_ = true;
+				state_.isFirstSpawning = true;
 				break;
 
 			case Phase::Second:
-				isSecondSpawning_ = true;
+				state_.isSecondSpawning = true;
 				break;
 
 			case Phase::Third:
-				isThirdSpawning_ = true;
+				state_.isThirdSpawning = true;
 				break;
 
 			default:
@@ -716,15 +702,15 @@ void Game::UpdatePhase(const RyoEngine::Camera& camera) {
 		return;
 	}
 
-	if (phase_ != Phase::First && phase_ != Phase::Second && phase_ != Phase::Third) {
+	if (state_.phase != Phase::First && state_.phase != Phase::Second && state_.phase != Phase::Third) {
 		return; // Ready/Changing/Endではフェーズ判定不要
 	}
 
 	// フェーズの時間
-	phaseElapsedTime_ += TimeManager::GetDeltaTime();
+	state_.phaseElapsedTime += TimeManager::GetDeltaTime();
 
 	// 敵のスポーン
-	switch (phase_) {
+	switch (state_.phase) {
 	case Phase::First:
 		FirstPhaseSpawn(camera);
 		break;
@@ -742,21 +728,21 @@ void Game::UpdatePhase(const RyoEngine::Camera& camera) {
 	}
 
 	// フェーズごとの制限時間を持ってくる
-	size_t routeIndex = static_cast<size_t>(phase_) - static_cast<size_t>(Phase::First);
+	size_t routeIndex = static_cast<size_t>(state_.phase) - static_cast<size_t>(Phase::First);
 	float timeLimit = phaseTimeLimits_[routeIndex];
 
 	// スポーン処理中は無視
-	if (!isFirstSpawning_ && !isSecondSpawning_ && !isThirdSpawning_) {
+	if (!state_.isFirstSpawning && !state_.isSecondSpawning && !state_.isThirdSpawning) {
 		// 敵の全滅してたらフェーズチェンジ
-		if (enemies_.empty()) {
+		if (state_.enemies.empty()) {
 			AdvanceToNextPhase();
 			return;
 		}
 
 		// 時間切れしてたらデスポーンアニメーションさせる
-		if (phaseElapsedTime_ >= timeLimit) {
-			for (auto& enemy : enemies_) {
-				if (enemy->IsDespawning())continue;
+		if (state_.phaseElapsedTime >= timeLimit) {
+			for (auto& enemy : state_.enemies) {
+				if (enemy->IsDespawning()) continue;
 				enemy->DespawnStart();
 			}
 		}
@@ -764,5 +750,5 @@ void Game::UpdatePhase(const RyoEngine::Camera& camera) {
 }
 
 bool Game::IsPlayerDead() const {
-	return player_->GetHp() <= 0.0f;
+	return state_.player->GetHp() <= 0.0f;
 }

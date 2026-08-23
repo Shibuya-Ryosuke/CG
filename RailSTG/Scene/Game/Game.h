@@ -24,7 +24,7 @@ public:
 	Game& operator=(const Game&) = delete;
 
 	/// <summary>
-	/// 初期化
+	/// 初期化(何度でも呼び直して1プレイ分の状態をリセットできる)
 	/// </summary>
 	void Initialize();
 
@@ -67,14 +67,13 @@ public:
 
 	void CheckAllCollision();
 
-
 	/// <summary>
 	/// enemyIdから現在生存している敵を検索
 	/// 見つからなければnullptr
 	/// </summary>
 	BaseEnemy* FindEnemyById(int32_t enemyId) const;
 
-	Phase GetPhase()const { return phase_; }
+	Phase GetPhase() const { return state_.phase; }
 
 	void SetPhaseTimeLimits(const std::vector<float>& timeLimits) { phaseTimeLimits_ = timeLimits; }
 
@@ -86,56 +85,59 @@ public:
 	bool IsPlayerDead() const;
 
 private:
-	float kMobSpawnTimer_ = 3.0f;
-	float kHomingMobSpawnTimer_ = 10.0f;
+	// 変化しない設定値(RuntimeStateのデフォルト初期化から参照するためstatic constexprにしている)
+	static constexpr float kMobSpawnTimer_ = 3.0f;
+	static constexpr float kHomingMobSpawnTimer_ = 10.0f;
 
-	float kFirstSpawnInterval_ = 0.6f;
-	float kSecondSpawnInterval_ = 2.0f;
-	float kThirdSpawnInterval_ = 2.8f;
+	static constexpr float kFirstSpawnInterval_ = 0.6f;
+	static constexpr float kSecondSpawnInterval_ = 2.0f;
+	static constexpr float kThirdSpawnInterval_ = 2.8f;
 
-	int32_t kFirstSpawnEnemies_ = 6;
-	int32_t kSecondSpawnEnemies_ = 12;
-	int32_t kThirdSpawnEnemies_ = 24;
+	static constexpr int32_t kFirstSpawnEnemies_ = 6;
+	static constexpr int32_t kSecondSpawnEnemies_ = 12;
+	static constexpr int32_t kThirdSpawnEnemies_ = 24;
 
-	int32_t kReadyFrames_ = 210;
+	static constexpr int32_t kReadyFrames_ = 210;
 
 private:
-	// プレイヤー
-	std::unique_ptr<Player> player_ = nullptr;
-	// モブ
-	std::vector<Mob*> mobs_;
-	// 追尾弾出す敵
-	std::vector<HomingMob*> homingMobs_;
-	// 機雷
-	std::vector<Mine*> mines_;
-	// レティクルで攻撃する敵
-	std::vector<ReticleGunner*> reticleGunners_;
-	// 敵全体
-	std::vector<std::unique_ptr<BaseEnemy>> enemies_;
-	// スポーン時間
-	float mobSpawnTimer_ = kMobSpawnTimer_;
-	float homingMobSpawnTimer_ = kHomingMobSpawnTimer_;
+	// 1プレイ分でリセットしたい実行時状態をまとめたもの。
+	// Initialize()で state_ = RuntimeState{}; とするだけで全部デフォルトに戻せる。
+	struct RuntimeState {
+		std::unique_ptr<Player> player = nullptr;
 
-	float enemySpawnTimer_ = kFirstSpawnInterval_;
+		std::vector<Mob*> mobs;
+		std::vector<HomingMob*> homingMobs;
+		std::vector<Mine*> mines;
+		std::vector<ReticleGunner*> reticleGunners;
+		std::vector<std::unique_ptr<BaseEnemy>> enemies;
 
-	// 開始はReadyから
-	Phase phase_ = Phase::Ready;
-	Phase nextPhase_ = Phase::First;   // Changing中に「終わったら何のフェーズへ行くか」を覚えておく
-	float changingElapsedTime_ = 0.0f; // Changingに入ってからの経過時間
-	float changingDuration_ = 0.0f;    // Changingの長さ(SceneManagerからセットされる)
+		float mobSpawnTimer = kMobSpawnTimer_;
+		float homingMobSpawnTimer = kHomingMobSpawnTimer_;
 
-	int32_t readyFrameCount_ = 0;
+		float enemySpawnTimer = kFirstSpawnInterval_;
 
-	float phaseElapsedTime_ = 0.0f; // 現在フェーズの経過時間
+		Phase phase = Phase::Ready;
+		Phase nextPhase = Phase::First;
+		float changingElapsedTime = 0.0f;
+
+		int32_t readyFrameCount = 0;
+
+		float phaseElapsedTime = 0.0f;
+
+		bool isFirstSpawning = true;
+		bool isSecondSpawning = false;
+		bool isThirdSpawning = false;
+
+		int32_t spawnEnemies = 0;
+		int32_t totalSpawnEnemies = 0;
+		int32_t totalDestroyEnemies = 0;
+
+		RyoEngine::Vector3 spawnSpace{};
+	};
+
+	RuntimeState state_;
+
+	// SceneManagerから一度だけセットされ、リプレイ時も保持したい値(RuntimeStateには含めない)
 	std::vector<float> phaseTimeLimits_;
-
-	bool isFirstSpawning_ = true;
-	bool isSecondSpawning_ = false;
-	bool isThirdSpawning_ = false;
-
-	int32_t spawnEnemies_ = 0;
-	int32_t totalSpawnEnemies_ = 0;
-	int32_t totalDestroyEnemies_ = 0;
-
-	RyoEngine::Vector3 spawnSpace_{};
+	float changingDuration_ = 0.0f;
 };

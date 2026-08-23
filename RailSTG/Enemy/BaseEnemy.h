@@ -134,6 +134,8 @@ public:
 		model_->SetRotateY(currentRotationY); // Ｙ軸回転の場合の例
 	}
 
+	static void ResetIdCounter() { nextEnemyId_ = 0; }
+
 protected:
 	// ID
 	int32_t enemyId_ = -1;
