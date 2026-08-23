@@ -12,8 +12,8 @@ namespace RyoEngine {
         Sprite();
         ~Sprite();
 
-        void Initialize(uint32_t textureHandle, Vector2 position = { 0.0f,0.0f });
-        void Initialize(const std::string& filePath, Vector2 position = { 0.0f,0.0f });
+        void Initialize(uint32_t textureHandle, Vector2 position = { 640.0f,360.0f });
+        void Initialize(const std::string& filePath, Vector2 position = { 640.0f,360.0f });
         void Finalize();
         void Update();
         void Draw();

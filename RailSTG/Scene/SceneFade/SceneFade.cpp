@@ -1,5 +1,4 @@
 #include "SceneFade.h"
-#include "../../../Original/RyoEngine.h"
 
 using namespace RyoEngine;
 
@@ -8,6 +7,7 @@ void SceneFade::StartFadeIn(int32_t durationFrames) {
 	frameCount_ = 0;
 	durationFrames_ = (durationFrames > 0) ? durationFrames : 1;
 	alpha_ = 1.0f;
+	fade_.Initialize("resources/RailSTG/UI/fade.png");
 }
 
 void SceneFade::StartFadeOut(int32_t durationFrames) {
@@ -15,6 +15,7 @@ void SceneFade::StartFadeOut(int32_t durationFrames) {
 	frameCount_ = 0;
 	durationFrames_ = (durationFrames > 0) ? durationFrames : 1;
 	alpha_ = 0.0f;
+	fade_.Initialize("resources/RailSTG/UI/fade.png");
 }
 
 void SceneFade::Update() {
@@ -34,6 +35,9 @@ void SceneFade::Update() {
 		alpha_ = EaseOutQuad(t, 0.0f, 1.0f);
 	}
 
+	fade_.SetColor({ 1.0f,1.0f,1.0f,alpha_ });
+	fade_.Update();
+
 	if (t >= 1.0f) {
 		bool wasFadingOut = (state_ == FadeState::FadingOut);
 		state_ = FadeState::None;
@@ -41,15 +45,9 @@ void SceneFade::Update() {
 	}
 }
 
-void SceneFade::Draw() const {
+void SceneFade::Draw() {
 	if (alpha_ <= 0.0001f) {
 		return;
 	}
-	PrimitiveRenderer::DrawRect2D(
-		{ 640.0f, 360.0f },
-		{ 1280.0f, 720.0f },
-		0.0f,
-		{ 0.0f, 0.0f, 0.0f, alpha_ },
-		PrimitiveDrawMode::Fill
-	);
+	fade_.Draw();
 }

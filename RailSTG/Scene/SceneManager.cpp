@@ -120,6 +120,8 @@ void SceneManager::Update() {
 
     switch (scene_) {
     case Scene::Title:
+        title_->Update();
+
         // フェード中でない(=遷移待ちでない)ときだけ入力を受け付ける
         if (fade_.IsIdle() && Input::TriggerKey(DIK_SPACE)) {
             pendingScene_ = Scene::Game;
@@ -148,6 +150,8 @@ void SceneManager::Update() {
         break;
 
     case Scene::Result:
+        result_->Update();
+
         // フェード中でない(=遷移待ちでない)ときだけ入力を受け付ける
         if (fade_.IsIdle() && Input::TriggerKey(DIK_SPACE)) {
             pendingScene_ = Scene::Title;

@@ -62,7 +62,7 @@ namespace RyoEngine {
 		// ウィンドウの生成
 		hwnd_ = CreateWindow(
 			wc_.lpszClassName,        // 利用するクラス名
-			L"CG2_シブヤ",            // タイトルバーの文字(何でも良い)
+			L"LE2A_10_シブヤ_リョウスケ_空の掃除屋",            // タイトルバーの文字(何でも良い)
 			WS_OVERLAPPEDWINDOW,     // よく見るウィンドウスタイル
 			CW_USEDEFAULT,           // 表示X座標(Windowsに任せる)
 			CW_USEDEFAULT,           // 表示Y座標(WindowsOSに任せる)

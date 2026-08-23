@@ -2,6 +2,7 @@
 #include <memory>
 #include <cstdint>
 #include <vector>
+#include <array>
 #include "PhaseRoute.h"
 
 namespace RyoEngine {
@@ -85,6 +86,7 @@ public:
 	bool IsPlayerDead() const;
 
 	void UpdateSprite();
+	void DrawSprite();
 
 	bool IsBackToTitle() const { return state_.isBackToTitle; }
 
@@ -152,7 +154,10 @@ private:
 
 	RuntimeState state_;
 
+	std::array< RyoEngine::Sprite, 3> phases_;
+	RyoEngine::Sprite ready_;
 	RyoEngine::Sprite pause_;
+	RyoEngine::Sprite end_;
 
 	// SceneManagerから一度だけセットされ、リプレイ時も保持したい値(RuntimeStateには含めない)
 	std::vector<float> phaseTimeLimits_;

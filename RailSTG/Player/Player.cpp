@@ -34,6 +34,10 @@ void Player::Initialize() {
 	// レティクル
 	reticle_ = std::make_unique<Reticle>();
 	reticle_->Initialize();
+
+	// 画像
+	justEvasion_.Initialize("resources/RailSTG/UI/Player/justEvasion.png");
+	lockOn_.Initialize("resources/RailSTG/UI/Player/lockOn.png");
 }
 
 void Player::Finalize() {
@@ -66,6 +70,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 		justEvasionDuration_ -= TimeManager::GetDeltaTime();
 	} else {
 		isJustEvasion_ = false;
+		isSlow_ = false;
 	}
 
 	// 回避継続時間の減少
@@ -200,6 +205,8 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 #ifdef _DEBUG
 	ImGui::End();
 #endif
+
+	UpdateSprite();
 }
 
 void Player::Draw() {
@@ -216,9 +223,7 @@ void Player::Draw() {
 	// 自身
 	model_->Draw();
 
-	if (state_ == PlayerState::SpecialAttack1) {
-		PrimitiveRenderer::DrawRect2D({ 640.0f,360.0f }, { 1280.0f,720.0f }, 0.0f, { 0.0f,0.0f,0.0f,0.6f }, PrimitiveDrawMode::Fill);
-	}
+	DrawSprite();
 }
 
 void Player::Move() {
@@ -460,4 +465,24 @@ void Player::OnCollision(float damage) {
 	//if (hp_ <= 0.0f) {
 	//	isDead_ = true;
 	//}
+}
+
+void Player::UpdateSprite() {
+	if (isSlow_) {
+		justEvasion_.Update();
+	}
+
+	if (state_ == PlayerState::SpecialAttack1) {
+		lockOn_.Update();
+	}
+}
+
+void Player::DrawSprite() {
+	if (isSlow_) {
+		justEvasion_.Draw();
+	}
+
+	if (state_ == PlayerState::SpecialAttack1) {
+		lockOn_.Draw();
+	}
 }

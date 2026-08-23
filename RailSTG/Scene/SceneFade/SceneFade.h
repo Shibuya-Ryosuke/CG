@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include "../../../Original/RyoEngine.h"
 
 enum class FadeState {
 	None,
@@ -21,7 +22,7 @@ public:
 	void StartFadeOut(int32_t durationFrames);
 
 	void Update();
-	void Draw() const;
+	void Draw();
 
 	bool IsIdle() const { return state_ == FadeState::None; }
 	bool IsFadeOutJustFinished() const { return justFinishedFadeOut_; }
@@ -33,4 +34,6 @@ private:
 	int32_t durationFrames_ = 90;
 	float alpha_ = 1.0f;
 	bool justFinishedFadeOut_ = false;
+
+	RyoEngine::Sprite fade_;
 };

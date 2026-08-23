@@ -27,8 +27,14 @@ void Game::Initialize() {
 
 	BaseEnemy::ResetIdCounter(); // 敵IDの採番を0から再開
 
-	pause_.Initialize("resources/RailSTG/UI/Game/pause.png",{640.0f,360.0f});
+	phases_.at(0).Initialize("resources/railSTG/UI/Game/phase1.png");
+	phases_.at(1).Initialize("resources/railSTG/UI/Game/phase2.png");
+	phases_.at(2).Initialize("resources/railSTG/UI/Game/phase3.png");
 
+	ready_.Initialize("resources/railSTG/UI/Game/ready.png");
+	pause_.Initialize("resources/RailSTG/UI/Game/pause.png");
+	end_.Initialize("resources/RailSTG/UI/Game/end.png");
+	
 	// プレイヤーの作成
 	state_.player = std::make_unique<Player>();
 	state_.player->Initialize();
@@ -226,9 +232,8 @@ void Game::Draw() {
 		PrimitiveRenderer::DrawRect2D({ 640.0f,360.0f }, { 1280.0f,720.0f }, 0.0f, { 0.0f, 0.0f, 0.0f, 0.6f }, PrimitiveDrawMode::Fill);
 	}
 
-	if (state_.isPause) {
-		pause_.Draw();
-	}
+	// UIの描画
+	DrawSprite();
 }
 
 void Game::MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera) {
@@ -787,5 +792,77 @@ bool Game::IsPlayerDead() const {
 }
 
 void Game::UpdateSprite() {
-	pause_.Update();
+	switch (state_.phase) {
+	case Phase::Ready:
+		ready_.Update();
+		break;
+
+	case Phase::Changing:
+		switch (state_.nextPhase) {
+		case Phase::First:
+			phases_.at(0).Update();
+			break;
+
+		case Phase::Second:
+			phases_.at(1).Update();
+			break;
+
+		case Phase::Third:
+			phases_.at(2).Update();
+			break;
+
+		default:
+			break;
+		}
+		break;
+
+	case Phase::End:
+		end_.Update();
+		break;
+
+	default:
+		break;
+	}
+
+	if (state_.isPause) {
+		pause_.Update();
+	}
+}
+
+void Game::DrawSprite() {
+	switch (state_.phase) {
+	case Phase::Ready:
+		ready_.Draw();
+		break;
+
+	case Phase::Changing:
+		switch (state_.nextPhase) {
+		case Phase::First:
+			phases_.at(0).Draw();
+			break;
+
+		case Phase::Second:
+			phases_.at(1).Draw();
+			break;
+
+		case Phase::Third:
+			phases_.at(2).Draw();
+			break;
+
+		default:
+			break;
+		}
+		break;
+
+	case Phase::End:
+		end_.Draw();
+		break;
+
+	default:
+		break;
+	}
+
+	if (state_.isPause) {
+		pause_.Draw();
+	}
 }

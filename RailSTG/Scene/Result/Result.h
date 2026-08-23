@@ -1,4 +1,5 @@
 #pragma once
+#include "../../../Original/RyoEngine.h"
 
 class Result {
 public:
@@ -21,4 +22,7 @@ public:
 	/// 描画
 	/// </summary>
 	void Draw();
+
+private:
+	RyoEngine::Sprite result_;
 };

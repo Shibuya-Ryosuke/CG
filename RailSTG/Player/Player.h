@@ -50,7 +50,7 @@ public:
 	bool IsEvasion() const { return isEvasion_; }
 	bool IsJustEvasion() const { return isJustEvasion_; }
 	float GetJustEvasionDuration() const { return justEvasionDuration_; }
-	void CollectJustEvasion(){ evasionDuration_ = kEvasionDuration / 3.0f; justEvasionDuration_ = kJustEvasionDuration / 3.0f; }
+	void CollectJustEvasion() { evasionDuration_ = kEvasionDuration / 3.0f; justEvasionDuration_ = kJustEvasionDuration / 3.0f; isSlow_ = true; }
 
 	void LockOnMode();
 	void UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
@@ -87,6 +87,8 @@ public:
 	float GetHp() { return hp_; }
 
 private:
+	void UpdateSprite();
+	void DrawSprite();
 
 private:
 	// 定数（まだデータドリブンにしてないのでいったんここ）
@@ -167,4 +169,10 @@ private:
 	float specialAttack1CoolTime_ = 0.0f;
 	// スペシャル攻撃１を使うために必要なゲージ
 	float specialAttack1Guage_ = 0.0f;
+
+	bool isSlow_ = false;
+
+	// 画像
+	RyoEngine::Sprite justEvasion_;
+	RyoEngine::Sprite lockOn_;
 };
