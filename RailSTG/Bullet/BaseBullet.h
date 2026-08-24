@@ -2,6 +2,7 @@
 #include "../../Original/RyoEngine.h"
 #include "../BaseObject/BaseObject.h"
 #include "../Time/TimeManager.h"
+#include <cstdint>
 
 class BaseBullet : public BaseObject {
 public:
@@ -43,7 +44,8 @@ public:
 	RyoEngine::Vector3 GetVelocity() const { return velocity_; }
 	const RyoEngine::OBB& GetOBB() const { return obb_; }
 	void SetOBBSize(const RyoEngine::Vector3& size) { baseObbSize_ = size; obb_.size = baseObbSize_; }
-
+	void SetTex(int32_t handle) { model_->SetTex(handle); }
+	void SetScale(RyoEngine::Vector3 scale) { model_->SetScale(scale); }
 	/// <summary>
 	/// 座標のセット
 	/// </summary>

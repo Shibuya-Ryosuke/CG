@@ -175,4 +175,7 @@ private:
 	// 画像
 	RyoEngine::Sprite justEvasion_;
 	RyoEngine::Sprite lockOn_;
+
+	// 追尾弾ハンドル
+	inline static int32_t playerMissileHandle_ = 0;
 };

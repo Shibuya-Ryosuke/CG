@@ -1,6 +1,7 @@
 #pragma once
 #include "../../../Original/RyoEngine.h"
 #include "../BaseBullet.h"
+#include <cstdint>
 
 // 前方宣言（あるいはインクルード）
 class BaseEnemy;

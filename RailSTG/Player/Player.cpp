@@ -22,7 +22,7 @@ Player::~Player() = default;
 
 void Player::Initialize() {
 	// モデルの生成
-	model_ = Model::Create("resources/RailSTG/TR.obj");
+	model_ = Model::Create("resources/RailSTG/Player/player.obj");
 	model_->SetTranslate({ 0.0f,0.0f,0.0f });
 
 	baseObbSize_ = { 1.0f,1.0f,1.0f };
@@ -38,6 +38,10 @@ void Player::Initialize() {
 	// 画像
 	justEvasion_.Initialize("resources/RailSTG/UI/Player/justEvasion.png");
 	lockOn_.Initialize("resources/RailSTG/UI/Player/lockOn.png");
+
+	if (playerMissileHandle_ == 0) {
+		playerMissileHandle_ = LoadTex("resources/RailSTG/Bullet/playerMissile_uv.png");
+	}
 }
 
 void Player::Finalize() {
@@ -450,6 +454,7 @@ void Player::ShootMissile(const RyoEngine::Camera& camera, const std::vector<std
 			missile->Initialize(spawnPos, target);
 			missile->SetDamage(kHomingMissileDamage);
 			missile->SetOBBSize({ 1.0f,1.0f,1.0f });
+			missile->SetTex(playerMissileHandle_);
 
 
 			// ミサイルリストに追加

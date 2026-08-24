@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include <cstdint>
 #include "../BaseEnemy.h"
 #include "../EnemyEnum.h"
 
@@ -39,4 +40,7 @@ private:
     RyoEngine::Vector3 targetPos_{};
     MobState state_ = MobState::None;
     MobState request_ = MobState::None;
+
+    // 追尾弾ハンドル
+    inline static int32_t enemyMissileHandle_ = 0;
 };

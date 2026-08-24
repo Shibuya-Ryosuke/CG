@@ -11,7 +11,6 @@ void Mine::Initialize() {
 	// 生成
 	if (model_ == nullptr) {
 		model_ = Model::Create("resources/RailSTG/Enemy/Mine/mine.obj");
-		model_->SetTex("resources/RailSTG/Enemy/Mine/monsterBall.png");
 	}
 
 	// ID格納

@@ -16,10 +16,13 @@ HomingMob::HomingMob() = default;
 HomingMob::~HomingMob() = default;
 
 void HomingMob::Initialize() {
+	if (enemyMissileHandle_ == 0) {
+		enemyMissileHandle_ = LoadTex("resources/RailSTG/Bullet/homingBullet_uv.png");
+	}
+
 	// 生成
 	if (model_ == nullptr) {
-		model_ = Model::Create("resources/RailSTG/Enemy/enemy.obj");
-		model_->SetTex("resources/RailSTG/Enemy/brick.png");
+		model_ = Model::Create("resources/RailSTG/Enemy/HomingMob/homingMob.obj");
 	}
 	// 速度セット
 	SetVelocity(kVelocity);
@@ -152,7 +155,7 @@ void HomingMob::Shot() {
 		bullet->SetDamage(kBulletDamage);
 		bullet->SetOwnerId(GetEnemyId());
 		bullet->SetLifeTime(100.0f);
-		bullet->SetOBBSize({ 2.0f,2.0f,2.0f });
+		bullet->SetScale({ 2.0f,2.0f,2.0f });
 		// 撃ち落とし可能
 		bullet->SetIsDestructible(true);
 		// 体力の設定

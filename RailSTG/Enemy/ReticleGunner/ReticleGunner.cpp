@@ -12,7 +12,6 @@ ReticleGunner::~ReticleGunner() = default;
 void ReticleGunner::Initialize() {
     if (model_ == nullptr) {
         model_ = Model::Create("resources/RailSTG/Enemy/ReticleGunner/reticleGunner.obj");
-        model_->SetTex("resources/RailSTG/Enemy/ReticleGunner/checkerBoard.png");
     }
 
     baseObbSize_ = { 1.0f,1.0f,1.0f };

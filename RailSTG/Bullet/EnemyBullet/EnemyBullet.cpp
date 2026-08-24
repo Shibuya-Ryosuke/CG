@@ -9,9 +9,10 @@ EnemyBullet::EnemyBullet() = default;
 void EnemyBullet::Initialize() {
 	if (model_ == nullptr) {
 		// 生成
-		model_ = Model::Create("resources/RailSTG/Bullet/EnemyBullet/enemyBullet.obj");
-		model_->SetTex("resources/RailSTG/Bullet/flower.png");
+		model_ = Model::Create("resources/RailSTG/Bullet/bullet.obj");
+		model_->SetTex("resources/RailSTG/Bullet/enemyBullet_uv.png");
 	}
+	baseObbSize_ = { 0.8f,0.8f,0.8f };
 }
 
 void EnemyBullet::Finalize() {
