@@ -55,6 +55,8 @@ namespace RyoEngine {
     }
 
     uint32_t TextureManager::Load(const std::string& filePath) {
+        assert(textures_.size() < kMaxTextures);
+
         if (filePathMap_.contains(filePath)) return filePathMap_[filePath];
 
         DirectX::ScratchImage mipImages = LoadTexture(filePath);

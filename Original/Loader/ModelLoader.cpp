@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <dxgidebug.h>
+#include "../Base/Logger.h"
 
 namespace RyoEngine {
 
@@ -181,6 +182,7 @@ namespace RyoEngine {
 				if (materialIndex < 0) {
 					// 見つからない場合は先頭のマテリアルにフォールバック
 					materialIndex = 0;
+					Logger::LogWarning("[ModelLoader] L185\nMaterial not found.\n");
 				}
 
 				// 現在のメッシュに既に頂点が入っているなら、マテリアルの切り替わりとして
