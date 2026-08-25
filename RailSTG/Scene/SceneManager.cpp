@@ -4,6 +4,7 @@
 #include "Result/Result.h"
 #include "../Particle/ParticleManager.h"
 #include "../Time/TimeManager.h"
+#include <imgui.h>
 
 using namespace RyoEngine;
 
@@ -63,6 +64,7 @@ void SceneManager::Initialize(Scene sceneState) {
     skydome_->SetScale({ 10.0f,10.0f,10.0f });
     // 地面
     ground_ = Model::Create("resources/RailSTG/Ground/ground.obj");
+    ground_->SetUVScale({ 5.0f,5.0f });
     //ground_->SetScale({ 10.0f,10.0f,10.0f });
      
     // パーティクルマネージャー
@@ -112,7 +114,7 @@ void SceneManager::Update() {
 
     // アクティブカメラの決定とその更新
     UpdateCamera();
-
+ 
     skydome_->Update(*activeCamera_);
     ground_->Update(*activeCamera_);
 
