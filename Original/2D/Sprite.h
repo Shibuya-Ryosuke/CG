@@ -7,13 +7,25 @@
 namespace RyoEngine {
     class DebugCamera;
 
+    enum class Anchor {
+        Center,
+        Top,
+        Bottom,
+        Left,
+        LeftTop,
+        LeftBottom,
+        Right,
+        RightTop,
+        RightBottom,
+    };
+
     class Sprite {
     public:
         Sprite();
         ~Sprite();
 
-        void Initialize(uint32_t textureHandle, Vector2 position = { 640.0f,360.0f });
-        void Initialize(const std::string& filePath, Vector2 position = { 640.0f,360.0f });
+        void Initialize(uint32_t textureHandle, Vector2 position = { 640.0f,360.0f }, Anchor anchor = Anchor::Center);
+        void Initialize(const std::string& filePath, Vector2 position = { 640.0f,360.0f }, Anchor anchor = Anchor::Center);
         void Finalize();
         void Update();
         void Draw();
@@ -44,7 +56,8 @@ namespace RyoEngine {
             uvRotate_ = rotate;
             uvTranslate_ = translate;
         }
-        void SetTexSize(const Vector2& size) { texSize_ = size; }
+        void SetTexSize(const Vector2& size);
+        void SetAnchor(Anchor anchor);
         void SetTex(uint32_t textureHandle) { textureHandle_ = textureHandle; };
         void SetTex(const std::string& filePath);
         void SetColor(const Vector4& color) {  materialData_->color = color; };
@@ -54,6 +67,7 @@ namespace RyoEngine {
         void CreateIndexResource();
         void CreateMaterialResource();
         void CreateWVPResource();
+        void UpdateVertexPositions();
 
         void InternalDraw();
     private:
@@ -84,5 +98,6 @@ namespace RyoEngine {
         Vector2 uvTranslate_ = { 0.0f, 0.0f };
         float uvRotate_ = 0.0f;
         Vector2 uvScale_ = { 1.0f, 1.0f };
+        Anchor anchor_ = Anchor::Center;
     };
 }

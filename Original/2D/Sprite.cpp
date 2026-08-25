@@ -8,9 +8,10 @@ namespace RyoEngine {
     Sprite::Sprite() {};
     Sprite::~Sprite() {};
 
-    void Sprite::Initialize(uint32_t textureHandle, Vector2 position) {
+    void Sprite::Initialize(uint32_t textureHandle, Vector2 position, Anchor anchor) {
         textureHandle_ = textureHandle;
         translate_ = position;
+        anchor_ = anchor;
         
         // 1. TextureManagerのインスタンスを取得
         TextureManager* textureManager = TextureManager::GetInstance();
@@ -32,28 +33,19 @@ namespace RyoEngine {
         CreateWVPResource();
 
         // 初期データ書き込み
-        // 頂点情報 (0:左下, 1:左上, 2:右下, 3:右上)
-        float halfWidth = texSize_.x * 0.5f;
-        float halfHeight = texSize_.y * 0.5f;
-        vertexData_[0].position = { -halfWidth,  halfHeight, 0.0f, 1.0f };
-        vertexData_[1].position = { -halfWidth, -halfHeight, 0.0f, 1.0f };
-        vertexData_[2].position = { halfWidth,  halfHeight, 0.0f, 1.0f };
-        vertexData_[3].position = { halfWidth, -halfHeight, 0.0f, 1.0f };
-
+        UpdateVertexPositions();
         vertexData_[0].texcoord = { 0.0f, 1.0f };
         vertexData_[1].texcoord = { 0.0f, 0.0f };
         vertexData_[2].texcoord = { 1.0f, 1.0f };
         vertexData_[3].texcoord = { 1.0f, 0.0f };
 
-        // インデックス (main.cppの順序通り)
         indexData_[0] = 0; indexData_[1] = 1; indexData_[2] = 2;
         indexData_[3] = 1; indexData_[4] = 3; indexData_[5] = 2;
-
         indexCount_ = 6;
     }
 
-    void Sprite::Initialize(const std::string& filePath, Vector2 position) {
-        Initialize(TextureManager::GetInstance()->Load(filePath), position);
+    void Sprite::Initialize(const std::string& filePath, Vector2 position, Anchor anchor) {
+        Initialize(TextureManager::GetInstance()->Load(filePath), position,anchor);
     }
 
     void Sprite::Finalize() {
@@ -128,6 +120,16 @@ namespace RyoEngine {
         });
     }
 
+    void Sprite::SetTexSize(const Vector2& size) {
+        texSize_ = size;
+        UpdateVertexPositions();
+    }
+
+    void Sprite::SetAnchor(Anchor anchor) {
+        anchor_ = anchor;
+        UpdateVertexPositions();
+    }
+
     void Sprite::SetTex(const std::string& filePath) {
         textureHandle_ = TextureManager::GetInstance()->Load(filePath);
     }
@@ -177,6 +179,34 @@ namespace RyoEngine {
         wvpResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Matrix4x4));
         wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&wvpData_));
         *wvpData_ = MakeIdentity4x4();
+    }
+    void Sprite::UpdateVertexPositions() {
+        if (!vertexData_) return; // Mapされる前(Initialize中の初回呼び出し等)は何もしない
+
+        float w = texSize_.x;
+        float h = texSize_.y;
+
+        // 左上原点(0,0)〜右下(w,h)のローカル矩形の中で、
+        // アンカーに対応する基準点(pivot)を求める
+        Vector2 pivot{};
+        switch (anchor_) {
+        case Anchor::Center:      pivot = { w * 0.5f, h * 0.5f }; break;
+        case Anchor::Top:         pivot = { w * 0.5f, 0.0f };     break;
+        case Anchor::Bottom:      pivot = { w * 0.5f, h };        break;
+        case Anchor::Left:        pivot = { 0.0f,     h * 0.5f }; break;
+        case Anchor::Right:       pivot = { w,        h * 0.5f }; break;
+        case Anchor::LeftTop:     pivot = { 0.0f,     0.0f };     break;
+        case Anchor::LeftBottom:  pivot = { 0.0f,     h };        break;
+        case Anchor::RightTop:    pivot = { w,        0.0f };     break;
+        case Anchor::RightBottom: pivot = { w,        h };        break;
+        }
+
+        // pivotがローカル原点(0,0)に来るように矩形をずらして配置
+        // (0:左下, 1:左上, 2:右下, 3:右上)
+        vertexData_[0].position = { 0.0f - pivot.x, h - pivot.y, 0.0f, 1.0f };
+        vertexData_[1].position = { 0.0f - pivot.x, 0.0f - pivot.y, 0.0f, 1.0f };
+        vertexData_[2].position = { w - pivot.x, h - pivot.y, 0.0f, 1.0f };
+        vertexData_[3].position = { w - pivot.x, 0.0f - pivot.y, 0.0f, 1.0f };
     }
     void Sprite::InternalDraw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
