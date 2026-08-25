@@ -3,13 +3,22 @@
 using namespace RyoEngine;
 
 void Result::Initialize() {
-	result_.Initialize("resources/RailSTG/UI/Result/result.png");
+	clear_.Initialize("resources/RailSTG/UI/Result/clear.png");
+	failed_.Initialize("resources/RailSTG/UI/Result/failed.png");
 }
 
 void Result::Update() {
-	result_.Update();
+	if (isClear_) {
+		clear_.Update();
+	} else {
+		failed_.Update();
+	}
 }
 
 void Result::Draw() {
-	result_.Draw();
+	if (isClear_) {
+		clear_.Draw();
+	} else {
+		failed_.Draw();
+	}
 }

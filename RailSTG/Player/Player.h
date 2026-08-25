@@ -121,6 +121,9 @@ private:
 
 	// ジャスト回避で跳ね返した弾のダメージ倍率
 	float kDeflectedDamageScale = 3.0f;
+
+	float kDamageTimer = 0.15f;
+
 private:
 
 	// レティクル
@@ -176,6 +179,9 @@ private:
 	int32_t lockedCount_ = 0;
 
 	bool isCollectJustEvasion_ = false;
+
+	// 被弾
+	float damageTimer_ = 0.0f;
 
 	// 画像
 	RyoEngine::Sprite hpBarBack_;

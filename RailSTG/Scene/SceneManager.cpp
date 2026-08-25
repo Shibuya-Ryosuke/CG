@@ -17,39 +17,7 @@ void SceneManager::Initialize(Scene sceneState) {
     camera_->Initialize();
     camera_->SetActive(true);
 
-    // フェーズごとの経路データを構築（First:35s, Second:45s, Third:60s）
-    phaseRoutes_ = {
-     { { // First (絶対座標 / 35秒用：シンプルに長めの直線を想定)
-         {   0.0f, 153.0f,   -25.0f },
-         {   0.0f, 153.0f,  1000.0f }, // 時間が長いため終点を少し遠くに延長
-     }, 35.0f },
-     { { // Second (相対座標 / 45秒用：ポイントを少し増やしてカーブを滑らかに)
-         {   0.0f,   0.0f,    0.0f },
-         {  20.0f,   0.0f,  100.0f },
-         {  50.0f,   0.0f,  220.0f },
-         {  85.0f,   0.0f,  360.0f },
-         { 103.4f,   0.0f,  500.0f },
-         { 110.0f,   0.0f,  650.0f },
-         { 135.0f,   0.0f,  780.0f },
-         { 160.0f,   0.0f,  920.0f },
-         { 180.8f,   0.0f, 1050.0f }, // 時間増加に合わせて終点も調整
-     }, 45.0f },
-     { { // Third (相対座標 / 60秒用：一番時間が長いため、高低差とカーブを増やした長丁場な経路)
-         {   0.0f,   0.0f,    0.0f },
-         {  30.0f,  10.0f,  100.0f },
-         {  60.0f,  25.0f,  220.0f },
-         { 101.6f,  41.8f,  350.0f },
-         { 120.0f,  50.0f,  480.0f },
-         { 127.6f,  52.3f,  620.0f },
-         { 127.6f,  45.0f,  760.0f },
-         { 127.6f,  30.0f,  900.0f },
-         { 127.6f,  15.0f, 1040.0f },
-         { 127.6f,   0.0f, 1200.0f }, // 60秒かけて進むロングコース
-     }, 60.0f },
-    };
-
-    // 最初のフェーズ(First)の経路をセット(スタートなので今まで通りSetWayPointsでOK)
-    camera_->SetWayPoints(phaseRoutes_[PhaseToRouteIndex(Phase::First)].wayPoints);
+    RouteInitialize();
 
     // デバッグカメラ
     debugCamera_ = std::make_unique<DebugCamera>();
@@ -68,6 +36,8 @@ void SceneManager::Initialize(Scene sceneState) {
     ground_->SetUVScale({ 4.0f,4.0f });
     //ground_->SetScale({ 10.0f,10.0f,10.0f });
      
+    pressSpace_.Initialize("resources/RailSTG/UI/Input/pressSpace.png", { 640.0f,450.0f }, Anchor::Center);
+
     // パーティクルマネージャー
     ParticleManager::GetInstance().Initialize();
     // シーン（enum）
@@ -111,6 +81,11 @@ void SceneManager::Update() {
     if (fade_.IsFadeOutJustFinished()) {
         scene_ = pendingScene_;
         fade_.StartFadeIn(kFadeInDurationFrames_);
+        if (pendingScene_ == Scene::Game) {
+            camera_->SetTranslate({ 0.0f,153.0f,-25.0f });
+        } else if (pendingScene_ == Scene::Title) {
+            RouteInitialize();
+        }
     }
 
     // アクティブカメラの決定とその更新
@@ -124,6 +99,7 @@ void SceneManager::Update() {
     switch (scene_) {
     case Scene::Title:
         title_->Update();
+        pressSpace_.Update();
 
         if (camera_->GetTranslate().z >= 500.0f) {
             camera_->SetTranslateZ(-25.0f);
@@ -134,7 +110,6 @@ void SceneManager::Update() {
             pendingScene_ = Scene::Game;
             game_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
-            camera_->SetTranslate({ 0.0f,153.0f,-25.0f });
         }
         break;
 
@@ -150,7 +125,7 @@ void SceneManager::Update() {
         }
 
         // タイトルへ
-        if (game_->IsBackToTitle()) {
+        if (fade_.IsIdle() && game_->IsBackToTitle()) {
             pendingScene_ = Scene::Title;
             title_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
@@ -159,6 +134,7 @@ void SceneManager::Update() {
 
     case Scene::Result:
         result_->Update();
+        pressSpace_.Update();
 
         // フェード中でない(=遷移待ちでない)ときだけ入力を受け付ける
         if (fade_.IsIdle() && Input::TriggerKey(DIK_SPACE)) {
@@ -183,6 +159,7 @@ void SceneManager::Draw() {
     switch (scene_) {
     case Scene::Title:
         title_->Draw();
+        pressSpace_.Draw();
         break;
 
     case Scene::Game:
@@ -191,6 +168,7 @@ void SceneManager::Draw() {
 
     case Scene::Result:
         result_->Draw();
+        pressSpace_.Draw();
         break;
 
     case Scene::None:
@@ -246,4 +224,40 @@ void SceneManager::CheckPhaseChange() {
     } else if (currentPhase == Phase::First || currentPhase == Phase::Second || currentPhase == Phase::Third) {
         camera_->ConnectToNextPhase(phaseRoutes_[PhaseToRouteIndex(currentPhase)].wayPoints);
     }
+}
+
+void SceneManager::RouteInitialize() {
+    // フェーズごとの経路データを構築（First:35s, Second:45s, Third:60s）
+    phaseRoutes_ = {
+     { { // First (絶対座標 / 35秒用：シンプルに長めの直線を想定)
+         {   0.0f, 153.0f,   -25.0f },
+         {   0.0f, 153.0f,  1000.0f }, // 時間が長いため終点を少し遠くに延長
+     }, 35.0f },
+     { { // Second (相対座標 / 45秒用：ポイントを少し増やしてカーブを滑らかに)
+         {   0.0f,   0.0f,    0.0f },
+         {  20.0f,   0.0f,  100.0f },
+         {  50.0f,   0.0f,  220.0f },
+         {  85.0f,   0.0f,  360.0f },
+         { 103.4f,   0.0f,  500.0f },
+         { 110.0f,   0.0f,  650.0f },
+         { 135.0f,   0.0f,  780.0f },
+         { 160.0f,   0.0f,  920.0f },
+         { 180.8f,   0.0f, 1050.0f }, // 時間増加に合わせて終点も調整
+     }, 45.0f },
+     { { // Third (相対座標 / 60秒用：一番時間が長いため、高低差とカーブを増やした長丁場な経路)
+         {   0.0f,   0.0f,    0.0f },
+         {  30.0f,  10.0f,  100.0f },
+         {  60.0f,  25.0f,  220.0f },
+         { 101.6f,  41.8f,  350.0f },
+         { 120.0f,  50.0f,  480.0f },
+         { 127.6f,  52.3f,  620.0f },
+         { 127.6f,  45.0f,  760.0f },
+         { 127.6f,  30.0f,  900.0f },
+         { 127.6f,  15.0f, 1040.0f },
+         { 127.6f,   0.0f, 1200.0f }, // 60秒かけて進むロングコース
+     }, 60.0f },
+    };
+
+    // 最初のフェーズ(First)の経路をセット(スタートなので今まで通りSetWayPointsでOK)
+    camera_->SetWayPoints(phaseRoutes_[PhaseToRouteIndex(Phase::First)].wayPoints);
 }

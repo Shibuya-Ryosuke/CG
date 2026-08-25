@@ -107,13 +107,17 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 		isEvasion_ = false;
 	}
 
-	// デバッグ用の色付け
-	if (isJustEvasion_) {
-		// 緑
-		model_->SetColor({ 0.0f,0.0f,1.0f,1.0f });
-	} else if (isEvasion_) {
-		// 青
-		model_->SetColor({ 0.0f,1.0f,0.0f,1.0f });
+	// 回避中は半透明
+	if (isEvasion_) {
+		model_->SetColor({ 1.0f,1.0f,1.0f,0.5f });
+	} else {
+		model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
+	}
+
+	// ダメージ演出
+	if (damageTimer_ > 0.0f) {
+		damageTimer_ -= TimeManager::GetDeltaTime();
+		model_->SetColor({ 1.0f,0.0f,0.0f,1.0f });
 	} else {
 		model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
 	}
@@ -188,6 +192,9 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 
 	ImGui::Text("specialAttack1 coolTime: (%.2f)", specialAttack1CoolTime_);
 	ImGui::Text("specialAttack1 guage   : (%.2f)", specialAttack1Guage_);
+	ImGui::NewLine();
+
+	ImGui::Text("damageT: %.2f", damageTimer_);
 	ImGui::End();
 #endif
 
@@ -254,6 +261,7 @@ void Player::Draw() {
 }
 
 void Player::Move() {
+	if (hp_ <= 0.0f)return;
 	// 上
 	if (InputManager::IsPushAction(InputAction::MoveUp)) {
 		followOffset_.y += speed_ * TimeManager::GetDeltaTime();
@@ -273,6 +281,7 @@ void Player::Move() {
 }
 
 void Player::MainShot(const RyoEngine::Camera& camera) {
+	if (hp_ <= 0.0f)return;
 	if (mainShotInterval_ <= 0) {
 		if (InputManager::IsPushAction(InputAction::MainShot)) {
 			auto bullet = std::make_unique<PlayerBullet>();
@@ -338,6 +347,7 @@ void Player::Evasion() {
 }
 
 void Player::LockOnMode() {
+	if (hp_ <= 0.0f)return;
 	if (specialAttack1CoolTime_ <= 0.0f) {
 		if (specialAttack1Guage_ >= 100.0f) {
 			// 右クリックでロックオンモードへ
@@ -490,6 +500,11 @@ void Player::OnCollision(float damage) {
 	if (isEvasion_)return;
 
 	hp_ -= damage;
+	if (hp_ < 0.0f) {
+		hp_ = 0.0f;
+	}
+	damageTimer_ = kDamageTimer;
+
 	//if (hp_ <= 0.0f) {
 	//	isDead_ = true;
 	//}

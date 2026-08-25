@@ -28,6 +28,9 @@ void ReticleGunner::Finalize() {}
 
 void ReticleGunner::Update(const RyoEngine::Camera& camera) {
 
+    // ダメージを受けていれば色が変わる
+    BaseEnemy::Damage();
+
     // 移動
     followOffset_ += velocity_ * TimeManager::GetDeltaTime();
 

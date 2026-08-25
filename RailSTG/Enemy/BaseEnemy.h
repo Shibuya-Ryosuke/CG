@@ -79,6 +79,7 @@ public:
 
 		// ダメージ処理
 		hp_ -= damage;
+		damageTimer_ = kDamageTimer_;
 
 		// hpが0以下なら死亡、このヒットで撃破されたことを返す
 		if (hp_ <= 0.0f) {
@@ -88,6 +89,15 @@ public:
 
 		// そうでなければfalse
 		return false;
+	}
+
+	void Damage() {
+		if (damageTimer_ > 0.0f) {
+			damageTimer_ -= TimeManager::GetDeltaTime();
+			model_->SetColor({ 1.0f,0.0f,0.0f,1.0f });
+		} else {
+			model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
+		}
 	}
 
 	void SpawnAnimation() {
@@ -167,4 +177,8 @@ protected:
 	float kAnimDuration_ = 1.5f;
 	bool isSpawning_ = true;
 	bool isDespawning_ = false;
+
+	// 被弾時
+	float damageTimer_ = 0.0f;
+	float kDamageTimer_ = 0.15f;
 };

@@ -23,6 +23,11 @@ public:
 	/// </summary>
 	void Draw();
 
+	void SetIsClear(bool isClear) { isClear_ = isClear; }
+
 private:
-	RyoEngine::Sprite result_;
+	RyoEngine::Sprite clear_;
+	RyoEngine::Sprite failed_;
+
+	bool isClear_ = true;
 };

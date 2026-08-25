@@ -55,6 +55,7 @@ private:
 	// フェーズ変化を検知するための比較用メソッド
 	void CheckPhaseChange();
 
+	void RouteInitialize();
 private:
 	// カメラ(レールに沿って自動移動するゲーム用カメラ)
 	std::unique_ptr<RailCameraController> camera_ = nullptr;
@@ -84,4 +85,7 @@ private:
 	std::unique_ptr<RyoEngine::Model> skydome_ = nullptr;
 	// 地面
 	std::unique_ptr<RyoEngine::Model> ground_ = nullptr;
+
+	// pressSpace
+	RyoEngine::Sprite pressSpace_;
 };

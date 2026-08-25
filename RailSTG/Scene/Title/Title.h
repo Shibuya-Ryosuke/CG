@@ -25,5 +25,4 @@ public:
 
 private:
 	RyoEngine::Sprite title_;
-	RyoEngine::Sprite pressSpace_;
 };

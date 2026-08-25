@@ -41,6 +41,9 @@ void Mob::Finalize(){}
 
 void Mob::Update(const RyoEngine::Camera& camera) {
 
+	// ダメージを受けていれば色が変わる
+	BaseEnemy::Damage();
+
 	// リクエストを反映
 	if (request_ != MobState::None) {
 		state_ = request_;

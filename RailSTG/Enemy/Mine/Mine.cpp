@@ -30,6 +30,9 @@ void Mine::Finalize() {
 
 void Mine::Update(const RyoEngine::Camera& camera) {
 
+	// ダメージを受けていれば色が変わる
+	BaseEnemy::Damage();
+
 	// カメラに向かって近づく(z減算)
 	followOffset_.z -= kApproachSpeed_ * TimeManager::GetDeltaTime();
 

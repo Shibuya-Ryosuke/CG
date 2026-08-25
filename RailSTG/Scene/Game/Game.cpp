@@ -89,29 +89,32 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	ImGui::End();
 #endif
 
-	if (Input::TriggerKey(DIK_TAB)) {
-		state_.isBackToGame = true;
-		state_.isPause = !state_.isPause;
-		TimeManager::SetTimeState(state_.isPause ? TimeState::Pause : TimeState::Default);
-	}
-
-	if (state_.isPause) {
-		if (Input::TriggerKey(DIK_W) || Input::TriggerKey(DIK_S)) {
-			state_.isBackToGame = !state_.isBackToGame;
+	// ポーズ
+	if (!state_.isBackToTitle) {
+		if (Input::TriggerKey(DIK_TAB)) {
+			state_.isBackToGame = true;
+			state_.isPause = !state_.isPause;
+			TimeManager::SetTimeState(state_.isPause ? TimeState::Pause : TimeState::Default);
 		}
 
-		if (Input::TriggerKey(DIK_SPACE) || Input::TriggerKey(DIK_RETURN)) {
-			if (state_.isBackToGame) {
-				state_.isPause = false;
-				TimeManager::SetTimeState(TimeState::Default);
-			} else {
-				// タイトルに戻ることを確定させる
-				state_.isBackToTitle = true;
+		if (state_.isPause) {
+			if (Input::TriggerKey(DIK_W) || Input::TriggerKey(DIK_S)) {
+				state_.isBackToGame = !state_.isBackToGame;
 			}
+
+			if (Input::TriggerKey(DIK_SPACE) || Input::TriggerKey(DIK_RETURN)) {
+				if (state_.isBackToGame) {
+					state_.isPause = false;
+					TimeManager::SetTimeState(TimeState::Default);
+				} else {
+					// タイトルに戻ることを確定させる
+					state_.isBackToTitle = true;
+				}
+			}
+		} else {
+			// プレイヤーの更新
+			state_.player->UpdatePlayer(camera, state_.enemies);
 		}
-	} else {
-		// プレイヤーの更新
-		state_.player->UpdatePlayer(camera, state_.enemies);
 	}
 
 	// velocityの代入
