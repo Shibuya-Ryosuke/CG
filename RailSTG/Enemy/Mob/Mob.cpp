@@ -119,7 +119,7 @@ void Mob::Draw() {
 		bullet->Draw();
 	}
 	model_->Draw();
-	PrimitiveRenderer::DrawOBB(obb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+	//PrimitiveRenderer::DrawOBB(obb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 	// ロックオンエフェクト
 	BaseEnemy::DrawLockOnEffect();
 }

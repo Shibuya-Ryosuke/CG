@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Original/RyoEngine.h"
 #include <cstdint>
+#include <array>
 
 #include "../BaseObject/BaseObject.h"
 #include "PlayerEnum.h"
@@ -50,7 +51,7 @@ public:
 	bool IsEvasion() const { return isEvasion_; }
 	bool IsJustEvasion() const { return isJustEvasion_; }
 	float GetJustEvasionDuration() const { return justEvasionDuration_; }
-	void CollectJustEvasion() { evasionDuration_ = kEvasionDuration / 3.0f; justEvasionDuration_ = kJustEvasionDuration / 3.0f; isSlow_ = true; }
+	void CollectJustEvasion() { evasionDuration_ = kEvasionDuration / 3.0f; justEvasionDuration_ = kJustEvasionDuration / 3.0f; isCollectJustEvasion_ = true; }
 
 	void LockOnMode();
 	void UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
@@ -85,6 +86,8 @@ public:
 	RyoEngine::Vector2 GetScreenPos()const { return screenPos_; }
 
 	float GetHp() { return hp_; }
+
+	PlayerState GetState()const { return state_; }
 
 private:
 	void UpdateSprite();
@@ -169,12 +172,23 @@ private:
 	float specialAttack1CoolTime_ = 0.0f;
 	// スペシャル攻撃１を使うために必要なゲージ
 	float specialAttack1Guage_ = 0.0f;
+	// ロックオンの数
+	int32_t lockedCount_ = 0;
 
-	bool isSlow_ = false;
+	bool isCollectJustEvasion_ = false;
 
 	// 画像
+	RyoEngine::Sprite hpBarBack_;
+	RyoEngine::Sprite maxHpBar_;
+	RyoEngine::Sprite hpBar_;
 	RyoEngine::Sprite justEvasion_;
-	RyoEngine::Sprite lockOn_;
+	RyoEngine::Sprite lockOnBack_;
+	RyoEngine::Sprite lockOnInfo_;
+	std::array<RyoEngine::Sprite, 2> lockOnNumbers_;
+	RyoEngine::Sprite lockOnAttackButton_;
+	RyoEngine::Sprite mainShotButton_;
+	RyoEngine::Sprite evasionButton_;
+
 
 	// 追尾弾ハンドル
 	inline static int32_t playerMissileHandle_ = 0;

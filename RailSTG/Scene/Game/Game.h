@@ -154,10 +154,17 @@ private:
 
 	RuntimeState state_;
 
+	RyoEngine::Sprite phaseInfo_;
 	std::array< RyoEngine::Sprite, 3> phases_;
 	RyoEngine::Sprite ready_;
+	RyoEngine::Sprite start_;
+	RyoEngine::Sprite nextPhase_;
+	RyoEngine::Sprite pauseButton_;
+	RyoEngine::Sprite pauseBack_;
 	RyoEngine::Sprite pause_;
+	RyoEngine::Sprite triangle_;
 	RyoEngine::Sprite end_;
+
 
 	// SceneManagerから一度だけセットされ、リプレイ時も保持したい値(RuntimeStateには含めない)
 	std::vector<float> phaseTimeLimits_;

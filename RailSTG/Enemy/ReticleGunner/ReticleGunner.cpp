@@ -190,7 +190,7 @@ void ReticleGunner::UpdateAllLockedPhase() {
 
 void ReticleGunner::Draw() {
     model_->Draw();
-    PrimitiveRenderer::DrawOBB(obb_, { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+    //PrimitiveRenderer::DrawOBB(obb_, { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
     BaseEnemy::DrawLockOnEffect();
 
     // レティクル自体の2D描画は別ステップで実装

@@ -70,5 +70,5 @@ void HomingMissile::Update(const RyoEngine::Camera& camera) {
 void HomingMissile::Draw() {
 	BaseBullet::Draw();
 	// デバッグ用OBB表示（必要に応じて）
-	PrimitiveRenderer::DrawOBB(obb_, { 1.0f, 0.5f, 0.0f, 1.0f }, PrimitiveDrawMode::Wireframe);
+	//PrimitiveRenderer::DrawOBB(obb_, { 1.0f, 0.5f, 0.0f, 1.0f }, PrimitiveDrawMode::Wireframe);
 }

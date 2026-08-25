@@ -27,12 +27,32 @@ void Game::Initialize() {
 
 	BaseEnemy::ResetIdCounter(); // 敵IDの採番を0から再開
 
-	phases_.at(0).Initialize("resources/railSTG/UI/Game/phase1.png");
-	phases_.at(1).Initialize("resources/railSTG/UI/Game/phase2.png");
-	phases_.at(2).Initialize("resources/railSTG/UI/Game/phase3.png");
+	//RyoEngine::Sprite phaseInfo_;
+	//std::array< RyoEngine::Sprite, 3> phases_;
+	//RyoEngine::Sprite ready_;
+	//RyoEngine::Sprite start_;
+	//RyoEngine::Sprite nextPhase_;
+	//RyoEngine::Sprite pauseButton_;
+	//RyoEngine::Sprite pauseBack_;
+	//RyoEngine::Sprite pause_;
+	//RyoEngine::Sprite triangle_;
+	//RyoEngine::Sprite end_;
+	phaseInfo_.Initialize("resources/railSTG/UI/Game/phaseInfo.png",{70.0f,70.0f},Anchor::LeftTop);
+	phases_.at(0).Initialize("resources/railSTG/UI/Game/phase1.png", { 70.0f,70.0f }, Anchor::LeftTop);
+	phases_.at(1).Initialize("resources/railSTG/UI/Game/phase2.png", { 70.0f,70.0f }, Anchor::LeftTop);
+	phases_.at(2).Initialize("resources/railSTG/UI/Game/phase3.png", { 70.0f,70.0f }, Anchor::LeftTop);
 
 	ready_.Initialize("resources/railSTG/UI/Game/ready.png");
-	pause_.Initialize("resources/RailSTG/UI/Game/pause.png");
+	start_.Initialize("resources/railSTG/UI/Game/start.png");
+	start_.SetScale({ 1.5f,1.5f });
+	nextPhase_.Initialize("resources/railSTG/UI/Game/nextPhase.png");
+	nextPhase_.SetScale({ 1.5f,1.5f });
+
+	pauseButton_.Initialize("resources/railSTG/UI/Game/pauseButton.png", { 1210.0f,60.0f }, Anchor::RightTop);
+	pauseButton_.SetScale({ 0.5f,0.5f });
+	pauseBack_.Initialize("resources/railSTG/UI/Pause/pause_Back.png");
+	pause_.Initialize("resources/RailSTG/UI/Pause/pause.png");
+	triangle_.Initialize("resources/railSTG/UI/Pause/triangle.png");
 	end_.Initialize("resources/RailSTG/UI/Game/end.png");
 	
 	// プレイヤーの作成
@@ -220,16 +240,16 @@ void Game::Draw() {
 	// プレイヤーの描画
 	state_.player->Draw();
 	// 当たり判定用の描画はデバッグ時のみのためここで描画
-	PrimitiveRenderer::DrawOBB(state_.player->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+	//PrimitiveRenderer::DrawOBB(state_.player->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 
 	// 全敵の描画
 	for (auto& enemy : state_.enemies) {
 		enemy->Draw();
-		PrimitiveRenderer::DrawOBB(enemy->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+		//PrimitiveRenderer::DrawOBB(enemy->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 	}
 
 	if (state_.phase == Phase::Ready) {
-		PrimitiveRenderer::DrawRect2D({ 640.0f,360.0f }, { 1280.0f,720.0f }, 0.0f, { 0.0f, 0.0f, 0.0f, 0.6f }, PrimitiveDrawMode::Fill);
+		//PrimitiveRenderer::DrawRect2D({ 640.0f,360.0f }, { 1280.0f,720.0f }, 0.0f, { 0.0f, 0.0f, 0.0f, 0.6f }, PrimitiveDrawMode::Fill);
 	}
 
 	// UIの描画
@@ -792,13 +812,12 @@ bool Game::IsPlayerDead() const {
 }
 
 void Game::UpdateSprite() {
-	switch (state_.phase) {
-	case Phase::Ready:
-		ready_.Update();
-		break;
+	if (state_.player->GetState() != PlayerState::SpecialAttack1) {
+		switch (state_.phase) {
+		case Phase::Ready:
+			ready_.Update();
+			break;
 
-	case Phase::Changing:
-		switch (state_.nextPhase) {
 		case Phase::First:
 			phases_.at(0).Update();
 			break;
@@ -811,32 +830,48 @@ void Game::UpdateSprite() {
 			phases_.at(2).Update();
 			break;
 
+		case Phase::Changing:
+			switch (state_.nextPhase) {
+			case Phase::First:
+				start_.Update();
+				break;
+
+			case Phase::Second:
+			case Phase::Third:
+				nextPhase_.Update();
+				break;
+
+			default:
+				break;
+			}
+			break;
+
+		case Phase::End:
+			end_.Update();
+			break;
+
 		default:
 			break;
 		}
-		break;
 
-	case Phase::End:
-		end_.Update();
-		break;
-
-	default:
-		break;
+		phaseInfo_.Update();
+		pauseButton_.Update();
 	}
 
 	if (state_.isPause) {
+		pauseBack_.Update();
 		pause_.Update();
+		triangle_.Update();
 	}
 }
 
 void Game::DrawSprite() {
-	switch (state_.phase) {
-	case Phase::Ready:
-		ready_.Draw();
-		break;
+	if (state_.player->GetState() != PlayerState::SpecialAttack1) {
+		switch (state_.phase) {
+		case Phase::Ready:
+			ready_.Draw();
+			break;
 
-	case Phase::Changing:
-		switch (state_.nextPhase) {
 		case Phase::First:
 			phases_.at(0).Draw();
 			break;
@@ -849,20 +884,37 @@ void Game::DrawSprite() {
 			phases_.at(2).Draw();
 			break;
 
+		case Phase::Changing:
+			switch (state_.nextPhase) {
+			case Phase::First:
+				start_.Draw();
+				break;
+
+			case Phase::Second:
+			case Phase::Third:
+				nextPhase_.Draw();
+				break;
+
+			default:
+				break;
+			}
+			break;
+
+		case Phase::End:
+			end_.Draw();
+			break;
+
 		default:
 			break;
 		}
-		break;
 
-	case Phase::End:
-		end_.Draw();
-		break;
-
-	default:
-		break;
+		phaseInfo_.Draw();
+		pauseButton_.Draw();
 	}
 
 	if (state_.isPause) {
+		pauseBack_.Draw();
 		pause_.Draw();
+		triangle_.Draw();
 	}
 }

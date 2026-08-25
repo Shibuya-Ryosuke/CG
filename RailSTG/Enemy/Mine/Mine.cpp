@@ -55,7 +55,7 @@ void Mine::Update(const RyoEngine::Camera& camera) {
 
 void Mine::Draw() {
 	model_->Draw();
-	PrimitiveRenderer::DrawOBB(obb_, { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+	//PrimitiveRenderer::DrawOBB(obb_, { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 	BaseEnemy::DrawLockOnEffect();
 }
 

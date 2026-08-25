@@ -62,9 +62,10 @@ void SceneManager::Initialize(Scene sceneState) {
     //skydome_->SetTex("resources/uvChecker.png");
     skydome_->SetLambert(ShadingMode::NONE);
     skydome_->SetScale({ 10.0f,10.0f,10.0f });
+    skydome_->SetUVScale({ 2.0f,4.0f });
     // 地面
     ground_ = Model::Create("resources/RailSTG/Ground/ground.obj");
-    ground_->SetUVScale({ 5.0f,5.0f });
+    ground_->SetUVScale({ 4.0f,4.0f });
     //ground_->SetScale({ 10.0f,10.0f,10.0f });
      
     // パーティクルマネージャー
@@ -124,11 +125,16 @@ void SceneManager::Update() {
     case Scene::Title:
         title_->Update();
 
+        if (camera_->GetTranslate().z >= 500.0f) {
+            camera_->SetTranslateZ(-25.0f);
+        }
+
         // フェード中でない(=遷移待ちでない)ときだけ入力を受け付ける
         if (fade_.IsIdle() && Input::TriggerKey(DIK_SPACE)) {
             pendingScene_ = Scene::Game;
             game_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
+            camera_->SetTranslate({ 0.0f,153.0f,-25.0f });
         }
         break;
 

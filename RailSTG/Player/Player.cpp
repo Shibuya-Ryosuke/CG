@@ -36,8 +36,31 @@ void Player::Initialize() {
 	reticle_->Initialize();
 
 	// 画像
+	hpBar_.Initialize("resources/RailSTG/UI/Player/hpBar.png", { 70.0f,610.0f }, Anchor::Left);
+	hpBar_.SetColor({ 0.2157f,0.6392f,0.2902f,1.0f });
+	maxHpBar_.Initialize("resources/RailSTG/UI/Player/hpBar_max.png", { 70.0f,610.0f }, Anchor::Left);
+	hpBarBack_.Initialize("resources/RailSTG/UI/Player/hpBar_back.png",{70.0f,610.0f},Anchor::Left);
+
 	justEvasion_.Initialize("resources/RailSTG/UI/Player/justEvasion.png");
-	lockOn_.Initialize("resources/RailSTG/UI/Player/lockOn.png");
+	
+	lockOnBack_.Initialize("resources/RailSTG/UI/Player/lockOn_back.png");
+	lockOnInfo_.Initialize("resources/RailSTG/UI/Player/lockOn_info.png");
+	lockOnNumbers_.at(0).Initialize("resources/RailSTG/UI/Player/lockOn_0.png");
+	lockOnNumbers_.at(1).Initialize("resources/RailSTG/UI/Player/lockOn_1.png");
+	lockOnAttackButton_.Initialize("resources/RailSTG/UI/Player/lockOnAttackButton.png",{1210.0f,550.0f},Anchor::RightBottom);
+	lockOnAttackButton_.SetScale({ 0.8f,0.8f });
+	mainShotButton_.Initialize("resources/RailSTG/UI/Player/mainShotButton.png", { 1210.0f,650.0f }, Anchor::RightBottom);
+	mainShotButton_.SetScale({ 0.8f,0.8f });
+	evasionButton_.Initialize("resources/RailSTG/UI/Player/evasionButton.png", {1110.0f, 650.0f}, Anchor::RightBottom);
+	evasionButton_.SetScale({ 0.8f,0.8f });
+
+	//RyoEngine::Sprite justEvasion_;
+	//RyoEngine::Sprite lockOnBack_;
+	//RyoEngine::Sprite lockOnInfo_;
+	//std::array<RyoEngine::Sprite, 2> lockOnNumbers_;
+	//RyoEngine::Sprite lockOnAttackButton_;
+	//RyoEngine::Sprite mainShotButton_;
+	//RyoEngine::Sprite evasionButton_;
 
 	if (playerMissileHandle_ == 0) {
 		playerMissileHandle_ = LoadTex("resources/RailSTG/Bullet/playerMissile_uv.png");
@@ -74,7 +97,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 		justEvasionDuration_ -= TimeManager::GetDeltaTime();
 	} else {
 		isJustEvasion_ = false;
-		isSlow_ = false;
+		isCollectJustEvasion_ = false;
 	}
 
 	// 回避継続時間の減少
@@ -390,15 +413,15 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 				enemy->SetLockOnState(LockOnState::Locked);
 
 				// 現在すでにLockedになっている敵の数を数える
-				int lockedCount = 0;
+				lockedCount_ = 0;
 				for (auto& e : enemies) {
 					if (e->GetLockOnState() == LockOnState::Locked) {
-						lockedCount++;
+						lockedCount_++;
 					}
 				}
 
 				// すでに2体に達していたらロックオンモードを終了
-				if (lockedCount >= 2) {
+				if (lockedCount_ >= 2) {
 					// ミサイル発射
 					ShootMissile(camera, enemies);
 					// プレイヤーと時間を通常へ
@@ -473,21 +496,60 @@ void Player::OnCollision(float damage) {
 }
 
 void Player::UpdateSprite() {
-	if (isSlow_) {
+	if (state_ != PlayerState::SpecialAttack1) {
+		hpBarBack_.Update();
+		maxHpBar_.Update();
+		float hpBarScale = hp_ / kMaxHp;
+		if (hpBarScale <= 0.25f) {
+			hpBar_.SetColor({ 0.8431f,0.0f,0.2078f,1.0f });
+		} else if (hpBarScale <= 0.5f) {
+			hpBar_.SetColor({ 1.0f,0.9176f,0.0f,1.0f });
+		}
+		hpBar_.SetScale({ hpBarScale,1.0f });
+		hpBar_.Update();
+		lockOnAttackButton_.Update();
+		mainShotButton_.Update();
+		evasionButton_.Update();
+	}
+
+	if (isCollectJustEvasion_) {
 		justEvasion_.Update();
 	}
 
 	if (state_ == PlayerState::SpecialAttack1) {
-		lockOn_.Update();
+		lockOnBack_.Update();
+		lockOnInfo_.Update();
+
+		if (lockedCount_ == 0) {
+			lockOnNumbers_.at(0).Update();
+		} else if (lockedCount_ == 1) {
+			lockOnNumbers_.at(1).Update();
+		}
 	}
 }
 
 void Player::DrawSprite() {
-	if (isSlow_) {
+	if (state_ != PlayerState::SpecialAttack1) {
+		hpBarBack_.Draw();
+		maxHpBar_.Draw();
+		hpBar_.Draw();
+		lockOnAttackButton_.Draw();
+		mainShotButton_.Draw();
+		evasionButton_.Draw();
+	}
+
+	if (isCollectJustEvasion_) {
 		justEvasion_.Draw();
 	}
 
 	if (state_ == PlayerState::SpecialAttack1) {
-		lockOn_.Draw();
+		lockOnBack_.Draw();
+		lockOnInfo_.Draw();
+
+		if (lockedCount_ == 0) {
+			lockOnNumbers_.at(0).Draw();
+		} else if (lockedCount_ == 1) {
+			lockOnNumbers_.at(1).Draw();
+		}
 	}
 }

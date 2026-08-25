@@ -76,5 +76,5 @@ void EnemyBullet::Update(const RyoEngine::Camera& camera) {
 
 void EnemyBullet::Draw() {
 	BaseBullet::Draw();
-	PrimitiveRenderer::DrawOBB(obb_, { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+	//PrimitiveRenderer::DrawOBB(obb_, { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 }
