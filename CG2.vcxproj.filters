@@ -109,6 +109,9 @@
     <Filter Include="RailSTG\Scene\SceneFade">
       <UniqueIdentifier>{f944dbba-e2c4-4168-b93b-6fd0312fe342}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RailSTG\GameSound">
+      <UniqueIdentifier>{4427bb5c-0873-4ff1-ba44-05d225ce9f48}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -499,6 +502,9 @@
     </ClInclude>
     <ClInclude Include="RailSTG\Scene\SceneFade\SceneFade.h">
       <Filter>RailSTG\Scene\SceneFade</Filter>
+    </ClInclude>
+    <ClInclude Include="RailSTG\GameSound\GameSound.h">
+      <Filter>RailSTG\GameSound</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

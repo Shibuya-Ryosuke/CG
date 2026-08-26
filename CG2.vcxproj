@@ -177,6 +177,7 @@
     <ClInclude Include="RailSTG\Enemy\Mob\Mob.h" />
     <ClInclude Include="RailSTG\Enemy\ReticleGunner\ReticleGunner.h" />
     <ClInclude Include="RailSTG\GameMath\GameMath.h" />
+    <ClInclude Include="RailSTG\GameSound\GameSound.h" />
     <ClInclude Include="RailSTG\Input\InputEnum.h" />
     <ClInclude Include="RailSTG\Input\InputManager.h" />
     <ClInclude Include="RailSTG\Particle\Particle.h" />

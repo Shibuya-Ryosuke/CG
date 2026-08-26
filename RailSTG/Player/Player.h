@@ -236,4 +236,11 @@ private:
 	uint32_t destroyParticle_ = 0;
 	ParticleManager justEvasionParticleManager_;
 	uint32_t justEvasionParticle_ = 0;
+
+	// 音
+	uint32_t evasionSE_ = 0;
+	uint32_t hitSE_ = 0;
+	uint32_t homingMissileSE_ = 0;
+	uint32_t mainShotSE_ = 0;
+
 };
