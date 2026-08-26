@@ -13,6 +13,7 @@
 #include "../Input/InputManager.h"
 #include "../Time/TimeManager.h"
 #include "../GameMath/GameMath.h"
+#include "../GameSound/GameSound.h"
 
 using namespace RyoEngine;
 
@@ -404,6 +405,7 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 			// 発射間隔のリセット
 			mainShotInterval_ = kMainShotInterval;
 
+			GameSound::PlaySE(GameSound::SE::MainShot,0.7f);
 			for (int i = 0; i < 10; ++i) {
 				// 銃口からフワッと広がるように、少しだけランダムな速度を混ぜる
 				RyoEngine::Vector3 particleVel = {
@@ -434,7 +436,33 @@ void Player::Evasion() {
 			justEvasionDuration_ = kJustEvasionDuration;
 			evasionDuration_ = kEvasionDuration;
 			evasionCoolTime_ = kEvasionCoolTime;
+			GameSound::PlaySE(GameSound::SE::PlayerEvasion);
 		}
+	}
+}
+
+void Player::CollectJustEvasion() {
+	evasionDuration_ = kEvasionDuration / 3.0f;
+	justEvasionDuration_ = kJustEvasionDuration / 3.0f;
+	isCollectJustEvasion_ = true;
+	GameSound::PlaySE(GameSound::SE::PlayerCollectJustEvasion);
+
+	for (int i = 0; i < 40; ++i) {
+		// 短い距離でふわっと広がるように、ごく小さなランダムベクトルを作る
+		RyoEngine::Vector3 particleVel = {
+			(static_cast<float>(rand() % 200 - 100) / 100.0f),
+			(static_cast<float>(rand() % 200 - 100) / 100.0f),
+			(static_cast<float>(rand() % 200) / 100.0f)
+		};
+		particleVel *= 10.0f;
+
+		justEvasionParticleManager_.Emit(
+			model_->GetWorldPos(),  // 発生位置
+			particleVel,            // その場付近でフワッと広がる速度
+			1.0f,                   // 寿命（秒）
+			0.25f,                  // 大きさ（スケール）
+			false                   // 重力（花火のようにふわっとさせたい場合はfalse、落としたいならtrue）
+		);
 	}
 }
 
@@ -585,15 +613,20 @@ void Player::ShootMissile(const RyoEngine::Camera& camera, const std::vector<std
 			// ミサイルリストに追加
 			bullets_.push_back(std::move(missile));
 		}
+		// うるさくなるから一回だけ
+		GameSound::PlaySE(GameSound::SE::HomingMissile);
 	}
 }
 
 void Player::OnCollision(float damage) {
+	if (hp_ <= 0.0f)return;
 	if (isEvasion_)return;
 
 	hp_ -= damage;
+	GameSound::PlaySE(GameSound::SE::Hit);
 	if (hp_ < 0.0f) {
 		hp_ = 0.0f;
+		GameSound::PlaySE(GameSound::SE::PlayerDestroy);
 	}
 	damageTimer_ = kDamageTimer;
 

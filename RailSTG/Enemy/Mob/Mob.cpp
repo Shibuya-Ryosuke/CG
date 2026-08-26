@@ -9,6 +9,7 @@
 #include "../../Bullet/EnemyBullet/EnemyBullet.h"
 #include "../../Time/TimeManager.h"
 #include "../../GameMath/GameMath.h"
+#include "../../GameSound/GameSound.h"
 
 using namespace RyoEngine;
 
@@ -163,6 +164,8 @@ void Mob::Shot() {
 
 		// 発射間隔をリセット
 		shotInterval_ = kShotInterval;
+
+		GameSound::PlaySE(GameSound::SE::EnemyShot);
 	}
 }
 

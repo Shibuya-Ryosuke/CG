@@ -40,6 +40,8 @@ public:
 	/// </summary>
 	void Draw();
 
+	void PressSpaceFade();
+
 private:
 	/// <summary>
 	/// ゲームカメラとデバッグカメラの切り替え（テキスト表示も込み）
@@ -88,4 +90,5 @@ private:
 
 	// pressSpace
 	RyoEngine::Sprite pressSpace_;
+	int32_t pressSpaceTimer_ = 0;
 };

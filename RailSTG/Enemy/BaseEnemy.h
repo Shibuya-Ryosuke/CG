@@ -8,6 +8,7 @@
 #include "../Time/TimeManager.h"
 #include "../Particle/ParticleManager.h"
 #include "EnemyEnum.h"
+#include "../GameSound/GameSound.h"
 
 class EnemyBullet;
 
@@ -61,6 +62,7 @@ public:
 	bool OnCollision(float damage) {
 		// 既に死亡しているなら無視
 		if (hp_ <= 0.0f) return false;
+		GameSound::PlaySE(GameSound::SE::Hit);
 
 		// ダメージ処理
 		hp_ -= damage;
@@ -70,6 +72,7 @@ public:
 		if (hp_ <= 0.0f) {
 			isDestroy_ = true;
 			animTimer_ = kDestroyDuration_;
+			GameSound::PlaySE(GameSound::SE::EnemyDestroy);
 
 			for (int i = 0; i < 50; ++i) {
 				// 短い距離でふわっと広がるように、ごく小さなランダムベクトルを作る

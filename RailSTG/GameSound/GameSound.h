@@ -23,11 +23,12 @@ public:
 		// Player
 		PlayerEvasion,
 		PlayerCollectJustEvasion,
-		PlayerHit,
+		Hit,
 		HomingMissile,
 		MainShot,
 		PlayerDestroy,
 		// Enemy
+		EnemySpawn,
 		EnemyDestroy,
 		EnemyShot,
 		ReticleLock,
@@ -55,12 +56,13 @@ public:
 		// --- SEのロード (Player) ---
 		seHandles[static_cast<int>(SE::PlayerEvasion)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/evasion.mp3");
 		seHandles[static_cast<int>(SE::PlayerCollectJustEvasion)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/evasion2.mp3");
-		seHandles[static_cast<int>(SE::PlayerHit)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/hit.mp3");
+		seHandles[static_cast<int>(SE::Hit)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/hit.mp3");
 		seHandles[static_cast<int>(SE::HomingMissile)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/homingMissile.mp3");
 		seHandles[static_cast<int>(SE::MainShot)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/mainShot.mp3");
 		seHandles[static_cast<int>(SE::PlayerDestroy)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/playerDestory.mp3");
 
 		// --- SEのロード (Enemy) ---
+		seHandles[static_cast<int>(SE::EnemySpawn)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Enemy/enemySpawn.mp3");
 		seHandles[static_cast<int>(SE::EnemyDestroy)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Enemy/enemyDestroy.mp3");
 		seHandles[static_cast<int>(SE::EnemyShot)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Enemy/enemyShot.mp3");
 		seHandles[static_cast<int>(SE::ReticleLock)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Enemy/reticleLock.mp3");
@@ -87,7 +89,7 @@ public:
 	/// <summary>
 	/// SEを再生する（どこからでもこの関数を呼ぶだけで鳴らせます）
 	/// </summary>
-	static void PlaySE(SE se, float volume = 0.2f) {
+	static void PlaySE(SE se, float volume = 0.15f) {
 		uint32_t handle = seHandles[static_cast<int>(se)];
 		RyoEngine::Audio::PlaySE(handle, volume);
 	}

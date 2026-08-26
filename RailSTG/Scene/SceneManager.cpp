@@ -6,6 +6,7 @@
 #include "../Time/TimeManager.h"
 #include "../GameSound/GameSound.h"
 #include <imgui.h>
+#include <cmath>
 
 using namespace RyoEngine;
 
@@ -118,7 +119,7 @@ void SceneManager::Update() {
     switch (scene_) {
     case Scene::Title:
         title_->Update();
-        pressSpace_.Update();
+        PressSpaceFade();
 
         if (camera_->GetTranslate().z >= 500.0f) {
             camera_->SetTranslateZ(-25.0f);
@@ -129,6 +130,7 @@ void SceneManager::Update() {
             pendingScene_ = Scene::Game;
             game_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
+            GameSound::PlaySE(GameSound::SE::Decision);
         }
         break;
 
@@ -153,13 +155,14 @@ void SceneManager::Update() {
 
     case Scene::Result:
         result_->Update();
-        pressSpace_.Update();
+        PressSpaceFade();
 
         // フェード中でない(=遷移待ちでない)ときだけ入力を受け付ける
         if (fade_.IsIdle() && Input::TriggerKey(DIK_SPACE)) {
             pendingScene_ = Scene::Title;
             title_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
+            GameSound::PlaySE(GameSound::SE::Decision);
         }
         break;
 
@@ -196,6 +199,17 @@ void SceneManager::Draw() {
     }
 
     fade_.Draw(); // 最前面に重ねて描画
+}
+
+void SceneManager::PressSpaceFade() {
+    // タイマーを進める（毎フレーム 1 ずつ増やす）
+    pressSpaceTimer_ ++;
+
+    // 60フレームで1周期（0〜2*PI）になるように計算
+    // ※もし「もっとゆっくり（例: 2秒で1往復）」にしたい場合は 60.0f の部分を 120.0f に変えてください
+    float alpha = (std::sin(float(pressSpaceTimer_) * (2.0f * float(M_PI)) / 60.0f) + 1.0f) * 0.5f;
+    pressSpace_.SetColor({ 1.0f,1.0f,1.0f,alpha });
+    pressSpace_.Update();
 }
 
 void SceneManager::UpdateCamera() {

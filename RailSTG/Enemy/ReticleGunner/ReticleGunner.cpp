@@ -106,6 +106,7 @@ void ReticleGunner::UpdateReticles(const RyoEngine::Camera& camera) {
                 r.worldPos = playerWorldPos_;
                 r.state = ReticleState::Locked;
                 activeIndex_++;
+                GameSound::PlaySE(GameSound::SE::ReticleLock);
             }
             break;
         }
@@ -169,8 +170,7 @@ void ReticleGunner::UpdateAllLockedPhase() {
             }
             allLockedTimer_ = 0.0f; // Ready待機用に0からリセット
 
-            // TODO: 予告SEをここで1回再生
-            // Audio::PlaySE("resources/RailSTG/SE/reticle_warning.wav");　など
+            GameSound::PlaySE(GameSound::SE::ReticleReady);
         }
         break;
     }
@@ -183,6 +183,7 @@ void ReticleGunner::UpdateAllLockedPhase() {
             for (auto& r : reticles_) {
                 r.state = ReticleState::Shot;
                 r.stateTimer = 0.0f;
+                GameSound::PlaySE(GameSound::SE::ReticleShot);
             }
             judged_ = false;
             // 判定処理は次のステップでGame側に実装

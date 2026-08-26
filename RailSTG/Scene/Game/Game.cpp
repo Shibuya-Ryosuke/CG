@@ -14,6 +14,7 @@
 #include "../../Bullet/PlayerBullet/PlayerBullet.h"
 #include "../../Time/TimeManager.h"
 #include "../../Time/TimeEnum.h"
+#include "../../GameSound/GameSound.h"
 #include <random>
 #include <utility>
 
@@ -52,7 +53,7 @@ void Game::Initialize() {
 	pauseButton_.SetScale({ 0.5f,0.5f });
 	pauseBack_.Initialize("resources/railSTG/UI/Pause/pause_Back.png");
 	pause_.Initialize("resources/RailSTG/UI/Pause/pause.png");
-	triangle_.Initialize("resources/railSTG/UI/Pause/triangle.png");
+	triangle_.Initialize("resources/railSTG/UI/Pause/triangle.png", { 442.0f,345.0f });
 	end_.Initialize("resources/RailSTG/UI/Game/end.png");
 	
 	// プレイヤーの作成
@@ -95,20 +96,36 @@ void Game::Update(const RyoEngine::Camera& camera) {
 			state_.isBackToGame = true;
 			state_.isPause = !state_.isPause;
 			TimeManager::SetTimeState(state_.isPause ? TimeState::Pause : TimeState::Default);
+
+			if (state_.isPause) {
+				GameSound::PlaySE(GameSound::SE::Pause);
+			} else {
+				GameSound::PlaySE(GameSound::SE::Cancel);
+			}
 		}
 
 		if (state_.isPause) {
 			if (Input::TriggerKey(DIK_W) || Input::TriggerKey(DIK_S)) {
 				state_.isBackToGame = !state_.isBackToGame;
+				GameSound::PlaySE(GameSound::SE::PushWS);
+			}
+
+			// 三角の位置調整
+			if (state_.isBackToGame) {
+				triangle_.SetTranslate({ 442.0f,345.0f });
+			} else {
+				triangle_.SetTranslate({ 442.0f,470.0f });
 			}
 
 			if (Input::TriggerKey(DIK_SPACE) || Input::TriggerKey(DIK_RETURN)) {
 				if (state_.isBackToGame) {
 					state_.isPause = false;
 					TimeManager::SetTimeState(TimeState::Default);
+					GameSound::PlaySE(GameSound::SE::Cancel);
 				} else {
 					// タイトルに戻ることを確定させる
 					state_.isBackToTitle = true;
+					GameSound::PlaySE(GameSound::SE::Decision);
 				}
 			}
 		} else {
@@ -279,6 +296,8 @@ void Game::MobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vect
 	state_.mobs.push_back(static_cast<Mob*>(rawPtr));
 
 	state_.spawnEnemies++;
+
+	GameSound::PlaySE(GameSound::SE::EnemySpawn);
 }
 
 void Game::HomingMobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera) {
@@ -296,6 +315,7 @@ void Game::HomingMobSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine
 	state_.homingMobs.push_back(static_cast<HomingMob*>(rawPtr));
 
 	state_.spawnEnemies++;
+	GameSound::PlaySE(GameSound::SE::EnemySpawn);
 }
 
 void Game::MineSpawn(float randXMin, float randXMax, float randYMin, float randYMax, float randZMin, float randZMax, int32_t maxMines, const RyoEngine::Camera& camera) {
@@ -327,6 +347,8 @@ void Game::MineSpawn(float randXMin, float randXMax, float randYMin, float randY
 		// Mineも一応入れておく
 		state_.spawnEnemies++;
 	}
+	// 生成ごとに鳴らすと重なってうるさいので一回だけ
+	GameSound::PlaySE(GameSound::SE::EnemySpawn);
 }
 
 void Game::ReticleGunnerSpawn(const RyoEngine::Vector3 followoffset, const RyoEngine::Vector3 velocity, const RyoEngine::Camera& camera) {
@@ -344,6 +366,7 @@ void Game::ReticleGunnerSpawn(const RyoEngine::Vector3 followoffset, const RyoEn
 	state_.reticleGunners.push_back(static_cast<ReticleGunner*>(rawPtr));
 
 	state_.spawnEnemies++;
+	GameSound::PlaySE(GameSound::SE::EnemySpawn);
 }
 
 void Game::FirstPhaseMoveEnemy() {
