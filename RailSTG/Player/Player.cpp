@@ -41,6 +41,7 @@ void Player::Initialize() {
 	maxHpBar_.Initialize("resources/RailSTG/UI/Player/hpBar_max.png", { 70.0f,610.0f }, Anchor::Left);
 	hpBarBack_.Initialize("resources/RailSTG/UI/Player/hpBar_back.png",{70.0f,610.0f},Anchor::Left);
 
+	// 差し替える必要あり
 	justEvasion_.Initialize("resources/RailSTG/UI/Player/justEvasion.png");
 	
 	lockOnBack_.Initialize("resources/RailSTG/UI/Player/lockOn_back.png");
@@ -54,13 +55,17 @@ void Player::Initialize() {
 	evasionButton_.Initialize("resources/RailSTG/UI/Player/evasionButton.png", {1110.0f, 650.0f}, Anchor::RightBottom);
 	evasionButton_.SetScale({ 0.8f,0.8f });
 
-	//RyoEngine::Sprite justEvasion_;
-	//RyoEngine::Sprite lockOnBack_;
-	//RyoEngine::Sprite lockOnInfo_;
-	//std::array<RyoEngine::Sprite, 2> lockOnNumbers_;
-	//RyoEngine::Sprite lockOnAttackButton_;
-	//RyoEngine::Sprite mainShotButton_;
-	//RyoEngine::Sprite evasionButton_;
+
+	lockOnHovered_ = LoadTex("resources/RailSTG/UI/Player/lockOn_hovered.png");
+	lockOnConfirme_ = LoadTex("resources/RailSTG/UI/Player/lockOn_confirme.png");
+	for (auto& effect : lockOnEffects_) {
+		effect = Model::Create("resources/RailSTG/LockOnEffect/lockOnEffect.obj");
+		effect->SetScale({ 0.5f,0.5f,1.0f });
+		effect->SetRotate({ 0.0f,0.0f,float(M_PI) / 2.0f });
+		effect->SetEnableLighting(false);
+		// 初期はホバー
+		effect->SetTex(lockOnHovered_);
+	}
 
 	if (playerMissileHandle_ == 0) {
 		playerMissileHandle_ = LoadTex("resources/RailSTG/Bullet/playerMissile_uv.png");
@@ -119,7 +124,9 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 		damageTimer_ -= TimeManager::GetDeltaTime();
 		model_->SetColor({ 1.0f,0.0f,0.0f,1.0f });
 	} else {
-		model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
+		if (!isEvasion_) {
+			model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
+		}
 	}
 
 	// レティクル
@@ -225,6 +232,39 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 		}
 	}
 
+	// ロックオンエフェクト
+	lockOnEnemies_ = -1;
+	bool hoverFound = false;
+	Vector3 hoveredPos{};
+
+	for (auto& enemy : enemies) {
+		LockOnState state = enemy->GetLockOnState();
+
+		if (state == LockOnState::Locked) {
+			lockOnEnemies_++;
+			lockOnEffects_.at(lockOnEnemies_)->SetTranslate(enemy->GetWorldPos());
+			lockOnEffects_.at(lockOnEnemies_)->SetTex(lockOnConfirme_);
+			Billboard(camera, lockOnEffects_.at(lockOnEnemies_).get());
+
+			if (lockOnEnemies_ >= 1) break; // 2体確定したらもう見なくていい
+			continue;
+		}
+
+		if (state == LockOnState::Hoverd) {
+			hoverFound = true;
+			hoveredPos = enemy->GetWorldPos();
+			// ここではスロットに書き込まない
+		}
+	}
+
+	if (lockOnEnemies_ < 1) {
+		// ホバー用スロットへの反映はループの外で一度だけ
+		size_t hoverSlot = lockOnEnemies_ + 1;
+		lockOnEffects_.at(hoverSlot)->SetTranslate(hoverFound ? hoveredPos : Vector3{ -50.0f, 0.0f, 0.0f });
+		lockOnEffects_.at(hoverSlot)->SetTex(lockOnHovered_);
+		Billboard(camera, lockOnEffects_.at(hoverSlot).get());
+	}
+
 	// 弾の更新
 #ifdef _DEBUG
 	ImGui::Begin("playerBullet");
@@ -254,6 +294,20 @@ void Player::Draw() {
 		reticle_->Draw();
 	}
 
+	// ロックオンエフェクト
+	// ロックオンされた敵がいなければ描かない（攻撃中のhoveredを除く）
+	if (state_ == PlayerState::SpecialAttack1) {
+		// ロックオン中はhoveredも書くため全部描く
+		for (auto& effect : lockOnEffects_) {
+			effect->Draw();
+		}
+	} else {
+		if (lockOnEnemies_ > -1) {
+			for (auto& effect : lockOnEffects_) {
+				effect->Draw();
+			}
+		}
+	}
 	// 自身
 	model_->Draw();
 
@@ -486,7 +540,7 @@ void Player::ShootMissile(const RyoEngine::Camera& camera, const std::vector<std
 			// 初期化
 			missile->Initialize(spawnPos, target);
 			missile->SetDamage(kHomingMissileDamage);
-			missile->SetOBBSize({ 1.0f,1.0f,1.0f });
+			missile->SetOBBSize({ 0.5f,0.5f,0.5f });
 			missile->SetTex(playerMissileHandle_);
 
 

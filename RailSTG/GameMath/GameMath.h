@@ -105,3 +105,25 @@ inline void UpdateOBB(RyoEngine::OBB& obb,const RyoEngine::Vector3& baseSize, co
 	RyoEngine::Vector3 size = baseSize * model->GetScale();
 	obb.size = size;
 }
+
+inline void Billboard(const RyoEngine::Camera& camera, RyoEngine::Model* model) {
+	RyoEngine::Matrix4x4 cameraRot = camera.GetViewMatrix();
+	cameraRot.m[3][0] = 0.0f;
+	cameraRot.m[3][1] = 0.0f;
+	cameraRot.m[3][2] = 0.0f;
+	RyoEngine::Matrix4x4 billboardRot = Transpose(cameraRot); // ビュー行列の回転の転置（逆回転）
+
+	// 1. スケール行列
+	RyoEngine::Matrix4x4 scaleMat = RyoEngine::MakeScaleMatrix(model->GetScale());
+	// 2. モデル自身の回転（ビルボードなので実質Z軸=面内ロールのみが見た目に反映される）
+	RyoEngine::Matrix4x4 rollMat = RyoEngine::MakeRotateZMatrix(model->GetRotate().z);
+	// 3. ビルボード回転（カメラを常に向く）
+	// 4. 平行移動行列
+	RyoEngine::Matrix4x4 transMat = RyoEngine::MakeTranslateMatrix(model->GetTranslate());
+
+	// ワールド行列 ＝ スケール × 自身の回転(ロール) × カメラ向いた回転 × 位置
+	RyoEngine::Matrix4x4 world = scaleMat * rollMat * billboardRot * transMat;
+	RyoEngine::Matrix4x4 wvp = world * camera.GetViewProjectionMatrix();
+
+	model->SetWVPData(world, wvp);
+}

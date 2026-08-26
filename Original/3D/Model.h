@@ -184,6 +184,7 @@ namespace RyoEngine {
         void SetTranslateX(float translateX) { transform_.translate.x = translateX; }
         void SetTranslateY(float translateY) { transform_.translate.y = translateY; }
         void SetTranslateZ(float translateZ) { transform_.translate.z = translateZ; }
+        void SetWVPData(RyoEngine::Matrix4x4 world, RyoEngine::Matrix4x4 wvp) { wvpData_->World = world; wvpData_->WVP = wvp; }
 
         /// <summary>
         /// 指向性ライトの指定 (シーン共有。LightManagerへの転送。全モデルに反映される)

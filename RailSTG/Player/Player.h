@@ -194,7 +194,14 @@ private:
 	RyoEngine::Sprite lockOnAttackButton_;
 	RyoEngine::Sprite mainShotButton_;
 	RyoEngine::Sprite evasionButton_;
+	// ハンドル
+	uint32_t lockOnHovered_ = 0;
+	uint32_t lockOnConfirme_ = 0;
+	// ロックオンされた敵の数
+	int32_t lockOnEnemies_ = -1;
 
+	// ロックオンエフェクト用モデル
+	std::array<std::unique_ptr<RyoEngine::Model>, 2> lockOnEffects_{ nullptr,nullptr };
 
 	// 追尾弾ハンドル
 	inline static int32_t playerMissileHandle_ = 0;

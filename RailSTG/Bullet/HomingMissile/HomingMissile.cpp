@@ -21,7 +21,7 @@ void HomingMissile::Initialize(const RyoEngine::Vector3& spawnPos, BaseEnemy* ta
 
 	// 発生位置のセット
 	model_->SetTranslate(spawnPos);
-	model_->SetScale({ 0.5f,0.5f,0.5f });
+	//model_->SetScale({ 0.5f,0.5f,0.5f });
 	// ターゲットのセット
 	targetEnemy_ = targetEnemy;
 
