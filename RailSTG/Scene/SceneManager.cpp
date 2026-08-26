@@ -4,6 +4,7 @@
 #include "Result/Result.h"
 #include "../Particle/ParticleManager.h"
 #include "../Time/TimeManager.h"
+#include "../GameSound/GameSound.h"
 #include <imgui.h>
 
 using namespace RyoEngine;
@@ -64,6 +65,12 @@ void SceneManager::Initialize(Scene sceneState) {
     result_ = std::make_unique<Result>();
     result_->Initialize();
 
+    // 音読み込み
+    GameSound::Initialize();
+
+    // bgm
+    GameSound::PlayBGM(GameSound::BGM::Title);
+
 }
 
 void SceneManager::Finalize() {
@@ -81,8 +88,22 @@ void SceneManager::Update() {
         fade_.StartFadeIn(kFadeInDurationFrames_);
         if (pendingScene_ == Scene::Game) {
             camera_->SetTranslate({ 0.0f,153.0f,-25.0f });
+            GameSound::StopBGM(GameSound::BGM::Title);
+            GameSound::PlayBGM(GameSound::BGM::Game);
         } else if (pendingScene_ == Scene::Title) {
             RouteInitialize();
+            GameSound::StopBGM(GameSound::BGM::Game);
+            GameSound::StopBGM(GameSound::BGM::Clear);
+            GameSound::StopBGM(GameSound::BGM::Failed);
+            GameSound::PlayBGM(GameSound::BGM::Title);
+        } else if (pendingScene_ == Scene::Result) {
+            GameSound::StopBGM(GameSound::BGM::Game);
+            if (game_->IsClear()) {
+                GameSound::PlayBGM(GameSound::BGM::Clear);
+            } else {
+                GameSound::PlayBGM(GameSound::BGM::Failed);
+            }
+            result_->SetIsClear(game_->IsClear());
         }
     }
 

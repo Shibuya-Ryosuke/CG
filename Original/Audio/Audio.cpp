@@ -283,4 +283,17 @@ namespace RyoEngine {
 		inst->playingSEs.push_back(playing);
 	}
 
+	void Audio::StopBGM(uint32_t handle) {
+		Audio* inst = GetInstance();
+
+		if (handle >= static_cast<uint32_t>(inst->bgmDatas.size())) {
+			return;
+		}
+
+		BGMData& data = inst->bgmDatas[static_cast<size_t>(handle)];
+		if (data.pSourceVoice) {
+			data.pSourceVoice->Stop();
+			data.pSourceVoice->FlushSourceBuffers();
+		}
+	}
 }

@@ -90,6 +90,8 @@ public:
 
 	bool IsBackToTitle() const { return state_.isBackToTitle; }
 
+	bool IsClear() const { return state_.isClear_; }
+
 private:
 	// 変化しない設定値(RuntimeStateのデフォルト初期化から参照するためstatic constexprにしている)
 	static constexpr float kMobSpawnTimer_ = 3.0f;
@@ -150,6 +152,9 @@ private:
 		bool isPause = false;
 		bool isBackToGame = true;
 		bool isBackToTitle = false;
+
+		// クリアかどうか
+		bool isClear_ = true;
 	};
 
 	RuntimeState state_;
@@ -164,7 +169,6 @@ private:
 	RyoEngine::Sprite pause_;
 	RyoEngine::Sprite triangle_;
 	RyoEngine::Sprite end_;
-
 
 	// SceneManagerから一度だけセットされ、リプレイ時も保持したい値(RuntimeStateには含めない)
 	std::vector<float> phaseTimeLimits_;

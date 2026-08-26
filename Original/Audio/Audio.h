@@ -57,6 +57,8 @@ namespace RyoEngine {
 		/// <param name="volume">音量(1.0が等倍)</param>
 		static void PlaySE(uint32_t handle, float volume);
 
+		static void StopBGM(uint32_t handle);
+
 		/// <summary>
 		/// 再生中のBGMの音量を変更する(フェードアウト等に使用)
 		/// </summary>

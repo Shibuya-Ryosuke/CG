@@ -7,7 +7,9 @@ public:
 	// BGMの種類
 	enum class BGM {
 		Title,
-		Stage1,
+		Game,
+		Clear,
+		Failed,
 		Max
 	};
 
@@ -40,7 +42,9 @@ public:
 	static void Initialize() {
 		// --- BGMのロード ---
 		bgmHandles[static_cast<int>(BGM::Title)] = RyoEngine::Audio::LoadBGM("resources/RailSTG/Sound/BGM/title.mp3");
-		bgmHandles[static_cast<int>(BGM::Stage1)] = RyoEngine::Audio::LoadBGM("resources/RailSTG/Sound/BGM/stage1.mp3");
+		bgmHandles[static_cast<int>(BGM::Game)] = RyoEngine::Audio::LoadBGM("resources/RailSTG/Sound/BGM/game.mp3");
+		bgmHandles[static_cast<int>(BGM::Clear)] = RyoEngine::Audio::LoadBGM("resources/RailSTG/Sound/BGM/clear.mp3");
+		bgmHandles[static_cast<int>(BGM::Failed)] = RyoEngine::Audio::LoadBGM("resources/RailSTG/Sound/BGM/failed.mp3");
 
 		// --- SEのロード (System) ---
 		seHandles[static_cast<int>(SE::Cancel)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/System/cancel.mp3");
@@ -67,7 +71,7 @@ public:
 	/// <summary>
 	/// BGMを再生する
 	/// </summary>
-	static void PlayBGM(BGM bgm, float volume = 1.0f, bool loop = true) {
+	static void PlayBGM(BGM bgm, float volume = 0.1f, bool loop = true) {
 		uint32_t handle = bgmHandles[static_cast<int>(bgm)];
 		RyoEngine::Audio::PlayBGM(handle, volume, loop);
 	}
@@ -83,9 +87,14 @@ public:
 	/// <summary>
 	/// SEを再生する（どこからでもこの関数を呼ぶだけで鳴らせます）
 	/// </summary>
-	static void PlaySE(SE se, float volume = 1.0f) {
+	static void PlaySE(SE se, float volume = 0.2f) {
 		uint32_t handle = seHandles[static_cast<int>(se)];
 		RyoEngine::Audio::PlaySE(handle, volume);
+	}
+
+	static void StopBGM(BGM bgm) {
+		uint32_t handle = bgmHandles[static_cast<int>(bgm)];
+		RyoEngine::Audio::StopBGM(handle);
 	}
 
 private:

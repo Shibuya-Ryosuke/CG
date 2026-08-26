@@ -203,6 +203,11 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	// 当たり判定
 	CheckAllCollision();
 
+	// クリアではなくさせる
+	if (IsPlayerDead()) {
+		state_.isClear_ = false;
+	}
+
 	// 1. まず実体（enemies）側で死んだものを削除する
 	state_.enemies.erase(
 		std::remove_if(state_.enemies.begin(), state_.enemies.end(),
