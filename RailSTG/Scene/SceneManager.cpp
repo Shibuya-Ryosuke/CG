@@ -38,8 +38,6 @@ void SceneManager::Initialize(Scene sceneState) {
      
     pressSpace_.Initialize("resources/RailSTG/UI/Input/pressSpace.png", { 640.0f,450.0f }, Anchor::Center);
 
-    // パーティクルマネージャー
-    ParticleManager::GetInstance().Initialize();
     // シーン（enum）
     scene_ = sceneState;
 
@@ -69,7 +67,7 @@ void SceneManager::Initialize(Scene sceneState) {
 }
 
 void SceneManager::Finalize() {
-    ParticleManager::GetInstance().Finalize();
+   
 }
 
 void SceneManager::Update() {
@@ -94,7 +92,7 @@ void SceneManager::Update() {
     skydome_->Update(*activeCamera_);
     ground_->Update(*activeCamera_);
 
-    ParticleManager::GetInstance().Update(*activeCamera_);
+   
 
     switch (scene_) {
     case Scene::Title:
@@ -154,7 +152,7 @@ void SceneManager::Draw() {
     skydome_->Draw();
     ground_->Draw();
 
-    ParticleManager::GetInstance().Draw();
+   
 
     switch (scene_) {
     case Scene::Title:

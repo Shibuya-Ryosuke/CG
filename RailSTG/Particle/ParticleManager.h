@@ -9,15 +9,10 @@
 
 class ParticleManager {
 public:
-    static ParticleManager& GetInstance() {
-        static ParticleManager instance;
-        return instance;
-    }
+    ParticleManager() = default;
+    ~ParticleManager() = default;
 
-    ParticleManager(const ParticleManager&) = delete;
-    ParticleManager& operator=(const ParticleManager&) = delete;
-
-    void Initialize();
+    void Initialize(uint32_t handle); // 引数追加。ここでModel::Create(filePath)する
     void Finalize();
     void Update(const RyoEngine::Camera& camera);
     void Draw();
@@ -25,15 +20,13 @@ public:
         float lifeTime, float scale, const RyoEngine::Vector4& color, bool useGravity = false);
 
 private:
-    ParticleManager() = default;
-    ~ParticleManager() = default;
 
     // 同時に描画できるパーティクルの最大数(専用WVPバッファのサイズを決める)
     // 1000個は安定して出したいとのことなので、多少の余裕を見て1536にしてある
     static constexpr uint32_t kMaxParticles = 1536;
 
     std::vector<Particle> particles_;
-    std::unique_ptr<RyoEngine::Model> model_ = nullptr;
+    inline static std::unique_ptr<RyoEngine::Model> particleModel_ = nullptr;
 
     //RyoEngine::Camera camera_;
 

@@ -14,12 +14,12 @@ namespace {
     }
 }
 
-void ParticleManager::Initialize() {
-    if (!model_) {
-        model_ = Model::Create("resources/RailSTG/Model/Particle/particle.obj");
-        model_->SetTex("resources/RailSTG/Model/Particle/particle.png");
-        model_->SetEnableLighting(false);
+void ParticleManager::Initialize(uint32_t handle) {
+    if (!particleModel_) {
+        particleModel_ = Model::Create("resources/RailSTG/Model/Particle/particle.obj");
+        particleModel_->SetEnableLighting(false);
     }
+    particleModel_->SetTex(handle);
 
     if (!instanceWVPResource_) {
         alignedWVPStride_ = Align256(static_cast<uint32_t>(sizeof(TransformationMatrix)));
@@ -36,7 +36,7 @@ void ParticleManager::Finalize() {
         instanceWVPMapped_ = nullptr;
         instanceWVPResource_.Reset();
     }
-    model_.reset();
+    particleModel_.reset();
 }
 
 /// <summary>
@@ -112,11 +112,12 @@ void ParticleManager::Update(const RyoEngine::Camera& camera) {
         auto* dst = reinterpret_cast<TransformationMatrix*>(instanceWVPMapped_ + i * alignedWVPStride_);
         dst->World = world;
         dst->WVP = wvp;
+        dst->alpha = p.color.w;
     }
 }
 
 void ParticleManager::Draw() {
-    if (!model_ || !instanceWVPResource_) return;
+    if (!particleModel_ || !instanceWVPResource_) return;
 
 #ifdef _DEBUG
     ImGui::Begin("particle");
@@ -128,7 +129,7 @@ void ParticleManager::Draw() {
         // model_->Draw()(内部でwvpResource_を1個だけ使う版)は使わない。
         D3D12_GPU_VIRTUAL_ADDRESS wvpGVA =
             instanceWVPResource_->GetGPUVirtualAddress() + i * alignedWVPStride_;
-        model_->DrawInstance(wvpGVA);
+        particleModel_->DrawInstance(wvpGVA);
 
         const Particle& p = particles_[i];
 #ifdef _DEBUG

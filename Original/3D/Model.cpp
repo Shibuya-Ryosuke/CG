@@ -278,6 +278,7 @@ namespace RyoEngine {
         wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&wvpData_));
         wvpData_->WVP = MakeIdentity4x4();
         wvpData_->World = MakeIdentity4x4();
+        wvpData_->alpha = 1.0f;
 
         CreateDirectionalLight();
     }

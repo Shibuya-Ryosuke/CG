@@ -35,7 +35,7 @@ PixelShaderOutput main(VertexShaderOutput input)
     float4 textureColor = gTexture.Sample(gSampler, transformdUV.xy);
     
     
-    clip(textureColor.a * gMaterial.color.a - 0.3f);
+    clip(textureColor.a * gMaterial.color.a * input.alpha - 0.3f);
     
     if (gMaterial.enableLighting != 0)
     {
@@ -43,32 +43,33 @@ PixelShaderOutput main(VertexShaderOutput input)
         switch (gMaterial.shadingMode)
         {
             case 0:
-        // None
+    // None
                 cos = 1.0f;
-            // ライトの情報を使わずにrgbaを出し処理終了
+        // ライトの情報を使わずにrgbaを出し処理終了
                 output.color.rgb = gMaterial.color.rgb * textureColor.rgb;
-                output.color.a = gMaterial.color.a * textureColor.a;
+                output.color.a = gMaterial.color.a * textureColor.a * input.alpha;
                 return output;
                 break;
 
             case 1:
-        // Lambert
+    // Lambert
                 cos = saturate(dot(normalize(input.normal), -gDirectionLight.direction));
                 break;
 
             case 2:
-        // Half Lambert
+    // Half Lambert
                 float NdotL = dot(normalize(input.normal), -gDirectionLight.direction);
                 cos = pow(NdotL * 0.5f + 0.5f, 2.0f);
                 break;
         }
-        
+       
         output.color.rgb = gMaterial.color.rgb * textureColor.rgb * gDirectionLight.color.rgb * cos * gDirectionLight.intensity;
-        output.color.a = gMaterial.color.a * textureColor.a;
+        output.color.a = gMaterial.color.a * textureColor.a * input.alpha; // 追加
     }
     else
     {
         output.color = gMaterial.color * textureColor;
+        output.color.a *= input.alpha; // 追加
     }
     return output;
 }

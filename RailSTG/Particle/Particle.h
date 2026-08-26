@@ -9,6 +9,7 @@ struct Particle {
     RyoEngine::Vector3 velocity{};
     RyoEngine::Vector4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
     float scale = 1.0f;
+    float alpha = 1.0f;
     float lifeTime = 1.0f;     // 最大寿命（秒）
     float currentLife = 0.0f;  // 現在の経過時間
     bool useGravity = false;   // 重力の有無

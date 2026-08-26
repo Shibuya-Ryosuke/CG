@@ -129,8 +129,6 @@ void HomingMob::Draw() {
 	}
 	model_->Draw();
 	//PrimitiveRenderer::DrawOBB(obb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
-	// ロックオンエフェクト
-	BaseEnemy::DrawLockOnEffect();
 }
 
 void HomingMob::Shot() {

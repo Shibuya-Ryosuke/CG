@@ -57,22 +57,6 @@ public:
 	// 弾の取得関数
 	virtual const std::vector<std::unique_ptr<EnemyBullet>>& GetBullets() const = 0;
 
-	void DrawLockOnEffect() {
-		switch (lockOnState_) {
-		case LockOnState::Hoverd:
-			RyoEngine::PrimitiveRenderer::DrawSphere(model_->GetWorldPos(), 1.0f, 16, { 0.0f,1.0f,0.0f,1.0f }, RyoEngine::PrimitiveDrawMode::Fill);
-			break;
-
-		case LockOnState::Locked:
-			RyoEngine::PrimitiveRenderer::DrawSphere(model_->GetWorldPos(), 1.0f, 16, { 1.0f,0.0f,0.0f,1.0f }, RyoEngine::PrimitiveDrawMode::Fill);
-			break;
-
-		case LockOnState::None:
-		default:
-			break;
-		}
-	}
-
 	bool OnCollision(float damage) {
 		// 既に死亡しているなら無視
 		if (isDead_) return false;

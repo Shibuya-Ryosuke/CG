@@ -12,7 +12,6 @@
 #include "../Enemy/EnemyEnum.h"
 #include "../Input/InputManager.h"
 #include "../Time/TimeManager.h"
-#include "../Particle/ParticleManager.h"
 #include "../GameMath/GameMath.h"
 
 using namespace RyoEngine;
@@ -70,6 +69,9 @@ void Player::Initialize() {
 	if (playerMissileHandle_ == 0) {
 		playerMissileHandle_ = LoadTex("resources/RailSTG/Model/Bullet/playerMissile_uv.png");
 	}
+
+	particle_ = LoadTex("resources/RailSTG/Model/Particle/particle.png");
+	particleManager_.Initialize(particle_);
 }
 
 void Player::Finalize() {
@@ -229,6 +231,11 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 					enemy->SetLockOnState(LockOnState::None);
 				}
 			}
+
+			// エフェクトも変な位置に残らないように飛ばす
+			for (auto& effect : lockOnEffects_) {
+				effect->SetTranslateX(-50.0f);
+			}
 		}
 	}
 
@@ -280,6 +287,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	ImGui::End();
 #endif
 
+	particleManager_.Update(camera);
 	UpdateSprite();
 }
 
@@ -310,6 +318,8 @@ void Player::Draw() {
 	}
 	// 自身
 	model_->Draw();
+	// パーティクル
+	particleManager_.Draw();
 
 	DrawSprite();
 }
@@ -373,7 +383,7 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 					(rand() % 10 - 5) * 0.2f
 				};
 
-				ParticleManager::GetInstance().Emit(
+				particleManager_.Emit(
 					model_->GetWorldPos(),                   // 発生位置（弾の現在地・発射位置）
 					particleVel,                // 飛び散る速度
 					1.0f,                      // 寿命（秒）
