@@ -44,6 +44,7 @@ void Mine::Update(const RyoEngine::Camera& camera) {
 	// アニメーション
 	BaseEnemy::SpawnAnimation();
 	BaseEnemy::DespawnAnimation();
+	BaseEnemy::DestroyAnimation();
 	// 回転速度をランダムに加算
 	rotation_.x += RandomFloat(-10.0f, 10.0f) * TimeManager::GetDeltaTime();
 	rotation_.y += RandomFloat(-10.0f, 10.0f) * TimeManager::GetDeltaTime();

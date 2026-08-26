@@ -66,6 +66,7 @@ void HomingMob::Update(const RyoEngine::Camera& camera) {
 	// アニメーション
 	BaseEnemy::SpawnAnimation();
 	BaseEnemy::DespawnAnimation();
+	BaseEnemy::DestroyAnimation();
 	// 更新
 	model_->Update(camera);
 	// obb

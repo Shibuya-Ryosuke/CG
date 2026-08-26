@@ -52,7 +52,29 @@ public:
 	bool IsEvasion() const { return isEvasion_; }
 	bool IsJustEvasion() const { return isJustEvasion_; }
 	float GetJustEvasionDuration() const { return justEvasionDuration_; }
-	void CollectJustEvasion() { evasionDuration_ = kEvasionDuration / 3.0f; justEvasionDuration_ = kJustEvasionDuration / 3.0f; isCollectJustEvasion_ = true; }
+	void CollectJustEvasion() { 
+		evasionDuration_ = kEvasionDuration / 3.0f;
+		justEvasionDuration_ = kJustEvasionDuration / 3.0f;
+		isCollectJustEvasion_ = true;
+
+		for (int i = 0; i < 40; ++i) {
+			// 短い距離でふわっと広がるように、ごく小さなランダムベクトルを作る
+			RyoEngine::Vector3 particleVel = {
+				(static_cast<float>(rand() % 200 - 100) / 100.0f),
+				(static_cast<float>(rand() % 200 - 100) / 100.0f),
+				(static_cast<float>(rand() % 200) / 100.0f)
+			};
+			particleVel *= 10.0f;
+
+			justEvasionParticleManager_.Emit(
+				model_->GetWorldPos(),  // 発生位置
+				particleVel,            // その場付近でフワッと広がる速度
+				1.0f,                   // 寿命（秒）
+				0.25f,                  // 大きさ（スケール）
+				false                   // 重力（花火のようにふわっとさせたい場合はfalse、落としたいならtrue）
+			);
+		}
+	}
 
 	void LockOnMode();
 	void UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
@@ -212,4 +234,6 @@ private:
 	uint32_t mainShotParticle_ = 0;
 	ParticleManager destroyParticleManager_;
 	uint32_t destroyParticle_ = 0;
+	ParticleManager justEvasionParticleManager_;
+	uint32_t justEvasionParticle_ = 0;
 };

@@ -40,6 +40,7 @@ void ReticleGunner::Update(const RyoEngine::Camera& camera) {
     // アニメーション
     BaseEnemy::SpawnAnimation();
     BaseEnemy::DespawnAnimation();
+    BaseEnemy::DestroyAnimation();
     model_->Update(camera);
     UpdateOBB(obb_, baseObbSize_, model_.get());
     particleManager_.Update(camera);

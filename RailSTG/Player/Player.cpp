@@ -72,7 +72,10 @@ void Player::Initialize() {
 
 	mainShotParticle_ = LoadTex("resources/RailSTG/Model/Particle/particle.png");
 	mainShotParticleManager_.Initialize(mainShotParticle_);
-	destroyParticleManager_
+	destroyParticle_ = LoadTex("resources/RailSTG/Model/Particle/particle_playerDestroy.png");
+	destroyParticleManager_.Initialize(destroyParticle_);
+	justEvasionParticle_ = LoadTex("resources/RailSTG/Model/Particle/particle_justEvasion.png");
+	justEvasionParticleManager_.Initialize(justEvasionParticle_);
 }
 
 void Player::Finalize() {
@@ -288,7 +291,28 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	ImGui::End();
 #endif
 
+	if (hp_ <= 0.0f) {
+		for (int i = 0; i < 5; ++i) {
+			// 短い距離でふわっと広がるように、ごく小さなランダムベクトルを作る
+			RyoEngine::Vector3 particleVel = {
+				(static_cast<float>(rand() % 200 - 100) / 100.0f),
+				(static_cast<float>(rand() % 200 - 100) / 100.0f),
+				(static_cast<float>(rand() % 200) / 100.0f)
+			};
+			particleVel *= 8.0f;
+
+			destroyParticleManager_.Emit(
+				model_->GetWorldPos(),  // 発生位置
+				particleVel,            // その場付近でフワッと広がる速度
+				1.0f,                   // 寿命（秒）
+				0.4f,                  // 大きさ（スケール）
+				true                   // 重力（花火のようにふわっとさせたい場合はfalse、落としたいならtrue）
+			);
+		}
+		destroyParticleManager_.Update(camera);
+	}
 	mainShotParticleManager_.Update(camera);
+	justEvasionParticleManager_.Update(camera);
 	UpdateSprite();
 }
 
@@ -320,7 +344,11 @@ void Player::Draw() {
 	// 自身
 	model_->Draw();
 	// パーティクル
+	if (hp_ <= 0.0f) {
+		destroyParticleManager_.Draw();
+	}
 	mainShotParticleManager_.Draw();
+	justEvasionParticleManager_.Draw();
 
 	DrawSprite();
 }
