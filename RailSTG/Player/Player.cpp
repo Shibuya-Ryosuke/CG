@@ -405,7 +405,7 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 			// 発射間隔のリセット
 			mainShotInterval_ = kMainShotInterval;
 
-			GameSound::PlaySE(GameSound::SE::MainShot,0.7f);
+			GameSound::PlaySE(GameSound::SE::MainShot,0.07f);
 			for (int i = 0; i < 10; ++i) {
 				// 銃口からフワッと広がるように、少しだけランダムな速度を混ぜる
 				RyoEngine::Vector3 particleVel = {
@@ -626,7 +626,7 @@ void Player::OnCollision(float damage) {
 	GameSound::PlaySE(GameSound::SE::Hit);
 	if (hp_ < 0.0f) {
 		hp_ = 0.0f;
-		GameSound::PlaySE(GameSound::SE::PlayerDestroy);
+		GameSound::PlaySE(GameSound::SE::PlayerDestroy,0.2f);
 	}
 	damageTimer_ = kDamageTimer;
 
