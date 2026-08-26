@@ -130,7 +130,7 @@ void SceneManager::Update() {
             pendingScene_ = Scene::Game;
             game_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
-            GameSound::PlaySE(GameSound::SE::Decision);
+            GameSound::PlaySE(GameSound::SE::Decision,0.22f);
         }
         break;
 
@@ -162,7 +162,7 @@ void SceneManager::Update() {
             pendingScene_ = Scene::Title;
             title_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
-            GameSound::PlaySE(GameSound::SE::Decision);
+            GameSound::PlaySE(GameSound::SE::Decision,0.22f);
         }
         break;
 

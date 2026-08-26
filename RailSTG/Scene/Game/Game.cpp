@@ -125,7 +125,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 				} else {
 					// タイトルに戻ることを確定させる
 					state_.isBackToTitle = true;
-					GameSound::PlaySE(GameSound::SE::Decision);
+					GameSound::PlaySE(GameSound::SE::Decision,0.22f);
 				}
 			}
 		} else {
