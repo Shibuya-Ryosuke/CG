@@ -11,7 +11,7 @@ ReticleGunner::~ReticleGunner() = default;
 
 void ReticleGunner::Initialize() {
     if (model_ == nullptr) {
-        model_ = Model::Create("resources/RailSTG/Enemy/ReticleGunner/reticleGunner.obj");
+        model_ = Model::Create("resources/RailSTG/Model/Enemy/ReticleGunner/reticleGunner.obj");
     }
 
     baseObbSize_ = { 1.0f,1.0f,1.0f };

@@ -26,13 +26,13 @@ void SceneManager::Initialize(Scene sceneState) {
     debugCamera_->SetTranslateZ(-25.0f);
 
     // 天球
-    skydome_ = Model::Create("resources/RailSTG/Skydome/skydome.obj");
+    skydome_ = Model::Create("resources/RailSTG/Model/Skydome/skydome.obj");
     //skydome_->SetTex("resources/uvChecker.png");
     skydome_->SetLambert(ShadingMode::NONE);
     skydome_->SetScale({ 10.0f,10.0f,10.0f });
     skydome_->SetUVScale({ 2.0f,4.0f });
     // 地面
-    ground_ = Model::Create("resources/RailSTG/Ground/ground.obj");
+    ground_ = Model::Create("resources/RailSTG/Model/Ground/ground.obj");
     ground_->SetUVScale({ 4.0f,4.0f });
     //ground_->SetScale({ 10.0f,10.0f,10.0f });
      

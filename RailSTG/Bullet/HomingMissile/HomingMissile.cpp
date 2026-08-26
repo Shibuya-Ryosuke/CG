@@ -11,8 +11,8 @@ HomingMissile::HomingMissile() = default;
 void HomingMissile::Initialize() {
 	// デフォルトの初期化（必要であれば）
 	if (model_ == nullptr) {
-		model_ = Model::Create("resources/RailSTG/Bullet/bullet.obj"); // ミサイル用のモデルパス
-		model_->SetTex("resources/uvChecker.png");
+		model_ = Model::Create("resources/RailSTG/Model/Bullet/bullet.obj"); // ミサイル用のモデルパス
+		//model_->SetTex("resources/uvChecker.png");
 	}
 }
 

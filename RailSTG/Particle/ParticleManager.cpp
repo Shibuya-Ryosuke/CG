@@ -16,8 +16,8 @@ namespace {
 
 void ParticleManager::Initialize() {
     if (!model_) {
-        model_ = Model::Create("resources/RailSTG/Particle/particle.obj");
-        model_->SetTex("resources/RailSTG/Particle/particle.png");
+        model_ = Model::Create("resources/RailSTG/Model/Particle/particle.obj");
+        model_->SetTex("resources/RailSTG/Model/Particle/particle.png");
         model_->SetEnableLighting(false);
     }
 

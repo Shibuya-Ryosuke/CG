@@ -18,7 +18,7 @@ Mob::~Mob() = default;
 void Mob::Initialize() {
 	// 生成
 	if (model_ == nullptr) {
-		model_ = Model::Create("resources/RailSTG/Enemy/Mob/mob.obj");
+		model_ = Model::Create("resources/RailSTG/Model/Enemy/Mob/mob.obj");
 	}
 	// 速度セット
 	SetVelocity(kVelocity);

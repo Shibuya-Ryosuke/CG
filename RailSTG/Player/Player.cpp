@@ -22,7 +22,7 @@ Player::~Player() = default;
 
 void Player::Initialize() {
 	// モデルの生成
-	model_ = Model::Create("resources/RailSTG/Player/player.obj");
+	model_ = Model::Create("resources/RailSTG/Model/Player/player.obj");
 	model_->SetTranslate({ 0.0f,0.0f,0.0f });
 
 	baseObbSize_ = { 1.0f,1.0f,1.0f };
@@ -59,7 +59,7 @@ void Player::Initialize() {
 	lockOnHovered_ = LoadTex("resources/RailSTG/UI/Player/lockOn_hovered.png");
 	lockOnConfirme_ = LoadTex("resources/RailSTG/UI/Player/lockOn_confirme.png");
 	for (auto& effect : lockOnEffects_) {
-		effect = Model::Create("resources/RailSTG/LockOnEffect/lockOnEffect.obj");
+		effect = Model::Create("resources/RailSTG/Model/LockOnEffect/lockOnEffect.obj");
 		effect->SetScale({ 0.5f,0.5f,1.0f });
 		effect->SetRotate({ 0.0f,0.0f,float(M_PI) / 2.0f });
 		effect->SetEnableLighting(false);
@@ -68,7 +68,7 @@ void Player::Initialize() {
 	}
 
 	if (playerMissileHandle_ == 0) {
-		playerMissileHandle_ = LoadTex("resources/RailSTG/Bullet/playerMissile_uv.png");
+		playerMissileHandle_ = LoadTex("resources/RailSTG/Model/Bullet/playerMissile_uv.png");
 	}
 }
 

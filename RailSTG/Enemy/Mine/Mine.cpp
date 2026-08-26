@@ -10,7 +10,7 @@ Mine::~Mine() = default;
 void Mine::Initialize() {
 	// 生成
 	if (model_ == nullptr) {
-		model_ = Model::Create("resources/RailSTG/Enemy/Mine/mine.obj");
+		model_ = Model::Create("resources/RailSTG/Model/Enemy/Mine/mine.obj");
 	}
 
 	// ID格納

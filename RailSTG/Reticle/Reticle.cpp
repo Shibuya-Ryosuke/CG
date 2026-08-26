@@ -8,7 +8,7 @@ Reticle::~Reticle() = default;
 void Reticle::Initialize() {
     // 2Dスプライトの初期化（パスやサイズはエンジンの仕様に合わせてください）
     sprite_ = std::make_unique<Sprite>();
-    sprite_->Initialize("resources/RailSTG/Reticle/reticle.png");
+    sprite_->Initialize("resources/RailSTG/Model/Reticle/reticle.png");
     //sprite_->SetTranslate({ 640.0f, 360.0f }); // 画面中央などを初期位置に
 }
 

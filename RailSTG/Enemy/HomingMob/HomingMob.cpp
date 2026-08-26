@@ -17,12 +17,12 @@ HomingMob::~HomingMob() = default;
 
 void HomingMob::Initialize() {
 	if (enemyMissileHandle_ == 0) {
-		enemyMissileHandle_ = LoadTex("resources/RailSTG/Bullet/homingBullet_uv.png");
+		enemyMissileHandle_ = LoadTex("resources/RailSTG/Model/Bullet/homingBullet_uv.png");
 	}
 
 	// 生成
 	if (model_ == nullptr) {
-		model_ = Model::Create("resources/RailSTG/Enemy/HomingMob/homingMob.obj");
+		model_ = Model::Create("resources/RailSTG/Model/Enemy/HomingMob/homingMob.obj");
 	}
 	// 速度セット
 	SetVelocity(kVelocity);
