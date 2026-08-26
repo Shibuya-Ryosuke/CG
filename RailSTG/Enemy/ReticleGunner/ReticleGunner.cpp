@@ -42,13 +42,16 @@ void ReticleGunner::Update(const RyoEngine::Camera& camera) {
     BaseEnemy::DespawnAnimation();
     model_->Update(camera);
     UpdateOBB(obb_, baseObbSize_, model_.get());
-
+    particleManager_.Update(camera);
     
     // アニメーション中は攻撃しない
     if (isSpawning_)return;
 
     // レティクルの状態を進行させる
     UpdateReticles(camera);
+
+    particle_ = LoadTex("resources/RailSTG/Model/Particle/particle_reticleGunnerDestroy.png");
+    particleManager_.Initialize(particle_);
 }
 
 bool ReticleGunner::TryJudgeHit(const RyoEngine::Vector2& playerScreenPos) {
@@ -193,6 +196,7 @@ void ReticleGunner::UpdateAllLockedPhase() {
 
 void ReticleGunner::Draw() {
     model_->Draw();
+    particleManager_.Draw();
     //PrimitiveRenderer::DrawOBB(obb_, { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 
     // レティクル自体の2D描画は別ステップで実装

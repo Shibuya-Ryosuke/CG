@@ -208,6 +208,8 @@ private:
 	inline static int32_t playerMissileHandle_ = 0;
 
 	// パーティクル
-	ParticleManager particleManager_;
-	uint32_t particle_ = 0;
+	ParticleManager mainShotParticleManager_;
+	uint32_t mainShotParticle_ = 0;
+	ParticleManager destroyParticleManager_;
+	uint32_t destroyParticle_ = 0;
 };

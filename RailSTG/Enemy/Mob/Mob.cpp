@@ -35,6 +35,9 @@ void Mob::Initialize() {
 
 	// 初期ステート
 	state_ = MobState::Standard;
+
+	particle_ = LoadTex("resources/RailSTG/Model/Particle/particle_mobDestroy.png");
+	particleManager_.Initialize(particle_);
 }
 
 void Mob::Finalize(){}
@@ -59,10 +62,12 @@ void Mob::Update(const RyoEngine::Camera& camera) {
 	// アニメーション
 	BaseEnemy::SpawnAnimation();
 	BaseEnemy::DespawnAnimation();
+	BaseEnemy::DestroyAnimation();
 	// 更新
 	model_->Update(camera);
 	// obb
 	UpdateOBB(obb_, baseObbSize_, model_.get());
+	particleManager_.Update(camera);
 
 	if (followOffset_.z > 130.0f) {
 		isDead_ = true;
@@ -122,6 +127,7 @@ void Mob::Draw() {
 		bullet->Draw();
 	}
 	model_->Draw();
+	particleManager_.Draw();
 	//PrimitiveRenderer::DrawOBB(obb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 }
 

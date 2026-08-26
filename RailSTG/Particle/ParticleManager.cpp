@@ -49,14 +49,13 @@ void ParticleManager::Finalize() {
 /// <param name="color">色</param>
 /// <param name="useGravity">重力を適用するかどうか</param>
 void ParticleManager::Emit(const Vector3& position, const Vector3& velocity,
-    float lifeTime, float scale, const Vector4& color, bool useGravity) {
+    float lifeTime, float scale, bool useGravity) {
     Particle p;
     p.position = position;
     p.velocity = velocity;
     p.lifeTime = lifeTime;
     p.currentLife = 0.0f;
     p.scale = scale;
-    p.color = color;
     p.useGravity = useGravity;
     particles_.push_back(p);
 }
@@ -75,7 +74,7 @@ void ParticleManager::Update(const RyoEngine::Camera& camera) {
         float lifeRate = p.currentLife / p.lifeTime;
         lifeRate = Clamp(lifeRate, 0.0f, 1.0f);
 
-        p.color.w = (1.0f - lifeRate);
+        p.alpha = (1.0f - lifeRate);
     }
 
     particles_.erase(
@@ -112,7 +111,7 @@ void ParticleManager::Update(const RyoEngine::Camera& camera) {
         auto* dst = reinterpret_cast<TransformationMatrix*>(instanceWVPMapped_ + i * alignedWVPStride_);
         dst->World = world;
         dst->WVP = wvp;
-        dst->alpha = p.color.w;
+        dst->alpha = p.alpha;
     }
 }
 
@@ -134,7 +133,7 @@ void ParticleManager::Draw() {
         const Particle& p = particles_[i];
 #ifdef _DEBUG
         ImGui::Text("position: (%.2f, %.2f, %.2f)", p.position.x, p.position.y, p.position.z);
-        ImGui::Text("particleColor: (%.2f,%.2f, %.2f, %.2f)", p.color.x, p.color.y, p.color.z, p.color.w);
+        ImGui::Text("particleColor: (%.2f)", p.alpha);
 #endif
     }
 #ifdef _DEBUG

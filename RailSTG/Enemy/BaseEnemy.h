@@ -6,6 +6,7 @@
 #include "../../Original/RyoEngine.h"
 #include "../BaseObject/BaseObject.h"
 #include "../Time/TimeManager.h"
+#include "../Particle/ParticleManager.h"
 #include "EnemyEnum.h"
 
 class EnemyBullet;
@@ -59,7 +60,7 @@ public:
 
 	bool OnCollision(float damage) {
 		// 既に死亡しているなら無視
-		if (isDead_) return false;
+		if (hp_ <= 0.0f) return false;
 
 		// ダメージ処理
 		hp_ -= damage;
@@ -67,7 +68,27 @@ public:
 
 		// hpが0以下なら死亡、このヒットで撃破されたことを返す
 		if (hp_ <= 0.0f) {
-			isDead_ = true;
+			isDestroy_ = true;
+			animTimer_ = kDestroyDuration_;
+
+			for (int i = 0; i < 50; ++i) {
+				// 短い距離でふわっと広がるように、ごく小さなランダムベクトルを作る
+				RyoEngine::Vector3 particleVel = {
+					(static_cast<float>(rand() % 200 - 100) / 100.0f),
+					(static_cast<float>(rand() % 200 - 100) / 100.0f),
+					(static_cast<float>(rand() % 200) / 100.0f)
+				};
+				particleVel *= 10.0f;
+
+				particleManager_.Emit(
+					model_->GetWorldPos(),  // 発生位置
+					particleVel,            // その場付近でフワッと広がる速度
+					1.0f,                   // 寿命（秒）
+					0.4f,                  // 大きさ（スケール）
+					true                   // 重力（花火のようにふわっとさせたい場合はfalse、落としたいならtrue）
+				);
+			}
+			//isDead_ = true;
 			return true;
 		}
 
@@ -120,12 +141,29 @@ public:
 
 		// 1. スケール用イージング
 		float easeScale = RyoEngine::EaseOutQuart(t, 0.0f, 1.0f);
-		// スケールを 0 から 1 へ
+		// スケールを 1 から 0 へ
 		model_->SetScale({ easeScale, easeScale, easeScale });
 
 		// 2. 回転させる
 		float currentRotationY = RyoEngine::EaseOutQuad(t, 0.0f, 10.0f * 2.0f * static_cast<float>(M_PI));
 		model_->SetRotateY(currentRotationY); // Ｙ軸回転の場合の例
+	}
+
+	void DestroyAnimation() {
+		if (!isDestroy_)return;
+
+		animTimer_ -= TimeManager::GetDeltaTime();
+		float t = animTimer_ / kDestroyDuration_;
+
+		if (t <= 0.0f) {
+			t = 0.0f;
+			isDead_ = true; // 死亡
+		}
+
+		// 1. スケール用イージング（はじめ遅く終わり早く ＝ easeIn など。例えば t * t）
+		float easeScale = RyoEngine::EaseInQuart(t, 0.0f, 1.0f);
+		// スケールを 0 から 1 へ
+		model_->SetScale({ easeScale, easeScale, easeScale });
 	}
 
 	static void ResetIdCounter() { nextEnemyId_ = 0; }
@@ -158,11 +196,17 @@ protected:
 
 	// スポーンアニメーション
 	float animTimer_ = 0.0f;
-	float kAnimDuration_ = 1.5f;
+	float kAnimDuration_ = 1.2f;
+	float kDestroyDuration_ = 0.8f;
 	bool isSpawning_ = true;
 	bool isDespawning_ = false;
+	bool isDestroy_ = false;
 
 	// 被弾時
 	float damageTimer_ = 0.0f;
 	float kDamageTimer_ = 0.15f;
+
+	// パーティクル
+	ParticleManager particleManager_;
+	uint32_t particle_ = 0;
 };

@@ -70,8 +70,9 @@ void Player::Initialize() {
 		playerMissileHandle_ = LoadTex("resources/RailSTG/Model/Bullet/playerMissile_uv.png");
 	}
 
-	particle_ = LoadTex("resources/RailSTG/Model/Particle/particle.png");
-	particleManager_.Initialize(particle_);
+	mainShotParticle_ = LoadTex("resources/RailSTG/Model/Particle/particle.png");
+	mainShotParticleManager_.Initialize(mainShotParticle_);
+	destroyParticleManager_
 }
 
 void Player::Finalize() {
@@ -287,7 +288,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	ImGui::End();
 #endif
 
-	particleManager_.Update(camera);
+	mainShotParticleManager_.Update(camera);
 	UpdateSprite();
 }
 
@@ -319,7 +320,7 @@ void Player::Draw() {
 	// 自身
 	model_->Draw();
 	// パーティクル
-	particleManager_.Draw();
+	mainShotParticleManager_.Draw();
 
 	DrawSprite();
 }
@@ -383,12 +384,11 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 					(rand() % 10 - 5) * 0.2f
 				};
 
-				particleManager_.Emit(
+				mainShotParticleManager_.Emit(
 					model_->GetWorldPos(),                   // 発生位置（弾の現在地・発射位置）
 					particleVel,                // 飛び散る速度
-					1.0f,                      // 寿命（秒）
+					0.7f,                      // 寿命（秒）
 					0.1f,                       // 大きさ（スケール）
-					{ 1.0f, 0.9f, 0.3f, 1.0f },  // 色（黄色・オレンジっぽい発射光）
 					true
 				);
 			}

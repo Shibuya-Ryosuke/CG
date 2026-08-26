@@ -39,6 +39,9 @@ void HomingMob::Initialize() {
 
 	// 初期ステート
 	state_ = MobState::Standard;
+
+	particle_ = LoadTex("resources/RailSTG/Model/Particle/particle_homingMobDestroy.png");
+	particleManager_.Initialize(particle_);
 }
 
 void HomingMob::Finalize() {}
@@ -67,10 +70,7 @@ void HomingMob::Update(const RyoEngine::Camera& camera) {
 	model_->Update(camera);
 	// obb
 	UpdateOBB(obb_, baseObbSize_, model_.get());
-
-	if (followOffset_.z > 130.0f) {
-		isDead_ = true;
-	}
+	particleManager_.Update(camera);
 
 	
 	// アニメーション中は攻撃しない
@@ -174,6 +174,7 @@ void HomingMob::Shot() {
 void HomingMob::Move() {
 	// 移動
 	followOffset_ += velocity_ * TimeManager::GetDeltaTime();
+	particleManager_.Draw();
 }
 
 void HomingMob::UpdateDeflectedBullets(const std::function<BaseEnemy* (int32_t)>& enemyFinder) {

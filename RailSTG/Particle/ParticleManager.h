@@ -17,7 +17,7 @@ public:
     void Update(const RyoEngine::Camera& camera);
     void Draw();
     void Emit(const RyoEngine::Vector3& position, const RyoEngine::Vector3& velocity,
-        float lifeTime, float scale, const RyoEngine::Vector4& color, bool useGravity = false);
+        float lifeTime, float scale, bool useGravity = false);
 
 private:
 

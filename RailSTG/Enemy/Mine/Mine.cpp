@@ -22,6 +22,9 @@ void Mine::Initialize() {
 	obb_.size = baseObbSize_;
 
 	hp_ = kMaxHp_;
+
+	particle_ = LoadTex("resources/RailSTG/Model/Particle/particle_mineDestroy.png");
+	particleManager_.Initialize(particle_);
 }
 
 void Mine::Finalize() {
@@ -48,6 +51,7 @@ void Mine::Update(const RyoEngine::Camera& camera) {
 	model_->SetRotate(rotation_);
 	model_->Update(camera);
 	UpdateOBB(obb_, baseObbSize_, model_.get());
+	particleManager_.Update(camera);
 
 	// カメラを通り過ぎたら消去
 	if (followOffset_.z < kDespawnZ_) {
@@ -58,6 +62,7 @@ void Mine::Update(const RyoEngine::Camera& camera) {
 
 void Mine::Draw() {
 	model_->Draw();
+	particleManager_.Draw();
 	//PrimitiveRenderer::DrawOBB(obb_, { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 }
 
