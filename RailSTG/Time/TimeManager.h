@@ -44,6 +44,8 @@ public:
 	static float GetDeltaTime() {
 		return GetInstance().deltaTime_;
 	}
+	static TimeState GetTimeState() { return GetInstance().state_; }
+
 	static void SetTimeState(TimeState state) { GetInstance().request_ = state; }
 
 	static void SetJustEvasionDuration(float duration) { GetInstance().justEvasionDuration_ = duration; }

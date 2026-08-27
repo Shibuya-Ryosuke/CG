@@ -10,7 +10,8 @@ void EnemyBullet::Initialize() {
 	if (model_ == nullptr) {
 		// 生成
 		model_ = Model::Create("resources/RailSTG/Model/Bullet/bullet.obj");
-		model_->SetTex("resources/RailSTG/Model/Bullet/enemyBullet_uv.png");
+		model_->SetTex("resources/RailSTG/Model/Bullet/bullet.png");
+		model_->SetColor({ 1.0f,0.0f,0.0f,1.0f });
 	}
 	baseObbSize_ = { 0.8f,0.8f,0.8f };
 }
@@ -39,13 +40,6 @@ void EnemyBullet::Update(const RyoEngine::Camera& camera) {
 			Vector3 currentDir = Normalize(velocity_);
 			Vector3 newDir = Normalize(currentDir + (direction - currentDir) * turnRate_);
 			velocity_ = newDir * speed;
-		}
-		
-
-		// デバッグ用に色を赤
-		// 跳ね返されたときだけ色の変更
-		if (isDeflected_) {
-			model_->SetColor({ 1.0f,0.0f,0.0f,1.0f });
 		}
 
 		// プレイヤーに対しての追従（至近距離で追尾打ち切り）

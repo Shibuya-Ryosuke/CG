@@ -24,6 +24,8 @@ public:
 		PlayerEvasion,
 		PlayerCollectJustEvasion,
 		Hit,
+		LockOnMode,
+		LockOn,
 		HomingMissile,
 		MainShot,
 		PlayerDestroy,
@@ -55,9 +57,11 @@ public:
 
 		// --- SEのロード (Player) ---
 		seHandles[static_cast<int>(SE::PlayerEvasion)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/evasion.mp3");
-		seHandles[static_cast<int>(SE::PlayerCollectJustEvasion)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/evasion2.mp3");
+		seHandles[static_cast<int>(SE::PlayerCollectJustEvasion)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/collectJustEvasion.mp3");
 		seHandles[static_cast<int>(SE::Hit)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/hit.mp3");
 		seHandles[static_cast<int>(SE::HomingMissile)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/homingMissile.mp3");
+		seHandles[static_cast<int>(SE::LockOnMode)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/lockOnMode.mp3");
+		seHandles[static_cast<int>(SE::LockOn)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/lockOn.mp3");
 		seHandles[static_cast<int>(SE::MainShot)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/mainShot.mp3");
 		seHandles[static_cast<int>(SE::PlayerDestroy)] = RyoEngine::Audio::LoadSE("resources/RailSTG/Sound/SE/Player/playerDestory.mp3");
 

@@ -10,7 +10,8 @@ void PlayerBullet::Initialize() {
 	if (model_ == nullptr) {
 		// 生成
 		model_ = Model::Create("resources/RailSTG/Model/Bullet/bullet.obj");
-		model_->SetTex("resources/RailSTG/Model/Bullet/playerBullet_uv.png");
+		model_->SetTex("resources/RailSTG/Model/Bullet/bullet.png");
+		model_->SetColor({ 0.02f,1.0f,0.1f,1.0f });
 	}
 	baseObbSize_ = { 0.7f,0.7f,0.7f };
 }

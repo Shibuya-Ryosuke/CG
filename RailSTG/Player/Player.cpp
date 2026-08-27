@@ -44,6 +44,10 @@ void Player::Initialize() {
 	// 差し替える必要あり
 	justEvasion_.Initialize("resources/RailSTG/UI/Player/justEvasion.png");
 	
+	lockOnHovered_ = LoadTex("resources/RailSTG/UI/Player/lockOn_hovered.png");
+	lockOnConfirme_ = LoadTex("resources/RailSTG/UI/Player/lockOn_confirme.png");
+	coolTimeButton_ = LoadTex("resources/RailSTG/UI/Player/buttonCoolTime.png");
+
 	lockOnBack_.Initialize("resources/RailSTG/UI/Player/lockOn_back.png");
 	lockOnInfo_.Initialize("resources/RailSTG/UI/Player/lockOn_info.png");
 	lockOnNumbers_.at(0).Initialize("resources/RailSTG/UI/Player/lockOn_0.png");
@@ -55,9 +59,11 @@ void Player::Initialize() {
 	evasionButton_.Initialize("resources/RailSTG/UI/Player/evasionButton.png", {1110.0f, 650.0f}, Anchor::RightBottom);
 	evasionButton_.SetScale({ 0.8f,0.8f });
 
+	coolTimeEvasionButton_.Initialize(coolTimeButton_, { 1070.0f, 610.0f });
+	coolTimeEvasionButton_.SetScale({ 0.8f,0.8f });
+	coolTimeLockOnButton_.Initialize(coolTimeButton_, { 1170.0f,510.0f });
+	coolTimeLockOnButton_.SetScale({ 0.8f,0.8f });
 
-	lockOnHovered_ = LoadTex("resources/RailSTG/UI/Player/lockOn_hovered.png");
-	lockOnConfirme_ = LoadTex("resources/RailSTG/UI/Player/lockOn_confirme.png");
 	for (auto& effect : lockOnEffects_) {
 		effect = Model::Create("resources/RailSTG/Model/LockOnEffect/lockOnEffect.obj");
 		effect->SetScale({ 0.5f,0.5f,1.0f });
@@ -71,8 +77,8 @@ void Player::Initialize() {
 		playerMissileHandle_ = LoadTex("resources/RailSTG/Model/Bullet/playerMissile_uv.png");
 	}
 
-	mainShotParticle_ = LoadTex("resources/RailSTG/Model/Particle/particle.png");
-	mainShotParticleManager_.Initialize(mainShotParticle_);
+	trailParticle_ = LoadTex("resources/RailSTG/Model/Particle/particle.png");
+	trailParticleManager_.Initialize(trailParticle_);
 	destroyParticle_ = LoadTex("resources/RailSTG/Model/Particle/particle_playerDestroy.png");
 	destroyParticleManager_.Initialize(destroyParticle_);
 	justEvasionParticle_ = LoadTex("resources/RailSTG/Model/Particle/particle_justEvasion.png");
@@ -102,6 +108,8 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	// 回避クールタイム減少
 	if (evasionCoolTime_ > 0.0f) {
 		evasionCoolTime_ -= TimeManager::GetDeltaTime();
+	} else {
+		evasionCoolTime_ = 0.0f;
 	}
 
 	// ジャスト回避継続時間の減少
@@ -241,6 +249,8 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 			for (auto& effect : lockOnEffects_) {
 				effect->SetTranslateX(-50.0f);
 			}
+
+			lockedCount_ = 0;
 		}
 	}
 
@@ -311,8 +321,27 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 			);
 		}
 		destroyParticleManager_.Update(camera);
+	} else {
+		if (TimeManager::GetTimeState() != TimeState::Ready) {
+			for (int i = 0; i < 5; ++i) {
+				// 銃口からフワッと広がるように、少しだけランダムな速度を混ぜる
+				RyoEngine::Vector3 particleVel = {
+					(rand() % 10 - 5) * 0.2f,
+					(rand() % 10 - 5) * 0.2f,
+					(rand() % 10 - 5) * 0.2f
+				};
+
+				trailParticleManager_.Emit(
+					model_->GetWorldPos(),                   // 発生位置（弾の現在地・発射位置）
+					particleVel,                // 飛び散る速度
+					0.7f,                      // 寿命（秒）
+					0.1f,                       // 大きさ（スケール）
+					true
+				);
+			}
+			trailParticleManager_.Update(camera);
+		}
 	}
-	mainShotParticleManager_.Update(camera);
 	justEvasionParticleManager_.Update(camera);
 	UpdateSprite();
 }
@@ -348,7 +377,7 @@ void Player::Draw() {
 	if (hp_ <= 0.0f) {
 		destroyParticleManager_.Draw();
 	}
-	mainShotParticleManager_.Draw();
+	trailParticleManager_.Draw();
 	justEvasionParticleManager_.Draw();
 
 	DrawSprite();
@@ -406,22 +435,22 @@ void Player::MainShot(const RyoEngine::Camera& camera) {
 			mainShotInterval_ = kMainShotInterval;
 
 			GameSound::PlaySE(GameSound::SE::MainShot,0.07f);
-			for (int i = 0; i < 10; ++i) {
-				// 銃口からフワッと広がるように、少しだけランダムな速度を混ぜる
-				RyoEngine::Vector3 particleVel = {
-					(rand() % 10 - 5) * 0.2f,
-					(rand() % 10 - 5) * 0.2f,
-					(rand() % 10 - 5) * 0.2f
-				};
+			//for (int i = 0; i < 10; ++i) {
+			//	// 銃口からフワッと広がるように、少しだけランダムな速度を混ぜる
+			//	RyoEngine::Vector3 particleVel = {
+			//		(rand() % 10 - 5) * 0.2f,
+			//		(rand() % 10 - 5) * 0.2f,
+			//		(rand() % 10 - 5) * 0.2f
+			//	};
 
-				mainShotParticleManager_.Emit(
-					model_->GetWorldPos(),                   // 発生位置（弾の現在地・発射位置）
-					particleVel,                // 飛び散る速度
-					0.7f,                      // 寿命（秒）
-					0.1f,                       // 大きさ（スケール）
-					true
-				);
-			}
+			//	mainShotParticleManager_.Emit(
+			//		model_->GetWorldPos(),                   // 発生位置（弾の現在地・発射位置）
+			//		particleVel,                // 飛び散る速度
+			//		0.7f,                      // 寿命（秒）
+			//		0.1f,                       // 大きさ（スケール）
+			//		true
+			//	);
+			//}
 		}
 	}
 }
@@ -445,7 +474,7 @@ void Player::CollectJustEvasion() {
 	evasionDuration_ = kEvasionDuration / 3.0f;
 	justEvasionDuration_ = kJustEvasionDuration / 3.0f;
 	isCollectJustEvasion_ = true;
-	GameSound::PlaySE(GameSound::SE::PlayerCollectJustEvasion);
+	GameSound::PlaySE(GameSound::SE::PlayerCollectJustEvasion,0.09f);
 
 	for (int i = 0; i < 40; ++i) {
 		// 短い距離でふわっと広がるように、ごく小さなランダムベクトルを作る
@@ -459,8 +488,8 @@ void Player::CollectJustEvasion() {
 		justEvasionParticleManager_.Emit(
 			model_->GetWorldPos(),  // 発生位置
 			particleVel,            // その場付近でフワッと広がる速度
-			1.0f,                   // 寿命（秒）
-			0.25f,                  // 大きさ（スケール）
+			0.6f,                   // 寿命（秒）
+			0.22f,                  // 大きさ（スケール）
 			false                   // 重力（花火のようにふわっとさせたい場合はfalse、落としたいならtrue）
 		);
 	}
@@ -474,6 +503,7 @@ void Player::LockOnMode() {
 			if (Input::IsMousePush(1)) {
 				request_ = PlayerState::SpecialAttack1;
 				TimeManager::SetTimeState(TimeState::Targeting);
+				GameSound::PlaySE(GameSound::SE::LockOnMode);
 			}
 		}
 	}
@@ -489,6 +519,7 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 		// キャンセル時のクールタイムを代入
 		specialAttack1CoolTime_ = kSpecialAttack1CanceledCoolTime;
 
+		GameSound::PlaySE(GameSound::SE::Cancel);
 		// 全敵のロックオン状態を解除
 		for (auto& enemy : enemies) {
 			enemy->SetLockOnState(LockOnState::None);
@@ -541,7 +572,7 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 			if (enemy->GetLockOnState() == LockOnState::Hoverd) {
 				// ロックオン状態へ
 				enemy->SetLockOnState(LockOnState::Locked);
-
+				GameSound::PlaySE(GameSound::SE::LockOn,0.2f);
 				// 現在すでにLockedになっている敵の数を数える
 				lockedCount_ = 0;
 				for (auto& e : enemies) {
@@ -650,6 +681,12 @@ void Player::UpdateSprite() {
 		lockOnAttackButton_.Update();
 		mainShotButton_.Update();
 		evasionButton_.Update();
+		float ctEvasionButtonScaleY = (evasionCoolTime_ / kEvasionCoolTime) * 0.8f;
+		coolTimeEvasionButton_.SetScale({ 0.8f,ctEvasionButtonScaleY });
+		coolTimeEvasionButton_.Update();
+		float ctLockOnButtonScaleY = (1.0f - (specialAttack1Guage_ / 100.0f)) * 0.8f;
+		coolTimeLockOnButton_.SetScale({ 0.8f,ctLockOnButtonScaleY });
+		coolTimeLockOnButton_.Update();
 	}
 
 	if (isCollectJustEvasion_) {
@@ -660,7 +697,7 @@ void Player::UpdateSprite() {
 		lockOnBack_.Update();
 		lockOnInfo_.Update();
 
-		if (lockedCount_ == 0) {
+		if (lockedCount_ <= 0) {
 			lockOnNumbers_.at(0).Update();
 		} else if (lockedCount_ == 1) {
 			lockOnNumbers_.at(1).Update();
@@ -676,6 +713,8 @@ void Player::DrawSprite() {
 		lockOnAttackButton_.Draw();
 		mainShotButton_.Draw();
 		evasionButton_.Draw();
+		coolTimeEvasionButton_.Draw();
+		coolTimeLockOnButton_.Draw();
 	}
 
 	if (isCollectJustEvasion_) {
@@ -686,7 +725,7 @@ void Player::DrawSprite() {
 		lockOnBack_.Draw();
 		lockOnInfo_.Draw();
 
-		if (lockedCount_ == 0) {
+		if (lockedCount_ <= 0) {
 			lockOnNumbers_.at(0).Draw();
 		} else if (lockedCount_ == 1) {
 			lockOnNumbers_.at(1).Draw();

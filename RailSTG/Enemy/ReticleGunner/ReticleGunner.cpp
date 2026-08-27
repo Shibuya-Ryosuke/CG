@@ -220,7 +220,8 @@ void ReticleGunner::Draw() {
     particleManager_.Draw();
     //PrimitiveRenderer::DrawOBB(obb_, { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 
-    // レティクル自体の2D描画は別ステップで実装
+    // プレイヤーのロックオン中は描画しない
+    if (TimeManager::GetTimeState() == TimeState::Targeting)return;
     for (auto& r : reticles_) {
         switch (r.state) {
         case ReticleState::Following:

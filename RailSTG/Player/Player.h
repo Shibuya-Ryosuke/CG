@@ -195,6 +195,8 @@ private:
 	RyoEngine::Sprite lockOnAttackButton_;
 	RyoEngine::Sprite mainShotButton_;
 	RyoEngine::Sprite evasionButton_;
+	RyoEngine::Sprite coolTimeEvasionButton_;
+	RyoEngine::Sprite coolTimeLockOnButton_;
 
 	// ロックオンエフェクト用モデル
 	std::array<std::unique_ptr<RyoEngine::Model>, 2> lockOnEffects_{ nullptr,nullptr };
@@ -203,13 +205,15 @@ private:
 	// ハンドル
 	uint32_t lockOnHovered_ = 0;
 	uint32_t lockOnConfirme_ = 0;
+	uint32_t coolTimeButton_ = 0;
+
 
 	// 追尾弾ハンドル
 	inline static int32_t playerMissileHandle_ = 0;
 
 	// パーティクル
-	ParticleManager mainShotParticleManager_;
-	uint32_t mainShotParticle_ = 0;
+	ParticleManager trailParticleManager_;
+	uint32_t trailParticle_ = 0;
 	ParticleManager destroyParticleManager_;
 	uint32_t destroyParticle_ = 0;
 	ParticleManager justEvasionParticleManager_;

@@ -19,6 +19,8 @@ public:
 	void SetIsDeflectable(bool isDefrectable) { isDeflectable_ = isDefrectable; }
 	void SetIsDeflected(bool isDefrected) {
 		isDeflected_ = isDefrected;
+		// 反射された弾の色へ変更
+		model_->SetColor({ 1.0f,0.9f,0.0f,1.0f });
 		if (isDefrected) {
 			isHomingDisabled_ = false;
 		}

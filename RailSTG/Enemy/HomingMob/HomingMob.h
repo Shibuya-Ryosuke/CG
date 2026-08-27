@@ -41,6 +41,6 @@ private:
     MobState state_ = MobState::None;
     MobState request_ = MobState::None;
 
-    // 追尾弾ハンドル
-    inline static int32_t enemyMissileHandle_ = 0;
+    //// 追尾弾ハンドル
+    //inline static int32_t enemyMissileHandle_ = 0;
 };
