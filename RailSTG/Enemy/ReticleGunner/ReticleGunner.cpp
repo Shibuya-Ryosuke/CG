@@ -14,6 +14,15 @@ void ReticleGunner::Initialize() {
         model_ = Model::Create("resources/RailSTG/Model/Enemy/ReticleGunner/reticleGunner.obj");
     }
 
+    following_ = LoadTex("resources/RailSTG/UI/Enemy/ReticleGunner/reticle_following.png");
+    locked_ = LoadTex("resources/RailSTG/UI/Enemy/ReticleGunner/reticle_lock.png");
+    ready_ = LoadTex("resources/RailSTG/UI/Enemy/ReticleGunner/reticle_ready.png");
+    shot_ = LoadTex("resources/RailSTG/UI/Enemy/ReticleGunner/reticle_shot.png");
+
+    for (auto& r : reticles_) {
+        r.reticle.Initialize(following_, { -50.0f,0.0f });
+    }
+
     baseObbSize_ = { 1.0f,1.0f,1.0f };
     obb_.size = baseObbSize_;
 
@@ -50,6 +59,9 @@ void ReticleGunner::Update(const RyoEngine::Camera& camera) {
 
     // レティクルの状態を進行させる
     UpdateReticles(camera);
+    for (auto& r : reticles_) {
+        r.reticle.Update();
+    }
 
     particle_ = LoadTex("resources/RailSTG/Model/Particle/particle_reticleGunnerDestroy.png");
     particleManager_.Initialize(particle_);
@@ -101,12 +113,15 @@ void ReticleGunner::UpdateReticles(const RyoEngine::Camera& camera) {
                 camera.GetViewMatrix(),
                 camera.GetProjectionMatrix()
             );
+            // ちょっと下にずらす
+            r.reticle.SetTranslate({ r.screenPos.x,r.screenPos.y - 15.0f});
 
             if (r.stateTimer >= kFollowDuration_) {
                 r.worldPos = playerWorldPos_;
                 r.state = ReticleState::Locked;
                 activeIndex_++;
                 GameSound::PlaySE(GameSound::SE::ReticleLock);
+                r.reticle.SetTex(locked_);
             }
             break;
         }
@@ -126,6 +141,8 @@ void ReticleGunner::UpdateReticles(const RyoEngine::Camera& camera) {
             case ReticleState::Shot:
                 if (r.stateTimer >= kShotDuration_) {
                     r.state = ReticleState::End;
+                    // 追尾中のテクスチャに戻す
+                    r.reticle.SetTex(following_);
                 }
                 break;
 
@@ -167,6 +184,7 @@ void ReticleGunner::UpdateAllLockedPhase() {
         if (allLockedTimer_ >= kLockedWaitDuration_) {
             for (auto& r : reticles_) {
                 r.state = ReticleState::Ready;
+                r.reticle.SetTex(ready_);
             }
             allLockedTimer_ = 0.0f; // Ready待機用に0からリセット
 
@@ -184,6 +202,7 @@ void ReticleGunner::UpdateAllLockedPhase() {
                 r.state = ReticleState::Shot;
                 r.stateTimer = 0.0f;
                 GameSound::PlaySE(GameSound::SE::ReticleShot);
+                r.reticle.SetTex(shot_);
             }
             judged_ = false;
             // 判定処理は次のステップでGame側に実装
@@ -202,29 +221,15 @@ void ReticleGunner::Draw() {
     //PrimitiveRenderer::DrawOBB(obb_, { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 
     // レティクル自体の2D描画は別ステップで実装
-    for (auto& reticle : reticles_) {
-        switch (reticle.state) {
+    for (auto& r : reticles_) {
+        switch (r.state) {
         case ReticleState::Following:
-            PrimitiveRenderer::DrawCircle2D(reticle.screenPos, kHitRadius_, 32, { 1.0f,1.0f,1.0f,0.6f }, PrimitiveDrawMode::Fill);
-            break;
-
         case ReticleState::Locked:
-            PrimitiveRenderer::DrawCircle2D(reticle.screenPos, kHitRadius_, 32, { 0.0f,1.0f,0.0f,0.6f }, PrimitiveDrawMode::Fill);
-            break;
-
         case ReticleState::Ready:
-            PrimitiveRenderer::DrawCircle2D(reticle.screenPos, kHitRadius_, 32, { 0.0f,0.0f,1.0f,0.6f }, PrimitiveDrawMode::Fill);
-            break;
-
         case ReticleState::Shot:
-            PrimitiveRenderer::DrawCircle2D(reticle.screenPos, kHitRadius_, 32, { 1.0f,0.0f,0.0f,0.6f }, PrimitiveDrawMode::Fill);
+            r.reticle.Draw();
             break;
 
-        case ReticleState::End:
-            PrimitiveRenderer::DrawCircle2D(reticle.screenPos, kHitRadius_, 32, { 0.5f,0.5f,0.5f,0.6f }, PrimitiveDrawMode::Fill);
-            break;
-
-        case ReticleState::None:
         default:
             break;
         }

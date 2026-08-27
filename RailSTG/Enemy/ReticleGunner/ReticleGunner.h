@@ -2,6 +2,7 @@
 #include <array>
 #include <vector>
 #include <memory>
+#include <cstdint>
 #include "../BaseEnemy.h"
 #include "../EnemyEnum.h"
 #include "../../Bullet/EnemyBullet/EnemyBullet.h"
@@ -10,6 +11,7 @@ struct ReticleData {
     ReticleState state = ReticleState::None;
     RyoEngine::Vector2 screenPos{};
     RyoEngine::Vector3 worldPos{};
+    RyoEngine::Sprite reticle{};
     float stateTimer = 0.0f;
 };
 
@@ -55,6 +57,12 @@ private:
 private:
     std::array<ReticleData, 3> reticles_{};
     int activeIndex_ = 0; // 現在Following/None処理中のレティクル番号(0〜2)。3になったら全部Locked済み
+
+    // ハンドル
+    uint32_t following_ = 0;
+    uint32_t locked_ = 0;
+    uint32_t ready_ = 0;
+    uint32_t shot_ = 0;
 
     // Locked→Ready→Shotの一括進行用タイマー
     float allLockedTimer_ = 0.0f;
