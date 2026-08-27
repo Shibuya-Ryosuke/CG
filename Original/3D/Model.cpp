@@ -283,7 +283,7 @@ namespace RyoEngine {
         CreateDirectionalLight();
     }
 
-    void Model::InternalDraw(ModelCommon::DrawType drawType, D3D12_GPU_VIRTUAL_ADDRESS externalWVP) {
+    void Model::InternalDraw(ModelCommon::DrawType drawType, D3D12_GPU_VIRTUAL_ADDRESS externalWVP, uint32_t externalTextureHandle) {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
         auto lightManager = LightManager::GetInstance(); // ループの外で取得
         D3D12_GPU_VIRTUAL_ADDRESS lightGVA = lightManager->GetGPUVirtualAddress();
@@ -309,8 +309,14 @@ namespace RyoEngine {
                 lastPSO = currentPSO;
             }
 
-            // SRV(テクスチャ)は DescriptorTable でセット
-            commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(mesh.textureHandle));
+
+            // externalTextureHandleが指定されていれば(パーティクル等)そちらを優先し、
+            // 無ければ従来通りメッシュ自身が持つtextureHandleを使う
+            uint32_t texHandle = (externalTextureHandle != 0) ? externalTextureHandle : mesh.textureHandle;
+            commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(texHandle));
+
+            //// SRV(テクスチャ)は DescriptorTable でセット
+            //commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(mesh.textureHandle));
 
             commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
             commandList->SetGraphicsRootConstantBufferView(0, mesh.materialResource->GetGPUVirtualAddress());
@@ -321,10 +327,10 @@ namespace RyoEngine {
         }
     }
 
-    void Model::DrawInstance(D3D12_GPU_VIRTUAL_ADDRESS externalWVP, ModelCommon::DrawType drawType) {
-        ModelCommon::GetInstance()->SetDrawCommands([this, externalWVP, drawType]() {
-            InternalDraw(drawType, externalWVP);
-        });
+    void Model::DrawInstance(D3D12_GPU_VIRTUAL_ADDRESS externalWVP, uint32_t externalTextureHandle, ModelCommon::DrawType drawType) {
+        ModelCommon::GetInstance()->SetDrawCommands([this, externalWVP, externalTextureHandle, drawType]() {
+            InternalDraw(drawType, externalWVP, externalTextureHandle);
+            });
     }
 
     void Model::Update(const Camera& camera) {

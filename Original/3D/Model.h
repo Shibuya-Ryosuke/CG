@@ -67,7 +67,7 @@ namespace RyoEngine {
         /// </summary>
         /// <param name="externalWVP">1インスタンス分のTransformationMatrixが書き込まれたCBのGPU仮想アドレス</param>
         /// <param name="drawType">通常描画(REAL)か反射描画(REFLECT)か</param>
-        void DrawInstance(D3D12_GPU_VIRTUAL_ADDRESS externalWVP, ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL);
+        void DrawInstance(D3D12_GPU_VIRTUAL_ADDRESS externalWVP, uint32_t externalTextureHandle = 0, ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL);
 
         /// <summary>
         /// モデルの作成
@@ -286,7 +286,7 @@ namespace RyoEngine {
     private:
         // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）
         void InternalInitialize(const ModelLoader::ModelData& modelData);
-        void InternalDraw(ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL, D3D12_GPU_VIRTUAL_ADDRESS externalWVP = 0);
+        void InternalDraw(ModelCommon::DrawType drawType, D3D12_GPU_VIRTUAL_ADDRESS externalWVP = 0, uint32_t externalTextureHandle = 0);
         // 指定メッシュのuvScale/uvRotate/uvTranslateから、materialData->uvTransformを再計算して書き込む
         void UpdateUVTransform(MeshResource& mesh);
 

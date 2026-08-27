@@ -38,4 +38,6 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> instanceWVPResource_;
     uint8_t* instanceWVPMapped_ = nullptr;
     uint32_t alignedWVPStride_ = 0;
+
+    uint32_t textureHandle_ = 0; // 自分用のテクスチャハンドル
 };

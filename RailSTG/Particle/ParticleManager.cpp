@@ -19,7 +19,7 @@ void ParticleManager::Initialize(uint32_t handle) {
         particleModel_ = Model::Create("resources/RailSTG/Model/Particle/particle.obj");
         particleModel_->SetEnableLighting(false);
     }
-    particleModel_->SetTex(handle);
+    textureHandle_ = handle;
 
     if (!instanceWVPResource_) {
         alignedWVPStride_ = Align256(static_cast<uint32_t>(sizeof(TransformationMatrix)));
@@ -128,7 +128,7 @@ void ParticleManager::Draw() {
         // model_->Draw()(内部でwvpResource_を1個だけ使う版)は使わない。
         D3D12_GPU_VIRTUAL_ADDRESS wvpGVA =
             instanceWVPResource_->GetGPUVirtualAddress() + i * alignedWVPStride_;
-        particleModel_->DrawInstance(wvpGVA);
+        particleModel_->DrawInstance(wvpGVA,textureHandle_);
 
         const Particle& p = particles_[i];
 #ifdef _DEBUG
