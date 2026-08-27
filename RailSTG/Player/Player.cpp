@@ -471,7 +471,7 @@ void Player::Evasion() {
 			justEvasionDuration_ = kJustEvasionDuration;
 			evasionDuration_ = kEvasionDuration;
 			evasionCoolTime_ = kEvasionCoolTime;
-			GameSound::PlaySE(GameSound::SE::PlayerEvasion);
+			GameSound::PlaySE(GameSound::SE::PlayerEvasion,0.18f);
 		}
 	}
 }
@@ -663,7 +663,7 @@ void Player::OnCollision(float damage) {
 	GameSound::PlaySE(GameSound::SE::Hit);
 	if (hp_ < 0.0f) {
 		hp_ = 0.0f;
-		GameSound::PlaySE(GameSound::SE::PlayerDestroy,0.2f);
+		GameSound::PlaySE(GameSound::SE::PlayerDestroy);
 	}
 	damageTimer_ = kDamageTimer;
 

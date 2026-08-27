@@ -124,6 +124,7 @@ void SceneManager::Update() {
         title_->Update();
         PressSpaceFade();
 
+        camera_->SetIdleRotate(true);
         if (camera_->GetTranslate().z >= 500.0f) {
             camera_->SetTranslateZ(-25.0f);
         }
@@ -148,11 +149,13 @@ void SceneManager::Update() {
             fade_.StartFadeOut(kFadeOutDurationFrames_);
         }
 
-        // タイトルへ
+        // ポーズからタイトルへ戻る
         if (fade_.IsIdle() && game_->IsBackToTitle()) {
             pendingScene_ = Scene::Title;
             title_->Initialize();
             fade_.StartFadeOut(kFadeOutDurationFrames_);
+            // Defaultにしないとカメラが回転しない
+            TimeManager::SetTimeState(TimeState::Default);
         }
         break;
 

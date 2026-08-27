@@ -273,10 +273,6 @@ void Game::Draw() {
 		//PrimitiveRenderer::DrawOBB(enemy->GetOBB(), { 1.0f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 	}
 
-	if (state_.phase == Phase::Ready) {
-		//PrimitiveRenderer::DrawRect2D({ 640.0f,360.0f }, { 1280.0f,720.0f }, 0.0f, { 0.0f, 0.0f, 0.0f, 0.6f }, PrimitiveDrawMode::Fill);
-	}
-
 	// UIの描画
 	DrawSprite();
 }
