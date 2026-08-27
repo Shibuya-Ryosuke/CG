@@ -34,8 +34,8 @@ void SceneManager::Initialize(Scene sceneState) {
     skydome_->SetScale({ 10.0f,10.0f,10.0f });
     skydome_->SetUVScale({ 2.0f,4.0f });
     // 地面
-    ground_ = Model::Create("resources/RailSTG/Model/Ground/ground.obj");
-    ground_->SetUVScale({ 4.0f,4.0f });
+    ground_ = Model::Create("resources/RailSTG/Model/Ground/ground4.obj");
+    ground_->SetUVScale({ 4.0f,4.0f },0);
     //ground_->SetScale({ 10.0f,10.0f,10.0f });
      
     pressSpace_.Initialize("resources/RailSTG/UI/Input/pressSpace.png", { 640.0f,450.0f }, Anchor::Center);
