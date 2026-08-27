@@ -217,6 +217,11 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	ImGui::NewLine();
 
 	ImGui::Text("damageT: %.2f", damageTimer_);
+	ImGui::NewLine();
+
+	ImGui::Text("effect1: %.2f,%.2f,%.2f", lockOnEffects_.at(0)->GetTranslate().x, lockOnEffects_.at(0)->GetTranslate().y, lockOnEffects_.at(0)->GetTranslate().z);
+	ImGui::Text("effect2: %.2f,%.2f,%.2f", lockOnEffects_.at(1)->GetTranslate().x, lockOnEffects_.at(1)->GetTranslate().y, lockOnEffects_.at(1)->GetTranslate().z);
+
 	ImGui::End();
 #endif
 
@@ -247,7 +252,8 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 
 			// エフェクトも変な位置に残らないように飛ばす
 			for (auto& effect : lockOnEffects_) {
-				effect->SetTranslateX(-50.0f);
+				effect->SetTranslate({ -100.0f, -100.0f, -100.0f });
+				Billboard(camera, effect.get());
 			}
 
 			lockedCount_ = 0;
@@ -279,10 +285,10 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 		}
 	}
 
-	if (lockOnEnemies_ < 1) {
+	if (state_ == PlayerState::SpecialAttack1 && lockOnEnemies_ < 1) {
 		// ホバー用スロットへの反映はループの外で一度だけ
 		size_t hoverSlot = lockOnEnemies_ + 1;
-		lockOnEffects_.at(hoverSlot)->SetTranslate(hoverFound ? hoveredPos : Vector3{ -50.0f, 0.0f, 0.0f });
+		lockOnEffects_.at(hoverSlot)->SetTranslate(hoverFound ? hoveredPos : Vector3{ -100.0f, -100.0f, -100.0f });
 		lockOnEffects_.at(hoverSlot)->SetTex(lockOnHovered_);
 		Billboard(camera, lockOnEffects_.at(hoverSlot).get());
 	}
