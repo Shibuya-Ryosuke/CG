@@ -54,7 +54,7 @@ public:
 	float GetJustEvasionDuration() const { return justEvasionDuration_; }
 	void CollectJustEvasion();
 
-	void LockOnMode();
+	void LockOnMode(const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
 	void UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
 	void ShootMissile(const RyoEngine::Camera& camera, const std::vector<std::unique_ptr<BaseEnemy>>& enemies);
 

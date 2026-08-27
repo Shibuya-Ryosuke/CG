@@ -167,7 +167,7 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	case PlayerState::Standard:
 		Evasion();
 		MainShot(camera);
-		LockOnMode();
+		LockOnMode(enemies);
 		break;
 
 	case PlayerState::SpecialAttack1:
@@ -511,8 +511,10 @@ void Player::CollectJustEvasion() {
 	}
 }
 
-void Player::LockOnMode() {
+void Player::LockOnMode(const std::vector<std::unique_ptr<BaseEnemy>>& enemies) {
 	if (hp_ <= 0.0f)return;
+	if (enemies.empty()) return;
+
 	if (specialAttack1CoolTime_ <= 0.0f) {
 		if (specialAttack1Guage_ >= 100.0f) {
 			// 右クリックでロックオンモードへ
@@ -597,8 +599,9 @@ void Player::UpdateLockOn(const RyoEngine::Camera& camera, const std::vector<std
 					}
 				}
 
-				// すでに2体に達していたらロックオンモードを終了
-				if (lockedCount_ >= 2) {
+				// ロックオン終了
+				int32_t requiredCount = std::min<int32_t>(2, static_cast<int32_t>(enemies.size()));
+				if (lockedCount_ >= requiredCount) {
 					// ミサイル発射
 					ShootMissile(camera, enemies);
 					// プレイヤーと時間を通常へ
@@ -677,9 +680,6 @@ void Player::OnCollision(float damage) {
 	}
 	damageTimer_ = kDamageTimer;
 
-	//if (hp_ <= 0.0f) {
-	//	isDead_ = true;
-	//}
 }
 
 void Player::UpdateSprite() {
