@@ -91,7 +91,7 @@ public:
 	PlayerState GetState()const { return state_; }
 
 	int32_t GetJustEvasionNumber() const { return justEvasionNumber_; }
-	float GetRemainingHP() const { return hp_ / kMaxHp; }
+	float GetRemainingHP() const { return (hp_ / kMaxHp) * 100.0f; }
 
 private:
 	void UpdateSprite();

@@ -100,6 +100,7 @@ void SceneManager::Update() {
             GameSound::StopBGM(GameSound::BGM::Clear);
             GameSound::StopBGM(GameSound::BGM::Failed);
             GameSound::PlayBGM(GameSound::BGM::Title);
+            pressSpace_.SetTranslate({ 640.0f,450.0f });
         } else if (pendingScene_ == Scene::Result) {
             GameSound::StopBGM(GameSound::BGM::Game);
             if (game_->IsClear()) {
@@ -111,6 +112,7 @@ void SceneManager::Update() {
                     game_->GetPlayerRemainingHP(),
                     game_->GetClearTime()
                 );
+                pressSpace_.SetTranslate({ 640.0f,610.0f });
             } else {
                 GameSound::PlayBGM(GameSound::BGM::Failed);
             }
