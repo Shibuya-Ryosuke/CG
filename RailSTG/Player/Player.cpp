@@ -41,8 +41,8 @@ void Player::Initialize() {
 	maxHpBar_.Initialize("resources/RailSTG/UI/Player/hpBar_max.png", { 70.0f,610.0f }, Anchor::Left);
 	hpBarBack_.Initialize("resources/RailSTG/UI/Player/hpBar_back.png",{70.0f,610.0f},Anchor::Left);
 
-	// 差し替える必要あり
-	justEvasion_.Initialize("resources/RailSTG/UI/Player/justEvasion.png");
+	// ポーズのを借りる
+	justEvasion_.Initialize("resources/RailSTG/UI/fade.png");
 	
 	lockOnHovered_ = LoadTex("resources/RailSTG/UI/Player/lockOn_hovered.png");
 	lockOnConfirme_ = LoadTex("resources/RailSTG/UI/Player/lockOn_confirme.png");
@@ -115,6 +115,16 @@ void Player::UpdatePlayer(const RyoEngine::Camera& camera, const std::vector<std
 	// ジャスト回避継続時間の減少
 	if (justEvasionDuration_ > 0.0f) {
 		justEvasionDuration_ -= TimeManager::GetDeltaTime();
+		// 0.0f ～ 1.0f の割合を計算
+		float progress = justEvasionDuration_ / kJustEvasionDuration;
+		if (progress < 0.0f) {
+			progress = 0.0f;
+		}
+
+		// 0.4 から 1.0 の範囲に変換する（1.0スタートで、最小が0.4になる）
+		float alpha = 0.4f + (1.0f - 0.4f) * progress;
+
+		justEvasion_.SetColor({ 1.0f, 1.0f, 1.0f, alpha });
 	} else {
 		isJustEvasion_ = false;
 		isCollectJustEvasion_ = false;
@@ -471,7 +481,7 @@ void Player::Evasion() {
 			justEvasionDuration_ = kJustEvasionDuration;
 			evasionDuration_ = kEvasionDuration;
 			evasionCoolTime_ = kEvasionCoolTime;
-			GameSound::PlaySE(GameSound::SE::PlayerEvasion,0.18f);
+			GameSound::PlaySE(GameSound::SE::PlayerEvasion,0.22f);
 		}
 	}
 }
@@ -480,7 +490,7 @@ void Player::CollectJustEvasion() {
 	evasionDuration_ = kEvasionDuration / 3.0f;
 	justEvasionDuration_ = kJustEvasionDuration / 3.0f;
 	isCollectJustEvasion_ = true;
-	GameSound::PlaySE(GameSound::SE::PlayerCollectJustEvasion,0.09f);
+	GameSound::PlaySE(GameSound::SE::PlayerCollectJustEvasion,0.07f);
 
 	for (int i = 0; i < 40; ++i) {
 		// 短い距離でふわっと広がるように、ごく小さなランダムベクトルを作る
@@ -660,10 +670,10 @@ void Player::OnCollision(float damage) {
 	if (isEvasion_)return;
 
 	hp_ -= damage;
-	GameSound::PlaySE(GameSound::SE::Hit);
+	GameSound::PlaySE(GameSound::SE::Hit,0.2f);
 	if (hp_ < 0.0f) {
 		hp_ = 0.0f;
-		GameSound::PlaySE(GameSound::SE::PlayerDestroy);
+		GameSound::PlaySE(GameSound::SE::PlayerDestroy,0.25f);
 	}
 	damageTimer_ = kDamageTimer;
 

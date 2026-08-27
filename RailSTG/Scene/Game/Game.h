@@ -168,7 +168,11 @@ private:
 	RyoEngine::Sprite pauseBack_;
 	RyoEngine::Sprite pause_;
 	RyoEngine::Sprite triangle_;
-	RyoEngine::Sprite end_;
+	RyoEngine::Sprite finish_;
+	RyoEngine::Sprite mouseLeft_;
+	RyoEngine::Sprite mouseRight_;
+	RyoEngine::Sprite tabKey_;
+	RyoEngine::Sprite spaceKey_;
 
 	// SceneManagerから一度だけセットされ、リプレイ時も保持したい値(RuntimeStateには含めない)
 	std::vector<float> phaseTimeLimits_;

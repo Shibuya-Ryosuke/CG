@@ -28,16 +28,6 @@ void Game::Initialize() {
 
 	BaseEnemy::ResetIdCounter(); // 敵IDの採番を0から再開
 
-	//RyoEngine::Sprite phaseInfo_;
-	//std::array< RyoEngine::Sprite, 3> phases_;
-	//RyoEngine::Sprite ready_;
-	//RyoEngine::Sprite start_;
-	//RyoEngine::Sprite nextPhase_;
-	//RyoEngine::Sprite pauseButton_;
-	//RyoEngine::Sprite pauseBack_;
-	//RyoEngine::Sprite pause_;
-	//RyoEngine::Sprite triangle_;
-	//RyoEngine::Sprite end_;
 	phaseInfo_.Initialize("resources/railSTG/UI/Game/phaseInfo.png",{70.0f,70.0f},Anchor::LeftTop);
 	phases_.at(0).Initialize("resources/railSTG/UI/Game/phase1.png", { 70.0f,70.0f }, Anchor::LeftTop);
 	phases_.at(1).Initialize("resources/railSTG/UI/Game/phase2.png", { 70.0f,70.0f }, Anchor::LeftTop);
@@ -48,14 +38,24 @@ void Game::Initialize() {
 	start_.SetScale({ 1.5f,1.5f });
 	nextPhase_.Initialize("resources/railSTG/UI/Game/nextPhase.png");
 	nextPhase_.SetScale({ 1.5f,1.5f });
+	finish_.Initialize("resources/RailSTG/UI/Game/finish.png");
+	finish_.SetScale({ 1.5f,1.5f });
 
 	pauseButton_.Initialize("resources/railSTG/UI/Game/pauseButton.png", { 1210.0f,60.0f }, Anchor::RightTop);
 	pauseButton_.SetScale({ 0.5f,0.5f });
 	pauseBack_.Initialize("resources/railSTG/UI/Pause/pause_Back.png");
 	pause_.Initialize("resources/RailSTG/UI/Pause/pause.png");
 	triangle_.Initialize("resources/railSTG/UI/Pause/triangle.png", { 442.0f,345.0f });
-	end_.Initialize("resources/RailSTG/UI/Game/end.png");
 	
+	mouseLeft_.Initialize("resources/RailSTG/UI/Input/mouse_Left.png",{1210.0f,630.0f});
+	mouseLeft_.SetScale({ 0.5f,0.5f });
+	mouseRight_.Initialize("resources/RailSTG/UI/Input/mouse_Right.png", { 1210.0f,530.0f });
+	mouseRight_.SetScale({ 0.5f,0.5f });
+	tabKey_.Initialize("resources/RailSTG/UI/Input/tab.png", { 1210.0f,100.0f });
+	tabKey_.SetScale({ 0.5f,0.5f });
+	spaceKey_.Initialize("resources/RailSTG/UI/Input/space.png", { 1110.0f,630.0f });
+	spaceKey_.SetScale({ 0.5f,0.5f });
+
 	// プレイヤーの作成
 	state_.player = std::make_unique<Player>();
 	state_.player->Initialize();
@@ -695,6 +695,7 @@ void Game::CheckAllCollision() {
 						state_.player->ChargeGuage();
 						pBullet->OnCollision();
 						bullet->OnCollisionDestructibleBullet(pBullet->GetDamage());
+						GameSound::PlaySE(GameSound::SE::Hit);
 					}
 				}
 			}
@@ -868,13 +869,17 @@ void Game::UpdateSprite() {
 				nextPhase_.Update();
 				break;
 
+			case Phase::End:
+				finish_.Update();
+				break;
+
 			default:
 				break;
 			}
 			break;
 
 		case Phase::End:
-			end_.Update();
+			finish_.Update();
 			break;
 
 		default:
@@ -883,6 +888,10 @@ void Game::UpdateSprite() {
 
 		phaseInfo_.Update();
 		pauseButton_.Update();
+		mouseLeft_.Update();
+		mouseRight_.Update();
+		tabKey_.Update();
+		spaceKey_.Update();
 	}
 
 	if (state_.isPause) {
@@ -922,13 +931,17 @@ void Game::DrawSprite() {
 				nextPhase_.Draw();
 				break;
 
+			case Phase::End:
+				finish_.Draw();
+				break;
+
 			default:
 				break;
 			}
 			break;
 
 		case Phase::End:
-			end_.Draw();
+			finish_.Draw();
 			break;
 
 		default:
@@ -937,6 +950,10 @@ void Game::DrawSprite() {
 
 		phaseInfo_.Draw();
 		pauseButton_.Draw();
+		mouseLeft_.Draw();
+		mouseRight_.Draw();
+		tabKey_.Draw();
+		spaceKey_.Draw();
 	}
 
 	if (state_.isPause) {
