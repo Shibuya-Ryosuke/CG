@@ -57,6 +57,13 @@ public:
 	/// <param name="duration">直進させたい時間(秒)。moveSpeed_×durationの距離だけ直進する</param>
 	void EnterChangingStraight(float duration);
 
+	/// <summary>
+	/// その場で回転し続ける「アイドル回転」モードの有効/無効を切り替える
+	/// (Title/Resultなど、レール移動をさせたくない場面で使う想定)
+	/// </summary>
+	void SetIdleRotate(bool enable) { isIdleRotating_ = enable; }
+	bool IsIdleRotating() const { return isIdleRotating_; }
+
 private:
 	/// <summary>
 	/// 現在区間内の進行度を進め、区間をまたいだらインデックスを送る
@@ -81,4 +88,10 @@ private:
 
 	// 仮想P0を置く距離を「次区間長の何割にするか」
 	static constexpr float kVirtualP0Ratio_ = 1.0f;
+
+	// アイドル回転モード中か(trueの間はレール移動をせず、その場でY軸回転だけ行う)
+	bool isIdleRotating_ = false;
+
+	// アイドル回転の速度(ラジアン/秒)
+	float idleRotateSpeed_ = 0.05f;
 };

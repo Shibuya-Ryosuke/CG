@@ -17,6 +17,7 @@ void SceneManager::Initialize(Scene sceneState) {
     // ゲームカメラ(レール自動移動カメラ)
     camera_ = std::make_unique<RailCameraController>();
     camera_->Initialize();
+    camera_->SetTranslate({ 0.0f,153.0f,-25.0f });
     camera_->SetActive(true);
 
     RouteInitialize();
@@ -42,6 +43,7 @@ void SceneManager::Initialize(Scene sceneState) {
 
     // シーン（enum）
     scene_ = sceneState;
+    camera_->SetIdleRotate(scene_ != Scene::Game); // Game以外はその場回転
 
     // 起動時(Title)はフェードインから始める
     fade_.StartFadeIn(kFadeInDurationFrames_);
@@ -87,6 +89,7 @@ void SceneManager::Update() {
     if (fade_.IsFadeOutJustFinished()) {
         scene_ = pendingScene_;
         fade_.StartFadeIn(kFadeInDurationFrames_);
+        camera_->SetIdleRotate(scene_ != Scene::Game); // 追加: Game以外はその場回転
         if (pendingScene_ == Scene::Game) {
             camera_->SetTranslate({ 0.0f,153.0f,-25.0f });
             GameSound::StopBGM(GameSound::BGM::Title);

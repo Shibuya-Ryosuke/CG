@@ -145,37 +145,53 @@ void RailCameraController::AdvanceProgress() {
 }
 
 void RailCameraController::Update() {
-	AdvanceProgress();
+	if (isIdleRotating_) {
+		// レール移動はせず、その場でY軸回転だけ進める
+		float deltaTime = TimeManager::GetDeltaTime();
+		rotate_.y += idleRotateSpeed_ * deltaTime;
 
-	if (wayPoints_.size() >= 2) {
-		// Catmull-Romは前後2点ずつ、計4点(P0, P1, P2, P3)を使ってP1→P2の間を滑らかに補間する。
-		// 先頭/末尾の区間で「前後の点」が存在しない場合は、無い方をP1(またはP2)自身で
-		// 複製して代用する(これが一番シンプルなCatmull-Romの端点処理)。
-		size_t count = wayPoints_.size();
+		// 1回転(2π)を超えたら即座に0へ戻す(見た目上は巻き戻りが分からないのでOK)
+		constexpr float kTwoPi = 6.28318530718f;
+		if (rotate_.y >= kTwoPi) {
+			rotate_.y = 0.0f;
+		}
 
-		size_t i1 = currentIndex_;
-		size_t i2 = currentIndex_ + 1;
-		size_t i0 = (i1 == 0) ? i1 : i1 - 1;
-		size_t i3 = (i2 + 1 < count) ? i2 + 1 : i2;
-
-		const Vector3& p0 = wayPoints_[i0];
-		const Vector3& p1 = wayPoints_[i1];
-		const Vector3& p2 = wayPoints_[i2];
-		const Vector3& p3 = wayPoints_[i3];
-
-		// 位置: Catmull-Romスプラインで滑らかに補間(以前のLerpからここが変わった部分)
-		translate_ = CatmullRomPosition(p0, p1, p2, p3, segmentT_);
-
-		// 向き: スプラインの接線方向(その瞬間の進行方向)を向かせる。
-		// 区間の切り替わりでも接線が連続的に変化するので、以前のような
-		// 「区間ごとの向きがカクッと切り替わる」現象が起きなくなる。
-		Vector3 direction = Normalize(CatmullRomTangent(p0, p1, p2, p3, segmentT_));
-		currentDirection_ = direction;
-		rotate_.y = atan2f(direction.x, direction.z);
-		float horizontalLength = sqrtf(direction.x * direction.x + direction.z * direction.z);
-		rotate_.x = atan2f(-direction.y, horizontalLength);
-		// ロール(Z軸の傾き)は今回も未使用。
+		// レール移動中の傾き(ピッチ/ロール)を引き継がないよう水平に固定
+		rotate_.x = 0.0f;
 		rotate_.z = 0.0f;
+	} else {
+		AdvanceProgress();
+
+		if (wayPoints_.size() >= 2) {
+			// Catmull-Romは前後2点ずつ、計4点(P0, P1, P2, P3)を使ってP1→P2の間を滑らかに補間する。
+			// 先頭/末尾の区間で「前後の点」が存在しない場合は、無い方をP1(またはP2)自身で
+			// 複製して代用する(これが一番シンプルなCatmull-Romの端点処理)。
+			size_t count = wayPoints_.size();
+
+			size_t i1 = currentIndex_;
+			size_t i2 = currentIndex_ + 1;
+			size_t i0 = (i1 == 0) ? i1 : i1 - 1;
+			size_t i3 = (i2 + 1 < count) ? i2 + 1 : i2;
+
+			const Vector3& p0 = wayPoints_[i0];
+			const Vector3& p1 = wayPoints_[i1];
+			const Vector3& p2 = wayPoints_[i2];
+			const Vector3& p3 = wayPoints_[i3];
+
+			// 位置: Catmull-Romスプラインで滑らかに補間(以前のLerpからここが変わった部分)
+			translate_ = CatmullRomPosition(p0, p1, p2, p3, segmentT_);
+
+			// 向き: スプラインの接線方向(その瞬間の進行方向)を向かせる。
+			// 区間の切り替わりでも接線が連続的に変化するので、以前のような
+			// 「区間ごとの向きがカクッと切り替わる」現象が起きなくなる。
+			Vector3 direction = Normalize(CatmullRomTangent(p0, p1, p2, p3, segmentT_));
+			currentDirection_ = direction;
+			rotate_.y = atan2f(direction.x, direction.z);
+			float horizontalLength = sqrtf(direction.x * direction.x + direction.z * direction.z);
+			rotate_.x = atan2f(-direction.y, horizontalLength);
+			// ロール(Z軸の傾き)は今回も未使用。
+			rotate_.z = 0.0f;
+		}
 	}
 
 
