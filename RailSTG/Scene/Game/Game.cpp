@@ -90,6 +90,11 @@ void Game::Update(const RyoEngine::Camera& camera) {
 	ImGui::End();
 #endif
 
+	// clear時間
+	if (!state_.isPause && (state_.phase != Phase::Ready) && (state_.phase != Phase::End)) {
+		state_.clearTime += TimeManager::GetDeltaTime();
+	}
+
 	// ポーズ
 	if (!state_.isBackToTitle) {
 		if (Input::TriggerKey(DIK_TAB)) {
@@ -222,7 +227,7 @@ void Game::Update(const RyoEngine::Camera& camera) {
 
 	// クリアではなくさせる
 	if (IsPlayerDead()) {
-		state_.isClear_ = false;
+		state_.isClear = false;
 	}
 
 	// 1. まず実体（enemies）側で死んだものを削除する
@@ -961,4 +966,12 @@ void Game::DrawSprite() {
 		pause_.Draw();
 		triangle_.Draw();
 	}
+}
+
+int32_t Game::GetPlayerJustEvasionNumber() const {
+	return state_.player->GetJustEvasionNumber();
+}
+
+float Game::GetPlayerRemainingHP() const {
+	return state_.player->GetRemainingHP();
 }

@@ -90,6 +90,9 @@ public:
 
 	PlayerState GetState()const { return state_; }
 
+	int32_t GetJustEvasionNumber() const { return justEvasionNumber_; }
+	float GetRemainingHP() const { return hp_ / kMaxHp; }
+
 private:
 	void UpdateSprite();
 	void DrawSprite();
@@ -154,6 +157,7 @@ private:
 	float evasionCoolTime_ = kEvasionCoolTime;
 	float evasionDuration_ = kEvasionDuration;
 	float justEvasionDuration_ = kJustEvasionDuration;
+	int32_t justEvasionNumber_ = 0;
 
 	// 無敵（被弾時の想定）
 	bool isInvincible_ = false;

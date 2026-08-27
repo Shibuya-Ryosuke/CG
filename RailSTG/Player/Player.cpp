@@ -490,6 +490,7 @@ void Player::CollectJustEvasion() {
 	evasionDuration_ = kEvasionDuration / 3.0f;
 	justEvasionDuration_ = kJustEvasionDuration / 3.0f;
 	isCollectJustEvasion_ = true;
+	justEvasionNumber_++;
 	GameSound::PlaySE(GameSound::SE::PlayerCollectJustEvasion,0.07f);
 
 	for (int i = 0; i < 40; ++i) {

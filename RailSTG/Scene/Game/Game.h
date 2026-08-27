@@ -90,7 +90,13 @@ public:
 
 	bool IsBackToTitle() const { return state_.isBackToTitle; }
 
-	bool IsClear() const { return state_.isClear_; }
+	bool IsClear() const { return state_.isClear; }
+
+	int32_t GetTotalSpawnEnemies() const { return state_.totalSpawnEnemies; }
+	int32_t GetTotalDestroyEnemies()const { return state_.totalDestroyEnemies; }
+	int32_t GetPlayerJustEvasionNumber()const;
+	float GetPlayerRemainingHP()const;
+	float GetClearTime()const { return state_.clearTime; }
 
 private:
 	// 変化しない設定値(RuntimeStateのデフォルト初期化から参照するためstatic constexprにしている)
@@ -154,7 +160,10 @@ private:
 		bool isBackToTitle = false;
 
 		// クリアかどうか
-		bool isClear_ = true;
+		bool isClear = true;
+
+		// 経過時間(clear時間)
+		float clearTime = 0.0f;
 	};
 
 	RuntimeState state_;

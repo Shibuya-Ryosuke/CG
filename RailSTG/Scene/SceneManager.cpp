@@ -104,6 +104,13 @@ void SceneManager::Update() {
             GameSound::StopBGM(GameSound::BGM::Game);
             if (game_->IsClear()) {
                 GameSound::PlayBGM(GameSound::BGM::Clear);
+                result_->SetInfo(
+                    game_->GetTotalSpawnEnemies(),
+                    game_->GetTotalDestroyEnemies(),
+                    game_->GetPlayerJustEvasionNumber(),
+                    game_->GetPlayerRemainingHP(),
+                    game_->GetClearTime()
+                );
             } else {
                 GameSound::PlayBGM(GameSound::BGM::Failed);
             }
