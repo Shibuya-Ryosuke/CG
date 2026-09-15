@@ -43,6 +43,9 @@
     <Filter Include="Application\Scene">
       <UniqueIdentifier>{d72d0e82-e098-4a50-9cae-8a26e2cda17a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Application\GameResources">
+      <UniqueIdentifier>{98731039-f783-4098-92b3-7ea8324b4530}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Original\Loader\ModelLoader.cpp">
@@ -311,6 +314,12 @@
     </ClInclude>
     <ClInclude Include="Application\Scene\SceneManager.h">
       <Filter>Application\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\GameResources\GameSound.h">
+      <Filter>Application\GameResources</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\GameResources\GameTex.h">
+      <Filter>Application\GameResources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

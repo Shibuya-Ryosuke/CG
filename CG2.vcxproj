@@ -105,6 +105,8 @@
     <ClCompile Include="Original\RyoEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Application\GameResources\GameSound.h" />
+    <ClInclude Include="Application\GameResources\GameTex.h" />
     <ClInclude Include="Application\Scene\Game.h" />
     <ClInclude Include="Application\Scene\SceneManager.h" />
     <ClInclude Include="Application\Scene\Title.h" />
