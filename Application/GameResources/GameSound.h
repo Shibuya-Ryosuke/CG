@@ -12,7 +12,7 @@ public:
 
 	// SEの種類
 	enum class SE : uint32_t {
-		// System
+		System,
 		// Cancel,
 		// Decision, など
 

@@ -4,7 +4,7 @@
 class GameImage {
 public:
 	enum class Image : uint32_t {
-		// BackGround,
+		BackGround,
 		// Particle,  など
 
 		Count

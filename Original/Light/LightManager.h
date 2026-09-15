@@ -1,53 +1,68 @@
 #pragma once
 #include <d3d12.h>
 #include <wrl.h>
+#include <vector>
+#include <cstdint>
 #include "Light.h"
 #include "../Math/Math.h"
 
 namespace RyoEngine {
 
+    // シーン内で同時に扱えるライトの最大数
+    // (Light配列用バッファをこのサイズで固定確保するため。増やす場合はここを変更してリソースを作り直す)
+    constexpr uint32_t kMaxLightCount = 16;
+
     /// <summary>
-    /// シーン全体で共有する指向性ライトを1つ管理するクラス。
-    /// 以前は各Modelがメッシュ単位でライトの定数バッファを個別に持っていたが、
-    /// Blenderのランプのように「1つの光源が全オブジェクトに影響する」形にするため、
-    /// ライトのリソースをここに一本化する。
-    /// 現状はDirectionalLightを1つだけ扱う想定 (複数光源には未対応)。
+    /// シーン全体で共有するライト群（Directional/Point/Spot/Area）とアンビエントライトを管理するクラス。
+    /// 以前は「DirectionalLightを1つだけ」保持していたが、複数灯・複数種別に対応するため
+    /// CPU側はstd::vector<Light>で管理し、Update()でGPU用バッファへ反映する方式に変更した。
+    ///
+    /// GPU側には3つのリソースを渡す想定：
+    ///   1. lightResource_       : Light配列そのもの（StructuredBufferとしてSRVを張る。stride = sizeof(Light)）
+    ///   2. lightCountResource_  : 現在有効なライト数（cbufferとしてCBVを張る）
+    ///   3. ambientResource_     : アンビエントライト（cbufferとしてCBVを張る）
+    /// ※ SRV/CBVのDescriptorHeapへの登録、ルートシグネチャ・PSO側の対応は別途必要（このクラスの範囲外）。
     /// </summary>
     class LightManager {
     public:
-        // インスタンス取得
         static LightManager* GetInstance();
 
-        /// <summary>
-        /// 初期化 (定数バッファの生成とデフォルト値の設定)
-        /// ModelCommon::Initialize()などと同じタイミングで、エンジン起動時に一度だけ呼ぶこと。
-        /// </summary>
         void Initialize();
-
-        /// <summary>
-        /// 終了処理
-        /// </summary>
         void Finalize();
 
-        // --- ゲッター ---
-        const DirectionalLight& GetDirectionalLight() const { return *lightData_; }
-        const Vector4& GetColor() const { return lightData_->color; }
-        const Vector3& GetDirection() const { return lightData_->direction; }
-        float GetIntensity() const { return lightData_->intensity; }
+        /// <summary>
+        /// CPU側(lights_)の内容をGPU用バッファへ反映する。
+        /// AddLight/RemoveLight/GetLight()経由での編集後、描画前に必ず呼ぶこと。
+        /// （Mapしっぱなしのバッファへ直接書き込むだけなので毎フレーム呼んでも軽い）
+        /// </summary>
+        void Update();
 
-        ID3D12Resource* GetResource() const { return lightResource_.Get(); }
-        D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() const { return lightResource_->GetGPUVirtualAddress(); }
+        // --- ライト操作 ---
+        // 追加したライトのインデックスを返す。kMaxLightCountを超えると追加できず-1を返す
+        int AddLight(const Light& light);
+        void RemoveLight(int index);
+        void ClearLights();
 
-        // --- セッター ---
-        void SetDirectionalLight(const DirectionalLight& light) {
-            SetColor(light.color);
-            SetDirection(light.direction);
-            SetIntensity(light.intensity);
+        Light& GetLight(int index) { return lights_[index]; }
+        const Light& GetLight(int index) const { return lights_[index]; }
+        size_t GetLightCount() const { return lights_.size(); }
+
+        // --- アンビエントライト ---
+        void SetAmbientLight(const AmbientLight& ambient) {
+            ambientData_->color = ambient.color;
+            ambientData_->intensity = ambient.intensity;
         }
-        void SetColor(const Vector4& color) { lightData_->color = color; }
-        // 向きは正規化して格納する (Modelが従来持っていたSetDLDirectionと同じ挙動)
-        void SetDirection(const Vector3& direction) { lightData_->direction = Normalize(direction); }
-        void SetIntensity(float intensity) { lightData_->intensity = intensity; }
+        void SetAmbientColor(const Vector4& color) { ambientData_->color = color; }
+        void SetAmbientIntensity(float intensity) { ambientData_->intensity = intensity; }
+        const AmbientLight& GetAmbientLight() const { return *ambientData_; }
+
+        // --- GPUリソース取得（DescriptorHeapへのSRV/CBV登録側で使用） ---
+        ID3D12Resource* GetLightResource() const { return lightResource_.Get(); }
+        ID3D12Resource* GetLightCountResource() const { return lightCountResource_.Get(); }
+        ID3D12Resource* GetAmbientResource() const { return ambientResource_.Get(); }
+
+        D3D12_GPU_VIRTUAL_ADDRESS GetLightCountGPUVirtualAddress() const { return lightCountResource_->GetGPUVirtualAddress(); }
+        D3D12_GPU_VIRTUAL_ADDRESS GetAmbientGPUVirtualAddress() const { return ambientResource_->GetGPUVirtualAddress(); }
 
     private:
         LightManager() = default;
@@ -55,8 +70,19 @@ namespace RyoEngine {
         LightManager(const LightManager&) = delete;
         LightManager& operator=(const LightManager&) = delete;
 
-        // ライト用定数バッファ (Upload Heapに常時Mapしたまま使う)
+        // CPU側のライト一覧（ここを編集してからUpdate()でGPUへ反映する）
+        std::vector<Light> lights_;
+
+        // Light配列用バッファ（kMaxLightCount件ぶん固定確保。StructuredBufferとして扱う想定）
         Microsoft::WRL::ComPtr<ID3D12Resource> lightResource_;
-        DirectionalLight* lightData_ = nullptr;
+        Light* lightMappedData_ = nullptr;
+
+        // 現在の有効ライト数用バッファ（cbuffer）
+        Microsoft::WRL::ComPtr<ID3D12Resource> lightCountResource_;
+        LightCountData* lightCountData_ = nullptr;
+
+        // アンビエントライト用バッファ（cbuffer）
+        Microsoft::WRL::ComPtr<ID3D12Resource> ambientResource_;
+        AmbientLight* ambientData_ = nullptr;
     };
 }
