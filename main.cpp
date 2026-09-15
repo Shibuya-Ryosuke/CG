@@ -4,12 +4,18 @@
 #endif
 
 #include "Application/Scene/SceneManager.h"
+#include "Application/GameResources/GameSound.h"
+#include "Application/GameResources/GameTex.h"
 
 using namespace RyoEngine;
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize();
+
+    // リソース初期化
+    GameImage::Initialize();
+    GameSound::Initialize();
 
     // ゲーム初期化
     SceneManager sceneManager{};
