@@ -11,6 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Application\Scene\Game.cpp" />
+    <ClCompile Include="Application\Scene\SceneManager.cpp" />
+    <ClCompile Include="Application\Scene\Title.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Original\2D\Sprite.cpp" />
     <ClCompile Include="Original\2D\SpriteCommon.cpp" />
@@ -102,6 +105,9 @@
     <ClCompile Include="Original\RyoEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Application\Scene\Game.h" />
+    <ClInclude Include="Application\Scene\SceneManager.h" />
+    <ClInclude Include="Application\Scene\Title.h" />
     <ClInclude Include="Original\2D\Sprite.h" />
     <ClInclude Include="Original\2D\SpriteCommon.h" />
     <ClInclude Include="Original\3D\Model.h" />

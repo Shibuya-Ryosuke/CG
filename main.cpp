@@ -3,6 +3,8 @@
 #include "Original/ImGui/ImGuiAllInclude.h"
 #endif
 
+#include "Application/Scene/SceneManager.h"
+
 using namespace RyoEngine;
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
@@ -10,7 +12,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     RyoEngine::Initialize();
 
     // ゲーム初期化
-    
+    SceneManager sceneManager{};
+    sceneManager.Initialize(Scene::Title);
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
@@ -23,6 +26,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         
         // 更新
+        sceneManager.Update();
 
         // ----------------------
         // ------ 更新終了 -------
@@ -38,6 +42,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         
         // 描画
+        sceneManager.Draw();
 
         // ----------------------
         // ------ 描画終了 -------
@@ -48,6 +53,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     }
     
     // ゲーム終了
+    sceneManager.Finalize();
 
     // エンジン終了
     RyoEngine::Finalize();

@@ -37,6 +37,12 @@
     <Filter Include="Engine\リソース ファイル\HLSL\Primitive">
       <UniqueIdentifier>{d94fb639-85ea-4770-88b6-b96d1234543a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Application">
+      <UniqueIdentifier>{ddccd698-3b21-49f0-b6aa-f5b97efa3e95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\Scene">
+      <UniqueIdentifier>{d72d0e82-e098-4a50-9cae-8a26e2cda17a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Original\Loader\ModelLoader.cpp">
@@ -148,6 +154,15 @@
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Application\Scene\SceneManager.cpp">
+      <Filter>Application\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\Scene\Title.cpp">
+      <Filter>Application\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\Scene\Game.cpp">
+      <Filter>Application\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">
@@ -287,6 +302,15 @@
     </ClInclude>
     <ClInclude Include="Original\PrimitiveRenderer\PrimitiveRenderer.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\Scene\Title.h">
+      <Filter>Application\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\Scene\Game.h">
+      <Filter>Application\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\Scene\SceneManager.h">
+      <Filter>Application\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
