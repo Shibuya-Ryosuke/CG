@@ -21,6 +21,13 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     SceneManager sceneManager{};
     sceneManager.Initialize(Scene::Title);
 
+    std::unique_ptr<Model> ground = Model::Create("resources/test/ground.obj");
+    std::unique_ptr<Model> sky = Model::Create("resources/test/skydome.obj");
+
+    DebugCamera camera{};
+    camera.Initialize();
+    camera.SetAvailable(true);
+
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
@@ -33,6 +40,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         
         // 更新
         sceneManager.Update();
+        camera.Update();
+
+        ground->Update(camera);
+        sky->Update(camera);
 
         // ----------------------
         // ------ 更新終了 -------
@@ -49,7 +60,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         
         // 描画
         sceneManager.Draw();
-
+        ground->Draw();
+        sky->Draw();
         // ----------------------
         // ------ 描画終了 -------
         // ----------------------

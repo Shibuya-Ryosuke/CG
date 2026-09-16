@@ -67,6 +67,7 @@ namespace RyoEngine {
 
         dxCommon_->CreateGameRenderTarget();
 
+        // ライトマネージャー
         lightManager_ = LightManager::GetInstance();
         lightManager_->Initialize();
 
@@ -196,6 +197,9 @@ namespace RyoEngine {
             }
         }
         ImGui::End();
+
+        // ライト
+        LightManager::GetInstance()->DrawImGui();
 
         // fps
         ImGui::Begin("Performance");

@@ -47,7 +47,6 @@ namespace RyoEngine {
     SpriteCommon* GetSpriteCommon();
     //ReflectCommon* GetReflectCommon();
     Font* GetFontOutputter();
-
     
     void Initialize();
     void Finalize();

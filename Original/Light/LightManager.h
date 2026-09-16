@@ -92,6 +92,13 @@ namespace RyoEngine {
         void SetDirection(const Vector3& direction) { lights_[0].direction = Normalize(direction); Update(); }
         void SetIntensity(float intensity) { lights_[0].intensity = intensity; Update(); }
 
+        /// <summary>
+        /// ライト・アンビエントのパラメータをImGuiで操作するデバッグUI。
+        /// ImGui::NewFrame()〜Render()の間で毎フレーム呼ぶこと。内部で編集後にUpdate()も呼ぶため、
+        /// 呼び出し側でUpdate()を別途呼ぶ必要はない。
+        /// </summary>
+        void DrawImGui();
+
     private:
         LightManager() = default;
         ~LightManager() = default;
