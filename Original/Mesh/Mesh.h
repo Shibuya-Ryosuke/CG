@@ -3,8 +3,6 @@
 #include <wrl.h>
 #include <vector>
 #include <string>
-#include "../Light/Light.h"
-#include "../Light/LightManager.h"
 #include "../Math/Math.h"
 
 namespace RyoEngine {
@@ -22,15 +20,15 @@ namespace RyoEngine {
 		/// <param name="position">初期位置 (ローカル座標)</param>
 		/// <param name="size">横幅、縦幅</param>
 		/// <param name="color">色</param>
-		void CreateTriangle(const Vector3& position, const Vector2& size, const Vector4& color = {1.0f,1.0f,1.0f,1.0f});
-		
+		void CreateTriangle(const Vector3& position, const Vector2& size, const Vector4& color = { 1.0f,1.0f,1.0f,1.0f });
+
 		/// <summary>
 		/// 球体の初期化
 		/// </summary>
 		/// <param name="position">初期位置 (ローカル座標)</param>
 		/// <param name="subdivision">分割数</param>
 		/// <param name="color">色</param>
-		void CreateSphere(const Vector3& position, uint32_t subdivision, const Vector4& color = {1.0f,1.0f,1.0f,1.0f});
+		void CreateSphere(const Vector3& position, uint32_t subdivision, const Vector4& color = { 1.0f,1.0f,1.0f,1.0f });
 
 		/// <summary>
 		/// 終了処理
@@ -52,7 +50,7 @@ namespace RyoEngine {
 
 
 		/// ゲッター
-		
+
 		/// <summary>
 		/// トランスフォームの取得
 		/// </summary>
@@ -107,28 +105,9 @@ namespace RyoEngine {
 			};
 		}
 
-		/// <summary>
-		/// 指向性ライトの取得 (シーン共有。LightManagerへの転送)
-		/// </summary>
-		/// <returns>指向性ライト構造体</returns>
-		const DirectionalLight& GetDirectionalLight() const { return LightManager::GetInstance()->GetDirectionalLight(); }
-		/// <summary>
-		/// 指向性ライトの色取得 (シーン共有。LightManagerへの転送)
-		/// </summary>
-		/// <returns>色</returns>
-		const Vector4& GetDLColor() const { return LightManager::GetInstance()->GetColor(); }
-		/// <summary>
-		/// 指向性ライトの向き取得 (シーン共有。LightManagerへの転送)
-		/// </summary>
-		/// <returns>向き</returns>
-		const Vector3& GetDLDirection() const { return LightManager::GetInstance()->GetDirection(); }
-		/// <summary>
-		/// 指向性ライトの光の強度取得 (シーン共有。LightManagerへの転送)
-		/// </summary>
-		/// <returns>光の強度</returns>
-		float GetDLIntensity() const { return LightManager::GetInstance()->GetIntensity(); }
-
-		
+		// NOTE: 以前はここに「指向性ライトの取得(GetDirectionalLight/GetDLColor/GetDLDirection/GetDLIntensity)」
+		//       があったが、ライトはMesh固有の情報ではなくシーン共有の情報であるため削除した。
+		//       ライトの状態を知りたい場合は LightManager::GetInstance() に直接アクセスすること。
 
 
 		/// セッター
@@ -194,27 +173,11 @@ namespace RyoEngine {
 		/// </summary>
 		/// <param name="filepath">ファイルパス</param>
 		void SetTex(const std::string& filepath);
-		
-		/// <summary>
-		/// 指向性ライトの指定 (シーン共有。LightManagerへの転送。全オブジェクトに反映される)
-		/// </summary>
-		/// <param name="light">指向性ライト構造体</param>
-		void SetDirectionalLight(const DirectionalLight& light) { LightManager::GetInstance()->SetDirectionalLight(light); }
-		/// <summary>
-		/// 指向性ライトの色指定 (シーン共有。LightManagerへの転送。全オブジェクトに反映される)
-		/// </summary>
-		/// <param name="color">色</param>
-		void SetDLColor(const Vector4& color) { LightManager::GetInstance()->SetColor(color); }
-		/// <summary>
-		/// 指向性ライトの向き指定 (シーン共有。LightManagerへの転送。全オブジェクトに反映される。内部で正規化が入ります)
-		/// </summary>
-		/// <param name="direction">向き</param>
-		void SetDLDirection(const Vector3& direction) { LightManager::GetInstance()->SetDirection(direction); }
-		/// <summary>
-		/// 指向性ライトの光の強度指定 (シーン共有。LightManagerへの転送。全オブジェクトに反映される)
-		/// </summary>
-		/// <param name="intensity">光の強度</param>
-		void SetDLIntensity(float intensity) { LightManager::GetInstance()->SetIntensity(intensity); }
+
+		// NOTE: 以前はここに「指向性ライトの指定(SetDirectionalLight/SetDLColor/SetDLDirection/SetDLIntensity)」
+		//       があったが、これは実態が「シーン全体の共有ライトを書き換える」グローバルな操作であり、
+		//       Mesh個別のセッターとして生えているのは実態と見た目が食い違っていたため削除した。
+		//       ライトを変更したい場合は LightManager::GetInstance() に直接アクセスすること。
 
 	private:
 		// 各種リソース生成
@@ -244,11 +207,11 @@ namespace RyoEngine {
 
 		// NOTE: ライト用のリソースはここでは持たない。
 		//       シーン全体で1つに共有するため LightManager (Singleton) が保持している。
-		//       GetDirectionalLight()等はLightManagerへの転送になっている。
+		//       ライトの読み書きはLightManagerへ直接アクセスすること(Mesh経由の転送APIは廃止した)。
 
 		// マッピング用ポインタ
 		Material* materialData_ = nullptr;   // Geometry.h の Material 構造体
-		
+
 		TransformationMatrix* wvpData_ = nullptr;
 
 		UINT indexCount_ = 0;

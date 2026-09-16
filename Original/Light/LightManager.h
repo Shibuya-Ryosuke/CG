@@ -56,13 +56,41 @@ namespace RyoEngine {
         void SetAmbientIntensity(float intensity) { ambientData_->intensity = intensity; }
         const AmbientLight& GetAmbientLight() const { return *ambientData_; }
 
-        // --- GPUリソース取得（DescriptorHeapへのSRV/CBV登録側で使用） ---
+        // --- GPUリソース取得（Root Descriptorとして直接バインドする想定。DescriptorHeap登録は不要） ---
         ID3D12Resource* GetLightResource() const { return lightResource_.Get(); }
         ID3D12Resource* GetLightCountResource() const { return lightCountResource_.Get(); }
         ID3D12Resource* GetAmbientResource() const { return ambientResource_.Get(); }
 
+        // Light配列(StructuredBuffer)本体。SetGraphicsRootShaderResourceView()でRoot Descriptorとして直接バインドする
+        D3D12_GPU_VIRTUAL_ADDRESS GetLightGPUVirtualAddress() const { return lightResource_->GetGPUVirtualAddress(); }
         D3D12_GPU_VIRTUAL_ADDRESS GetLightCountGPUVirtualAddress() const { return lightCountResource_->GetGPUVirtualAddress(); }
         D3D12_GPU_VIRTUAL_ADDRESS GetAmbientGPUVirtualAddress() const { return ambientResource_->GetGPUVirtualAddress(); }
+
+        // ================================================================
+        // 後方互換API（旧：シーンにDirectionalLightが1つだけという設計の名残）
+        // 内部的には「lights_[0]」を「シーンの代表的な指向性ライト」として読み書きする。
+        // Initialize()で必ず1つ目のライトを登録しているため lights_[0] は存在する前提。
+        // ClearLights()で全消去した状態でこれらを呼ぶと壊れるので、複数灯を扱うようになったら
+        // Model/MeshからはこちらではなくAddLight/GetLight/RemoveLightを直接使うよう移行すること。
+        // ================================================================
+        DirectionalLight GetDirectionalLight() const {
+            const Light& l = lights_[0];
+            return DirectionalLight{ l.color, l.direction, l.intensity };
+        }
+        const Vector4& GetColor() const { return lights_[0].color; }
+        const Vector3& GetDirection() const { return lights_[0].direction; }
+        float GetIntensity() const { return lights_[0].intensity; }
+
+        void SetDirectionalLight(const DirectionalLight& light) {
+            lights_[0].type = LightType::Directional;
+            lights_[0].color = light.color;
+            lights_[0].direction = Normalize(light.direction);
+            lights_[0].intensity = light.intensity;
+            Update();
+        }
+        void SetColor(const Vector4& color) { lights_[0].color = color; Update(); }
+        void SetDirection(const Vector3& direction) { lights_[0].direction = Normalize(direction); Update(); }
+        void SetIntensity(float intensity) { lights_[0].intensity = intensity; Update(); }
 
     private:
         LightManager() = default;

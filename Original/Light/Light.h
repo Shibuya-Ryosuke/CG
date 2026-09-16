@@ -39,4 +39,13 @@ namespace RyoEngine {
 		Vector4 color;     // rgb=色
 		float   intensity; // 強度
 	};
+
+	// 後方互換用：以前の「シーンにDirectionalLightが1つだけ」設計の構造体。
+	// Model/MeshのGetDirectionalLight()等、旧API向けの受け渡しにのみ使用する。
+	// 新規コードでは使わず、Lightを直接使うこと。
+	struct DirectionalLight {
+		Vector4 color;
+		Vector3 direction;
+		float   intensity;
+	};
 }

@@ -94,7 +94,7 @@ namespace RyoEngine {
 		descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;  // Offsetを自動計算
 
 		// RootParameterを作成
-		D3D12_ROOT_PARAMETER rootParameters[4] = {};
+		D3D12_ROOT_PARAMETER rootParameters[6] = {};
 		// Material
 		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;  // CBVを使う
 		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;  // PixelShaderで使う
@@ -108,10 +108,22 @@ namespace RyoEngine {
 		rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 		rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;  // Tableの中身の配列を指定
 		rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);  // Tableで利用する数
-		// DirectionalLight
-		rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+
+		// Light配列 (StructuredBuffer。Root DescriptorのSRVとして直接バインドする。DescriptorHeap登録は不要)
+		// NOTE: Textureがt0を使っているため、こちらはt1にする
+		rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
 		rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-		rootParameters[3].Descriptor.ShaderRegister = 1;
+		rootParameters[3].Descriptor.ShaderRegister = 1;  // t1
+
+		// 有効ライト数 (cbuffer)
+		rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		rootParameters[4].Descriptor.ShaderRegister = 1;  // b1
+
+		// アンビエントライト (cbuffer)
+		rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		rootParameters[5].Descriptor.ShaderRegister = 2;  // b2
 
 		descriptionRootSignature.pParameters = rootParameters;  // ルートパラメータ配列へのポインタ
 		descriptionRootSignature.NumParameters = _countof(rootParameters);  // 配列の長さ

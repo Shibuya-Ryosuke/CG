@@ -4,6 +4,8 @@
 #include "../Camera/DebugCamera.h"
 #include "../Graphics/TextureManager.h"
 #include "../3D/ModelCommon.h"
+#include "../Light/Light.h"
+#include "../Light/LightManager.h"
 
 namespace RyoEngine {
 
@@ -153,8 +155,13 @@ namespace RyoEngine {
         commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
         commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
 
-        // ライトの定数バッファをセット (シーン共有のLightManagerが持つものを全オブジェクトで参照する)
-        commandList->SetGraphicsRootConstantBufferView(3, LightManager::GetInstance()->GetGPUVirtualAddress());
+        // ライト関連のバッファをセット (シーン共有のLightManagerが持つものを全オブジェクトで参照する)
+        // NOTE: 複数灯対応により、ライトは3リソースに分かれた。ルートシグネチャ側の
+        //       root param 3をCBVからSRVに変更し、4・5番を新規追加する必要がある。
+        auto lightManager = LightManager::GetInstance();
+        commandList->SetGraphicsRootShaderResourceView(3, lightManager->GetLightGPUVirtualAddress());  // Light配列 (Root Descriptor SRV)
+        commandList->SetGraphicsRootConstantBufferView(4, lightManager->GetLightCountGPUVirtualAddress()); // 有効ライト数
+        commandList->SetGraphicsRootConstantBufferView(5, lightManager->GetAmbientGPUVirtualAddress());    // アンビエントライト
         // 描画実行
         commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
     }
@@ -180,7 +187,7 @@ namespace RyoEngine {
     void Mesh::Draw() {
         ModelCommon::GetInstance()->SetDrawCommands([this]() {
             InternalDraw();
-        });
+            });
     }
 
     void Mesh::Finalize() {

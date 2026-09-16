@@ -4,6 +4,8 @@
 //#include "../Reflect/ReflectCommon.h"
 //#include "../Reflect/ReflectModel.h"
 #include "../Edit/AnimEdit.h"
+#include "../Light/Light.h"
+#include "../Light/LightManager.h"
 
 namespace RyoEngine {
 
@@ -286,7 +288,16 @@ namespace RyoEngine {
     void Model::InternalDraw(ModelCommon::DrawType drawType, D3D12_GPU_VIRTUAL_ADDRESS externalWVP, uint32_t externalTextureHandle) {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
         auto lightManager = LightManager::GetInstance(); // ループの外で取得
-        D3D12_GPU_VIRTUAL_ADDRESS lightGVA = lightManager->GetGPUVirtualAddress();
+        // NOTE: 複数灯対応により、ライト関連は3リソースに分かれた。
+        //   ・lightArrayGVA : Light配列本体 (StructuredBuffer。Root DescriptorのSRVとして直接バインド)
+        //   ・lightCountGVA : 現在の有効ライト数 (cbuffer)
+        //   ・ambientGVA    : アンビエントライト (cbuffer)
+        // ルートシグネチャ側で root param 3をCBVからSRVに変更し、4・5番を新規追加する必要がある。
+        // (現状のRootSignature定義ファイルが手元に無いため、番号はMesh.cppと合わせて仮に3/4/5としている。
+        //  実際のRootSignature生成コードと食い違っていないか要確認)
+        D3D12_GPU_VIRTUAL_ADDRESS lightArrayGVA = lightManager->GetLightGPUVirtualAddress();
+        D3D12_GPU_VIRTUAL_ADDRESS lightCountGVA = lightManager->GetLightCountGPUVirtualAddress();
+        D3D12_GPU_VIRTUAL_ADDRESS ambientGVA = lightManager->GetAmbientGPUVirtualAddress();
 
         // externalWVPが指定されていれば(パーティクル等の外部インスタンスバッファ)そちらを優先し、
         // 指定が無ければ従来通りモデル自身が持つ1個のwvpResource_を使う
@@ -321,7 +332,9 @@ namespace RyoEngine {
             commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
             commandList->SetGraphicsRootConstantBufferView(0, mesh.materialResource->GetGPUVirtualAddress());
             commandList->SetGraphicsRootConstantBufferView(1, wvpGVA);
-            commandList->SetGraphicsRootConstantBufferView(3, lightGVA);
+            commandList->SetGraphicsRootShaderResourceView(3, lightArrayGVA);  // Light配列 (Root Descriptor SRV)
+            commandList->SetGraphicsRootConstantBufferView(4, lightCountGVA); // 有効ライト数
+            commandList->SetGraphicsRootConstantBufferView(5, ambientGVA);    // アンビエントライト
 
             commandList->DrawInstanced(mesh.vertexCount, 1, 0, 0);
         }
@@ -335,8 +348,8 @@ namespace RyoEngine {
 
     void Model::Update(const Camera& camera) {
         // ワールド行列の作成
-        worldMatrix_ = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
-        
+        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+
         // WVP行列の計算 (World * ViewProjection)
         Matrix4x4 wvpMatrix = worldMatrix_ * camera.GetViewProjectionMatrix();
 
@@ -345,9 +358,9 @@ namespace RyoEngine {
     }
 
     void Model::Draw(ModelCommon::DrawType drawType) {
-        ModelCommon::GetInstance()->SetDrawCommands([ =, this]() {
+        ModelCommon::GetInstance()->SetDrawCommands([=, this]() {
             InternalDraw(drawType);
-        });
+            });
     }
 
     std::unique_ptr<Model> Model::Create(const std::string& filePath, bool registAnimEdit, const std::string& name) {
