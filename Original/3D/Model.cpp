@@ -314,6 +314,13 @@ namespace RyoEngine {
                     : ModelCommon::DrawType::NO_UV;
             }
 
+            // シャドウパス中は、UV有無やREFLECTのロジックを無視して深度専用PSOを強制する。
+            // (drawTypeはDraw()呼び出し時点でラムダに焼き付けられた古い値のため、
+            //  「今このフレームで実際にシャドウパス中かどうか」はModelCommon側の状態を見て判定する)
+            if (ModelCommon::GetInstance()->GetCurrentDrawType() == ModelCommon::DrawType::SHADOW) {
+                actualDrawType = ModelCommon::DrawType::SHADOW;
+            }
+
             ID3D12PipelineState* currentPSO = ModelCommon::GetInstance()->GetPipelineState(actualDrawType);
             if (currentPSO != lastPSO) {
                 commandList->SetPipelineState(currentPSO);

@@ -23,7 +23,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     std::unique_ptr<Model> ground = Model::Create("resources/test/ground.obj");
     std::unique_ptr<Model> sky = Model::Create("resources/test/skydome.obj");
-
+    std::unique_ptr<Model> flower = Model::Create("resources/test/TR.obj");
+    std::unique_ptr<Model> bunny = Model::Create("resources/test/bunny.obj");
+    flower->SetTranslateY(1.0f);
+    bunny->SetTranslate({ 2.0f,1.5f,1.0f });
     DebugCamera camera{};
     camera.Initialize();
     camera.SetAvailable(true);
@@ -44,7 +47,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
         ground->Update(camera);
         sky->Update(camera);
-
+        flower->Update(camera);
+        bunny->Update(camera);
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------
@@ -62,6 +66,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         sceneManager.Draw();
         ground->Draw();
         sky->Draw();
+        flower->Draw();
+        bunny->Draw();
         // ----------------------
         // ------ 描画終了 -------
         // ----------------------

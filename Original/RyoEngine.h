@@ -24,6 +24,7 @@
 #include "ImGui/ImGuiManager.h"
 #include "Edit/AnimEdit.h"
 #include "Light/LightManager.h"
+#include "Shadow/ShadowMap.h"
 #include "PrimitiveRenderer/PrimitiveRenderer.h"
 #include <cstdint>
 #include <string>

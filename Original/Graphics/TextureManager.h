@@ -68,7 +68,10 @@ namespace RyoEngine {
 		uint32_t GetWhiteTex() { return whiteTex; }
 
 		// 外部で作ったリソースを登録してインデックスを返す
-		uint32_t RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
+		// srvFormatOverride省略時(DXGI_FORMAT_UNKNOWN)は今まで通りresource自体のFormatをSRVに使う。
+		// DXGI_FORMAT_R32_TYPELESS等、TYPELESSなリソース(シャドウマップの深度テクスチャ等)を登録する場合は、
+		// SRVとして解釈させたい具体的なフォーマット(例：DXGI_FORMAT_R32_FLOAT)を明示的に渡すこと。
+		uint32_t RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT srvFormatOverride = DXGI_FORMAT_UNKNOWN);
 
 	private:
 		TextureManager() = default;

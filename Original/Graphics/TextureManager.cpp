@@ -91,7 +91,7 @@ namespace RyoEngine {
     }
 
 
-    uint32_t TextureManager::RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource) {
+    uint32_t TextureManager::RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT srvFormatOverride) {
         // 現在のテクスチャ配列の末尾をインデックスとする
         uint32_t index = static_cast<uint32_t>(textures_.size());
         assert(index < kMaxTextures);
@@ -101,8 +101,12 @@ namespace RyoEngine {
         textures_.push_back(texture);
 
         // シェーダーリソースビュー (SRV) の設定
+        // NOTE: srvFormatOverrideが指定されていればそちらを優先する。
+        //       DXGI_FORMAT_R32_TYPELESS等のTYPELESSリソース(シャドウマップの深度テクスチャ等)は
+        //       resource自体のFormatをそのままSRVに渡すと失敗するため、呼び出し側で
+        //       具体的な型(例：DXGI_FORMAT_R32_FLOAT)を明示的に渡す必要がある。
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-        srvDesc.Format = resource->GetDesc().Format;
+        srvDesc.Format = (srvFormatOverride != DXGI_FORMAT_UNKNOWN) ? srvFormatOverride : resource->GetDesc().Format;
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         srvDesc.Texture2D.MipLevels = 1;

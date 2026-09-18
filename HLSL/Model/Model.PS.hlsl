@@ -48,6 +48,16 @@ cbuffer AmbientLightBuffer : register(b2)
     float gAmbientIntensity;
 };
 
+// ライトのView-Projection行列 (シャドウマップ参照用。C++側のroot param 6、Vertex/Pixel共通)
+cbuffer LightViewProjBuffer : register(b3)
+{
+    float4x4 gLightViewProj;
+};
+
+// シャドウマップ本体と、PCF用の比較サンプラー
+Texture2D<float> gShadowMap : register(t2);
+SamplerComparisonState gShadowSampler : register(s1);
+
 struct PixelShaderOutput 
 {
     float4 color : SV_TARGET0;
@@ -68,6 +78,32 @@ float ComputeCosTerm(float3 normal, float3 dirToLight, int shadingMode)
         return pow(NdotL * 0.5f + 0.5f, 2.0f);
     }
     return 1.0f;
+}
+
+// ワールド座標から、シャドウマップを使って「影の量」を計算する (1:影なし 〜 0:完全に影)
+// NOTE: 現状はDirectionalLight(Light 0)専用。Point/Spotの影は別方式が必要なため未対応。
+float CalculateShadowFactor(float3 worldPosition)
+{
+    float4 lightClipPos = mul(float4(worldPosition, 1.0f), gLightViewProj);
+    // 正射影なのでw除算は本来不要だが、念のため行っておく
+    float3 lightNDC = lightClipPos.xyz / lightClipPos.w;
+
+    // NDC(-1〜1、Yは上向き)からテクスチャUV(0〜1、Vは下向き)へ変換
+    float2 shadowUV;
+    shadowUV.x = lightNDC.x * 0.5f + 0.5f;
+    shadowUV.y = -lightNDC.y * 0.5f + 0.5f;
+    float currentDepth = lightNDC.z;
+
+    // シャドウマップの範囲外(影を落とす対象範囲の外)は、影なし扱いにする
+    if (shadowUV.x < 0.0f || shadowUV.x > 1.0f || shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
+        currentDepth < 0.0f || currentDepth > 1.0f)
+    {
+        return 1.0f;
+    }
+
+    // SampleCmpLevelZeroでハードウェアPCF(2x2の平均)を使う。
+    // ComparisonFunc=LESS_EQUALなので、currentDepth <= シャドウマップの深度 なら1(影なし)に近づく。
+    return gShadowMap.SampleCmpLevelZero(gShadowSampler, shadowUV, currentDepth);
 }
 
 PixelShaderOutput main(VertexShaderOutput input) 
@@ -93,7 +129,8 @@ PixelShaderOutput main(VertexShaderOutput input)
                 // ピクセルから見た「ライトへの向き」はその逆
                 float3 dirToLight = -light.direction;
                 float cosTerm = ComputeCosTerm(normal, dirToLight, gMaterial.shadingMode);
-                lightSum += light.color.rgb * cosTerm * light.intensity;
+                float shadow = CalculateShadowFactor(input.worldPosition);
+                lightSum += light.color.rgb * cosTerm * light.intensity * shadow;
             }
             else
             {

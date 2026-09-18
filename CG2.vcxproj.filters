@@ -28,9 +28,6 @@
     <Filter Include="Engine\リソース ファイル\HLSL\Sprite">
       <UniqueIdentifier>{49bb948b-afed-4b17-b0cd-3ec18adff378}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\リソース ファイル\HLSL\Reflect">
-      <UniqueIdentifier>{7c1b1358-122b-4f68-adc1-9be6b0a36c4a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\リソース ファイル\HLSL\Model">
       <UniqueIdentifier>{11f21ad4-adfd-4df1-b2a0-b64fbfdcd0dc}</UniqueIdentifier>
     </Filter>
@@ -45,6 +42,9 @@
     </Filter>
     <Filter Include="Application\GameResources">
       <UniqueIdentifier>{98731039-f783-4098-92b3-7ea8324b4530}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\リソース ファイル\HLSL\Shadow">
+      <UniqueIdentifier>{6acd64d8-ed65-43c5-85fa-3473f6da641b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -165,6 +165,9 @@
     </ClCompile>
     <ClCompile Include="Application\Scene\Game.cpp">
       <Filter>Application\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Shadow\ShadowMap.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -321,6 +324,9 @@
     <ClInclude Include="Application\GameResources\GameTex.h">
       <Filter>Application\GameResources</Filter>
     </ClInclude>
+    <ClInclude Include="Original\Shadow\ShadowMap.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Sprite\Sprite.hlsli">
@@ -360,6 +366,9 @@
     </FxCompile>
     <FxCompile Include="HLSL\Primitive\Primitive_VS.hlsl">
       <Filter>Engine\リソース ファイル\HLSL\Primitive</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Shadow\ShadowMap.VS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\Shadow</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

@@ -28,6 +28,7 @@ namespace RyoEngine {
         ShaderCompiler* shaderCompiler_ = nullptr;
         TextureManager* textureManager_ = nullptr;
         LightManager* lightManager_ = nullptr;
+       
         ModelCommon* modelCommon_ = nullptr;
         SpriteCommon* spriteCommon_ = nullptr;
         //ReflectCommon* reflectCommon_ = nullptr;
@@ -70,6 +71,9 @@ namespace RyoEngine {
         // ライトマネージャー
         lightManager_ = LightManager::GetInstance();
         lightManager_->Initialize();
+
+        // シャドウ
+        ShadowMap::Initialize();
 
         // 各種描画共通部の初期化
         PrimitiveRenderer::Initialize();
@@ -120,6 +124,7 @@ namespace RyoEngine {
         spriteCommon_->Finalize();
         modelCommon_->Finalize();
         PrimitiveRenderer::Finalize();
+        ShadowMap::Finalize();
         lightManager_->Finalize();
         textureManager_->Finalize();
         shaderCompiler_->Finalize();
@@ -253,6 +258,11 @@ namespace RyoEngine {
 
     void EndFrame() {
         PrimitiveRenderer::Flush();
+
+        // シャドウパス：ライト視点で深度だけ先に描画する
+        ShadowMap::BeginShadowPass();
+        modelCommon_->DrawShadow();
+        ShadowMap::GetInstance()->EndShadowPass();
 
         // 3d描画
         Begin3dDraw();

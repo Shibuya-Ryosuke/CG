@@ -25,6 +25,9 @@ struct Light
 };
 
 static const uint LIGHT_TYPE_DIRECTIONAL = 0;
+static const uint LIGHT_TYPE_POINT       = 1;
+static const uint LIGHT_TYPE_SPOT        = 2;
+static const uint LIGHT_TYPE_AREA        = 3;
 
 ConstantBuffer<Material> gMaterial : register(b0);
 
@@ -44,10 +47,60 @@ cbuffer AmbientLightBuffer : register(b2)
     float gAmbientIntensity;
 };
 
+// ライトのView-Projection行列 (シャドウマップ参照用。C++側のroot param 6、Vertex/Pixel共通)
+cbuffer LightViewProjBuffer : register(b3)
+{
+    float4x4 gLightViewProj;
+};
+
+// シャドウマップ本体と、PCF用の比較サンプラー
+// NOTE: このシェーダーはテクスチャ(t0)を使わないが、シャドウマップのレジスタ番号(t2)は
+//       Model_PS.hlsl側と揃えておく必要がある(RootSignature共有のため)
+Texture2D<float> gShadowMap : register(t2);
+SamplerComparisonState gShadowSampler : register(s1);
+
 struct PixelShaderOutput
 {
     float4 color : SV_TARGET0;
 };
+
+float ComputeCosTerm(float3 normal, float3 dirToLight, int shadingMode)
+{
+    if (shadingMode == 1)
+    {
+        // Lambert
+        return saturate(dot(normal, dirToLight));
+    }
+    else if (shadingMode == 2)
+    {
+        // Half Lambert
+        float NdotL = dot(normal, dirToLight);
+        return pow(NdotL * 0.5f + 0.5f, 2.0f);
+    }
+    return 1.0f;
+}
+
+// ワールド座標から、シャドウマップを使って「影の量」を計算する (1:影なし 〜 0:完全に影)
+// NOTE: 現状はDirectionalLight(Light 0)専用。Point/Spotの影は別方式が必要なため未対応。
+// (Model_PS.hlslと全く同じ定義)
+float CalculateShadowFactor(float3 worldPosition)
+{
+    float4 lightClipPos = mul(float4(worldPosition, 1.0f), gLightViewProj);
+    float3 lightNDC = lightClipPos.xyz / lightClipPos.w;
+
+    float2 shadowUV;
+    shadowUV.x = lightNDC.x * 0.5f + 0.5f;
+    shadowUV.y = -lightNDC.y * 0.5f + 0.5f;
+    float currentDepth = lightNDC.z;
+
+    if (shadowUV.x < 0.0f || shadowUV.x > 1.0f || shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
+        currentDepth < 0.0f || currentDepth > 1.0f)
+    {
+        return 1.0f;
+    }
+
+    return gShadowMap.SampleCmpLevelZero(gShadowSampler, shadowUV, currentDepth);
+}
 
 PixelShaderOutput main(VertexShaderOutput input)
 {
@@ -62,25 +115,34 @@ PixelShaderOutput main(VertexShaderOutput input)
         for (uint i = 0; i < gLightCount; ++i)
         {
             Light light = gLights[i];
-            if (light.type != LIGHT_TYPE_DIRECTIONAL)
-            {
-                continue;
-            }
 
-            float cos = 0.0f;
-            if (gMaterial.shadingMode == 1)
+            if (light.type == LIGHT_TYPE_DIRECTIONAL)
             {
-                // Lambert
-                cos = saturate(dot(normal, -light.direction));
+                float3 dirToLight = -light.direction;
+                float cosTerm = ComputeCosTerm(normal, dirToLight, gMaterial.shadingMode);
+                float shadow = CalculateShadowFactor(input.worldPosition);
+                lightSum += light.color.rgb * cosTerm * light.intensity * shadow;
             }
-            else if (gMaterial.shadingMode == 2)
+            else
             {
-                // Half Lambert
-                float NdotL = dot(normal, -light.direction);
-                cos = pow(NdotL * 0.5f + 0.5f, 2.0f);
-            }
+                // NOTE: Areaは暫定的にPointと全く同じ計算にしている(Model_PS.hlsl側と同様)
+                float3 toLightVec = light.position - input.worldPosition;
+                float distance = length(toLightVec);
+                float3 dirToLight = toLightVec / max(distance, 0.0001f);
 
-            lightSum += light.color.rgb * cos * light.intensity;
+                float attenuation = saturate(1.0f - (distance / max(light.range, 0.0001f)));
+                attenuation *= attenuation;
+
+                if (light.type == LIGHT_TYPE_SPOT)
+                {
+                    float cosAngle = dot(-dirToLight, normalize(light.direction));
+                    float spotAttenuation = saturate((cosAngle - light.spotAngle) / max(light.spotFalloff, 0.0001f));
+                    attenuation *= spotAttenuation;
+                }
+
+                float cosTerm = ComputeCosTerm(normal, dirToLight, gMaterial.shadingMode);
+                lightSum += light.color.rgb * cosTerm * light.intensity * attenuation;
+            }
         }
 
         lightSum += gAmbientColor.rgb * gAmbientIntensity;
