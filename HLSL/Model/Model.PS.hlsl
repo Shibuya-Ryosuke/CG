@@ -146,6 +146,9 @@ PixelShaderOutput main(VertexShaderOutput input)
                 float attenuation = saturate(1.0f - (distance / max(light.range, 0.0001f)));
                 attenuation *= attenuation;
 
+                // 逆二乗則（ライトの中心を白飛びさせる）
+                //float attenuation = 1.0f / max(distance * distance, 0.01f); // 0除算だけ防ぐ
+                
                 if (light.type == LIGHT_TYPE_SPOT)
                 {
                     // スポットのコーン減衰：light.directionは「スポット自体が照らす向き」
