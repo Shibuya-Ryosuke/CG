@@ -46,6 +46,9 @@
     <Filter Include="Engine\リソース ファイル\HLSL\Shadow">
       <UniqueIdentifier>{6acd64d8-ed65-43c5-85fa-3473f6da641b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\リソース ファイル\HLSL\PostProcess">
+      <UniqueIdentifier>{80ad0662-de58-47ea-91c2-01d8bbdaac8d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Original\Loader\ModelLoader.cpp">
@@ -167,6 +170,9 @@
       <Filter>Application\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Original\Shadow\ShadowMap.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\PostProcess\PostProcess.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -327,6 +333,9 @@
     <ClInclude Include="Original\Shadow\ShadowMap.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Original\PostProcess\PostProcess.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Sprite\Sprite.hlsli">
@@ -369,6 +378,12 @@
     </FxCompile>
     <FxCompile Include="HLSL\Shadow\ShadowMap.VS.hlsl">
       <Filter>Engine\リソース ファイル\HLSL\Shadow</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Composite\Composite.PS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Composite\Composite.VS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

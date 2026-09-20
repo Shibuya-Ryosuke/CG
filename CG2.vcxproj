@@ -101,6 +101,7 @@
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
     <ClCompile Include="Original\Math\Collision.cpp" />
     <ClCompile Include="Original\Mesh\Mesh.cpp" />
+    <ClCompile Include="Original\PostProcess\PostProcess.cpp" />
     <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />
     <ClCompile Include="Original\Shadow\ShadowMap.cpp" />
@@ -155,6 +156,7 @@
     <ClInclude Include="Original\Math\Transform.h" />
     <ClInclude Include="Original\Math\Vector.h" />
     <ClInclude Include="Original\Mesh\Mesh.h" />
+    <ClInclude Include="Original\PostProcess\PostProcess.h" />
     <ClInclude Include="Original\PrimitiveRenderer\PrimitiveRenderer.h" />
     <ClInclude Include="Original\RyoEngine.h" />
     <ClInclude Include="Original\Shadow\ShadowMap.h" />
@@ -178,6 +180,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="HLSL\Composite\Composite.PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="HLSL\Composite\Composite.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="HLSL\Model\Model.PS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

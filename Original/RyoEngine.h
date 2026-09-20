@@ -25,6 +25,7 @@
 #include "Edit/AnimEdit.h"
 #include "Light/LightManager.h"
 #include "Shadow/ShadowMap.h"
+#include "PostProcess/PostProcess.h"
 #include "PrimitiveRenderer/PrimitiveRenderer.h"
 #include <cstdint>
 #include <string>

@@ -58,10 +58,16 @@ namespace RyoEngine {
 		int32_t GetBackBufferHeight() const { return backBufferHeight_; }
 		uint32_t GetBackBufferCount() const { return 2; }
 		DXGI_FORMAT GetBackBufferFormat() const { return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; }
-		
+
 		// メインループでImGui::Imageに渡すためのGPUハンドルを取得するゲッター
 		D3D12_GPU_DESCRIPTOR_HANDLE GetGameTextureGPUHandle() const {
 			return TextureManager::GetInstance()->GetGPUHandle(gameTextureHandle_);
+		}
+
+		// PostProcess::Composite()が、HDR合成後の結果をgameRenderTargetResource_へ
+		// 書き戻す際にOMSetRenderTargetsで使うためのRTV CPUハンドル
+		D3D12_CPU_DESCRIPTOR_HANDLE GetGameRenderTargetRTVHandle() const {
+			return gameRtvHeap_->GetCPUDescriptorHandleForHeapStart();
 		}
 
 	private:

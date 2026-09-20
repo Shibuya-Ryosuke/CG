@@ -68,6 +68,9 @@ namespace RyoEngine {
 
         dxCommon_->CreateGameRenderTarget();
 
+        // HDRとか
+        PostProcess::GetInstance()->Initialize();
+
         // ライトマネージャー
         lightManager_ = LightManager::GetInstance();
         lightManager_->Initialize();
@@ -129,6 +132,8 @@ namespace RyoEngine {
         textureManager_->Finalize();
         shaderCompiler_->Finalize();
 
+        PostProcess::GetInstance()->Finalize();
+
         // DirectXの基盤を止める（デバイスなどの破棄）
         dxCommon_->Finalize();
 
@@ -145,6 +150,7 @@ namespace RyoEngine {
 
     void Begin3dDraw() {
         GetDxCommon()->PreDraw();
+        PostProcess::GetInstance()->BeginScenePass();   // ← 追加：描画先をHDRバッファへ切り替える
         GetModelCommon()->BeginDraw();
     }
 
@@ -205,6 +211,8 @@ namespace RyoEngine {
 
         // ライト
         LightManager::GetInstance()->DrawImGui();
+        // ポストプロセス(HDR/ブルームのON-OFF)
+        PostProcess::GetInstance()->DrawImGui();
 
         // fps
         ImGui::Begin("Performance");
@@ -267,6 +275,10 @@ namespace RyoEngine {
         // 3d描画
         Begin3dDraw();
         modelCommon_->Draw();
+
+        // HDR→LDR合成 (トーンマッピングのON/OFFはここで反映される)
+        PostProcess::GetInstance()->EndScenePass();
+        PostProcess::GetInstance()->Composite();
 
         // 2d描画
         Begin2dDraw();
