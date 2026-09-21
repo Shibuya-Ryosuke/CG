@@ -123,6 +123,8 @@ namespace RyoEngine {
         materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
         materialData_->enableLighting = 1;
         materialData_->shadingMode = ShadingMode::HALF_LAMBERT;
+        materialData_->emissiveColor = { 0.0f, 0.0f, 0.0f, 0.0f };
+        materialData_->emissiveIntensity = 0.0f;
         UpdateUVTransform(); // uvScale_(1,1)/uvRotate_(0)/uvTranslate_(0,0)から単位行列相当が入る
     }
 
@@ -187,7 +189,7 @@ namespace RyoEngine {
     void Mesh::Draw() {
         ModelCommon::GetInstance()->SetDrawCommands([this]() {
             InternalDraw();
-            });
+        });
     }
 
     void Mesh::Finalize() {

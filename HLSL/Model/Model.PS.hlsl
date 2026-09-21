@@ -7,6 +7,11 @@ struct Material
     int shadingMode;
     float2 padding;
     float4x4 uvTransform;
+
+    // 発光(エミッシブ)。C++側Material構造体(Geometry.h)と1:1でレイアウトを合わせること。
+    float4 emissiveColor;
+    float emissiveIntensity;
+    float3 padding2;
 };
 
 // C++側 Light構造体(Light.h)と1:1でレイアウトを合わせること。全体で64byte。
@@ -146,9 +151,6 @@ PixelShaderOutput main(VertexShaderOutput input)
                 float attenuation = saturate(1.0f - (distance / max(light.range, 0.0001f)));
                 attenuation *= attenuation;
 
-                // 逆二乗則（ライトの中心を白飛びさせる）
-                //float attenuation = 1.0f / max(distance * distance, 0.01f); // 0除算だけ防ぐ
-                
                 if (light.type == LIGHT_TYPE_SPOT)
                 {
                     // スポットのコーン減衰：light.directionは「スポット自体が照らす向き」
@@ -173,5 +175,10 @@ PixelShaderOutput main(VertexShaderOutput input)
         output.color = gMaterial.color * textureColor;
         output.color.a *= input.alpha;
     }
+
+    // 発光(エミッシブ)：ライティング計算(enableLighting/shadingModeの分岐)を経由せず無条件で加算する。
+    // 1.0を超える値もそのまま残り、ACESトーンマッピングやブルーム(実装後)の対象になる。
+    output.color.rgb += gMaterial.emissiveColor.rgb * gMaterial.emissiveIntensity;
+
     return output;
 }

@@ -130,6 +130,8 @@ namespace RyoEngine {
         const ShadingMode& GetLambert(size_t meshIndex = 0) const { return meshes_[meshIndex].materialData->shadingMode; }
 
         Vector4& GetColor(size_t meshIndex = 0) const { return meshes_[meshIndex].materialData->color; };
+        const Vector4& GetEmissiveColor(size_t meshIndex = 0) const { return meshes_[meshIndex].materialData->emissiveColor; }
+        float GetEmissiveIntensity(size_t meshIndex = 0) const { return meshes_[meshIndex].materialData->emissiveIntensity; }
         ID3D12Resource* GetMaterialResource(size_t meshIndex = 0) const { return meshes_[meshIndex].materialResource.Get(); };
         uint32_t GetTxHandle(size_t meshIndex = 0) const { return meshes_[meshIndex].textureHandle; }
         D3D12_VERTEX_BUFFER_VIEW GetVBV(size_t meshIndex = 0) const { return meshes_[meshIndex].vertexBufferView; }
@@ -140,7 +142,7 @@ namespace RyoEngine {
         bool GetHasUV(size_t meshIndex = 0) const { return meshes_[meshIndex].hasUV; }
 
         ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
-
+        
         Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
         Vector3 GetWorldPos() const { return { wvpData_->World.m[3][0],wvpData_->World.m[3][1],wvpData_->World.m[3][2] }; }
         Vector3 GetOrientationX() const { return Normalize({ wvpData_->World.m[0][0], wvpData_->World.m[0][1], wvpData_->World.m[0][2] }); }
@@ -148,7 +150,7 @@ namespace RyoEngine {
         Vector3 GetOrientationZ() const { return Normalize({ wvpData_->World.m[2][0], wvpData_->World.m[2][1], wvpData_->World.m[2][2] }); }
 
         int32_t GetAnimEditID() const { return animEditID_; }
-
+        
 
         // Setter
         /// <summary>
@@ -193,6 +195,13 @@ namespace RyoEngine {
         /// </summary>
         /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
         void SetColor(const Vector4& color, int32_t meshIndex = -1);
+        /// <summary>
+        /// 発光(エミッシブ)の指定。ライティング計算を経由せず、最終的な色に無条件で加算される。
+        /// </summary>
+        /// <param name="color">発光色(rgbのみ使用)</param>
+        /// <param name="intensity">発光強度(1.0を超えられる)</param>
+        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
+        void SetEmissive(const Vector3& color, float intensity, int32_t meshIndex = -1);
 
         /// <summary>
         /// このメッシュがUVを持つかどうかを指定する。
@@ -227,7 +236,7 @@ namespace RyoEngine {
         float GetUVRotate(size_t meshIndex = 0) const { return meshes_[meshIndex].uvRotate; }
         Vector2 GetUVTranslate(size_t meshIndex = 0) const { return meshes_[meshIndex].uvTranslate; }
 
-
+        
         // マルチマテリアル版 (名前指定)
         ShadingMode GetLambertByName(const std::string& materialName) const;
         Vector4 GetColorByName(const std::string& materialName) const;

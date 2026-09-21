@@ -15,6 +15,14 @@ namespace RyoEngine {
         ShadingMode shadingMode = ShadingMode::LAMBERT;
         float padding[2] = { 0 };
         Matrix4x4 uvTransform;
+
+        // 発光(エミッシブ)。ライティング計算を経由せず、最終的な色に無条件で加算するだけの値。
+        // color/intensityを分けているのはLightと同じ発想(Lightのcolor/intensityと同様、
+        // intensityは1.0を超えられる＝HDRバッファ上でそのまま明るい値として残り、
+        // 後段のACESトーンマッピングやブルームの対象になる)。
+        Vector4 emissiveColor = { 0.0f, 0.0f, 0.0f, 0.0f }; // rgbのみ使用
+        float emissiveIntensity = 0.0f;                     // デフォルト0なので、既存メッシュの見た目は変化しない
+        float padding2[3] = { 0 };
     };
     struct Sphere {
         Vector3 center;

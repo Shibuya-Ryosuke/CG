@@ -20,15 +20,15 @@ namespace RyoEngine {
 		/// <param name="position">初期位置 (ローカル座標)</param>
 		/// <param name="size">横幅、縦幅</param>
 		/// <param name="color">色</param>
-		void CreateTriangle(const Vector3& position, const Vector2& size, const Vector4& color = { 1.0f,1.0f,1.0f,1.0f });
-
+		void CreateTriangle(const Vector3& position, const Vector2& size, const Vector4& color = {1.0f,1.0f,1.0f,1.0f});
+		
 		/// <summary>
 		/// 球体の初期化
 		/// </summary>
 		/// <param name="position">初期位置 (ローカル座標)</param>
 		/// <param name="subdivision">分割数</param>
 		/// <param name="color">色</param>
-		void CreateSphere(const Vector3& position, uint32_t subdivision, const Vector4& color = { 1.0f,1.0f,1.0f,1.0f });
+		void CreateSphere(const Vector3& position, uint32_t subdivision, const Vector4& color = {1.0f,1.0f,1.0f,1.0f});
 
 		/// <summary>
 		/// 終了処理
@@ -50,7 +50,7 @@ namespace RyoEngine {
 
 
 		/// ゲッター
-
+		
 		/// <summary>
 		/// トランスフォームの取得
 		/// </summary>
@@ -76,6 +76,14 @@ namespace RyoEngine {
 		/// </summary>
 		/// <returns>色</returns>
 		const Vector4& GetColor()     const { return materialData_->color; }
+		/// <summary>
+		/// 発光色の取得
+		/// </summary>
+		const Vector4& GetEmissiveColor() const { return materialData_->emissiveColor; }
+		/// <summary>
+		/// 発光強度の取得
+		/// </summary>
+		float GetEmissiveIntensity() const { return materialData_->emissiveIntensity; }
 		/// <summary>
 		/// ランバートの取得
 		/// </summary>
@@ -137,6 +145,16 @@ namespace RyoEngine {
 		/// </summary>
 		/// <param name="color">色</param>
 		void SetColor(const Vector4& color) { materialData_->color = color; }
+		/// <summary>
+		/// 発光(エミッシブ)の指定。ライティング計算を経由せず、最終的な色に無条件で加算される。
+		/// intensityを1.0以上にすると、ACESトーンマッピングやブルーム(実装後)の対象になる。
+		/// </summary>
+		/// <param name="color">発光色(rgbのみ使用)</param>
+		/// <param name="intensity">発光強度</param>
+		void SetEmissive(const Vector3& color, float intensity) {
+			materialData_->emissiveColor = { color.x, color.y, color.z, 0.0f };
+			materialData_->emissiveIntensity = intensity;
+		}
 		/// <summary>
 		/// ランバートのセット
 		/// </summary>
@@ -211,7 +229,7 @@ namespace RyoEngine {
 
 		// マッピング用ポインタ
 		Material* materialData_ = nullptr;   // Geometry.h の Material 構造体
-
+		
 		TransformationMatrix* wvpData_ = nullptr;
 
 		UINT indexCount_ = 0;

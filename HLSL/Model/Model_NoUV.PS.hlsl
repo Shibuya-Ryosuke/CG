@@ -7,6 +7,11 @@ struct Material
     int shadingMode;
     float2 padding;
     float4x4 uvTransform; // このシェーダーでは未使用。Model_PS.hlslのMaterialとメモリレイアウトを合わせるためだけに残す
+
+    // 発光(エミッシブ)。C++側Material構造体(Geometry.h)、Model_PS.hlslと1:1でレイアウトを合わせること。
+    float4 emissiveColor;
+    float emissiveIntensity;
+    float3 padding2;
 };
 
 // C++側 Light構造体(Light.h)と1:1でレイアウトを合わせること。全体で64byte。
@@ -154,6 +159,9 @@ PixelShaderOutput main(VertexShaderOutput input)
     {
         output.color = gMaterial.color;
     }
+
+    // 発光(エミッシブ)：ライティング計算を経由せず無条件で加算する
+    output.color.rgb += gMaterial.emissiveColor.rgb * gMaterial.emissiveIntensity;
 
     return output;
 }

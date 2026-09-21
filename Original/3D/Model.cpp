@@ -82,6 +82,19 @@ namespace RyoEngine {
         }
     }
 
+    void Model::SetEmissive(const Vector3& color, float intensity, int32_t meshIndex) {
+        Vector4 emissiveColor = { color.x, color.y, color.z, 0.0f };
+        if (meshIndex < 0) {
+            for (auto& mesh : meshes_) {
+                mesh.materialData->emissiveColor = emissiveColor;
+                mesh.materialData->emissiveIntensity = intensity;
+            }
+        } else {
+            meshes_[meshIndex].materialData->emissiveColor = emissiveColor;
+            meshes_[meshIndex].materialData->emissiveIntensity = intensity;
+        }
+    }
+
     void Model::SetHasUV(bool hasUV, int32_t meshIndex) {
         if (meshIndex < 0) {
             for (auto& mesh : meshes_) {
@@ -253,6 +266,8 @@ namespace RyoEngine {
             mesh.materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
             mesh.materialData->enableLighting = 1;
             mesh.materialData->shadingMode = ShadingMode::LAMBERT;
+            mesh.materialData->emissiveColor = { 0.0f, 0.0f, 0.0f, 0.0f };
+            mesh.materialData->emissiveIntensity = 0.0f;
             UpdateUVTransform(mesh); // uvScale(1,1)/uvRotate(0)/uvTranslate(0,0)のデフォルト値から単位行列相当が入る
 
             // 3. テクスチャ (メッシュが参照するマテリアルのmap_Kdから読み込む。無ければ白テクスチャ)
@@ -355,8 +370,8 @@ namespace RyoEngine {
 
     void Model::Update(const Camera& camera) {
         // ワールド行列の作成
-        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-
+        worldMatrix_ = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
+        
         // WVP行列の計算 (World * ViewProjection)
         Matrix4x4 wvpMatrix = worldMatrix_ * camera.GetViewProjectionMatrix();
 
@@ -365,9 +380,9 @@ namespace RyoEngine {
     }
 
     void Model::Draw(ModelCommon::DrawType drawType) {
-        ModelCommon::GetInstance()->SetDrawCommands([=, this]() {
+        ModelCommon::GetInstance()->SetDrawCommands([ =, this]() {
             InternalDraw(drawType);
-            });
+        });
     }
 
     std::unique_ptr<Model> Model::Create(const std::string& filePath, bool registAnimEdit, const std::string& name) {

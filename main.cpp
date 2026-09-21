@@ -31,6 +31,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     camera.Initialize();
     camera.SetAvailable(true);
 
+    float emissiveIntensity = 0.0f;
+    Vector3 emissiveColor{};
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
@@ -45,6 +47,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         sceneManager.Update();
         camera.Update();
 
+        ImGui::Begin("bunny emissive");
+        ImGui::DragFloat("intensity", &emissiveIntensity, 0.005f, 0.0f, 100.0f);
+        ImGui::ColorEdit3("color", &emissiveColor.x);
+        ImGui::End();
+        bunny->SetEmissive(emissiveColor, emissiveIntensity);
         ground->Update(camera);
         sky->Update(camera);
         flower->Update(camera);
