@@ -11,7 +11,7 @@ using namespace RyoEngine;
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
-    RyoEngine::Initialize();
+    RyoEngine::Initialize(L"Application");
 
     // リソース初期化
     GameImage::Initialize();

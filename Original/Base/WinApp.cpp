@@ -45,7 +45,7 @@ namespace RyoEngine {
 		// ウィンドウプロシージャ
 		wc_.lpfnWndProc = WindowProc;
 		// ウィンドウクラス名(何でもいい)
-		wc_.lpszClassName = title;
+		wc_.lpszClassName = L"OriginalEngine";
 		// インスタンスハンドル
 		wc_.hInstance = GetModuleHandle(nullptr);
 		// カーソル
@@ -62,7 +62,7 @@ namespace RyoEngine {
 		// ウィンドウの生成
 		hwnd_ = CreateWindow(
 			wc_.lpszClassName,        // 利用するクラス名
-			L"LE2A_10_シブヤ_リョウスケ_空の掃除屋",            // タイトルバーの文字(何でも良い)
+			title,                   // タイトルバーの文字
 			WS_OVERLAPPEDWINDOW,     // よく見るウィンドウスタイル
 			CW_USEDEFAULT,           // 表示X座標(Windowsに任せる)
 			CW_USEDEFAULT,           // 表示Y座標(WindowsOSに任せる)

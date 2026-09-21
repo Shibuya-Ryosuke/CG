@@ -50,7 +50,7 @@ namespace RyoEngine {
     //ReflectCommon* GetReflectCommon();
     Font* GetFontOutputter();
     
-    void Initialize();
+    void Initialize(const wchar_t* title);
     void Finalize();
 
     void Begin3dDraw();

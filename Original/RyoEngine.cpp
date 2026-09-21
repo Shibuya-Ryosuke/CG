@@ -46,11 +46,11 @@ namespace RyoEngine {
 
     }
 
-    void Initialize() {
+    void Initialize(const wchar_t* title) {
         Logger::Initialize();
 
         winApp_ = WinApp::GetInstance();
-        winApp_->Initialize(L"test");
+        winApp_->Initialize(title);
 
         // DirectX基盤の初期化
         dxCommon_ = DirectXCommon::GetInstance();
