@@ -379,10 +379,16 @@
     <FxCompile Include="HLSL\Shadow\ShadowMap.VS.hlsl">
       <Filter>Engine\リソース ファイル\HLSL\Shadow</Filter>
     </FxCompile>
-    <FxCompile Include="HLSL\Composite\Composite.PS.hlsl">
+    <FxCompile Include="HLSL\Composite\Composite.VS.hlsl">
       <Filter>Engine\リソース ファイル\HLSL\PostProcess</Filter>
     </FxCompile>
-    <FxCompile Include="HLSL\Composite\Composite.VS.hlsl">
+    <FxCompile Include="HLSL\PostProcess\Composite.PS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\PostProcess\BloomSample.PS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\PostProcess\BloomThreshold.PS.hlsl">
       <Filter>Engine\リソース ファイル\HLSL\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>

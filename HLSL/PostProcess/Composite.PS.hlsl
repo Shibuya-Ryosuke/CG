@@ -1,12 +1,15 @@
 Texture2D<float4> gSceneColor : register(t0);
+Texture2D<float4> gBloomTexture : register(t1); // ブルームOFF時は未使用(有効な値は入っているが参照しない)
 SamplerState gSampler : register(s0);
 
-cbuffer CompositeParams : register(b0)
+cbuffer PostProcessParams : register(b0)
 {
-    uint gACESEnabled;  // ON:ACESフィルミックで圧縮 / OFF:露出後の値を単純にクリップ
-    uint gBloomEnabled; // NOTE: ブルーム本体は未実装のため今は未使用。将来ここでブルーム結果を加算する
-    float gExposure;    // 圧縮する前に、明るさを底上げ/引き下げする係数(常時有効)
-    float padding;
+    uint gACESEnabled;   // ON:ACESフィルミックで圧縮 / OFF:露出後の値を単純にクリップ
+    uint gBloomEnabled;  // ON:ブルーム結果をシーンカラーに加算してから圧縮する
+    float gExposure;     // 圧縮する前に、明るさを底上げ/引き下げする係数(常時有効)
+    float gThreshold;    // このパスでは未使用(BloomThresholdパス用)
+    float gBloomIntensity; // ブルームをシーンへ加算する際の強さ
+    float3 padding;
 };
 
 struct VertexShaderOutput
@@ -39,6 +42,13 @@ PixelShaderOutput main(VertexShaderOutput input)
 
     float3 hdrColor = gSceneColor.Sample(gSampler, input.texcoord).rgb;
 
+    // ブルーム：閾値を超えた明るい部分がダウンサンプル/アップサンプルを経て滲んだ結果を加算する
+    if (gBloomEnabled != 0)
+    {
+        float3 bloomColor = gBloomTexture.Sample(gSampler, input.texcoord).rgb;
+        hdrColor += bloomColor * gBloomIntensity;
+    }
+
     // 露出：圧縮する前に、シーン全体の明るさを底上げ/引き下げする(常時適用)
     float3 exposedColor = hdrColor * gExposure;
 
@@ -49,7 +59,7 @@ PixelShaderOutput main(VertexShaderOutput input)
     }
     else
     {
-        // ACES OFF：露出後の値を単純にクリップするだけ(HDR化する前の見た目に近い)
+        // ACES OFF：露出後の値を単純にクリップするだけ
         finalColor = saturate(exposedColor);
     }
 

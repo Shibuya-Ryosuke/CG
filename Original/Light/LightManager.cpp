@@ -97,17 +97,17 @@ namespace RyoEngine {
         ImGui::Begin("LightManager");
 
         // --- アンビエントライト ---
-        if (ImGui::CollapsingHeader("Ambient Light", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::ColorEdit3("Ambient Color", &ambientData_->color.x);
-            ImGui::SliderFloat("Ambient Intensity", &ambientData_->intensity, 0.0f, 2.0f);
+        if (ImGui::CollapsingHeader("環境光", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::ColorEdit3("環境光の色", &ambientData_->color.x);
+            ImGui::SliderFloat("環境光の強さ", &ambientData_->intensity, 0.0f, 2.0f);
         }
 
         ImGui::Separator();
 
         // --- ライト一覧 ---
-        ImGui::Text("Lights: %zu / %u", lights_.size(), kMaxLightCount);
+        ImGui::Text("ライト一覧: %zu / %u", lights_.size(), kMaxLightCount);
 
-        if (ImGui::Button("Add Directional Light") && lights_.size() < kMaxLightCount) {
+        if (ImGui::Button("ライトの追加") && lights_.size() < kMaxLightCount) {
             Light newLight{};
             newLight.type = LightType::Directional;
             newLight.color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -117,39 +117,39 @@ namespace RyoEngine {
         }
 
         int removeIndex = -1;
-        const char* typeNames[] = { "Directional", "Point", "Spot", "Area" };
+        const char* typeNames[] = { "平行光源（サン）", "ポイント", "スポット", "エリア（未実装）" };
 
         for (size_t i = 0; i < lights_.size(); ++i) {
             ImGui::PushID(static_cast<int>(i));
             Light& light = lights_[i];
 
-            std::string header = "Light " + std::to_string(i);
+            std::string header = "ライト " + std::to_string(i);
             if (ImGui::CollapsingHeader(header.c_str())) {
                 int typeIndex = static_cast<int>(light.type);
-                if (ImGui::Combo("Type", &typeIndex, typeNames, IM_ARRAYSIZE(typeNames))) {
+                if (ImGui::Combo("種類", &typeIndex, typeNames, IM_ARRAYSIZE(typeNames))) {
                     light.type = static_cast<LightType>(typeIndex);
                 }
 
-                ImGui::ColorEdit3("Color", &light.color.x);
-                ImGui::SliderFloat("Intensity", &light.intensity, 0.0f, 5.0f);
+                ImGui::ColorEdit3("色", &light.color.x);
+                ImGui::SliderFloat("強さ", &light.intensity, 0.0f, 10.0f);
 
                 // NOTE: Point/Spot/Areaはシェーダー側の計算が未実装のため、
                 //       ここでいじれても見た目には反映されない(現状はDirectionalのみ反映される)
                 if (light.type == LightType::Directional || light.type == LightType::Spot) {
-                    if (ImGui::SliderFloat3("Direction", &light.direction.x, -1.0f, 1.0f)) {
+                    if (ImGui::SliderFloat3("向き", &light.direction.x, -1.0f, 1.0f)) {
                         light.direction = Normalize(light.direction);
                     }
                 }
                 if (light.type == LightType::Point || light.type == LightType::Spot || light.type == LightType::Area) {
-                    ImGui::DragFloat3("Position", &light.position.x, 0.1f);
-                    ImGui::SliderFloat("Range", &light.range, 0.0f, 50.0f);
+                    ImGui::DragFloat3("座標", &light.position.x, 0.1f);
+                    ImGui::SliderFloat("範囲", &light.range, 0.0f, 100.0f);
                 }
                 if (light.type == LightType::Spot) {
-                    ImGui::SliderFloat("Spot Angle (cos)", &light.spotAngle, 0.0f, 1.0f);
-                    ImGui::SliderFloat("Spot Falloff", &light.spotFalloff, 0.0f, 1.0f);
+                    ImGui::SliderFloat("角度", &light.spotAngle, 0.0f, 1.0f);
+                    ImGui::SliderFloat("減衰", &light.spotFalloff, 0.0f, 1.0f);
                 }
 
-                if (ImGui::Button("Remove")) {
+                if (ImGui::Button("削除")) {
                     removeIndex = static_cast<int>(i);
                 }
             }
