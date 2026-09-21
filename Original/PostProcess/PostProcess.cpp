@@ -479,7 +479,7 @@ namespace RyoEngine {
 
     void PostProcess::DrawImGui() {
         ImGui::Begin("PostProcess");
-        ImGui::SliderFloat("露出", &exposure_, 0.0f, 50.0f);
+        ImGui::SliderFloat("露出", &exposure_, 0.0f, 5.0f);
         ImGui::Checkbox("ACES トーンマッピング", &acesEnabled_);
         if (!acesEnabled_) {
             ImGui::TextDisabled("(OFF時は露出後の値を単純にクリップします)");
@@ -488,7 +488,7 @@ namespace RyoEngine {
         ImGui::Checkbox("Bloom", &bloomEnabled_);
         if (bloomEnabled_) {
             ImGui::SliderFloat("Bloom対象となる境界値", &bloomThreshold_, 0.0f, 10.0f);
-            ImGui::SliderFloat("Bloomの強さ", &bloomIntensity_, 0.0f, 5.0f);
+            ImGui::SliderFloat("Bloomの強さ", &bloomIntensity_, 0.0f, 10.0f);
         }
         ImGui::End();
     }
