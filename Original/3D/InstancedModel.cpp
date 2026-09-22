@@ -84,7 +84,7 @@ namespace RyoEngine {
         instances_[index].color = color;
     }
 
-    void InstancedModel::Update() {
+    void InstancedModel::UpdateBuffer() {
         materialData_->enableLighting = enableLighting_ ? 1 : 0;
         materialData_->shadingMode = static_cast<int32_t>(shadingMode_);
 

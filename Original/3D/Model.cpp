@@ -368,7 +368,7 @@ namespace RyoEngine {
             });
     }
 
-    void Model::Update(const Camera& camera) {
+    void Model::TransferMatrix(const Camera& camera) {
         // ワールド行列の作成
         worldMatrix_ = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
         

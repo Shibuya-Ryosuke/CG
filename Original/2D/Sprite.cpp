@@ -72,7 +72,7 @@ namespace RyoEngine {
         wvpData_ = nullptr;
     }
 
-    void Sprite::Update() {
+    void Sprite::TransferMatrix() {
         // 1. transform_ (Vector2化) から行列を計算するための3Dベクトルを作る
         Vector3 scale3D = { scale_.x, scale_.y, 1.0f }; // Zは必ず1.0f
         Vector3 translate3D = { translate_.x, translate_.y, 0.0f };

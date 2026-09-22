@@ -45,7 +45,7 @@ namespace RyoEngine {
         };
 
         void Initialize();
-        void Update(const Camera& camera);
+        void TransferMatrix(const Camera& camera);
 
         /// <summary>
         /// 描画

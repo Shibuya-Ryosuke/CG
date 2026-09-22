@@ -27,7 +27,7 @@ namespace RyoEngine {
         void Initialize(uint32_t textureHandle, Vector2 position = { 640.0f,360.0f }, Anchor anchor = Anchor::Center);
         void Initialize(const std::string& filePath, Vector2 position = { 640.0f,360.0f }, Anchor anchor = Anchor::Center);
         void Finalize();
-        void Update();
+        void TransferMatrix();
         void Draw();
 
         // Getter

@@ -58,10 +58,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         ImGui::Text("count : %d", bullets.GetInstanceCount());
         ImGui::End();
         bunny->SetEmissive(emissiveColor, emissiveIntensity);
-        ground->Update(camera);
-        sky->Update(camera);
-        flower->Update(camera);
-        bunny->Update(camera);
+
         if (Input::PushKey(DIK_A)) {
             Vector3 pos{ float(std::rand() % 100 - 50),float(std::rand()%20),float(std::rand() % 100 - 50)};
             id = bullets.AddInstance(pos);
@@ -70,7 +67,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             bullets.RemoveInstance(int(id));
             id--;
         }
-        bullets.Update();
+        // まとめて行列計算
+        bullets.UpdateBuffer();
+
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------
@@ -84,6 +83,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // --- 描画処理 (Draw) ---
         // ----------------------
         
+        // 行列の確定
+        ground->TransferMatrix(camera);
+        sky->TransferMatrix(camera);
+        flower->TransferMatrix(camera);
+        bunny->TransferMatrix(camera);
+
         // 描画
         sceneManager.Draw();
         ground->Draw();

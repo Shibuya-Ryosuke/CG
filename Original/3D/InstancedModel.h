@@ -60,7 +60,7 @@ namespace RyoEngine {
         /// <summary>
         /// 各インスタンスのワールド行列を再計算し、GPUバッファへ書き込む。Draw()の前に毎フレーム呼ぶこと。
         /// </summary>
-        void Update();
+        void UpdateBuffer();
 
         /// <summary>
         /// 全インスタンスをまとめて描画するよう予約する。
