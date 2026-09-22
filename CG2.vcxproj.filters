@@ -175,6 +175,15 @@
     <ClCompile Include="Original\PostProcess\PostProcess.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Original\Mesh\InstancedMesh.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\3D\InstancedModel.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\3D\InstancedModelCommon.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">
@@ -336,6 +345,15 @@
     <ClInclude Include="Original\PostProcess\PostProcess.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Original\Mesh\InstancedMesh.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\3D\InstancedModel.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\3D\InstancedModelCommon.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Sprite\Sprite.hlsli">
@@ -390,6 +408,12 @@
     </FxCompile>
     <FxCompile Include="HLSL\PostProcess\BloomThreshold.PS.hlsl">
       <Filter>Engine\リソース ファイル\HLSL\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Model\Instanced.PS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\Model</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Model\Instanced.VS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\Model</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

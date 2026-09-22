@@ -25,8 +25,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     std::unique_ptr<Model> sky = Model::Create("resources/test/skydome.obj");
     std::unique_ptr<Model> flower = Model::Create("resources/test/TR.obj");
     std::unique_ptr<Model> bunny = Model::Create("resources/test/bunny.obj");
+
+    InstancedModel bullets{};
+    bullets.Initialize("resources/test/TR.obj");
+    size_t id = 0;
     flower->SetTranslateY(1.0f);
-    bunny->SetTranslate({ 2.0f,1.5f,1.0f });
+    bunny->SetTranslate({ 0.0f,5.0f,0.0f });
     DebugCamera camera{};
     camera.Initialize();
     camera.SetAvailable(true);
@@ -50,12 +54,23 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         ImGui::Begin("bunny emissive");
         ImGui::DragFloat("intensity", &emissiveIntensity, 0.005f, 0.0f, 100.0f);
         ImGui::ColorEdit3("color", &emissiveColor.x);
+        ImGui::Text("InstancedModel\nid : %d", id);
+        ImGui::Text("count : %d", bullets.GetInstanceCount());
         ImGui::End();
         bunny->SetEmissive(emissiveColor, emissiveIntensity);
         ground->Update(camera);
         sky->Update(camera);
         flower->Update(camera);
         bunny->Update(camera);
+        if (Input::PushKey(DIK_A)) {
+            Vector3 pos{ float(std::rand() % 100 - 50),float(std::rand()%20),float(std::rand() % 100 - 50)};
+            id = bullets.AddInstance(pos);
+        } else if (Input::PushKey(DIK_S)) {
+            id = bullets.GetInstanceCount()-1;
+            bullets.RemoveInstance(int(id));
+            id--;
+        }
+        bullets.Update();
         // ----------------------
         // ------ 更新終了 -------
         // ----------------------
@@ -75,6 +90,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         sky->Draw();
         flower->Draw();
         bunny->Draw();
+        bullets.Draw(camera);
         // ----------------------
         // ------ 描画終了 -------
         // ----------------------

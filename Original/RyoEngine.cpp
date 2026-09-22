@@ -84,6 +84,8 @@ namespace RyoEngine {
         modelCommon_ = ModelCommon::GetInstance();
         modelCommon_->Initialize();
 
+        InstancedModelCommon::GetInstance()->Initialize();
+
         spriteCommon_ = SpriteCommon::GetInstance();
         spriteCommon_->Initialize();
 
@@ -125,6 +127,7 @@ namespace RyoEngine {
 
         //reflectCommon_->Finalize();
         spriteCommon_->Finalize();
+        InstancedModelCommon::GetInstance()->Finalize();
         modelCommon_->Finalize();
         PrimitiveRenderer::Finalize();
         ShadowMap::Finalize();
@@ -179,6 +182,7 @@ namespace RyoEngine {
         PrimitiveRenderer::NewFrame();
         modelCommon_->CommandsClear();
         spriteCommon_->CommandsClear();
+        InstancedModelCommon::GetInstance()->CommandsClear();
 
         Input::Update();
 
@@ -275,6 +279,7 @@ namespace RyoEngine {
         // 3d描画
         Begin3dDraw();
         modelCommon_->Draw();
+        InstancedModelCommon::GetInstance()->Draw();
 
         // HDR→LDR合成 (トーンマッピングのON/OFFはここで反映される)
         PostProcess::GetInstance()->EndScenePass();

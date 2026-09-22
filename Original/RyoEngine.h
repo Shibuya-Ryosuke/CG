@@ -9,6 +9,8 @@
 #include "Base/ShaderCompiler.h"
 #include "3D/ModelCommon.h"
 #include "3D/Model.h"
+#include "3D/InstancedModelCommon.h"
+#include "3D/InstancedModel.h"
 #include "2D/SpriteCommon.h"
 #include "2D/Sprite.h"
 #include "Mesh/Mesh.h"

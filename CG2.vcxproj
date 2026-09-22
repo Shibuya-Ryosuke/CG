@@ -17,6 +17,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Original\2D\Sprite.cpp" />
     <ClCompile Include="Original\2D\SpriteCommon.cpp" />
+    <ClCompile Include="Original\3D\InstancedModel.cpp" />
+    <ClCompile Include="Original\3D\InstancedModelCommon.cpp" />
     <ClCompile Include="Original\3D\Model.cpp" />
     <ClCompile Include="Original\3D\ModelCommon.cpp" />
     <ClCompile Include="Original\Audio\Audio.cpp" />
@@ -100,6 +102,7 @@
     <ClCompile Include="Original\Light\LightManager.cpp" />
     <ClCompile Include="Original\Loader\ModelLoader.cpp" />
     <ClCompile Include="Original\Math\Collision.cpp" />
+    <ClCompile Include="Original\Mesh\InstancedMesh.cpp" />
     <ClCompile Include="Original\Mesh\Mesh.cpp" />
     <ClCompile Include="Original\PostProcess\PostProcess.cpp" />
     <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp" />
@@ -114,6 +117,8 @@
     <ClInclude Include="Application\Scene\Title.h" />
     <ClInclude Include="Original\2D\Sprite.h" />
     <ClInclude Include="Original\2D\SpriteCommon.h" />
+    <ClInclude Include="Original\3D\InstancedModel.h" />
+    <ClInclude Include="Original\3D\InstancedModelCommon.h" />
     <ClInclude Include="Original\3D\Model.h" />
     <ClInclude Include="Original\3D\ModelCommon.h" />
     <ClInclude Include="Original\Audio\Audio.h" />
@@ -155,6 +160,7 @@
     <ClInclude Include="Original\Math\Geometry.h" />
     <ClInclude Include="Original\Math\Transform.h" />
     <ClInclude Include="Original\Math\Vector.h" />
+    <ClInclude Include="Original\Mesh\InstancedMesh.h" />
     <ClInclude Include="Original\Mesh\Mesh.h" />
     <ClInclude Include="Original\PostProcess\PostProcess.h" />
     <ClInclude Include="Original\PrimitiveRenderer\PrimitiveRenderer.h" />
@@ -181,6 +187,14 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="HLSL\Composite\Composite.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="HLSL\Model\Instanced.PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="HLSL\Model\Instanced.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
