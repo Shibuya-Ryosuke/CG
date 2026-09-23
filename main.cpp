@@ -27,8 +27,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     std::unique_ptr<Model> bunny = Model::Create("resources/test/bunny.obj");
 
     InstancedModel bullets{};
+    InstancedModel::Handle id{};
+
     bullets.Initialize("resources/test/TR.obj");
-    size_t id = 0;
     flower->SetTranslateY(1.0f);
     bunny->SetTranslate({ 0.0f,5.0f,0.0f });
     DebugCamera camera{};
@@ -63,8 +64,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
             Vector3 pos{ float(std::rand() % 100 - 50),float(std::rand()%20),float(std::rand() % 100 - 50)};
             id = bullets.AddInstance(pos);
         } else if (Input::PushKey(DIK_S)) {
-            id = bullets.GetInstanceCount()-1;
-            bullets.RemoveInstance(int(id));
+            id = uint32_t(bullets.GetInstanceCount());
+            id--;
+            bullets.RemoveInstance(id);
             id--;
         }
         // まとめて行列計算

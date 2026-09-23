@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <cstdint>
+#include <unordered_map>
 #include "../Math/Geometry.h"
 #include "../Mesh/InstancedMesh.h"
 
@@ -26,11 +27,22 @@ namespace RyoEngine {
     /// ・少数で、個別に細かく制御したいオブジェクト → Model
     /// ・大量に、同じ形のものをまとめて出したいオブジェクト(弾、雑魚敵など) → InstancedModel
     ///
+    /// 「弾1個につき1クラス」のような個別管理と組み合わせる場合、各オブジェクト(BaseBullet等)は
+    /// Modelを直接持つ代わりに、共有のInstancedModelから貰ったHandleを1つだけ持ち、
+    /// 毎フレームSetInstanceTransform(handle, ...)で自分の位置を書き込む、という使い方を想定している。
+    /// InstancedModel自体は「大量描画用のバッチ」であって「1体のオブジェクト」ではない、という
+    /// 位置づけの違いに注意。
+    ///
     /// NOTE: 現状シャドウの落とし/受けには対応していない。ライティング(Directional/Point/Spot/Area
     ///       +アンビエント)は通常のModelと共通のLightManagerの状態がそのまま反映される。
     /// </summary>
     class InstancedModel {
     public:
+        // 不透明なID。内部のGPU配列上での実際の並び順(RemoveInstance時に詰め替わる)とは無関係に、
+        // 一度発行したインスタンスを永続的に指し示す。0は「無効なハンドル」として予約している。
+        using Handle = uint32_t;
+        static constexpr Handle kInvalidHandle = 0;
+
         /// <summary>
         /// 初期化。同じfilePathであれば内部でInstancedMeshのキャッシュが効く。
         /// </summary>
@@ -42,14 +54,16 @@ namespace RyoEngine {
         /// <summary>
         /// インスタンスを1体追加する
         /// </summary>
-        /// <returns>追加したインスタンスのインデックス(Set系で使う)。上限を超えると-1</returns>
-        int AddInstance(const Vector3& translate, const Vector3& rotate = { 0.0f, 0.0f, 0.0f },
+        /// <returns>このインスタンスを指し示すHandle。上限を超えるとkInvalidHandle</returns>
+        Handle AddInstance(const Vector3& translate, const Vector3& rotate = { 0.0f, 0.0f, 0.0f },
             const Vector3& scale = { 1.0f, 1.0f, 1.0f }, const Vector4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
-        void RemoveInstance(int index);
+        // NOTE: 内部ではswap-and-pop(削除位置に末尾の要素を持ってきて切り詰める)で消すため、
+        //       他のインスタンスのHandleは一切変化しない。O(1)で消せる。
+        void RemoveInstance(Handle handle);
         void ClearInstances();
 
-        void SetInstanceTransform(int index, const Vector3& translate, const Vector3& rotate, const Vector3& scale);
-        void SetInstanceColor(int index, const Vector4& color);
+        void SetInstanceTransform(Handle handle, const Vector3& translate, const Vector3& rotate, const Vector3& scale);
+        void SetInstanceColor(Handle handle, const Vector4& color);
 
         size_t GetInstanceCount() const { return instances_.size(); }
 
@@ -80,7 +94,12 @@ namespace RyoEngine {
             Vector3 scale{ 1.0f, 1.0f, 1.0f };
             Vector4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
         };
-        std::vector<Instance> instances_;
+        std::vector<Instance> instances_; // GPU用の密な配列。常に隙間なく詰まっている(RemoveInstance時にswap-and-popで詰め替える)
+        // instances_[i] が今どのHandleに対応しているか (instances_と同じ並び順で管理)
+        std::vector<Handle> instanceHandles_;
+        // Handle -> instances_内の現在のインデックス、の逆引き
+        std::unordered_map<Handle, int> handleToIndex_;
+        Handle nextHandle_ = 1; // 0はkInvalidHandleとして予約しているので1から始める
 
         std::shared_ptr<InstancedMesh> mesh_;
         uint32_t maxInstanceCount_ = 0;

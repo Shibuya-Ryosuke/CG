@@ -39,49 +39,74 @@ namespace RyoEngine {
         instanceResource_.Reset();
         instanceData_ = nullptr;
         instances_.clear();
+        instanceHandles_.clear();
+        handleToIndex_.clear();
         mesh_.reset();
     }
 
-    int InstancedModel::AddInstance(const Vector3& translate, const Vector3& rotate, const Vector3& scale, const Vector4& color) {
+    InstancedModel::Handle InstancedModel::AddInstance(const Vector3& translate, const Vector3& rotate, const Vector3& scale, const Vector4& color) {
         if (instances_.size() >= maxInstanceCount_) {
-            Logger::LogSuccess("[InstancedModel] Cannot add instance, maxInstanceCount reached.\n");
-            return -1;
+            Logger::Log("[InstancedModel] Cannot add instance, maxInstanceCount reached.\n");
+            return kInvalidHandle;
         }
         Instance instance;
         instance.translate = translate;
         instance.rotate = rotate;
         instance.scale = scale;
         instance.color = color;
+
+        Handle handle = nextHandle_++;
         instances_.push_back(instance);
-        return static_cast<int>(instances_.size() - 1);
+        instanceHandles_.push_back(handle);
+        handleToIndex_[handle] = static_cast<int>(instances_.size() - 1);
+        return handle;
     }
 
-    void InstancedModel::RemoveInstance(int index) {
-        if (index < 0 || index >= static_cast<int>(instances_.size())) {
-            Logger::LogError("[InstancedModel] RemoveInstance index out of range.\n");
+    void InstancedModel::RemoveInstance(Handle handle) {
+        auto it = handleToIndex_.find(handle);
+        if (it == handleToIndex_.end()) {
+            Logger::Log("[InstancedModel] RemoveInstance: invalid handle.\n");
             return;
         }
-        instances_.erase(instances_.begin() + index);
+
+        int index = it->second;
+        int lastIndex = static_cast<int>(instances_.size()) - 1;
+
+        if (index != lastIndex) {
+            // 末尾の要素を削除位置へ持ってくる(swap-and-pop)。
+            // 順序は保証されなくなるが、他のインスタンスのHandleは一切変わらないままO(1)で消せる。
+            instances_[index] = instances_[lastIndex];
+            instanceHandles_[index] = instanceHandles_[lastIndex];
+            handleToIndex_[instanceHandles_[index]] = index; // 移動した要素のHandleが指す先を更新
+        }
+        instances_.pop_back();
+        instanceHandles_.pop_back();
+        handleToIndex_.erase(it);
     }
 
     void InstancedModel::ClearInstances() {
         instances_.clear();
+        instanceHandles_.clear();
+        handleToIndex_.clear();
     }
 
-    void InstancedModel::SetInstanceTransform(int index, const Vector3& translate, const Vector3& rotate, const Vector3& scale) {
-        if (index < 0 || index >= static_cast<int>(instances_.size())) {
+    void InstancedModel::SetInstanceTransform(Handle handle, const Vector3& translate, const Vector3& rotate, const Vector3& scale) {
+        auto it = handleToIndex_.find(handle);
+        if (it == handleToIndex_.end()) {
             return;
         }
-        instances_[index].translate = translate;
-        instances_[index].rotate = rotate;
-        instances_[index].scale = scale;
+        Instance& instance = instances_[it->second];
+        instance.translate = translate;
+        instance.rotate = rotate;
+        instance.scale = scale;
     }
 
-    void InstancedModel::SetInstanceColor(int index, const Vector4& color) {
-        if (index < 0 || index >= static_cast<int>(instances_.size())) {
+    void InstancedModel::SetInstanceColor(Handle handle, const Vector4& color) {
+        auto it = handleToIndex_.find(handle);
+        if (it == handleToIndex_.end()) {
             return;
         }
-        instances_[index].color = color;
+        instances_[it->second].color = color;
     }
 
     void InstancedModel::UpdateBuffer() {
