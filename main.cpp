@@ -23,14 +23,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
     std::unique_ptr<Model> ground = Model::Create("resources/test/ground.obj");
     std::unique_ptr<Model> sky = Model::Create("resources/test/skydome.obj");
-    std::unique_ptr<Model> flower = Model::Create("resources/test/TR.obj");
     std::unique_ptr<Model> bunny = Model::Create("resources/test/bunny.obj");
 
     InstancedModel bullets{};
     InstancedModel::Handle id{};
 
     bullets.Initialize("resources/test/TR.obj");
-    flower->SetTranslateY(1.0f);
     bunny->SetTranslate({ 0.0f,5.0f,0.0f });
     DebugCamera camera{};
     camera.Initialize();
@@ -88,14 +86,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // 行列の確定
         ground->TransferMatrix(camera);
         sky->TransferMatrix(camera);
-        flower->TransferMatrix(camera);
         bunny->TransferMatrix(camera);
 
         // 描画
         sceneManager.Draw();
         ground->Draw();
         sky->Draw();
-        flower->Draw();
         bunny->Draw();
         bullets.Draw(camera);
         // ----------------------

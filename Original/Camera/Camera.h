@@ -7,6 +7,7 @@ namespace RyoEngine {
         Camera() = default;
         virtual  ~Camera() = default;
         // activeCameraを決めるときに必要
+        Camera(const Camera&) = default;
         Camera& operator=(const Camera&) = default;
 
         virtual void Initialize();

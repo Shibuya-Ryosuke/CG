@@ -6,6 +6,7 @@
 #include <memory>
 #include <cstdint>
 #include <unordered_map>
+#include "../Math/Transform.h"
 #include "../Math/Geometry.h"
 #include "../Mesh/InstancedMesh.h"
 
@@ -63,6 +64,7 @@ namespace RyoEngine {
         void ClearInstances();
 
         void SetInstanceTransform(Handle handle, const Vector3& translate, const Vector3& rotate, const Vector3& scale);
+        void SetInstanceTransform(Handle handle, const Transform& transform);
         void SetInstanceColor(Handle handle, const Vector4& color);
 
         size_t GetInstanceCount() const { return instances_.size(); }

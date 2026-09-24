@@ -49,6 +49,9 @@
     <Filter Include="Engine\リソース ファイル\HLSL\PostProcess">
       <UniqueIdentifier>{80ad0662-de58-47ea-91c2-01d8bbdaac8d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Test">
+      <UniqueIdentifier>{20db6151-7cb6-4ae1-acd6-5d2c8b7b7634}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Original\Loader\ModelLoader.cpp">
@@ -183,6 +186,15 @@
     </ClCompile>
     <ClCompile Include="Original\3D\InstancedModelCommon.cpp">
       <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Test\TestPlayer.cpp">
+      <Filter>Engine\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Test\TestManager.cpp">
+      <Filter>Engine\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Test\TestBullet.cpp">
+      <Filter>Engine\Test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -353,6 +365,15 @@
     </ClInclude>
     <ClInclude Include="Original\3D\InstancedModelCommon.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Test\TestManager.h">
+      <Filter>Engine\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Test\TestPlayer.h">
+      <Filter>Engine\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Test\TestBullet.h">
+      <Filter>Engine\Test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

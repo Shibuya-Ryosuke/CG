@@ -101,6 +101,17 @@ namespace RyoEngine {
         instance.scale = scale;
     }
 
+    void InstancedModel::SetInstanceTransform(Handle handle, const Transform& transform) {
+        auto it = handleToIndex_.find(handle);
+        if (it == handleToIndex_.end()) {
+            return;
+        }
+        Instance& instance = instances_[it->second];
+        instance.translate = transform.translate;
+        instance.rotate = transform.rotate;
+        instance.scale = transform.scale;
+    }
+
     void InstancedModel::SetInstanceColor(Handle handle, const Vector4& color) {
         auto it = handleToIndex_.find(handle);
         if (it == handleToIndex_.end()) {
