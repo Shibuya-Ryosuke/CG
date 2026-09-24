@@ -26,7 +26,7 @@ private:
 	// SRT
 	RyoEngine::Transform transform_{};
 	// 速さ
-	RyoEngine::Vector3 velocity_ = { 1.0f, 0.0f, 1.0f };
+	RyoEngine::Vector3 velocity_ = { 8.0f, 0.0f, 8.0f };
 
 	// 発光関連
 	float emissiveIntensity_ = 0.0f;

@@ -10,6 +10,8 @@ void TestPlayer::Initialize(TestManager* manager) {
 	// モデル初期化
 	bunny_ = Model::Create("resources/test/bunny.obj");
 	transform_.translate.y = 5.0f;
+	transform_.scale = { 1.0f,1.0f,1.0f };
+	transform_.rotate = { 0.0f,2.8f,0.0f };
 }
 
 void TestPlayer::Update() {
@@ -17,8 +19,8 @@ void TestPlayer::Update() {
 	ImGui::Begin("test");
 	// SRT
 	ImGui::DragFloat3("bunny scale", &transform_.scale.x, 0.01f, 0.0f, 10.0f);
-	ImGui::DragFloat3("bunny rotate", &transform_.rotate.x, 0.1f, -100.0f, 100.0f);
-	ImGui::DragFloat3("bunny translate", &transform_.translate.x, 0.1f, -100.0f, 100.0f);
+	ImGui::DragFloat3("bunny rotate", &transform_.rotate.x, 0.01f, -100.0f, 100.0f);
+	ImGui::DragFloat3("bunny translate", &transform_.translate.x, 0.01f, -100.0f, 100.0f);
 
 	ImGui::Spacing();
 	ImGui::Separator();
@@ -35,25 +37,29 @@ void TestPlayer::Update() {
 
 	// 移動
 	// 左右
-	if (Input::PushKey(DIK_A || DIK_LEFT)) {
-		transform_.translate.x -= velocity_.x;
+	if (Input::PushKey(DIK_A) || Input::PushKey(DIK_LEFT)) {
+		transform_.translate.x -= velocity_.x * GetDeltaTime();
 	}
-	if (Input::PushKey(DIK_D || DIK_RIGHT)) {
-		transform_.translate.x += velocity_.x;
+	if (Input::PushKey(DIK_D) || Input::PushKey(DIK_RIGHT)) {
+		transform_.translate.x += velocity_.x * GetDeltaTime();
 	}
 
 	// 前後
-	if (Input::PushKey(DIK_W || DIK_UP)) {
-		transform_.translate.z += velocity_.z;
+	if (Input::PushKey(DIK_W) || Input::PushKey(DIK_UP)) {
+		transform_.translate.z += velocity_.z * GetDeltaTime();
 	}
-	if (Input::PushKey(DIK_S || DIK_DOWN)) {
-		transform_.translate.z -= velocity_.z;
+	if (Input::PushKey(DIK_S) || Input::PushKey(DIK_DOWN)) {
+		transform_.translate.z -= velocity_.z * GetDeltaTime();
 	}
 
-	if (Input::TriggerKey(DIK_SPACE)) {
+	if (Input::PushKey(DIK_SPACE)) {
 		if (manager_) {
-			// プレイヤーの座標から少し前方に発射するなどの調整も可能
-			manager_->SpawnBullet(transform_.translate);
+			Vector3 randomPos{};
+			randomPos.x = RandomFloat(-50.0f, 50.0f);
+			randomPos.y = RandomFloat(1.0f, 10.0f);
+			randomPos.z = RandomFloat(-50.0f, 50.0f);
+
+			manager_->SpawnBullet(randomPos);
 		}
 	}
 
