@@ -8,7 +8,7 @@ void TestManager::Initialize() {
 	sky_ = Model::Create("resources/test/skydome.obj");
 
 	// 弾用のInstancedModel初期化
-	bulletInstancedModel_.Initialize("resources/test/TR.obj",10000);
+	bulletInstancedModel_.Initialize("resources/test/TR.obj",5000);
 
 	// プレイヤー初期化（自分自身のポインタを渡して、弾を発射できるようにする）
 	player_.Initialize(this);
