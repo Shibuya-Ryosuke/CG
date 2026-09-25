@@ -31,4 +31,7 @@ private:
 	// 発光関連
 	float emissiveIntensity_ = 0.0f;
 	RyoEngine::Vector3 emissiveColor_{};
+
+	// ライトのid
+	uint32_t bunnyLightId_ = 0;
 };

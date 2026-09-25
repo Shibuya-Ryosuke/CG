@@ -8,21 +8,9 @@
 
 namespace RyoEngine {
 
-    // シーン内で同時に扱えるライトの最大数
-    // (Light配列用バッファをこのサイズで固定確保するため。増やす場合はここを変更してリソースを作り直す)
-    constexpr uint32_t kMaxLightCount = 16;
+    // シーン内で同時に扱えるライトの最大数（64灯）
+    constexpr uint32_t kMaxLightCount = 64;
 
-    /// <summary>
-    /// シーン全体で共有するライト群（Directional/Point/Spot/Area）とアンビエントライトを管理するクラス。
-    /// 以前は「DirectionalLightを1つだけ」保持していたが、複数灯・複数種別に対応するため
-    /// CPU側はstd::vector<Light>で管理し、Update()でGPU用バッファへ反映する方式に変更した。
-    ///
-    /// GPU側には3つのリソースを渡す想定：
-    ///   1. lightResource_       : Light配列そのもの（StructuredBufferとしてSRVを張る。stride = sizeof(Light)）
-    ///   2. lightCountResource_  : 現在有効なライト数（cbufferとしてCBVを張る）
-    ///   3. ambientResource_     : アンビエントライト（cbufferとしてCBVを張る）
-    /// ※ SRV/CBVのDescriptorHeapへの登録、ルートシグネチャ・PSO側の対応は別途必要（このクラスの範囲外）。
-    /// </summary>
     class LightManager {
     public:
         static LightManager* GetInstance();
@@ -30,22 +18,76 @@ namespace RyoEngine {
         void Initialize();
         void Finalize();
 
-        /// <summary>
-        /// CPU側(lights_)の内容をGPU用バッファへ反映する。
-        /// AddLight/RemoveLight/GetLight()経由での編集後、描画前に必ず呼ぶこと。
-        /// （Mapしっぱなしのバッファへ直接書き込むだけなので毎フレーム呼んでも軽い）
-        /// </summary>
         void Update();
 
-        // --- ライト操作 ---
-        // 追加したライトのインデックスを返す。kMaxLightCountを超えると追加できず-1を返す
+        // --- ライト操作（コードからの追加・削除） ---
+        int AddLight(LightType type);
         int AddLight(const Light& light);
         void RemoveLight(int index);
         void ClearLights();
 
+        // --- ライトの個別Getter / Setter（ID指定・インライン実装） ---
+        size_t GetLightCount() const { return lights_.size(); }
+
         Light& GetLight(int index) { return lights_[index]; }
         const Light& GetLight(int index) const { return lights_[index]; }
-        size_t GetLightCount() const { return lights_.size(); }
+
+        void SetLightType(int index, LightType type) {
+            if (index >= 0 && index < static_cast<int>(lights_.size())) {
+                lights_[index].type = type;
+            }
+        }
+        LightType GetLightType(int index) const { return lights_[index].type; }
+
+        void SetLightColor(int index, const Vector4& color) {
+            if (index >= 0 && index < static_cast<int>(lights_.size())) {
+                lights_[index].color = color;
+            }
+        }
+        const Vector4& GetLightColor(int index) const { return lights_[index].color; }
+
+        void SetLightIntensity(int index, float intensity) {
+            if (index >= 0 && index < static_cast<int>(lights_.size())) {
+                lights_[index].intensity = intensity;
+            }
+        }
+        float GetLightIntensity(int index) const { return lights_[index].intensity; }
+
+        void SetLightDirection(int index, const Vector3& direction) {
+            if (index >= 0 && index < static_cast<int>(lights_.size())) {
+                lights_[index].direction = Normalize(direction);
+            }
+        }
+        const Vector3& GetLightDirection(int index) const { return lights_[index].direction; }
+
+        void SetLightPosition(int index, const Vector3& position) {
+            if (index >= 0 && index < static_cast<int>(lights_.size())) {
+                lights_[index].position = position;
+            }
+        }
+        const Vector3& GetLightPosition(int index) const { return lights_[index].position; }
+
+        void SetLightRange(int index, float range) {
+            if (index >= 0 && index < static_cast<int>(lights_.size())) {
+                lights_[index].range = range;
+            }
+        }
+        float GetLightRange(int index) const { return lights_[index].range; }
+
+        void SetLightSpotAngle(int index, float spotAngle) {
+            if (index >= 0 && index < static_cast<int>(lights_.size())) {
+                lights_[index].spotAngle = spotAngle;
+            }
+        }
+        float GetLightSpotAngle(int index) const { return lights_[index].spotAngle; }
+
+        void SetLightSpotFalloff(int index, float spotFalloff) {
+            if (index >= 0 && index < static_cast<int>(lights_.size())) {
+                lights_[index].spotFalloff = spotFalloff;
+            }
+        }
+        float GetLightSpotFalloff(int index) const { return lights_[index].spotFalloff; }
+
 
         // --- アンビエントライト ---
         void SetAmbientLight(const AmbientLight& ambient) {
@@ -54,25 +96,22 @@ namespace RyoEngine {
         }
         void SetAmbientColor(const Vector4& color) { ambientData_->color = color; }
         void SetAmbientIntensity(float intensity) { ambientData_->intensity = intensity; }
-        const AmbientLight& GetAmbientLight() const { return *ambientData_; }
 
-        // --- GPUリソース取得（Root Descriptorとして直接バインドする想定。DescriptorHeap登録は不要） ---
+        const AmbientLight& GetAmbientLight() const { return *ambientData_; }
+        const Vector4& GetAmbientColor() const { return ambientData_->color; }
+        float GetAmbientIntensity() const { return ambientData_->intensity; }
+
+
+        // --- GPUリソース取得 ---
         ID3D12Resource* GetLightResource() const { return lightResource_.Get(); }
         ID3D12Resource* GetLightCountResource() const { return lightCountResource_.Get(); }
         ID3D12Resource* GetAmbientResource() const { return ambientResource_.Get(); }
 
-        // Light配列(StructuredBuffer)本体。SetGraphicsRootShaderResourceView()でRoot Descriptorとして直接バインドする
         D3D12_GPU_VIRTUAL_ADDRESS GetLightGPUVirtualAddress() const { return lightResource_->GetGPUVirtualAddress(); }
         D3D12_GPU_VIRTUAL_ADDRESS GetLightCountGPUVirtualAddress() const { return lightCountResource_->GetGPUVirtualAddress(); }
         D3D12_GPU_VIRTUAL_ADDRESS GetAmbientGPUVirtualAddress() const { return ambientResource_->GetGPUVirtualAddress(); }
 
-        // ================================================================
-        // 後方互換API（旧：シーンにDirectionalLightが1つだけという設計の名残）
-        // 内部的には「lights_[0]」を「シーンの代表的な指向性ライト」として読み書きする。
-        // Initialize()で必ず1つ目のライトを登録しているため lights_[0] は存在する前提。
-        // ClearLights()で全消去した状態でこれらを呼ぶと壊れるので、複数灯を扱うようになったら
-        // Model/MeshからはこちらではなくAddLight/GetLight/RemoveLightを直接使うよう移行すること。
-        // ================================================================
+        // --- 後方互換API ---
         DirectionalLight GetDirectionalLight() const {
             const Light& l = lights_[0];
             return DirectionalLight{ l.color, l.direction, l.intensity };
@@ -92,11 +131,6 @@ namespace RyoEngine {
         void SetDirection(const Vector3& direction) { lights_[0].direction = Normalize(direction); Update(); }
         void SetIntensity(float intensity) { lights_[0].intensity = intensity; Update(); }
 
-        /// <summary>
-        /// ライト・アンビエントのパラメータをImGuiで操作するデバッグUI。
-        /// ImGui::NewFrame()〜Render()の間で毎フレーム呼ぶこと。内部で編集後にUpdate()も呼ぶため、
-        /// 呼び出し側でUpdate()を別途呼ぶ必要はない。
-        /// </summary>
         void DrawImGui();
 
     private:
@@ -105,18 +139,14 @@ namespace RyoEngine {
         LightManager(const LightManager&) = delete;
         LightManager& operator=(const LightManager&) = delete;
 
-        // CPU側のライト一覧（ここを編集してからUpdate()でGPUへ反映する）
         std::vector<Light> lights_;
 
-        // Light配列用バッファ（kMaxLightCount件ぶん固定確保。StructuredBufferとして扱う想定）
         Microsoft::WRL::ComPtr<ID3D12Resource> lightResource_;
         Light* lightMappedData_ = nullptr;
 
-        // 現在の有効ライト数用バッファ（cbuffer）
         Microsoft::WRL::ComPtr<ID3D12Resource> lightCountResource_;
         LightCountData* lightCountData_ = nullptr;
 
-        // アンビエントライト用バッファ（cbuffer）
         Microsoft::WRL::ComPtr<ID3D12Resource> ambientResource_;
         AmbientLight* ambientData_ = nullptr;
     };
