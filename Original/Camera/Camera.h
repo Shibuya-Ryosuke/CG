@@ -1,13 +1,15 @@
 #pragma once
 #include "../Math/Math.h"
+#include <array>
 
 namespace RyoEngine {
     class Camera {
     public:
         Camera() = default;
         virtual  ~Camera() = default;
-        // activeCameraを決めるときに必要
+        // コピーコンストラクタの明示
         Camera(const Camera&) = default;
+        // activeCameraを決めるときに必要
         Camera& operator=(const Camera&) = default;
 
         virtual void Initialize();
@@ -28,6 +30,7 @@ namespace RyoEngine {
             viewMatrix_ = view;
             projectionMatrix_ = proj;
             viewProjectionMatrix_ = viewMatrix_ * projectionMatrix_;
+            UpdateFrustumPlanes(); // フラスタムカリング用の6平面もここで更新しておく
             isOverride_ = true; // 自動計算をスキップさせる
         }
         void SetActive(bool isActive) { isActive_ = isActive; }
@@ -42,6 +45,12 @@ namespace RyoEngine {
         const Matrix4x4& GetViewProjectionMatrix() const { return viewProjectionMatrix_; }
 
         bool IsActive() const { return isActive_; }
+
+        /// <summary>
+        /// フラスタムカリング用の6平面(Left/Right/Bottom/Top/Near/Farの順)を取得する。
+        /// Update()(またはSetCustomMatrices())のタイミングで自動的に更新されている。
+        /// </summary>
+        const std::array<Plane, 6>& GetFrustumPlanes() const { return frustumPlanes_; }
 
         /// <summary>
         /// カメラのローカル+Z軸(正面)をワールド空間へ変換したベクトル
@@ -72,6 +81,16 @@ namespace RyoEngine {
         //       SetCustomMatrices()によるオーバーライドを尊重して自動計算をスキップできるよう
         //       protectedへ変更した。
         bool isOverride_ = false;
+
+        // フラスタムカリング用の6平面 (Left/Right/Bottom/Top/Near/Farの順)
+        std::array<Plane, 6> frustumPlanes_{};
+
+        /// <summary>
+        /// viewProjectionMatrix_から視錐台の6平面を計算し、frustumPlanes_へ書き込む。
+        /// DebugCameraのようにUpdate()を完全に独自実装しているクラスは、
+        /// viewProjectionMatrix_を計算した直後にこれを呼ぶこと(呼ばないと視錐台が更新されない)。
+        /// </summary>
+        void UpdateFrustumPlanes();
 
     private:
         bool isActive_ = true;

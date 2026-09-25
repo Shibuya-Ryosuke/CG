@@ -1,12 +1,16 @@
 #pragma once
 #include "Math.h"
+#include <array>
 
 namespace RyoEngine {
-/// --- 球 ---
-/// 球と球
+	/// --- 球 ---
+	/// 球と球
 	bool IsCollision(const Sphere& s1, const Sphere& s2);
 	// 球と平面
 	bool IsCollision(const Sphere& sphere, const Plane& plane);
+	// 球とフラスタム(視錐台6平面。Camera::GetFrustumPlanes()の並び順)
+	// true: 視錐台と重なっている(=描画対象になり得る)。false: 完全に外側(=カリング対象)
+	bool IsCollision(const Sphere& sphere, const std::array<Plane, 6>& frustumPlanes);
 
 	// --- 直線・半直線・線分 と 平面 ---
 	bool IsCollision(const Segment& segment, const Plane& plane);

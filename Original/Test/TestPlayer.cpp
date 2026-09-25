@@ -25,7 +25,7 @@ void TestPlayer::Update() {
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
-
+	ImGui::Text("isVisible %d", bunny_->IsVisible());
 	// 発光（周囲にライティングするわけではない）
 	ImGui::DragFloat("emissive intensity", &emissiveIntensity_, 0.01f, 0.0f, 100.0f);
 	ImGui::ColorEdit3("emissive color", &emissiveColor_.x);
@@ -54,12 +54,14 @@ void TestPlayer::Update() {
 
 	if (Input::PushKey(DIK_SPACE)) {
 		if (manager_) {
-			Vector3 randomPos{};
-			randomPos.x = RandomFloat(-50.0f, 50.0f);
-			randomPos.y = RandomFloat(1.0f, 10.0f);
-			randomPos.z = RandomFloat(-50.0f, 50.0f);
+			for (int32_t i = 0;i < 20;i++) {
+				Vector3 randomPos{};
+				randomPos.x = RandomFloat(-50.0f, 50.0f);
+				randomPos.y = RandomFloat(1.0f, 10.0f);
+				randomPos.z = RandomFloat(-50.0f, 50.0f);
 
-			manager_->SpawnBullet(randomPos);
+				manager_->SpawnBullet(randomPos);
+			}
 		}
 	}
 

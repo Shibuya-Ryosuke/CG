@@ -246,6 +246,9 @@ namespace RyoEngine {
         meshes_.clear();
         meshes_.reserve(modelData.meshes.size());
 
+        // フラスタムカリング用：全メッシュの全頂点から、原点から一番遠い頂点までの距離(=半径)を求める
+        boundingRadius_ = 0.0f;
+
         for (const auto& srcMesh : modelData.meshes) {
             MeshResource mesh;
 
@@ -259,6 +262,15 @@ namespace RyoEngine {
             mesh.vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
             std::memcpy(vertexData, srcMesh.vertices.data(), sizeof(VertexData) * srcMesh.vertices.size());
             mesh.vertexCount = static_cast<uint32_t>(srcMesh.vertices.size());
+
+            // 各頂点のローカル座標(原点からの距離)を見て、boundingRadius_を更新していく
+            for (const auto& vertex : srcMesh.vertices) {
+                Vector3 position = { vertex.position.x, vertex.position.y, vertex.position.z };
+                float distance = Length(position);
+                if (distance > boundingRadius_) {
+                    boundingRadius_ = distance;
+                }
+            }
 
             // 2. マテリアルバッファ作成 (メッシュごとに1つ)
             mesh.materialResource = DirectXCommon::CreateBufferResource(device, sizeof(Material));
@@ -370,19 +382,37 @@ namespace RyoEngine {
 
     void Model::TransferMatrix(const Camera& camera) {
         // ワールド行列の作成
-        worldMatrix_ = MakeAffineMatrix(transform_.scale,transform_.rotate,transform_.translate);
-        
+        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+
         // WVP行列の計算 (World * ViewProjection)
         Matrix4x4 wvpMatrix = worldMatrix_ * camera.GetViewProjectionMatrix();
 
         wvpData_->World = worldMatrix_;
         wvpData_->WVP = wvpMatrix;
+
+        // フラスタムカリング判定
+        // NOTE: スケールが非一様(x/y/zで値が違う)でも安全なように、一番大きい成分で半径を拡大する
+        //       (実際の形より少し大きめの球になるが、誤って消してしまうよりは安全)
+        float maxScale = transform_.scale.x;
+        if (transform_.scale.y > maxScale) maxScale = transform_.scale.y;
+        if (transform_.scale.z > maxScale) maxScale = transform_.scale.z;
+
+        Sphere boundingSphere{};
+        boundingSphere.center = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
+        boundingSphere.radius = boundingRadius_ * maxScale;
+
+        isVisible_ = IsCollision(boundingSphere, camera.GetFrustumPlanes());
     }
 
     void Model::Draw(ModelCommon::DrawType drawType) {
-        ModelCommon::GetInstance()->SetDrawCommands([ =, this]() {
+        // フラスタムカリング：視錐台の外にあるなら、描画コマンドの予約自体をしない
+        if (!isVisible_) {
+            return;
+        }
+
+        ModelCommon::GetInstance()->SetDrawCommands([=, this]() {
             InternalDraw(drawType);
-        });
+            });
     }
 
     std::unique_ptr<Model> Model::Create(const std::string& filePath, bool registAnimEdit, const std::string& name) {

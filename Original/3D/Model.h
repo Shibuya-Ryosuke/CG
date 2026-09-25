@@ -9,6 +9,7 @@
 #include "../Loader/ModelLoader.h"
 #include "../Camera/Camera.h"
 #include "../Camera/DebugCamera.h"
+#include "../Math/Collision.h"
 #include "ModelCommon.h"
 
 namespace RyoEngine {
@@ -142,7 +143,7 @@ namespace RyoEngine {
         bool GetHasUV(size_t meshIndex = 0) const { return meshes_[meshIndex].hasUV; }
 
         ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
-        
+
         Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
         Vector3 GetWorldPos() const { return { wvpData_->World.m[3][0],wvpData_->World.m[3][1],wvpData_->World.m[3][2] }; }
         Vector3 GetOrientationX() const { return Normalize({ wvpData_->World.m[0][0], wvpData_->World.m[0][1], wvpData_->World.m[0][2] }); }
@@ -150,7 +151,13 @@ namespace RyoEngine {
         Vector3 GetOrientationZ() const { return Normalize({ wvpData_->World.m[2][0], wvpData_->World.m[2][1], wvpData_->World.m[2][2] }); }
 
         int32_t GetAnimEditID() const { return animEditID_; }
-        
+
+        /// <summary>
+        /// 直近のTransferMatrix(camera)時点で、視錐台と重なっていたか(=描画対象かどうか)。
+        /// Draw()はこれがfalseの場合、描画コマンドの予約自体をスキップする(フラスタムカリング)。
+        /// </summary>
+        bool IsVisible() const { return isVisible_; }
+
 
         // Setter
         /// <summary>
@@ -236,7 +243,7 @@ namespace RyoEngine {
         float GetUVRotate(size_t meshIndex = 0) const { return meshes_[meshIndex].uvRotate; }
         Vector2 GetUVTranslate(size_t meshIndex = 0) const { return meshes_[meshIndex].uvTranslate; }
 
-        
+
         // マルチマテリアル版 (名前指定)
         ShadingMode GetLambertByName(const std::string& materialName) const;
         Vector4 GetColorByName(const std::string& materialName) const;
@@ -277,6 +284,12 @@ namespace RyoEngine {
         TransformationMatrix* wvpData_ = nullptr;
 
         Matrix4x4 worldMatrix_{};
+
+        // フラスタムカリング用。モデルのローカル座標系での「原点から一番遠い頂点までの距離」
+        // (InternalInitialize()で全頂点から計算する。実際の判定時はワールドスケールぶん拡大して使う)
+        float boundingRadius_ = 0.0f;
+        // 直近のTransferMatrix(camera)時点で視錐台と重なっていたか。Draw()がこれを見て描画をスキップする
+        bool isVisible_ = true;
 
         int32_t animEditID_ = 0;
     };

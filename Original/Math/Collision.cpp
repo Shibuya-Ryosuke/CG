@@ -15,6 +15,18 @@ namespace RyoEngine {
 		return k <= sphere.radius;
 	}
 
+	bool IsCollision(const Sphere& sphere, const std::array<Plane, 6>& frustumPlanes) {
+		for (const auto& plane : frustumPlanes) {
+			// 平面の「内側(視錐台の中)」を正としたときの符号付き距離
+			float signedDistance = Dot(plane.normal, sphere.center) - plane.distance;
+			// 半径ぶんを差し引いても尚マイナス(=平面の外側)なら、球は完全にその平面の外にある
+			if (signedDistance < -sphere.radius) {
+				return false; // 1枚でも完全に外側なら、視錐台全体とも重ならない
+			}
+		}
+		return true;
+	}
+
 	bool IsCollision(const Segment& segment, const Plane& plane) {
 		float dot = Dot(plane.normal, segment.diff);
 		if (dot == 0.0f) {
@@ -292,4 +304,3 @@ namespace RyoEngine {
 		return true;
 	}
 }
-

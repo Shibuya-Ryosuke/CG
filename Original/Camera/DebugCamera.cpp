@@ -22,7 +22,7 @@ namespace RyoEngine {
 	}
 
 	void DebugCamera::Update() {
-		
+
 		if (isAvailable_) {
 			float wheel = static_cast<float>(Input::GetMouseWheel());
 			if (std::abs(wheel) > 0) {
@@ -54,7 +54,7 @@ namespace RyoEngine {
 
 
 		// カメラのワールド行列を作成
-		Matrix4x4 worldMatrix =  MakeTranslateMatrix(translate_) * matRot;
+		Matrix4x4 worldMatrix = MakeTranslateMatrix(translate_) * matRot;
 
 		// ワールド行列の逆行列をビュー行列へ
 		viewMatrix_ = Inverse(worldMatrix);
@@ -64,5 +64,10 @@ namespace RyoEngine {
 
 		// ViewProjection行列の合成
 		viewProjectionMatrix_ = viewMatrix_ * projectionMatrix_;
+
+		// フラスタムカリング用の6平面もここで更新しておく
+		// (このクラスはUpdate()を完全に独自実装しているため、Camera::Update()側の
+		//  呼び出しに乗っかれない。呼び忘れると視錐台が更新されないので要注意)
+		UpdateFrustumPlanes();
 	}
 }
