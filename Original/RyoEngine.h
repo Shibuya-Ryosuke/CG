@@ -46,7 +46,6 @@ namespace RyoEngine {
     WinApp* GetWinApp();
     DirectXCommon* GetDxCommon();
     TextureManager* GetTexManager();
-    LightManager* GetLightManager();
     ModelCommon* GetModelCommon();
     SpriteCommon* GetSpriteCommon();
     //ReflectCommon* GetReflectCommon();

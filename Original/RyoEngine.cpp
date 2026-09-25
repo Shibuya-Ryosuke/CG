@@ -27,7 +27,6 @@ namespace RyoEngine {
         DirectXCommon* dxCommon_ = nullptr;
         ShaderCompiler* shaderCompiler_ = nullptr;
         TextureManager* textureManager_ = nullptr;
-        LightManager* lightManager_ = nullptr;
        
         ModelCommon* modelCommon_ = nullptr;
         SpriteCommon* spriteCommon_ = nullptr;
@@ -72,8 +71,7 @@ namespace RyoEngine {
         PostProcess::GetInstance()->Initialize();
 
         // ライトマネージャー
-        lightManager_ = LightManager::GetInstance();
-        lightManager_->Initialize();
+        LightManager::Initialize();
 
         // シャドウ
         ShadowMap::Initialize();
@@ -131,7 +129,7 @@ namespace RyoEngine {
         modelCommon_->Finalize();
         PrimitiveRenderer::Finalize();
         ShadowMap::Finalize();
-        lightManager_->Finalize();
+        LightManager::Finalize();
         textureManager_->Finalize();
         shaderCompiler_->Finalize();
 
@@ -336,7 +334,6 @@ namespace RyoEngine {
     WinApp* GetWinApp() { return winApp_; }
     DirectXCommon* GetDxCommon() { return dxCommon_; }
     TextureManager* GetTexManager() { return textureManager_; }
-    LightManager* GetLightManager() { return lightManager_; }
     ModelCommon* GetModelCommon() { return modelCommon_; }
     SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
     //ReflectCommon* GetReflectCommon() { return reflectCommon_; }

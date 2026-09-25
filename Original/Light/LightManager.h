@@ -13,125 +13,126 @@ namespace RyoEngine {
 
     class LightManager {
     public:
+        // シングルトンインスタンスの取得
         static LightManager* GetInstance();
 
-        void Initialize();
-        void Finalize();
-
-        void Update();
+        static void Initialize();
+        static void Finalize();
+        static void Update();
 
         // --- ライト操作（コードからの追加・削除） ---
-        int AddLight(LightType type);
-        int AddLight(const Light& light);
-        void RemoveLight(int index);
-        void ClearLights();
+        static int AddLight(LightType type);
+        static int AddLight(const Light& light);
+        static void RemoveLight(int index);
+        static void ClearLights();
 
-        // --- ライトの個別Getter / Setter（ID指定・インライン実装） ---
-        size_t GetLightCount() const { return lights_.size(); }
+        // --- ライトの個別Getter / Setter（ID指定） ---
+        static size_t GetLightCount() { return GetInstance()->lights_.size(); }
 
-        Light& GetLight(int index) { return lights_[index]; }
-        const Light& GetLight(int index) const { return lights_[index]; }
+        //static Light& GetLight(int index) { return GetInstance()->lights_[index]; }
+        static const Light& GetLight(int index) { return GetInstance()->lights_[index]; }
 
-        void SetLightType(int index, LightType type) {
-            if (index >= 0 && index < static_cast<int>(lights_.size())) {
-                lights_[index].type = type;
+        static void SetLightType(int index, LightType type) {
+            if (index >= 0 && index < static_cast<int>(GetInstance()->lights_.size())) {
+                GetInstance()->lights_[index].type = type;
             }
         }
-        LightType GetLightType(int index) const { return lights_[index].type; }
+        static LightType GetLightType(int index) { return GetInstance()->lights_[index].type; }
 
-        void SetLightColor(int index, const Vector4& color) {
-            if (index >= 0 && index < static_cast<int>(lights_.size())) {
-                lights_[index].color = color;
+        static void SetLightColor(int index, const Vector4& color) {
+            if (index >= 0 && index < static_cast<int>(GetInstance()->lights_.size())) {
+                GetInstance()->lights_[index].color = color;
             }
         }
-        const Vector4& GetLightColor(int index) const { return lights_[index].color; }
+        static const Vector4& GetLightColor(int index) { return GetInstance()->lights_[index].color; }
 
-        void SetLightIntensity(int index, float intensity) {
-            if (index >= 0 && index < static_cast<int>(lights_.size())) {
-                lights_[index].intensity = intensity;
+        static void SetLightIntensity(int index, float intensity) {
+            if (index >= 0 && index < static_cast<int>(GetInstance()->lights_.size())) {
+                GetInstance()->lights_[index].intensity = intensity;
             }
         }
-        float GetLightIntensity(int index) const { return lights_[index].intensity; }
+        static float GetLightIntensity(int index) { return GetInstance()->lights_[index].intensity; }
 
-        void SetLightDirection(int index, const Vector3& direction) {
-            if (index >= 0 && index < static_cast<int>(lights_.size())) {
-                lights_[index].direction = Normalize(direction);
+        static void SetLightDirection(int index, const Vector3& direction) {
+            if (index >= 0 && index < static_cast<int>(GetInstance()->lights_.size())) {
+                GetInstance()->lights_[index].direction = Normalize(direction);
             }
         }
-        const Vector3& GetLightDirection(int index) const { return lights_[index].direction; }
+        static const Vector3& GetLightDirection(int index) { return GetInstance()->lights_[index].direction; }
 
-        void SetLightPosition(int index, const Vector3& position) {
-            if (index >= 0 && index < static_cast<int>(lights_.size())) {
-                lights_[index].position = position;
+        static void SetLightPosition(int index, const Vector3& position) {
+            if (index >= 0 && index < static_cast<int>(GetInstance()->lights_.size())) {
+                GetInstance()->lights_[index].position = position;
             }
         }
-        const Vector3& GetLightPosition(int index) const { return lights_[index].position; }
+        static const Vector3& GetLightPosition(int index) { return GetInstance()->lights_[index].position; }
 
-        void SetLightRange(int index, float range) {
-            if (index >= 0 && index < static_cast<int>(lights_.size())) {
-                lights_[index].range = range;
+        static void SetLightRange(int index, float range) {
+            if (index >= 0 && index < static_cast<int>(GetInstance()->lights_.size())) {
+                GetInstance()->lights_[index].range = range;
             }
         }
-        float GetLightRange(int index) const { return lights_[index].range; }
+        static float GetLightRange(int index) { return GetInstance()->lights_[index].range; }
 
-        void SetLightSpotAngle(int index, float spotAngle) {
-            if (index >= 0 && index < static_cast<int>(lights_.size())) {
-                lights_[index].spotAngle = spotAngle;
+        static void SetLightSpotAngle(int index, float spotAngle) {
+            if (index >= 0 && index < static_cast<int>(GetInstance()->lights_.size())) {
+                GetInstance()->lights_[index].spotAngle = spotAngle;
             }
         }
-        float GetLightSpotAngle(int index) const { return lights_[index].spotAngle; }
+        static float GetLightSpotAngle(int index) { return GetInstance()->lights_[index].spotAngle; }
 
-        void SetLightSpotFalloff(int index, float spotFalloff) {
-            if (index >= 0 && index < static_cast<int>(lights_.size())) {
-                lights_[index].spotFalloff = spotFalloff;
+        static void SetLightSpotFalloff(int index, float spotFalloff) {
+            if (index >= 0 && index < static_cast<int>(GetInstance()->lights_.size())) {
+                GetInstance()->lights_[index].spotFalloff = spotFalloff;
             }
         }
-        float GetLightSpotFalloff(int index) const { return lights_[index].spotFalloff; }
+        static float GetLightSpotFalloff(int index) { return GetInstance()->lights_[index].spotFalloff; }
 
 
         // --- アンビエントライト ---
-        void SetAmbientLight(const AmbientLight& ambient) {
-            ambientData_->color = ambient.color;
-            ambientData_->intensity = ambient.intensity;
+        static void SetAmbientLight(const AmbientLight& ambient) {
+            GetInstance()->ambientData_->color = ambient.color;
+            GetInstance()->ambientData_->intensity = ambient.intensity;
         }
-        void SetAmbientColor(const Vector4& color) { ambientData_->color = color; }
-        void SetAmbientIntensity(float intensity) { ambientData_->intensity = intensity; }
+        static void SetAmbientColor(const Vector4& color) { GetInstance()->ambientData_->color = color; }
+        static void SetAmbientIntensity(float intensity) { GetInstance()->ambientData_->intensity = intensity; }
 
-        const AmbientLight& GetAmbientLight() const { return *ambientData_; }
-        const Vector4& GetAmbientColor() const { return ambientData_->color; }
-        float GetAmbientIntensity() const { return ambientData_->intensity; }
+        static const AmbientLight& GetAmbientLight() { return *GetInstance()->ambientData_; }
+        static const Vector4& GetAmbientColor() { return GetInstance()->ambientData_->color; }
+        static float GetAmbientIntensity() { return GetInstance()->ambientData_->intensity; }
 
 
         // --- GPUリソース取得 ---
-        ID3D12Resource* GetLightResource() const { return lightResource_.Get(); }
-        ID3D12Resource* GetLightCountResource() const { return lightCountResource_.Get(); }
-        ID3D12Resource* GetAmbientResource() const { return ambientResource_.Get(); }
+        static ID3D12Resource* GetLightResource() { return GetInstance()->lightResource_.Get(); }
+        static ID3D12Resource* GetLightCountResource() { return GetInstance()->lightCountResource_.Get(); }
+        static ID3D12Resource* GetAmbientResource() { return GetInstance()->ambientResource_.Get(); }
 
-        D3D12_GPU_VIRTUAL_ADDRESS GetLightGPUVirtualAddress() const { return lightResource_->GetGPUVirtualAddress(); }
-        D3D12_GPU_VIRTUAL_ADDRESS GetLightCountGPUVirtualAddress() const { return lightCountResource_->GetGPUVirtualAddress(); }
-        D3D12_GPU_VIRTUAL_ADDRESS GetAmbientGPUVirtualAddress() const { return ambientResource_->GetGPUVirtualAddress(); }
+        static D3D12_GPU_VIRTUAL_ADDRESS GetLightGPUVirtualAddress() { return GetInstance()->lightResource_->GetGPUVirtualAddress(); }
+        static D3D12_GPU_VIRTUAL_ADDRESS GetLightCountGPUVirtualAddress() { return GetInstance()->lightCountResource_->GetGPUVirtualAddress(); }
+        static D3D12_GPU_VIRTUAL_ADDRESS GetAmbientGPUVirtualAddress() { return GetInstance()->ambientResource_->GetGPUVirtualAddress(); }
 
         // --- 後方互換API ---
-        DirectionalLight GetDirectionalLight() const {
-            const Light& l = lights_[0];
+        static DirectionalLight GetDirectionalLight() {
+            const Light& l = GetInstance()->lights_[0];
             return DirectionalLight{ l.color, l.direction, l.intensity };
         }
-        const Vector4& GetColor() const { return lights_[0].color; }
-        const Vector3& GetDirection() const { return lights_[0].direction; }
-        float GetIntensity() const { return lights_[0].intensity; }
+        static const Vector4& GetColor() { return GetInstance()->lights_[0].color; }
+        static const Vector3& GetDirection() { return GetInstance()->lights_[0].direction; }
+        static float GetIntensity() { return GetInstance()->lights_[0].intensity; }
 
-        void SetDirectionalLight(const DirectionalLight& light) {
-            lights_[0].type = LightType::Directional;
-            lights_[0].color = light.color;
-            lights_[0].direction = Normalize(light.direction);
-            lights_[0].intensity = light.intensity;
+        static void SetDirectionalLight(const DirectionalLight& light) {
+            auto* inst = GetInstance();
+            inst->lights_[0].type = LightType::Directional;
+            inst->lights_[0].color = light.color;
+            inst->lights_[0].direction = Normalize(light.direction);
+            inst->lights_[0].intensity = light.intensity;
             Update();
         }
-        void SetColor(const Vector4& color) { lights_[0].color = color; Update(); }
-        void SetDirection(const Vector3& direction) { lights_[0].direction = Normalize(direction); Update(); }
-        void SetIntensity(float intensity) { lights_[0].intensity = intensity; Update(); }
+        static void SetColor(const Vector4& color) { GetInstance()->lights_[0].color = color; Update(); }
+        static void SetDirection(const Vector3& direction) { GetInstance()->lights_[0].direction = Normalize(direction); Update(); }
+        static void SetIntensity(float intensity) { GetInstance()->lights_[0].intensity = intensity; Update(); }
 
-        void DrawImGui();
+        static void DrawImGui();
 
     private:
         LightManager() = default;
@@ -139,6 +140,7 @@ namespace RyoEngine {
         LightManager(const LightManager&) = delete;
         LightManager& operator=(const LightManager&) = delete;
 
+        // 非静的メンバ変数（インスタンスごとに保持される実データ）
         std::vector<Light> lights_;
 
         Microsoft::WRL::ComPtr<ID3D12Resource> lightResource_;

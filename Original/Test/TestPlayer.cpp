@@ -13,7 +13,7 @@ void TestPlayer::Initialize(TestManager* manager) {
 	transform_.scale = { 1.0f,1.0f,1.0f };
 	transform_.rotate = { 0.0f,2.8f,0.0f };
 
-	bunnyLightId_ = LightManager::GetInstance()->AddLight(LightType::Point);
+	bunnyLightId_ = LightManager::AddLight(LightType::Point);
 }
 
 void TestPlayer::Update() {
@@ -71,7 +71,7 @@ void TestPlayer::Update() {
 	bunny_->SetTransform(transform_);
 
 	// ライト追従
-	LightManager::GetInstance()->SetLightPosition(bunnyLightId_, bunny_->GetTranslate());
+	LightManager::SetLightPosition(bunnyLightId_, bunny_->GetTranslate());
 
 }
 

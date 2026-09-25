@@ -12,18 +12,20 @@ namespace RyoEngine {
     }
 
     void LightManager::Initialize() {
+        auto instance = GetInstance();
+
         Logger::Log("LightManager : Initializing...\n");
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
-        lightResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Light) * kMaxLightCount);
-        lightResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightMappedData_));
+        instance->lightResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Light) * kMaxLightCount);
+        instance->lightResource_->Map(0, nullptr, reinterpret_cast<void**>(&instance->lightMappedData_));
 
-        lightCountResource_ = DirectXCommon::CreateBufferResource(device, sizeof(LightCountData));
-        lightCountResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightCountData_));
-        lightCountData_->lightCount = 0;
+        instance->lightCountResource_ = DirectXCommon::CreateBufferResource(device, sizeof(LightCountData));
+        instance->lightCountResource_->Map(0, nullptr, reinterpret_cast<void**>(&instance->lightCountData_));
+        instance->lightCountData_->lightCount = 0;
 
-        ambientResource_ = DirectXCommon::CreateBufferResource(device, sizeof(AmbientLight));
-        ambientResource_->Map(0, nullptr, reinterpret_cast<void**>(&ambientData_));
+        instance->ambientResource_ = DirectXCommon::CreateBufferResource(device, sizeof(AmbientLight));
+        instance->ambientResource_->Map(0, nullptr, reinterpret_cast<void**>(&instance->ambientData_));
 
         // デフォルトライトの登録
         Light defaultLight{};
@@ -33,8 +35,8 @@ namespace RyoEngine {
         defaultLight.intensity = 1.0f;
         AddLight(defaultLight);
 
-        ambientData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-        ambientData_->intensity = 0.1f;
+        instance->ambientData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+        instance->ambientData_->intensity = 0.1f;
 
         Update();
 
@@ -42,32 +44,38 @@ namespace RyoEngine {
     }
 
     void LightManager::Finalize() {
+        auto instance = GetInstance();
+
         Logger::Log("LightManager : Finalizing...\n");
-        lightResource_.Reset();
-        lightMappedData_ = nullptr;
-        lightCountResource_.Reset();
-        lightCountData_ = nullptr;
-        ambientResource_.Reset();
-        ambientData_ = nullptr;
-        lights_.clear();
+        instance->lightResource_.Reset();
+        instance->lightMappedData_ = nullptr;
+        instance->lightCountResource_.Reset();
+        instance->lightCountData_ = nullptr;
+        instance->ambientResource_.Reset();
+        instance->ambientData_ = nullptr;
+        instance->lights_.clear();
         Logger::LogSuccess("LightManager : Finalized\n");
     }
 
     void LightManager::Update() {
-        uint32_t count = static_cast<uint32_t>(lights_.size());
+        auto instance = GetInstance();
+
+        uint32_t count = static_cast<uint32_t>(instance->lights_.size());
         if (count > kMaxLightCount) {
             Logger::Log("LightManager : Light count exceeds kMaxLightCount, truncating.\n");
             count = kMaxLightCount;
         }
 
         for (uint32_t i = 0; i < count; ++i) {
-            lightMappedData_[i] = lights_[i];
+            instance->lightMappedData_[i] = instance->lights_[i];
         }
-        lightCountData_->lightCount = count;
+        instance->lightCountData_->lightCount = count;
     }
 
     int LightManager::AddLight(LightType type) {
-        if (lights_.size() >= kMaxLightCount) {
+        auto instance = GetInstance();
+
+        if (instance->lights_.size() >= kMaxLightCount) {
             Logger::Log("LightManager : Cannot add light, kMaxLightCount reached.\n");
             return -1;
         }
@@ -81,55 +89,63 @@ namespace RyoEngine {
         newLight.spotAngle = 0.5f;
         newLight.spotFalloff = 0.1f;
 
-        lights_.push_back(newLight);
-        return static_cast<int>(lights_.size() - 1);
+        instance->lights_.push_back(newLight);
+        return static_cast<int>(instance->lights_.size() - 1);
     }
 
     int LightManager::AddLight(const Light& light) {
-        if (lights_.size() >= kMaxLightCount) {
+        auto instance = GetInstance();
+
+        if (instance->lights_.size() >= kMaxLightCount) {
             Logger::Log("LightManager : Cannot add light, kMaxLightCount reached.\n");
             return -1;
         }
-        lights_.push_back(light);
-        return static_cast<int>(lights_.size() - 1);
+        instance->lights_.push_back(light);
+        return static_cast<int>(instance->lights_.size() - 1);
     }
 
     void LightManager::RemoveLight(int index) {
-        if (index < 0 || index >= static_cast<int>(lights_.size())) {
+        auto instance = GetInstance();
+
+        if (index < 0 || index >= static_cast<int>(instance->lights_.size())) {
             Logger::Log("LightManager : RemoveLight index out of range.\n");
             return;
         }
-        lights_.erase(lights_.begin() + index);
+        instance->lights_.erase(instance->lights_.begin() + index);
     }
 
     void LightManager::ClearLights() {
-        lights_.clear();
+        auto instance = GetInstance();
+
+        instance->lights_.clear();
     }
 
     void LightManager::DrawImGui() {
+        auto instance = GetInstance();
+
         ImGui::Begin("LightManager");
 
         // --- アンビエントライト ---
         if (ImGui::CollapsingHeader("環境光", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::ColorEdit3("環境光の色", &ambientData_->color.x);
-            ImGui::SliderFloat("環境光の強さ", &ambientData_->intensity, 0.0f, 2.0f);
+            ImGui::ColorEdit3("環境光の色", &instance->ambientData_->color.x);
+            ImGui::SliderFloat("環境光の強さ", &instance->ambientData_->intensity, 0.0f, 2.0f);
         }
 
         ImGui::Separator();
 
         // --- ライト一覧 ---
-        ImGui::Text("ライト一覧: %zu / %u", lights_.size(), kMaxLightCount);
+        ImGui::Text("ライト一覧: %zu / %u", instance->lights_.size(), kMaxLightCount);
 
-        if (ImGui::Button("ライトの追加") && lights_.size() < kMaxLightCount) {
+        if (ImGui::Button("ライトの追加") && instance->lights_.size() < kMaxLightCount) {
             AddLight(LightType::Directional);
         }
 
         int removeIndex = -1;
         const char* typeNames[] = { "平行光源（サン）", "ポイント", "スポット", "エリア（未実装）" };
 
-        for (size_t i = 0; i < lights_.size(); ++i) {
+        for (size_t i = 0; i < instance->lights_.size(); ++i) {
             ImGui::PushID(static_cast<int>(i));
-            Light& light = lights_[i];
+            Light& light = instance->lights_[i];
 
             std::string header = "ライト " + std::to_string(i);
             if (ImGui::CollapsingHeader(header.c_str())) {
