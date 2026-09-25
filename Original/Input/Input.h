@@ -16,6 +16,10 @@
 namespace RyoEngine {
 	class Input {
 	public:
+        enum class DeviceType {
+            Keyboard,
+            Gamepad,
+        };
 
 		static void Initialize(HINSTANCE hInstance, HWND hwnd);
 
@@ -103,6 +107,11 @@ namespace RyoEngine {
             return (std::abs(val) < 0.1f) ? 0.0f : val;
         }
 
+        // デバイスタイプ
+        static DeviceType GetDeviceType() {
+            return GetInstance()->deviceType_;
+        }
+
 	private:
 		Input() = default;
 		~Input() = default;
@@ -124,5 +133,7 @@ namespace RyoEngine {
 		XINPUT_STATE joyState_ = {};
 		XINPUT_STATE joyStatePrevious_ = {};
 		bool isConnected_ = false;
+
+        DeviceType deviceType_ = DeviceType::Keyboard;
 	};
 }

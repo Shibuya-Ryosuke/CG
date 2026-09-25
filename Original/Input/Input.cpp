@@ -81,5 +81,45 @@ namespace RyoEngine {
 		// 0番目のコントローラーの状態取得
 		DWORD dwResult = XInputGetState(0, &instance->joyState_);
 		instance->isConnected_ = (dwResult == ERROR_SUCCESS);
+
+		// デバイスタイプ判定ロジック
+		// 1. ゲームパッドの入力判定（ボタンが押された、またはスティックが倒されたか）
+		if (instance->isConnected_) {
+			// ボタンのトリガー（押された瞬間）をチェック
+			WORD currentButtons = instance->joyState_.Gamepad.wButtons;
+			WORD prevButtons = instance->joyStatePrevious_.Gamepad.wButtons;
+			bool buttonPressed = (currentButtons != prevButtons) && (currentButtons != 0);
+
+			// スティックの傾きをチェック（デッドゾーン考慮）
+			float lx = (float)instance->joyState_.Gamepad.sThumbLX / 32768.0f;
+			float ly = (float)instance->joyState_.Gamepad.sThumbLY / 32768.0f;
+			float rx = (float)instance->joyState_.Gamepad.sThumbRX / 32768.0f;
+			float ry = (float)instance->joyState_.Gamepad.sThumbRY / 32768.0f;
+			bool stickMoved = (std::abs(lx) > 0.2f || std::abs(ly) > 0.2f || std::abs(rx) > 0.2f || std::abs(ry) > 0.2f);
+
+			if (buttonPressed || stickMoved) {
+				instance->deviceType_ = DeviceType::Gamepad;
+			}
+		}
+
+		// 2. キーボード・マウスの入力判定
+		// キーボードのいずれかが押されたか
+		for (int i = 0; i < 256; ++i) {
+			if ((instance->keys_[i] & 0x80) && !(instance->preKeys_[i] & 0x80)) {
+				instance->deviceType_ = DeviceType::Keyboard;
+				break;
+			}
+		}
+		// マウスのクリックや移動・ホイールをチェック
+		for (int i = 0; i < 3; ++i) {
+			if ((instance->mouseState_.rgbButtons[i] & 0x80) && !(instance->preMouseState_.rgbButtons[i] & 0x80)) {
+				instance->deviceType_ = DeviceType::Keyboard;
+				break;
+			}
+		}
+		// 0だと判定が厳しすぎるようならstd::abs(lX) > 2などで緩める
+		if (instance->mouseState_.lX != 0 || instance->mouseState_.lY != 0 || instance->mouseState_.lZ != 0) {
+			instance->deviceType_ = DeviceType::Keyboard;
+		}
 	}
 }
