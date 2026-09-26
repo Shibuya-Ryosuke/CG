@@ -3,6 +3,7 @@
 #include <wrl.h>
 #include <cstdint>
 #include <vector>
+#include <chrono>
 
 namespace RyoEngine {
 
@@ -59,6 +60,39 @@ namespace RyoEngine {
         void SetBloomIntensity(float intensity) { bloomIntensity_ = intensity; }
         float GetBloomIntensity() const { return bloomIntensity_; }
 
+        // --- 追加エフェクト ---
+        void SetDistortionEnabled(bool enabled) { distortionEnabled_ = enabled; }
+        bool IsDistortionEnabled() const { return distortionEnabled_; }
+        void SetDistortionStrength(float strength) { distortionStrength_ = strength; }
+        float GetDistortionStrength() const { return distortionStrength_; }
+
+        void SetGlitchEnabled(bool enabled) { glitchEnabled_ = enabled; }
+        bool IsGlitchEnabled() const { return glitchEnabled_; }
+        void SetGlitchIntensity(float intensity) { glitchIntensity_ = intensity; }
+        float GetGlitchIntensity() const { return glitchIntensity_; }
+
+        void SetChromaticAberrationEnabled(bool enabled) { chromaticAberrationEnabled_ = enabled; }
+        bool IsChromaticAberrationEnabled() const { return chromaticAberrationEnabled_; }
+        void SetChromaticAberrationStrength(float strength) { chromaticAberrationStrength_ = strength; }
+        float GetChromaticAberrationStrength() const { return chromaticAberrationStrength_; }
+
+        // NOTE: 簡易版(3x3ボックスブラーの1パス)。強くかけるとバンディングが出やすいので、
+        //       本格的なブラーが必要になったらブルームと同じダウンサンプル方式に切り替えること。
+        void SetBlurEnabled(bool enabled) { blurEnabled_ = enabled; }
+        bool IsBlurEnabled() const { return blurEnabled_; }
+        void SetBlurStrength(float strength) { blurStrength_ = strength; }
+        float GetBlurStrength() const { return blurStrength_; }
+
+        void SetGrayscaleEnabled(bool enabled) { grayscaleEnabled_ = enabled; }
+        bool IsGrayscaleEnabled() const { return grayscaleEnabled_; }
+        void SetGrayscaleIntensity(float intensity) { grayscaleIntensity_ = intensity; }
+        float GetGrayscaleIntensity() const { return grayscaleIntensity_; }
+
+        void SetNoiseEnabled(bool enabled) { noiseEnabled_ = enabled; }
+        bool IsNoiseEnabled() const { return noiseEnabled_; }
+        void SetNoiseIntensity(float intensity) { noiseIntensity_ = intensity; }
+        float GetNoiseIntensity() const { return noiseIntensity_; }
+
     private:
         PostProcess() = default;
         ~PostProcess() = default;
@@ -109,6 +143,31 @@ namespace RyoEngine {
         float bloomThreshold_ = 1.0f;   // これを超えた明るさの部分だけがブルームの対象になる
         float bloomIntensity_ = 1.0f;   // 最終的にシーンへ加算する際の強さ
 
+        // --- 追加エフェクト用フラグ・パラメータ ---
+        // NOTE: distortion/glitchはUVを歪ませてからサンプリングする(色を歪ませる系より先に適用)。
+        //       blur/chromaticAberrationはサンプリング方法そのものを変える。
+        //       grayscale/noiseは、露出・トーンマッピングを終えた最終画像に対する仕上げ処理。
+        bool distortionEnabled_ = false;
+        float distortionStrength_ = 0.01f;
+
+        bool glitchEnabled_ = false;
+        float glitchIntensity_ = 0.05f;
+
+        bool chromaticAberrationEnabled_ = false;
+        float chromaticAberrationStrength_ = 0.005f;
+
+        bool blurEnabled_ = false;
+        float blurStrength_ = 0.003f; // UV空間での直接のオフセット量(簡易実装のため解像度非依存の近似値)
+
+        bool grayscaleEnabled_ = false;
+        float grayscaleIntensity_ = 1.0f; // 0:元の色のまま 1:完全に白黒
+
+        bool noiseEnabled_ = false;
+        float noiseIntensity_ = 0.05f;
+
+        // ノイズ/グリッチのアニメーションに使う経過時間の計測用
+        std::chrono::steady_clock::time_point startTime_;
+
         // フラグ・パラメータを各ポストプロセスシェーダーへ渡すための定数バッファ
         struct PostProcessParams {
             uint32_t acesEnabled;
@@ -116,6 +175,26 @@ namespace RyoEngine {
             float exposure;
             float threshold;
             float bloomIntensity;
+
+            uint32_t distortionEnabled;
+            float distortionStrength;
+
+            uint32_t glitchEnabled;
+            float glitchIntensity;
+
+            uint32_t chromaticAberrationEnabled;
+            float chromaticAberrationStrength;
+
+            uint32_t blurEnabled;
+            float blurStrength;
+
+            uint32_t grayscaleEnabled;
+            float grayscaleIntensity;
+
+            uint32_t noiseEnabled;
+            float noiseIntensity;
+
+            float time;
             float padding[3];
         };
         Microsoft::WRL::ComPtr<ID3D12Resource> compositeParamsResource_;

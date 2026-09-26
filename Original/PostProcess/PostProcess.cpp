@@ -30,6 +30,22 @@ namespace RyoEngine {
         compositeParamsData_->exposure = exposure_;
         compositeParamsData_->threshold = bloomThreshold_;
         compositeParamsData_->bloomIntensity = bloomIntensity_;
+        compositeParamsData_->distortionEnabled = distortionEnabled_ ? 1 : 0;
+        compositeParamsData_->distortionStrength = distortionStrength_;
+        compositeParamsData_->glitchEnabled = glitchEnabled_ ? 1 : 0;
+        compositeParamsData_->glitchIntensity = glitchIntensity_;
+        compositeParamsData_->chromaticAberrationEnabled = chromaticAberrationEnabled_ ? 1 : 0;
+        compositeParamsData_->chromaticAberrationStrength = chromaticAberrationStrength_;
+        compositeParamsData_->blurEnabled = blurEnabled_ ? 1 : 0;
+        compositeParamsData_->blurStrength = blurStrength_;
+        compositeParamsData_->grayscaleEnabled = grayscaleEnabled_ ? 1 : 0;
+        compositeParamsData_->grayscaleIntensity = grayscaleIntensity_;
+        compositeParamsData_->noiseEnabled = noiseEnabled_ ? 1 : 0;
+        compositeParamsData_->noiseIntensity = noiseIntensity_;
+        compositeParamsData_->time = 0.0f;
+
+        // ノイズ/グリッチのアニメーション用に、経過時間の起点をここで記録しておく
+        startTime_ = std::chrono::steady_clock::now();
 
         Logger::LogSuccess("PostProcess : Initialized\n");
     }
@@ -446,6 +462,22 @@ namespace RyoEngine {
         compositeParamsData_->exposure = exposure_;
         compositeParamsData_->threshold = bloomThreshold_;
         compositeParamsData_->bloomIntensity = bloomIntensity_;
+        compositeParamsData_->distortionEnabled = distortionEnabled_ ? 1 : 0;
+        compositeParamsData_->distortionStrength = distortionStrength_;
+        compositeParamsData_->glitchEnabled = glitchEnabled_ ? 1 : 0;
+        compositeParamsData_->glitchIntensity = glitchIntensity_;
+        compositeParamsData_->chromaticAberrationEnabled = chromaticAberrationEnabled_ ? 1 : 0;
+        compositeParamsData_->chromaticAberrationStrength = chromaticAberrationStrength_;
+        compositeParamsData_->blurEnabled = blurEnabled_ ? 1 : 0;
+        compositeParamsData_->blurStrength = blurStrength_;
+        compositeParamsData_->grayscaleEnabled = grayscaleEnabled_ ? 1 : 0;
+        compositeParamsData_->grayscaleIntensity = grayscaleIntensity_;
+        compositeParamsData_->noiseEnabled = noiseEnabled_ ? 1 : 0;
+        compositeParamsData_->noiseIntensity = noiseIntensity_;
+
+        // ノイズ/グリッチのアニメーション用の経過時間(秒)
+        std::chrono::duration<float> elapsed = std::chrono::steady_clock::now() - startTime_;
+        compositeParamsData_->time = elapsed.count();
 
         if (bloomEnabled_) {
             RenderBloom();
@@ -489,6 +521,37 @@ namespace RyoEngine {
         if (bloomEnabled_) {
             ImGui::SliderFloat("Bloom対象となる境界値", &bloomThreshold_, 0.0f, 10.0f);
             ImGui::SliderFloat("Bloomの強さ", &bloomIntensity_, 0.0f, 10.0f);
+        }
+        ImGui::Separator();
+        ImGui::Checkbox("色収差(Chromatic Aberration)", &chromaticAberrationEnabled_);
+        if (chromaticAberrationEnabled_) {
+            ImGui::SliderFloat("色収差の強さ", &chromaticAberrationStrength_, 0.0f, 0.05f);
+        }
+        ImGui::Separator();
+        ImGui::Checkbox("ブラー(簡易版)", &blurEnabled_);
+        if (blurEnabled_) {
+            ImGui::SliderFloat("ブラーの強さ", &blurStrength_, 0.0f, 0.02f);
+            ImGui::TextDisabled("(3x3の簡易ボックスブラー。強くかけるとバンディングが出やすい)");
+        }
+        ImGui::Separator();
+        ImGui::Checkbox("ノイズ(グレイン)", &noiseEnabled_);
+        if (noiseEnabled_) {
+            ImGui::SliderFloat("ノイズの強さ", &noiseIntensity_, 0.0f, 0.5f);
+        }
+        ImGui::Separator();
+        ImGui::Checkbox("グリッチ", &glitchEnabled_);
+        if (glitchEnabled_) {
+            ImGui::SliderFloat("グリッチの強さ", &glitchIntensity_, 0.0f, 0.3f);
+        }
+        ImGui::Separator();
+        ImGui::Checkbox("ゆがみ(Distortion)", &distortionEnabled_);
+        if (distortionEnabled_) {
+            ImGui::SliderFloat("ゆがみの強さ", &distortionStrength_, 0.0f, 0.05f);
+        }
+        ImGui::Separator();
+        ImGui::Checkbox("白黒化(Grayscale)", &grayscaleEnabled_);
+        if (grayscaleEnabled_) {
+            ImGui::SliderFloat("白黒の度合い", &grayscaleIntensity_, 0.0f, 1.0f);
         }
         ImGui::End();
     }
