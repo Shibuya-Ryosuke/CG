@@ -1,126 +1,166 @@
 #pragma warning(disable: 4866)
 
 #include "ParamEditor.h"
+#include "../Base/Logger.h"
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <json.hpp>
 #include <imgui.h>
 
 namespace RyoEngine {
 
-    // --- 各種登録処理 ---
+    // --- グループ階層管理 ---
+
+    void ParamEditor::BeginGroup(const std::string& name, bool open) {
+        GetInstance().BeginGroupInternal(name, open);
+    }
+
+    void ParamEditor::EndGroup() {
+        GetInstance().EndGroupInternal();
+    }
+
+    void ParamEditor::BeginGroupInternal(const std::string& name, bool open) {
+        ParamEntry groupEntry{};
+        groupEntry.name = name;
+        groupEntry.type = EntryType::Group;
+        groupEntry.defaultOpen = open;
+
+        AddEntry(groupEntry);
+
+        // スタックの末尾（今追加したグループの children へのポインタをセット）
+        if (groupStack_.empty()) {
+            groupStack_.push_back(&rootEntries_.back());
+        } else {
+            groupStack_.push_back(&(groupStack_.back()->children.back()));
+        }
+    }
+
+    void ParamEditor::EndGroupInternal() {
+        if (!groupStack_.empty()) {
+            groupStack_.pop_back();
+        }
+    }
+
+    void ParamEditor::AddEntry(ParamEntry entry) {
+        // ロード済みデータがあれば初期値を上書き適用
+        if (isLoaded_) {
+            // パスの解決は簡易的に名前マッチまたはロード時に一括適用
+        }
+
+        if (groupStack_.empty()) {
+            rootEntries_.push_back(entry);
+        } else {
+            groupStack_.back()->children.push_back(entry);
+        }
+    }
+
+    // --- 各種パラメータ登録 ---
 
     void ParamEditor::RegisterFlag(const std::string& name, bool* value) {
-        auto& inst = GetInstance();
-        inst.flagParams_[name] = value;
-        if (inst.isLoaded_) {
-            auto it = inst.loadedJson_.find(name);
-            if (it != inst.loadedJson_.end() && it->is_boolean()) {
-                *value = it->get<bool>();
-            }
+        ParamEntry e{};
+        e.name = name;
+        e.type = EntryType::Flag;
+        e.ptr = value;
+
+        if (GetInstance().isLoaded_) {
+            // 後述のロード処理で一括紐づけするためここではポインタだけ保持
         }
+        GetInstance().AddEntry(e);
     }
 
     void ParamEditor::RegisterValue(const std::string& name, int32_t* value, float speed, int32_t min, int32_t max) {
-        auto& inst = GetInstance();
-        inst.int32Params_[name] = { value, speed, min, max };
-        if (inst.isLoaded_) {
-            auto it = inst.loadedJson_.find(name);
-            if (it != inst.loadedJson_.end() && it->is_number_integer()) {
-                *value = it->get<int32_t>();
-            }
-        }
+        ParamEntry e{};
+        e.name = name;
+        e.type = EntryType::Int32;
+        e.ptr = value;
+        e.speed = speed;
+        e.minInt = min;
+        e.maxInt = max;
+        GetInstance().AddEntry(e);
     }
 
     void ParamEditor::RegisterValue(const std::string& name, uint32_t* value, float speed, uint32_t min, uint32_t max) {
-        auto& inst = GetInstance();
-        inst.uint32Params_[name] = { value, speed, min, max };
-        if (inst.isLoaded_) {
-            auto it = inst.loadedJson_.find(name);
-            if (it != inst.loadedJson_.end() && it->is_number_unsigned()) {
-                *value = it->get<uint32_t>();
-            }
-        }
+        ParamEntry e{};
+        e.name = name;
+        e.type = EntryType::UInt32;
+        e.ptr = value;
+        e.speed = speed;
+        e.minInt = static_cast<int32_t>(min);
+        e.maxInt = static_cast<int32_t>(max);
+        GetInstance().AddEntry(e);
     }
 
     void ParamEditor::RegisterValue(const std::string& name, float* value, float speed, float min, float max) {
-        auto& inst = GetInstance();
-        inst.floatParams_[name] = { value, speed, min, max };
-        if (inst.isLoaded_) {
-            auto it = inst.loadedJson_.find(name);
-            if (it != inst.loadedJson_.end() && it->is_number()) {
-                *value = it->get<float>();
-            }
-        }
+        ParamEntry e{};
+        e.name = name;
+        e.type = EntryType::Float;
+        e.ptr = value;
+        e.speed = speed;
+        e.minVal[0] = min;
+        e.maxVal[0] = max;
+        GetInstance().AddEntry(e);
     }
 
     void ParamEditor::RegisterValue(const std::string& name, Vector2* value, float speed, float min, float max) {
-        auto& inst = GetInstance();
-        inst.vec2Params_[name] = { value, speed, {min, min}, {max, max} };
-        if (inst.isLoaded_) {
-            auto it = inst.loadedJson_.find(name);
-            if (it != inst.loadedJson_.end() && it->is_array() && it->size() == 2) {
-                value->x = (*it)[0].get<float>();
-                value->y = (*it)[1].get<float>();
-            }
-        }
+        ParamEntry e{};
+        e.name = name;
+        e.type = EntryType::Vector2;
+        e.ptr = value;
+        e.speed = speed;
+        e.minVal[0] = min; e.minVal[1] = min;
+        e.maxVal[0] = max; e.maxVal[1] = max;
+        GetInstance().AddEntry(e);
     }
 
     void ParamEditor::RegisterValue(const std::string& name, Vector3* value, float speed, float min, float max) {
-        auto& inst = GetInstance();
-        inst.vec3Params_[name] = { value, speed, {min, min, min}, {max, max, max} };
-        if (inst.isLoaded_) {
-            auto it = inst.loadedJson_.find(name);
-            if (it != inst.loadedJson_.end() && it->is_array() && it->size() == 3) {
-                value->x = (*it)[0].get<float>();
-                value->y = (*it)[1].get<float>();
-                value->z = (*it)[2].get<float>();
-            }
-        }
+        ParamEntry e{};
+        e.name = name;
+        e.type = EntryType::Vector3;
+        e.ptr = value;
+        e.speed = speed;
+        e.minVal[0] = min; e.minVal[1] = min; e.minVal[2] = min;
+        e.maxVal[0] = max; e.maxVal[1] = max; e.maxVal[2] = max;
+        GetInstance().AddEntry(e);
     }
 
     void ParamEditor::RegisterValue(const std::string& name, Vector4* value, float speed, float min, float max) {
-        auto& inst = GetInstance();
-        inst.vec4Params_[name] = { value, speed, {min, min, min, min}, {max, max, max, max} };
-        if (inst.isLoaded_) {
-            auto it = inst.loadedJson_.find(name);
-            if (it != inst.loadedJson_.end() && it->is_array() && it->size() == 4) {
-                value->x = (*it)[0].get<float>();
-                value->y = (*it)[1].get<float>();
-                value->z = (*it)[2].get<float>();
-                value->w = (*it)[3].get<float>();
-            }
-        }
+        ParamEntry e{};
+        e.name = name;
+        e.type = EntryType::Vector4;
+        e.ptr = value;
+        e.speed = speed;
+        e.minVal[0] = min; e.minVal[1] = min; e.minVal[2] = min; e.minVal[3] = min;
+        e.maxVal[0] = max; e.maxVal[1] = max; e.maxVal[2] = max; e.maxVal[3] = max;
+        GetInstance().AddEntry(e);
+    }
+
+    void ParamEditor::RegisterValue(const std::string& name, Transform* value, float speed, float min, float max) {
+        // Transformは内部でグループを作り、上から順に scale, rotate, translate を展開する
+        BeginGroup(name, false);
+        RegisterValue("scale", &value->scale, speed, min, max);
+        RegisterValue("rotate", &value->rotate, speed, -180.0f, 180.0f); // 回転は一般的によく使う範囲に調整可能
+        RegisterValue("translate", &value->translate, speed, -1000.0f, 1000.0f);
+        EndGroup();
     }
 
     void ParamEditor::RegisterColor(const std::string& name, Vector3* value) {
-        auto& inst = GetInstance();
-        inst.color3Params_[name] = value;
-        if (inst.isLoaded_) {
-            auto it = inst.loadedJson_.find(name);
-            if (it != inst.loadedJson_.end() && it->is_array() && it->size() == 3) {
-                value->x = (*it)[0].get<float>();
-                value->y = (*it)[1].get<float>();
-                value->z = (*it)[2].get<float>();
-            }
-        }
+        ParamEntry e{};
+        e.name = name;
+        e.type = EntryType::Color3;
+        e.ptr = value;
+        GetInstance().AddEntry(e);
     }
 
     void ParamEditor::RegisterColor(const std::string& name, Vector4* value) {
-        auto& inst = GetInstance();
-        inst.color4Params_[name] = value;
-        if (inst.isLoaded_) {
-            auto it = inst.loadedJson_.find(name);
-            if (it != inst.loadedJson_.end() && it->is_array() && it->size() == 4) {
-                value->x = (*it)[0].get<float>();
-                value->y = (*it)[1].get<float>();
-                value->z = (*it)[2].get<float>();
-                value->w = (*it)[3].get<float>();
-            }
-        }
+        ParamEntry e{};
+        e.name = name;
+        e.type = EntryType::Color4;
+        e.ptr = value;
+        GetInstance().AddEntry(e);
     }
 
-    // --- 静的インターフェースの転送実装 ---
+    // --- インターフェースの転送 ---
 
     void ParamEditor::DrawImGuiWindow(const char* windowName) {
         GetInstance().DrawImGuiInternal(windowName);
@@ -134,154 +174,246 @@ namespace RyoEngine {
         GetInstance().LoadFromJsonInternal(filepath);
     }
 
-    // --- 内部処理の実体 ---
+    // --- 内部処理：ImGui描画 ---
 
     void ParamEditor::DrawImGuiInternal(const char* windowName) {
 #ifdef _DEBUG
         ImGui::Begin(windowName);
-        {
-            for (auto& [name, ptr] : flagParams_) {
-                ImGui::Checkbox(name.c_str(), ptr);
-            }
-            for (auto& [name, info] : int32Params_) {
-                ImGui::DragInt(name.c_str(), info.ptr, info.speed, info.min, info.max);
-            }
-            for (auto& [name, info] : uint32Params_) {
-                int temp = static_cast<int>(*(info.ptr));
-                if (ImGui::DragInt(name.c_str(), &temp, info.speed, static_cast<int>(info.min), static_cast<int>(info.max))) {
-                    *(info.ptr) = static_cast<uint32_t>(std::max(0, temp));
-                }
-            }
-            for (auto& [name, info] : floatParams_) {
-                ImGui::DragFloat(name.c_str(), info.ptr, info.speed, info.min, info.max);
-            }
-            for (auto& [name, info] : vec2Params_) {
-                ImGui::DragFloat2(name.c_str(), &info.ptr->x, info.speed, info.min.x, info.max.x);
-            }
-            for (auto& [name, info] : vec3Params_) {
-                ImGui::DragFloat3(name.c_str(), &info.ptr->x, info.speed, info.min.x, info.max.x);
-            }
-            for (auto& [name, info] : vec4Params_) {
-                ImGui::DragFloat4(name.c_str(), &info.ptr->x, info.speed, info.min.x, info.max.x);
-            }
-            for (auto& [name, ptr] : color3Params_) {
-                ImGui::ColorEdit3(name.c_str(), &ptr->x);
-            }
-            for (auto& [name, ptr] : color4Params_) {
-                ImGui::ColorEdit4(name.c_str(), &ptr->x);
-            }
+        // 保存と読込
+        if (ImGui::Button("Save")) {
+            SaveToJson();
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Load")) {
+            LoadFromJson();
+        }
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        DrawEntries(rootEntries_);
         ImGui::End();
 #endif
     }
 
-    void ParamEditor::SaveToJsonInternal(const std::string& filepath) {
-        nlohmann::json j;
+    void ParamEditor::DrawEntries(std::vector<ParamEntry>& entries) {
+        for (auto& e : entries) {
+            ImGui::PushID(&e); // 一意なID保証
 
-        for (const auto& [name, ptr] : flagParams_) {
-            j[name] = *ptr;
+            switch (e.type) {
+            case EntryType::Group: {
+                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+                if (e.defaultOpen) {
+                    flags |= ImGuiTreeNodeFlags_DefaultOpen;
+                }
+                bool open = ImGui::TreeNodeEx(e.name.c_str(), flags);
+                if (open) {
+                    DrawEntries(e.children);
+                    ImGui::TreePop();
+                }
+                break;
+            }
+            case EntryType::Flag:
+                if (e.ptr) ImGui::Checkbox(e.name.c_str(), static_cast<bool*>(e.ptr));
+                break;
+            case EntryType::Int32:
+                if (e.ptr) ImGui::DragInt(e.name.c_str(), static_cast<int32_t*>(e.ptr), e.speed, e.minInt, e.maxInt);
+                break;
+            case EntryType::UInt32:
+                if (e.ptr) {
+                    int temp = static_cast<int>(*static_cast<uint32_t*>(e.ptr));
+                    if (ImGui::DragInt(e.name.c_str(), &temp, e.speed, e.minInt, e.maxInt)) {
+                        *static_cast<uint32_t*>(e.ptr) = static_cast<uint32_t>(std::max(0, temp));
+                    }
+                }
+                break;
+            case EntryType::Float:
+                if (e.ptr) ImGui::DragFloat(e.name.c_str(), static_cast<float*>(e.ptr), e.speed, e.minVal[0], e.maxVal[0]);
+                break;
+            case EntryType::Vector2:
+                if (e.ptr) {
+                    auto* v = static_cast<Vector2*>(e.ptr);
+                    ImGui::DragFloat2(e.name.c_str(), &v->x, e.speed, e.minVal[0], e.maxVal[0]);
+                }
+                break;
+            case EntryType::Vector3:
+                if (e.ptr) {
+                    auto* v = static_cast<Vector3*>(e.ptr);
+                    ImGui::DragFloat3(e.name.c_str(), &v->x, e.speed, e.minVal[0], e.maxVal[0]);
+                }
+                break;
+            case EntryType::Vector4:
+                if (e.ptr) {
+                    auto* v = static_cast<Vector4*>(e.ptr);
+                    ImGui::DragFloat4(e.name.c_str(), &v->x, e.speed, e.minVal[0], e.maxVal[0]);
+                }
+                break;
+            case EntryType::Color3:
+                if (e.ptr) {
+                    auto* v = static_cast<Vector3*>(e.ptr);
+                    ImGui::ColorEdit3(e.name.c_str(), &v->x);
+                }
+                break;
+            case EntryType::Color4:
+                if (e.ptr) {
+                    auto* v = static_cast<Vector4*>(e.ptr);
+                    ImGui::ColorEdit4(e.name.c_str(), &v->x);
+                }
+                break;
+            }
+
+            ImGui::PopID();
         }
-        for (const auto& [name, info] : int32Params_) {
-            j[name] = *(info.ptr);
+    }
+
+    // --- 内部処理：JSONセーブ ---
+
+    void ParamEditor::SaveToJsonInternal(const std::string& filepath) {
+        Logger::Log("[ParamEditor] Save started: " + filepath);
+
+        namespace fs = std::filesystem;
+
+        // ファイルパスから親ディレクトリのパスを抽出し、存在しない場合は自動で作成する
+        fs::path path(filepath);
+        if (path.has_parent_path()) {
+            // ここでフォルダ作成に失敗した場合の対策として try-catch で囲むとより安全です
+            try {
+                fs::create_directories(path.parent_path());
+            }
+            catch (...) {
+                Logger::LogError("[ParamEditor] Failed to create directory: " + path.parent_path().string());
+                return;
+            }
         }
-        for (const auto& [name, info] : uint32Params_) {
-            j[name] = *(info.ptr);
-        }
-        for (const auto& [name, info] : floatParams_) {
-            j[name] = *(info.ptr);
-        }
-        for (const auto& [name, info] : vec2Params_) {
-            j[name] = { info.ptr->x, info.ptr->y };
-        }
-        for (const auto& [name, info] : vec3Params_) {
-            j[name] = { info.ptr->x, info.ptr->y, info.ptr->z };
-        }
-        for (const auto& [name, info] : vec4Params_) {
-            j[name] = { info.ptr->x, info.ptr->y, info.ptr->z, info.ptr->w };
-        }
-        for (const auto& [name, ptr] : color3Params_) {
-            j[name] = { ptr->x, ptr->y, ptr->z };
-        }
-        for (const auto& [name, ptr] : color4Params_) {
-            j[name] = { ptr->x, ptr->y, ptr->z, ptr->w };
-        }
+
+        nlohmann::json j;
+        SaveEntriesToJson(j, rootEntries_);
 
         std::ofstream file(filepath);
         if (file.is_open()) {
             file << j.dump(4);
+            Logger::LogSuccess("[ParamEditor] Save Successed.");
+        } else {
+            Logger::LogWarning("[ParamEditor] Save failed: Could not open file " + filepath);
         }
     }
 
+    void ParamEditor::SaveEntriesToJson(nlohmann::json& j, const std::vector<ParamEntry>& entries) {
+        for (const auto& e : entries) {
+            if (e.type == EntryType::Group) {
+                nlohmann::json childJson;
+                SaveEntriesToJson(childJson, e.children);
+                j[e.name] = childJson;
+            } else if (e.ptr) {
+                switch (e.type) {
+                case EntryType::Flag:
+                    j[e.name] = *static_cast<bool*>(e.ptr);
+                    break;
+                case EntryType::Int32:
+                    j[e.name] = *static_cast<int32_t*>(e.ptr);
+                    break;
+                case EntryType::UInt32:
+                    j[e.name] = *static_cast<uint32_t*>(e.ptr);
+                    break;
+                case EntryType::Float:
+                    j[e.name] = *static_cast<float*>(e.ptr);
+                    break;
+                case EntryType::Vector2: {
+                    auto* v = static_cast<Vector2*>(e.ptr);
+                    j[e.name] = { v->x, v->y };
+                    break;
+                }
+                case EntryType::Vector3:
+                case EntryType::Color3: {
+                    auto* v = static_cast<Vector3*>(e.ptr);
+                    j[e.name] = { v->x, v->y, v->z };
+                    break;
+                }
+                case EntryType::Vector4:
+                case EntryType::Color4: {
+                    auto* v = static_cast<Vector4*>(e.ptr);
+                    j[e.name] = { v->x, v->y, v->z, v->w };
+                    break;
+                }
+                default:
+                    break;
+                }
+            }
+        }
+    }
+
+    // --- 内部処理：JSONロード ---
+
     void ParamEditor::LoadFromJsonInternal(const std::string& filepath) {
+        Logger::Log("[ParamEditor] Load started: " + filepath);
+
         std::ifstream file(filepath);
-        if (!file.is_open()) return;
+        if (!file.is_open()) {
+            Logger::LogError("[ParamEditor] Load failed: Could not open file " + filepath);
+            return;
+        }
 
         file >> loadedJson_;
         isLoaded_ = true;
 
-        for (auto& [name, ptr] : flagParams_) {
-            auto it = loadedJson_.find(name);
-            if (it != loadedJson_.end() && it->is_boolean()) {
-                *ptr = it->get<bool>();
-            }
-        }
-        for (auto& [name, info] : int32Params_) {
-            auto it = loadedJson_.find(name);
-            if (it != loadedJson_.end() && it->is_number_integer()) {
-                *(info.ptr) = it->get<int32_t>();
-            }
-        }
-        for (auto& [name, info] : uint32Params_) {
-            auto it = loadedJson_.find(name);
-            if (it != loadedJson_.end() && it->is_number_unsigned()) {
-                *(info.ptr) = it->get<uint32_t>();
-            }
-        }
-        for (auto& [name, info] : floatParams_) {
-            auto it = loadedJson_.find(name);
-            if (it != loadedJson_.end() && it->is_number()) {
-                *(info.ptr) = it->get<float>();
-            }
-        }
-        for (auto& [name, info] : vec2Params_) {
-            auto it = loadedJson_.find(name);
-            if (it != loadedJson_.end() && it->is_array() && it->size() == 2) {
-                info.ptr->x = (*it)[0].get<float>();
-                info.ptr->y = (*it)[1].get<float>();
-            }
-        }
-        for (auto& [name, info] : vec3Params_) {
-            auto it = loadedJson_.find(name);
-            if (it != loadedJson_.end() && it->is_array() && it->size() == 3) {
-                info.ptr->x = (*it)[0].get<float>();
-                info.ptr->y = (*it)[1].get<float>();
-                info.ptr->z = (*it)[2].get<float>();
-            }
-        }
-        for (auto& [name, info] : vec4Params_) {
-            auto it = loadedJson_.find(name);
-            if (it != loadedJson_.end() && it->is_array() && it->size() == 4) {
-                info.ptr->x = (*it)[0].get<float>();
-                info.ptr->y = (*it)[1].get<float>();
-                info.ptr->z = (*it)[2].get<float>();
-                info.ptr->w = (*it)[3].get<float>();
-            }
-        }
-        for (auto& [name, ptr] : color3Params_) {
-            auto it = loadedJson_.find(name);
-            if (it != loadedJson_.end() && it->is_array() && it->size() == 3) {
-                ptr->x = (*it)[0].get<float>();
-                ptr->y = (*it)[1].get<float>();
-                ptr->z = (*it)[2].get<float>();
-            }
-        }
-        for (auto& [name, ptr] : color4Params_) {
-            auto it = loadedJson_.find(name);
-            if (it != loadedJson_.end() && it->is_array() && it->size() == 4) {
-                ptr->x = (*it)[0].get<float>();
-                ptr->y = (*it)[1].get<float>();
-                ptr->z = (*it)[2].get<float>();
-                ptr->w = (*it)[3].get<float>();
+        // 再帰的にロードデータを各エントリに反映
+        LoadEntriesFromJson(loadedJson_, rootEntries_);
+
+        Logger::LogSuccess("[ParamEditor] Load Successed.");
+    }
+
+    void ParamEditor::LoadEntriesFromJson(const nlohmann::json& j, std::vector<ParamEntry>& entries) {
+        for (auto& e : entries) {
+            if (!j.contains(e.name)) continue;
+
+            if (e.type == EntryType::Group) {
+                if (j[e.name].is_object()) {
+                    LoadEntriesFromJson(j[e.name], e.children);
+                }
+            } else if (e.ptr) {
+                const auto& val = j[e.name];
+                switch (e.type) {
+                case EntryType::Flag:
+                    if (val.is_boolean()) *static_cast<bool*>(e.ptr) = val.get<bool>();
+                    break;
+                case EntryType::Int32:
+                    if (val.is_number_integer()) *static_cast<int32_t*>(e.ptr) = val.get<int32_t>();
+                    break;
+                case EntryType::UInt32:
+                    if (val.is_number_unsigned()) *static_cast<uint32_t*>(e.ptr) = val.get<uint32_t>();
+                    break;
+                case EntryType::Float:
+                    if (val.is_number()) *static_cast<float*>(e.ptr) = val.get<float>();
+                    break;
+                case EntryType::Vector2:
+                    if (val.is_array() && val.size() == 2) {
+                        auto* v = static_cast<Vector2*>(e.ptr);
+                        v->x = val[0].get<float>();
+                        v->y = val[1].get<float>();
+                    }
+                    break;
+                case EntryType::Vector3:
+                case EntryType::Color3:
+                    if (val.is_array() && val.size() == 3) {
+                        auto* v = static_cast<Vector3*>(e.ptr);
+                        v->x = val[0].get<float>();
+                        v->y = val[1].get<float>();
+                        v->z = val[2].get<float>();
+                    }
+                    break;
+                case EntryType::Vector4:
+                case EntryType::Color4:
+                    if (val.is_array() && val.size() == 4) {
+                        auto* v = static_cast<Vector4*>(e.ptr);
+                        v->x = val[0].get<float>();
+                        v->y = val[1].get<float>();
+                        v->z = val[2].get<float>();
+                        v->w = val[3].get<float>();
+                    }
+                    break;
+                default:
+                    break;
+                }
             }
         }
     }

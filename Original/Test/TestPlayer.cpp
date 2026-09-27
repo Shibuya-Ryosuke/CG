@@ -13,15 +13,19 @@ void TestPlayer::Initialize(TestManager* manager) {
 	transform_.scale = { 1.0f,1.0f,1.0f };
 	transform_.rotate = { 0.0f,2.8f,0.0f };
 
+	// ライト追加
 	bunnyLightId_ = LightManager::AddLight(LightType::Point);
 
+	// パラメータ操作の登録
 	// SRT
-	ParamEditor::RegisterValue("bunny scale", &transform_.scale);
-	ParamEditor::RegisterValue("bunny rotate", &transform_.rotate);
-	ParamEditor::RegisterValue("bunny translate", &transform_.translate);
+	ParamEditor::BeginGroup("bunny");
+	ParamEditor::RegisterValue("transform", &transform_);
 	// 発光（周囲にライティングするわけではない）
-	ParamEditor::RegisterValue("emissive intensity", &emissiveIntensity_);
-	ParamEditor::RegisterColor("emissive color", &emissiveColor_);
+	ParamEditor::BeginGroup("emissive");
+	ParamEditor::RegisterValue("intensity", &emissiveIntensity_);
+	ParamEditor::RegisterColor("color", &emissiveColor_);
+	ParamEditor::EndGroup();
+	ParamEditor::EndGroup(); // BeginGroupの数だけEndGroupを呼ぶ
 }
 
 void TestPlayer::Update() {

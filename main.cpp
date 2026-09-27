@@ -30,6 +30,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     camera.Initialize();
     camera.SetAvailable(true);
 
+
+    // ここでパラメータの読込
+    ParamEditor::LoadFromJson();
+
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始

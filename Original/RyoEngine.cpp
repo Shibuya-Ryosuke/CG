@@ -102,8 +102,6 @@ namespace RyoEngine {
             dxCommon_->GetBackBufferFormat()
         );
 
-        ParamEditor::LoadFromJson();
-
         // フォント
         fontOutputer_ = new Font();
         fontOutputer_->Initialize("Resources/EngineResources/Debugfont/debugfont.fnt", "Resources/EngineResources/Debugfont/debugfont.png");

@@ -2,7 +2,7 @@
 
 #include "../Math/Math.h"
 #include <string>
-#include <unordered_map>
+#include <vector>
 #include <json.hpp>
 
 namespace RyoEngine {
@@ -20,10 +20,14 @@ namespace RyoEngine {
         ParamEditor(ParamEditor&&) = delete;
         ParamEditor& operator=(ParamEditor&&) = delete;
 
+        // --- グループ階層管理 ---
+        static void BeginGroup(const std::string& name, bool open = false);
+        static void EndGroup();
+
         // --- 1. フラグ登録（bool専用） ---
         static void RegisterFlag(const std::string& name, bool* value);
 
-        // --- 2. 数値・ベクトル値登録（スピード・下限・上限を指定可能。デフォルト: 1 / 0 / 100） ---
+        // --- 2. 数値・ベクトル値登録（スピード・下限・上限を指定可能） ---
         static void RegisterValue(const std::string& name, int32_t* value, float speed = 1.0f, int32_t min = 0, int32_t max = 100);
         static void RegisterValue(const std::string& name, uint32_t* value, float speed = 1.0f, uint32_t min = 0, uint32_t max = 100);
         static void RegisterValue(const std::string& name, float* value, float speed = 1.0f, float min = 0.0f, float max = 100.0f);
@@ -31,7 +35,10 @@ namespace RyoEngine {
         static void RegisterValue(const std::string& name, Vector3* value, float speed = 1.0f, float min = 0.0f, float max = 100.0f);
         static void RegisterValue(const std::string& name, Vector4* value, float speed = 1.0f, float min = 0.0f, float max = 100.0f);
 
-        // --- 3. カラー登録（ColorEdit用） ---
+        // --- 3. Transform登録（scale, rotate, translateを上から順にグループ展開） ---
+        static void RegisterValue(const std::string& name, Transform* value, float speed = 0.01f, float min = -100.0f, float max = 100.0f);
+
+        // --- 4. カラー登録（ColorEdit用） ---
         static void RegisterColor(const std::string& name, Vector3* value);
         static void RegisterColor(const std::string& name, Vector4* value);
 
@@ -39,40 +46,64 @@ namespace RyoEngine {
         static void DrawImGuiWindow(const char* windowName = "Parameter Editor");
 
         // --- JSON保存・読み込み ---
-        static void SaveToJson(const std::string& filepath = "Resources/ApplicationResources/Json/Editor");
-        static void LoadFromJson(const std::string& filepath = "Resources/ApplicationResources/Json/Editor");
+        static void SaveToJson(const std::string& filepath = "Resources/ApplicationResources/Json/Editor/paramEditor.json");
+        static void LoadFromJson(const std::string& filepath = "Resources/ApplicationResources/Json/Editor/paramEditor.json");
 
     private:
         ParamEditor() = default;
         ~ParamEditor() = default;
 
-        // 内部実装用のメンバ関数
-        void DrawImGuiInternal(const char* windowName);
-        void SaveToJsonInternal(const std::string& filepath);
-        void LoadFromJsonInternal(const std::string& filepath);
-
-        // 値パラメータの描画および設定情報を保持するための構造体
-        template <typename T>
-        struct ValueParamInfo {
-            T* ptr = nullptr;
-            float speed = 1.0f;
-            T min{};
-            T max{};
+        // パラメータの種類
+        enum class EntryType {
+            Flag,
+            Int32,
+            UInt32,
+            Float,
+            Vector2,
+            Vector3,
+            Vector4,
+            Color3,
+            Color4,
+            Group
         };
 
-        // 各型ごとの保持マップ
-        std::unordered_map<std::string, bool*> flagParams_;
-        std::unordered_map<std::string, ValueParamInfo<int32_t>> int32Params_;
-        std::unordered_map<std::string, ValueParamInfo<uint32_t>> uint32Params_;
-        std::unordered_map<std::string, ValueParamInfo<float>> floatParams_;
-        std::unordered_map<std::string, ValueParamInfo<Vector2>> vec2Params_;
-        std::unordered_map<std::string, ValueParamInfo<Vector3>> vec3Params_;
-        std::unordered_map<std::string, ValueParamInfo<Vector4>> vec4Params_;
+        // ツリー構造を構成するエントリ構造体
+        struct ParamEntry {
+            std::string name;
+            EntryType type;
+            void* ptr = nullptr;
 
-        std::unordered_map<std::string, Vector3*> color3Params_;
-        std::unordered_map<std::string, Vector4*> color4Params_;
+            // 数値設定
+            float speed = 1.0f;
+            float minVal[4] = { 0, 0, 0, 0 };
+            float maxVal[4] = { 100, 100, 100, 100 };
+            int32_t minInt = 0;
+            int32_t maxInt = 100;
 
-        // 起動時に先読みしたJSONデータを一時保持するストレージ
+            // グループ用
+            bool defaultOpen = false;
+            std::vector<ParamEntry> children;
+        };
+
+        // 内部実装用のメンバ関数
+        void BeginGroupInternal(const std::string& name, bool open);
+        void EndGroupInternal();
+        void AddEntry(ParamEntry entry);
+
+        void DrawImGuiInternal(const char* windowName);
+        void DrawEntries(std::vector<ParamEntry>& entries);
+
+        void SaveToJsonInternal(const std::string& filepath);
+        void SaveEntriesToJson(nlohmann::json& j, const std::vector<ParamEntry>& entries);
+
+        void LoadFromJsonInternal(const std::string& filepath);
+        void LoadEntriesFromJson(const nlohmann::json& j, std::vector<ParamEntry>& entries);
+
+        // ルートエントリと現在の階層スタック
+        std::vector<ParamEntry> rootEntries_;
+        std::vector<ParamEntry*> groupStack_;
+
+        // 起動時に先読みしたJSONデータ
         nlohmann::json loadedJson_;
         bool isLoaded_ = false;
     };
