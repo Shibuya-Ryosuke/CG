@@ -46,8 +46,8 @@ namespace RyoEngine {
         static void DrawImGuiWindow(const char* windowName = "Parameter Editor");
 
         // --- JSON保存・読み込み ---
-        static void SaveToJson(const std::string& filepath = "Resources/ApplicationResources/Json/Editor/paramEditor.json");
-        static void LoadFromJson(const std::string& filepath = "Resources/ApplicationResources/Json/Editor/paramEditor.json");
+        static void Save(const std::string& filepath = "Resources/ApplicationResources/Json/Editor/paramEditor.json");
+        static void Load(const std::string& filepath = "Resources/ApplicationResources/Json/Editor/paramEditor.json");
 
     private:
         ParamEditor() = default;

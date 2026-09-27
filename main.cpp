@@ -31,8 +31,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     camera.SetAvailable(true);
 
 
-    // ここでパラメータの読込
-    ParamEditor::LoadFromJson();
+    // 全てのInitializeが終わったらJsonの読込
+    ParamEditor::Load();
+    LightManager::Load();
 
     // --- メインループ ---
     while (GetWinApp()->ProcessMessage()) {

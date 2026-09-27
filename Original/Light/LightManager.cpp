@@ -72,6 +72,88 @@ namespace RyoEngine {
         instance->lightCountData_->lightCount = count;
     }
 
+    void LightManager::Save(const std::string& filePath) {
+        Logger::Log("[LightManager] Save started: " + filePath);
+
+        namespace fs = std::filesystem;
+
+        // ファイルパスから親ディレクトリのパスを抽出し、存在しない場合は自動で作成する
+        fs::path path(filePath);
+        if (path.has_parent_path()) {
+            try {
+                fs::create_directories(path.parent_path());
+            }
+            catch (...) {
+                Logger::LogError("[LightManager] Failed to create directory: " + path.parent_path().string());
+                return;
+            }
+        }
+
+        auto instance = GetInstance();
+        nlohmann::json root;
+
+        // アンビエントライトの保存
+        root["ambient"] = *instance->ambientData_;
+
+        // ライト一覧の保存
+        nlohmann::json lightsArray = nlohmann::json::array();
+        for (const auto& light : instance->lights_) {
+            lightsArray.push_back(light);
+        }
+        root["lights"] = lightsArray;
+
+        // ファイルへ書き込み
+        std::ofstream file(filePath);
+        if (file.is_open()) {
+            file << root.dump(4); // インデント付きで綺麗に出力
+            Logger::LogSuccess("[LightManager] Save Successed.");
+        } else {
+            Logger::LogWarning("[LightManager] Save failed: Could not open file " + filePath);
+        }
+    }
+
+    void LightManager::Load(const std::string& filePath) {
+        Logger::Log("[LightManager] Load started: " + filePath);
+
+        if (!std::filesystem::exists(filePath)) {
+            Logger::LogError("[LightManager] Load failed: Could not open file " + filePath);
+            return;
+        }
+
+        std::ifstream file(filePath);
+        if (!file.is_open()) {
+            Logger::LogError("[LightManager] Load failed: Could not open file " + filePath);
+            return;
+        }
+
+        nlohmann::json root;
+        file >> root;
+        file.close();
+
+        auto instance = GetInstance();
+        // データのクリア
+        instance->lights_.clear();
+
+        // アンビエントライトの読み込み
+        if (root.contains("ambient")) {
+            *instance->ambientData_ = root["ambient"].get<AmbientLight>();
+        }
+
+        // ライト一覧の読み込み
+        if (root.contains("lights") && root["lights"].is_array()) {
+            for (const auto& jLight : root["lights"]) {
+                if (instance->lights_.size() >= kMaxLightCount) {
+                    break;
+                }
+                Light light = jLight.get<Light>();
+                instance->lights_.push_back(light);
+            }
+        }
+
+        Update();
+        Logger::LogSuccess("[LightManager] Load Successed.");
+    }
+
     int LightManager::AddLight(LightType type) {
         auto instance = GetInstance();
 
@@ -125,6 +207,18 @@ namespace RyoEngine {
         auto instance = GetInstance();
 
         ImGui::Begin("LightManager");
+
+        // --- 保存・読み込みボタン ---
+        if (ImGui::Button("Save")) {
+            Save();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Load")) {
+            Load();
+        }
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
 
         // --- アンビエントライト ---
         if (ImGui::CollapsingHeader("環境光", ImGuiTreeNodeFlags_DefaultOpen)) {

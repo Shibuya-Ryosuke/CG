@@ -166,11 +166,11 @@ namespace RyoEngine {
         GetInstance().DrawImGuiInternal(windowName);
     }
 
-    void ParamEditor::SaveToJson(const std::string& filepath) {
+    void ParamEditor::Save(const std::string& filepath) {
         GetInstance().SaveToJsonInternal(filepath);
     }
 
-    void ParamEditor::LoadFromJson(const std::string& filepath) {
+    void ParamEditor::Load(const std::string& filepath) {
         GetInstance().LoadFromJsonInternal(filepath);
     }
 
@@ -181,11 +181,11 @@ namespace RyoEngine {
         ImGui::Begin(windowName);
         // 保存と読込
         if (ImGui::Button("Save")) {
-            SaveToJson();
+            Save();
         }
         ImGui::SameLine();
         if (ImGui::Button("Load")) {
-            LoadFromJson();
+            Load();
         }
         ImGui::Spacing();
         ImGui::Separator();

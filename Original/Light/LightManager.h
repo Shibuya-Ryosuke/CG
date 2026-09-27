@@ -20,6 +20,10 @@ namespace RyoEngine {
         static void Finalize();
         static void Update();
 
+        // --- JSON 保存・読み込み ---
+        static void Save(const std::string& filePath = "Resources/ApplicationResources/Json/Manager/lightManager.json");
+        static void Load(const std::string& filePath = "Resources/ApplicationResources/Json/Manager/lightManager.json");
+
         // --- ライト操作（コードからの追加・削除） ---
         static int AddLight(LightType type);
         static int AddLight(const Light& light);
