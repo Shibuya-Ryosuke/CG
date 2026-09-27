@@ -3,7 +3,7 @@
 #include "../Graphics/TextureManager.h"
 //#include "../Reflect/ReflectCommon.h"
 //#include "../Reflect/ReflectModel.h"
-#include "../Edit/AnimEdit.h"
+#include "../Edit/AnimEditor.h"
 #include "../Light/Light.h"
 #include "../Light/LightManager.h"
 
@@ -421,7 +421,7 @@ namespace RyoEngine {
         instance->CreateModel(filePath); // モデル読み込みとリソース作成 (複数メッシュに対応)
 
         if (registAnimEdit) {
-            AnimEdit::SetTargetModel(instance.get(), name);
+            AnimEditor::SetTargetModel(instance.get(), name);
         }
 
         return instance;

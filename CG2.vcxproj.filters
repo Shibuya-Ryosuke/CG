@@ -147,7 +147,7 @@
     <ClCompile Include="Original\Externals\imgui\ImVectorEditor.cpp">
       <Filter>Externals\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Edit\AnimEdit.cpp">
+    <ClCompile Include="Original\Edit\AnimEditor.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Easing\Easing.cpp">
@@ -321,7 +321,7 @@
     <ClInclude Include="Original\ImGui\ImGuiAllInclude.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Edit\AnimEdit.h">
+    <ClInclude Include="Original\Edit\AnimEditor.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Easing\Easing.h">

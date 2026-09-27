@@ -24,7 +24,7 @@
 #include "Camera/DebugCamera.h"
 #include "Input/Input.h"
 #include "ImGui/ImGuiManager.h"
-#include "Edit/AnimEdit.h"
+#include "Edit/AnimEditor.h"
 #include "Light/LightManager.h"
 #include "Shadow/ShadowMap.h"
 #include "PostProcess/PostProcess.h"

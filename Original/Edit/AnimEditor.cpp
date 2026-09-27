@@ -1,4 +1,4 @@
-#include "AnimEdit.h"
+#include "AnimEditor.h"
 #include "../Base/Logger.h"
 #include "../3D/Model.h"
 // ★追加：Camera対応のため。プロジェクトの実際の配置に合わせてパスを調整してください。
@@ -24,7 +24,7 @@ using json = nlohmann::json;
 
 namespace RyoEngine {
 
-	struct AnimEdit::Impl {
+	struct AnimEditor::Impl {
 		// キーフレームの軸グループ
 		enum class AxisGroup {
 			None,
@@ -1761,7 +1761,7 @@ namespace RyoEngine {
 
 	// --- 構造体の外側での WindowDelegate のメンバ関数定義（エディタUI専用） ---
 #ifdef _DEBUG
-	size_t AnimEdit::Impl::WindowDelegate::GetPointCount(size_t curveIndex) {
+	size_t AnimEditor::Impl::WindowDelegate::GetPointCount(size_t curveIndex) {
 		// ⭕ m_pOwnerWindowのチェックに修正
 		if (!m_pOwnerWindow) return 0;
 		auto& window = *m_pOwnerWindow; // ⭕ 選択中ではなく、自分のウィンドウを参照
@@ -1780,12 +1780,12 @@ namespace RyoEngine {
 		return count;
 	}
 
-	uint32_t AnimEdit::Impl::WindowDelegate::GetCurveColor(size_t curveIndex) {
+	uint32_t AnimEditor::Impl::WindowDelegate::GetCurveColor(size_t curveIndex) {
 		uint32_t colors[] = { 0xFF0000FF, 0xFF00FF00, 0xFFFF0000 }; // R, G, B
 		return colors[curveIndex];
 	}
 
-	ImVec2* AnimEdit::Impl::WindowDelegate::GetPoints(size_t curveIndex) {
+	ImVec2* AnimEditor::Impl::WindowDelegate::GetPoints(size_t curveIndex) {
 		static std::vector<ImVec2> pointsCache;
 		pointsCache.clear();
 		// ⭕ m_pOwnerWindowのチェックに修正
@@ -1814,7 +1814,7 @@ namespace RyoEngine {
 		return pointsCache.data();
 	}
 
-	int AnimEdit::Impl::WindowDelegate::EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) {
+	int AnimEditor::Impl::WindowDelegate::EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) {
 		// ⭕ m_pOwnerWindowのチェックに修正
 		if (!m_pOwnerWindow) return pointIndex;
 		auto& window = *m_pOwnerWindow; // ⭕ 自分のウィンドウを参照
@@ -1868,7 +1868,7 @@ namespace RyoEngine {
 		return pointIndex;
 	}
 
-	void AnimEdit::Impl::WindowDelegate::AddPoint(size_t curveIndex, ImVec2 value) {
+	void AnimEditor::Impl::WindowDelegate::AddPoint(size_t curveIndex, ImVec2 value) {
 		// ⭕ m_pOwnerWindowのチェックに修正
 		if (!m_pOwnerWindow) return;
 		auto& window = *m_pOwnerWindow; // ⭕ 自分のウィンドウを参照
@@ -1897,7 +1897,7 @@ namespace RyoEngine {
 	// ★追加：pointIndex番目の点が実際にどのキーフレームなのかを、
 	// GetPoints/EditPoint と同じ「フレーム順に並べ直す」ロジックで特定し、
 	// そのキーフレームに保存されているイージング種別を返す。
-	RyoEngine::EasingType AnimEdit::Impl::WindowDelegate::GetEasing(size_t curveIndex, int pointIndex) const {
+	RyoEngine::EasingType AnimEditor::Impl::WindowDelegate::GetEasing(size_t curveIndex, int pointIndex) const {
 		if (!m_pOwnerWindow) return RyoEngine::EasingType::Lerp;
 		auto& window = *m_pOwnerWindow;
 		int mode = window.currentTransformMode;
@@ -1931,17 +1931,17 @@ namespace RyoEngine {
 	// =========================================================================
 	//  AnimEdit クラス本体の実装
 	// =========================================================================
-	AnimEdit::AnimEdit() {
+	AnimEditor::AnimEditor() {
 		m_pImpl = new Impl();
 	}
 
-	AnimEdit::~AnimEdit() {
+	AnimEditor::~AnimEditor() {
 		delete m_pImpl;
 	}
 
-	void AnimEdit::Initialize() {}
+	void AnimEditor::Initialize() {}
 
-	void AnimEdit::RegisterFlag(const std::string& name, bool* ptr) {
+	void AnimEditor::RegisterFlag(const std::string& name, bool* ptr) {
 		if (!ptr) return;
 		auto& flags = GetInstance().m_pImpl->m_RegisteredFlags;
 		for (const auto& pair : flags) {
@@ -1950,8 +1950,8 @@ namespace RyoEngine {
 		flags.push_back(std::make_pair(name, ptr));
 	}
 
-	void AnimEdit::Update() {
-		AnimEdit& instance = GetInstance();
+	void AnimEditor::Update() {
+		AnimEditor& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
 
 		// ★変更：deltaTimeの取得元を分離。
@@ -2028,8 +2028,8 @@ namespace RyoEngine {
 	}
 
 #ifdef _DEBUG
-	void AnimEdit::WindowManager() {
-		AnimEdit& instance = GetInstance();
+	void AnimEditor::WindowManager() {
+		AnimEditor& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
 
 		// ★追加：新規作成の対象種別（Model / Camera）を選ぶUI用の一時状態。
@@ -2297,11 +2297,11 @@ namespace RyoEngine {
 		}
 	}
 
-	void AnimEdit::DrawUI() {}
+	void AnimEditor::DrawUI() {}
 #endif // _DEBUG
 
-	void AnimEdit::SaveSettings(const char* filePath) {
-		AnimEdit& instance = GetInstance();
+	void AnimEditor::SaveSettings(const char* filePath) {
+		AnimEditor& instance = GetInstance();
 		Impl* impl = instance.m_pImpl;
 		std::filesystem::path p(filePath);
 		if (p.has_parent_path()) { std::filesystem::create_directories(p.parent_path()); }
@@ -2385,14 +2385,14 @@ namespace RyoEngine {
 		}
 	}
 
-	void AnimEdit::LoadSettings(const char* filePath) {
+	void AnimEditor::LoadSettings(const char* filePath) {
 	std::ifstream file(filePath);
 	if (!file.is_open()) return;
 	json j_root;
 	try { file >> j_root; }
 	catch (...) { return; }
 
-	AnimEdit& instance = GetInstance();
+	AnimEditor& instance = GetInstance();
 	Impl* impl = instance.m_pImpl;
 	impl->m_SubWindows.clear();
 	impl->m_SelectedWindowIdx = -1;
@@ -2548,7 +2548,7 @@ namespace RyoEngine {
     // いつかモデルたちのSRTをデータ上に書き出す時が来たら、
     // 0フレーム時のSRTをいじれるようにする
     // 現在は読み取り専用
-	void AnimEdit::ModelOperate() {
+	void AnimEditor::ModelOperate() {
 		Impl* impl = GetInstance().m_pImpl;
 
 		ImGui::Spacing();
@@ -2694,7 +2694,7 @@ namespace RyoEngine {
 	}
 #endif // _DEBUG
 
-	void AnimEdit::SetTargetModel(Model* model, const std::string& name) {
+	void AnimEditor::SetTargetModel(Model* model, const std::string& name) {
 		if (model == nullptr) {
 			Logger::LogWarning("[AnimEdit] (SetTargetModel)\nThe selected Model is nullptr.\n");
 			return;
@@ -2708,7 +2708,7 @@ namespace RyoEngine {
 	}
 
 	// ★追加：カメラを登録する（SetTargetModelのカメラ版）
-	void AnimEdit::SetTargetCamera(Camera* camera, const std::string& name) {
+	void AnimEditor::SetTargetCamera(Camera* camera, const std::string& name) {
 		if (camera == nullptr) {
 			Logger::LogWarning("[AnimEdit] (SetTargetCamera)\nThe selected Camera is nullptr.\n");
 			return;

@@ -6,14 +6,14 @@ namespace RyoEngine {
 	class Model;
 	class Camera;
 
-	class AnimEdit {
+	class AnimEditor {
 	public:
 
 		// コピーと代入を禁止
-		AnimEdit(const AnimEdit&) = delete;
-		AnimEdit& operator=(const AnimEdit&) = delete;
-		AnimEdit(AnimEdit&&) = delete;
-		AnimEdit& operator=(AnimEdit&&) = delete;
+		AnimEditor(const AnimEditor&) = delete;
+		AnimEditor& operator=(const AnimEditor&) = delete;
+		AnimEditor(AnimEditor&&) = delete;
+		AnimEditor& operator=(AnimEditor&&) = delete;
 
 		// ★変更：以下は「実行時コア機能」（トリガー判定・SRT適用・セーブ/ロード・
 		// モデル/フラグ登録）。ImGuiのエディタUIに依存しないため、
@@ -21,8 +21,8 @@ namespace RyoEngine {
 		static void Initialize();
 		static void Update();
 
-		static void SaveSettings(const char* filePath = "resources/json/editor/animationEditor.json");
-		static void LoadSettings(const char* filePath = "resources/json/editor/animationEditor.json");
+		static void SaveSettings(const char* filePath = "resources/Json/Editor/animationEditor.json");
+		static void LoadSettings(const char* filePath = "resources/Json/Editor/animationEditor.json");
 
 		// モデルを登録
 		static void SetTargetModel(Model* model, const std::string& name);
@@ -46,13 +46,13 @@ namespace RyoEngine {
 #endif
 
 	private:
-		static AnimEdit& GetInstance() {
-			static AnimEdit instance;
+		static AnimEditor& GetInstance() {
+			static AnimEditor instance;
 			return instance;
 		}
 
-		AnimEdit();
-		~AnimEdit();
+		AnimEditor();
+		~AnimEditor();
 
 		struct Impl;
 		Impl* m_pImpl = nullptr;
