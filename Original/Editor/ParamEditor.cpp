@@ -196,7 +196,7 @@ namespace RyoEngine {
 #endif
     }
 
-    void ParamEditor::DrawEntries(std::vector<ParamEntry>& entries) {
+    void ParamEditor::DrawEntries(std::list<ParamEntry>& entries) {
         for (auto& e : entries) {
             ImGui::PushID(&e); // 一意なID保証
 
@@ -298,7 +298,7 @@ namespace RyoEngine {
         }
     }
 
-    void ParamEditor::SaveEntriesToJson(nlohmann::json& j, const std::vector<ParamEntry>& entries) {
+    void ParamEditor::SaveEntriesToJson(nlohmann::json& j, const std::list<ParamEntry>& entries) {
         for (const auto& e : entries) {
             if (e.type == EntryType::Group) {
                 nlohmann::json childJson;
@@ -362,7 +362,7 @@ namespace RyoEngine {
         Logger::LogSuccess("[ParamEditor] Load Successed.");
     }
 
-    void ParamEditor::LoadEntriesFromJson(const nlohmann::json& j, std::vector<ParamEntry>& entries) {
+    void ParamEditor::LoadEntriesFromJson(const nlohmann::json& j, std::list<ParamEntry>& entries) {
         for (auto& e : entries) {
             if (!j.contains(e.name)) continue;
 

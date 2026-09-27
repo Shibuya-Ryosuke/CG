@@ -3,6 +3,7 @@
 #include "../Math/Math.h"
 #include <string>
 #include <vector>
+#include <list>
 #include <json.hpp>
 
 namespace RyoEngine {
@@ -82,7 +83,11 @@ namespace RyoEngine {
 
             // グループ用
             bool defaultOpen = false;
-            std::vector<ParamEntry> children;
+            // NOTE: std::vectorだと兄弟要素の追加(push_back)で再確保が起こり、
+            //       groupStack_に積んだ既存要素へのポインタが無効化されてしまう。
+            //       std::listはノード単位で確保されるため、要素を追加しても
+            //       既存要素のアドレスは変わらない(=groupStack_のポインタが常に有効)。
+            std::list<ParamEntry> children;
         };
 
         // 内部実装用のメンバ関数
@@ -91,16 +96,17 @@ namespace RyoEngine {
         void AddEntry(ParamEntry entry);
 
         void DrawImGuiInternal(const char* windowName);
-        void DrawEntries(std::vector<ParamEntry>& entries);
+        void DrawEntries(std::list<ParamEntry>& entries);
 
         void SaveToJsonInternal(const std::string& filepath);
-        void SaveEntriesToJson(nlohmann::json& j, const std::vector<ParamEntry>& entries);
+        void SaveEntriesToJson(nlohmann::json& j, const std::list<ParamEntry>& entries);
 
         void LoadFromJsonInternal(const std::string& filepath);
-        void LoadEntriesFromJson(const nlohmann::json& j, std::vector<ParamEntry>& entries);
+        void LoadEntriesFromJson(const nlohmann::json& j, std::list<ParamEntry>& entries);
 
         // ルートエントリと現在の階層スタック
-        std::vector<ParamEntry> rootEntries_;
+        // rootEntries_もchildren同様の理由でstd::listにしている
+        std::list<ParamEntry> rootEntries_;
         std::vector<ParamEntry*> groupStack_;
 
         // 起動時に先読みしたJSONデータ
