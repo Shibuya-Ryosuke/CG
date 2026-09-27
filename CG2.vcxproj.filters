@@ -147,9 +147,6 @@
     <ClCompile Include="Original\Externals\imgui\ImVectorEditor.cpp">
       <Filter>Externals\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Edit\AnimEditor.cpp">
-      <Filter>Engine\ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Original\Easing\Easing.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
@@ -195,6 +192,12 @@
     </ClCompile>
     <ClCompile Include="Original\Test\TestBullet.cpp">
       <Filter>Engine\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Editor\AnimEditor.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Editor\ParamEditor.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -321,9 +324,6 @@
     <ClInclude Include="Original\ImGui\ImGuiAllInclude.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Edit\AnimEditor.h">
-      <Filter>Engine\ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Original\Easing\Easing.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
@@ -374,6 +374,12 @@
     </ClInclude>
     <ClInclude Include="Original\Test\TestBullet.h">
       <Filter>Engine\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Editor\AnimEditor.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Editor\ParamEditor.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

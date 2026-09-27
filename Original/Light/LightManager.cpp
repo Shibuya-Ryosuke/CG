@@ -121,6 +121,7 @@ namespace RyoEngine {
     }
 
     void LightManager::DrawImGui() {
+#ifdef _DEBUG
         auto instance = GetInstance();
 
         ImGui::Begin("LightManager");
@@ -183,7 +184,8 @@ namespace RyoEngine {
         }
 
         ImGui::End();
-
+#endif
+        // RyoEngineで呼び出してるのはDrawImguiなのでこのUpdateは残す
         Update();
     }
 }

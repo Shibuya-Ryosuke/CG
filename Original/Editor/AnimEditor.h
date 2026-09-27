@@ -21,8 +21,8 @@ namespace RyoEngine {
 		static void Initialize();
 		static void Update();
 
-		static void SaveSettings(const char* filePath = "resources/Json/Editor/animationEditor.json");
-		static void LoadSettings(const char* filePath = "resources/Json/Editor/animationEditor.json");
+		static void SaveSettings(const char* filePath = "Resources/ApplicationResources/Json/Editor/animationEditor.json");
+		static void LoadSettings(const char* filePath = "Resources/ApplicationResources/Json/Editor/animationEditor.json");
 
 		// モデルを登録
 		static void SetTargetModel(Model* model, const std::string& name);

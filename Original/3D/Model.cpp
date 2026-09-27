@@ -3,7 +3,7 @@
 #include "../Graphics/TextureManager.h"
 //#include "../Reflect/ReflectCommon.h"
 //#include "../Reflect/ReflectModel.h"
-#include "../Edit/AnimEditor.h"
+#include "../Editor/AnimEditor.h"
 #include "../Light/Light.h"
 #include "../Light/LightManager.h"
 

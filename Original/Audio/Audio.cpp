@@ -96,15 +96,15 @@ namespace RyoEngine {
 		}
 	}
 
-	Audio::SoundData Audio::LoadWaveFile(const char* filename) {
+	Audio::SoundData Audio::LoadWaveFile(const std::string& filename) {
 		HRESULT hr = S_OK;
 
-		// char*からwchar_t*へ変換
-		// 必要なバッファサイズを取得
-		int32_t size = MultiByteToWideChar(CP_ACP, 0, filename, -1, nullptr, 0);
+		// std::stringからwchar_t*へ変換
+	// 必要なバッファサイズを取得
+		int32_t size = MultiByteToWideChar(CP_ACP, 0, filename.c_str(), -1, nullptr, 0);
 		// 変換
 		std::wstring wstr(static_cast<size_t>(size), L'\0');
-		MultiByteToWideChar(CP_ACP, 0, filename, -1, &wstr[0], size);
+		MultiByteToWideChar(CP_ACP, 0, filename.c_str(), -1, &wstr[0], size);
 
 		// SourceReaderの作成
 		Microsoft::WRL::ComPtr<IMFSourceReader> pReader;
@@ -164,7 +164,7 @@ namespace RyoEngine {
 		return soundData;
 	}
 
-	uint32_t Audio::LoadBGM(const char* filename) {
+	uint32_t Audio::LoadBGM(const std::string& filename) {
 		Audio* inst = GetInstance();
 
 		BGMData data;
@@ -174,7 +174,7 @@ namespace RyoEngine {
 		return static_cast<uint32_t>(inst->bgmDatas.size() - 1);
 	}
 
-	uint32_t Audio::LoadSE(const char* filename) {
+	uint32_t Audio::LoadSE(const std::string& filename) {
 		Audio* inst = GetInstance();
 
 		inst->seDatas.push_back(LoadWaveFile(filename));

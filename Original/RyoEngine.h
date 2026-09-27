@@ -24,7 +24,7 @@
 #include "Camera/DebugCamera.h"
 #include "Input/Input.h"
 #include "ImGui/ImGuiManager.h"
-#include "Edit/AnimEditor.h"
+#include "Editor/AnimEditor.h"
 #include "Light/LightManager.h"
 #include "Shadow/ShadowMap.h"
 #include "PostProcess/PostProcess.h"
@@ -91,8 +91,30 @@ namespace RyoEngine {
     int32_t RandomInt32_t(int32_t min, int32_t max);
     float RandomFloat(float min, float max);
 
+    /// <summary>
+    /// 画像の読み込み
+    /// </summary>
+    /// <param name="filePath">Resources/ApplicationResources/　の後のパスを記述</param>
+    /// <returns></returns>
     uint32_t LoadTex(const std::string& filePath);
     
+    /// <summary>
+    /// BGMの読み込み
+    /// </summary>
+    /// <param name="filePath">Resources/ApplicationResources/　の後のパスを記述</param>
+    /// <returns></returns>
+    uint32_t LoadBGM(const std::string& filePath);
+
+    /// <summary>
+    /// SEの読み込み
+    /// </summary>
+    /// <param name="filePath">Resources/ApplicationResources/　の後のパスを記述</param>
+    /// <returns></returns>
+    uint32_t LoadSE(const std::string& filePath);
+
+    /// <summary>
+    /// テキスト表示（Debug時のみ）
+    /// </summary>
     template <typename... Args>
     void PrintText(std::format_string<Args...> fmt, Vector2 position, Args&&... args) {
         if (!GetFontOutputter()) return;

@@ -47,8 +47,14 @@ namespace RyoEngine {
         // ★ 追加: 引数付きで scale を省略したい場合（デフォルト 1.0f）
         template <typename... Args>
         void ScreenPrint(std::format_string<Args...> fmt, Vector2 position, Args&&... args) {
+#ifdef _DEBUG
             std::string formattedText = std::format(fmt, std::forward<Args>(args)...);
             RegisterText(formattedText, position, 1.0f);
+#else
+            void(fmt);
+            void(position);
+            void(args);
+#endif
         }
 
         void DrawAllText();

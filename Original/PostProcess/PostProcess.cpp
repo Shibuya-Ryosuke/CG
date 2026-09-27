@@ -510,6 +510,7 @@ namespace RyoEngine {
     }
 
     void PostProcess::DrawImGui() {
+#ifdef _DEBUG
         ImGui::Begin("PostProcess");
         ImGui::SliderFloat("露出", &exposure_, 0.0f, 5.0f);
         ImGui::Checkbox("ACES トーンマッピング", &acesEnabled_);
@@ -554,5 +555,6 @@ namespace RyoEngine {
             ImGui::SliderFloat("白黒の度合い", &grayscaleIntensity_, 0.0f, 1.0f);
         }
         ImGui::End();
+#endif
     }
 }

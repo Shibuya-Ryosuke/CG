@@ -3,6 +3,7 @@
 #include <wrl/client.h>
 #include <vector>
 #include <cstdint>
+#include <string>
 
 namespace RyoEngine {
 	class Audio {
@@ -30,14 +31,14 @@ namespace RyoEngine {
 		/// ( .wav .mp3 .aac .m4a .wma に対応 )
 		/// </summary>
 		/// <param name="filename">音声ファイルへのパス</param>
-		static uint32_t LoadBGM(const char* filename);
+		static uint32_t LoadBGM(const std::string& filename);
 
 		/// <summary>
 		/// SE用に音声ファイルをロード(重ねて再生可能)
 		/// ( .wav .mp3 .aac .m4a .wma に対応 )
 		/// </summary>
 		/// <param name="filename">音声ファイルへのパス</param>
-		static uint32_t LoadSE(const char* filename);
+		static uint32_t LoadSE(const std::string& filename);
 
 		/// <summary>
 		/// BGM再生。
@@ -109,7 +110,7 @@ namespace RyoEngine {
 		Audio& operator=(const Audio&) = delete;
 
 		// 波形ファイルを読み込んでデコードする共通処理(BGM/SEどちらもここを通る)
-		static SoundData LoadWaveFile(const char* filename);
+		static SoundData LoadWaveFile(const std::string& filename);
 
 		// 再生完了済みのSEボイスを破棄する
 		void CleanupFinishedSE();

@@ -30,7 +30,8 @@
     <ClCompile Include="Original\Camera\Camera.cpp" />
     <ClCompile Include="Original\Camera\DebugCamera.cpp" />
     <ClCompile Include="Original\Easing\Easing.cpp" />
-    <ClCompile Include="Original\Edit\AnimEditor.cpp" />
+    <ClCompile Include="Original\Editor\AnimEditor.cpp" />
+    <ClCompile Include="Original\Editor\ParamEditor.cpp" />
     <ClCompile Include="Original\Externals\imgui\GraphEditor.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
@@ -133,7 +134,8 @@
     <ClInclude Include="Original\Camera\Camera.h" />
     <ClInclude Include="Original\Camera\DebugCamera.h" />
     <ClInclude Include="Original\Easing\Easing.h" />
-    <ClInclude Include="Original\Edit\AnimEditor.h" />
+    <ClInclude Include="Original\Editor\AnimEditor.h" />
+    <ClInclude Include="Original\Editor\ParamEditor.h" />
     <ClInclude Include="Original\Externals\imgui\GraphEditor.h" />
     <ClInclude Include="Original\Externals\imgui\imconfig.h" />
     <ClInclude Include="Original\Externals\imgui\ImCurveEdit.h" />

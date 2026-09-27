@@ -8,7 +8,7 @@ void TestPlayer::Initialize(TestManager* manager) {
 	manager_ = manager;
 
 	// モデル初期化
-	bunny_ = Model::Create("resources/test/bunny.obj");
+	bunny_ = Model::Create("Resources/EngineResources/Test/bunny.obj");
 	transform_.translate.y = 5.0f;
 	transform_.scale = { 1.0f,1.0f,1.0f };
 	transform_.rotate = { 0.0f,2.8f,0.0f };

@@ -104,7 +104,7 @@ namespace RyoEngine {
 
         // フォント
         fontOutputer_ = new Font();
-        fontOutputer_->Initialize("resources/debugfont/debugfont.fnt", "resources/debugfont/debugfont.png");
+        fontOutputer_->Initialize("Resources/EngineResources/Debugfont/debugfont.fnt", "Resources/EngineResources/Debugfont/debugfont.png");
 
         lastTime_ = std::chrono::high_resolution_clock::now();
 
@@ -326,7 +326,18 @@ namespace RyoEngine {
     }
 
     uint32_t LoadTex(const std::string& filePath) {
-        return GetTexManager()->Load(filePath);
+        std::string fullPath = "Resources/ApplicationResources/" + filePath;
+        return GetTexManager()->Load(fullPath);
+    }
+
+    uint32_t LoadBGM(const std::string& filePath) {
+        std::string fullPath = "Resources/ApplicationResources/" + filePath;
+        return Audio::LoadBGM(fullPath);
+    }
+
+    uint32_t LoadSE(const std::string& filePath) {
+        std::string fullPath = "Resources/ApplicationResources/" + filePath;
+        return Audio::LoadSE(fullPath);
     }
 
     // --- ゲッターの実装 ---
