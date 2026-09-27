@@ -102,6 +102,8 @@ namespace RyoEngine {
             dxCommon_->GetBackBufferFormat()
         );
 
+        ParamEditor::LoadFromJson();
+
         // フォント
         fontOutputer_ = new Font();
         fontOutputer_->Initialize("Resources/EngineResources/Debugfont/debugfont.fnt", "Resources/EngineResources/Debugfont/debugfont.png");
@@ -267,6 +269,8 @@ namespace RyoEngine {
     }
 
     void EndFrame() {
+        ParamEditor::DrawImGuiWindow();
+
         PrimitiveRenderer::Flush();
 
         // シャドウパス：ライト視点で深度だけ先に描画する

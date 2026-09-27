@@ -14,28 +14,17 @@ void TestPlayer::Initialize(TestManager* manager) {
 	transform_.rotate = { 0.0f,2.8f,0.0f };
 
 	bunnyLightId_ = LightManager::AddLight(LightType::Point);
+
+	// SRT
+	ParamEditor::RegisterValue("bunny scale", &transform_.scale);
+	ParamEditor::RegisterValue("bunny rotate", &transform_.rotate);
+	ParamEditor::RegisterValue("bunny translate", &transform_.translate);
+	// 発光（周囲にライティングするわけではない）
+	ParamEditor::RegisterValue("emissive intensity", &emissiveIntensity_);
+	ParamEditor::RegisterColor("emissive color", &emissiveColor_);
 }
 
 void TestPlayer::Update() {
-#ifdef _DEBUG
-	ImGui::Begin("test");
-	// SRT
-	ImGui::DragFloat3("bunny scale", &transform_.scale.x, 0.01f, 0.0f, 10.0f);
-	ImGui::DragFloat3("bunny rotate", &transform_.rotate.x, 0.01f, -100.0f, 100.0f);
-	ImGui::DragFloat3("bunny translate", &transform_.translate.x, 0.01f, -100.0f, 100.0f);
-
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
-	ImGui::Text("isVisible %d", bunny_->IsVisible());
-	// 発光（周囲にライティングするわけではない）
-	ImGui::DragFloat("emissive intensity", &emissiveIntensity_, 0.01f, 0.0f, 100.0f);
-	ImGui::ColorEdit3("emissive color", &emissiveColor_.x);
-	ImGui::End();
-
-	// 発光セット
-	bunny_->SetEmissive(emissiveColor_, emissiveIntensity_);
-#endif
 
 	// 移動
 	// 左右
@@ -69,10 +58,11 @@ void TestPlayer::Update() {
 
 	// SRT更新
 	bunny_->SetTransform(transform_);
+	// 発光更新
+	bunny_->SetEmissive(emissiveColor_, emissiveIntensity_);
 
 	// ライト追従
 	LightManager::SetLightPosition(bunnyLightId_, bunny_->GetTranslate());
-
 }
 
 void TestPlayer::Draw(RyoEngine::Camera camera) {

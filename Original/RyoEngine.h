@@ -25,6 +25,7 @@
 #include "Input/Input.h"
 #include "ImGui/ImGuiManager.h"
 #include "Editor/AnimEditor.h"
+#include "Editor/ParamEditor.h"
 #include "Light/LightManager.h"
 #include "Shadow/ShadowMap.h"
 #include "PostProcess/PostProcess.h"
