@@ -25,6 +25,8 @@ private:
 	std::unique_ptr<RyoEngine::Model> bunny_{};
 	// SRT
 	RyoEngine::Transform transform_{};
+	// モデル自体の色
+	RyoEngine::Vector4 color_{ 1.0f,1.0f,1.0f,1.0f };
 	// 速さ
 	RyoEngine::Vector3 velocity_ = { 8.0f, 0.0f, 8.0f };
 

@@ -20,6 +20,7 @@ void TestPlayer::Initialize(TestManager* manager) {
 	// SRT
 	ParamEditor::BeginGroup("bunny");
 	ParamEditor::RegisterValue("transform", &transform_);
+	ParamEditor::RegisterColor("color", &color_);
 	// 発光（周囲にライティングするわけではない）
 	ParamEditor::BeginGroup("emissive");
 	ParamEditor::RegisterValue("intensity", &emissiveIntensity_);
@@ -62,6 +63,8 @@ void TestPlayer::Update() {
 
 	// SRT更新
 	bunny_->SetTransform(transform_);
+	// モデル自体の色更新
+	bunny_->SetColor(color_);
 	// 発光更新
 	bunny_->SetEmissive(emissiveColor_, emissiveIntensity_);
 
