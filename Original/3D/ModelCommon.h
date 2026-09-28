@@ -4,6 +4,8 @@
 #include "../Base/DirectXCommon.h"
 #include <vector>
 #include <functional>
+#include <array>
+#include "../Math/BlendMode.h" // 追加: BlendModeのインクルード
 
 namespace RyoEngine {
     class ModelCommon {
@@ -11,64 +13,46 @@ namespace RyoEngine {
         enum DrawType {
             REAL,
             REFLECT,
-            NO_UV,          // UVを持たないメッシュ用 (通常描画)
-            REFLECT_NO_UV,  // UVを持たないメッシュ用 (鏡面反射描画)
-            SHADOW,         // シャドウマップ用 (深度のみ書き込む)
+            NO_UV,
+            REFLECT_NO_UV,
+            SHADOW,
         };
 
-        /// <summary>
-        /// シングルトンインスタンスの取得
-        /// </summary>
         static ModelCommon* GetInstance();
 
-        /// <summary>
-        /// 初期化
-        /// </summary>
         void Initialize();
 
-        void BeginDraw(DrawType drawType = DrawType::REAL);
-        void Draw();
+        // 変更: BlendModeを指定してBeginDrawできるようにする（デフォルトはNormal）
+        void BeginDraw(DrawType drawType = DrawType::REAL, BlendMode blendMode = BlendMode::Normal);
+        void Draw(BlendMode blendMode = BlendMode::Normal);
 
-        /// <summary>
-        /// シャドウパス用の描画。BeginDraw(SHADOW)を内部で呼び、drawCommands_を
-        /// (通常描画と同じものを)もう一度流す。各Mesh/ModelのInternalDraw()自体は変更不要
-        /// (root param 1のWVPリソースが持つWorld行列を、シャドウ用VSがそのまま読むだけのため)。
-        /// </summary>
         void DrawShadow();
 
-        /// <summary>
-        /// 終了処理
-        /// </summary>
         void Finalize();
 
-        // --- ゲッター ---
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
-        ID3D12PipelineState* GetPipelineState() const { return realPipelineState_.Get(); }
 
+        // 従来のゲッター（互換性のためNormalを返すか、必要に応じて拡張）
+        ID3D12PipelineState* GetPipelineState() const { return realPipelineStates_[static_cast<size_t>(BlendMode::Normal)].Get(); }
 
         /// <summary>
-        /// DrawTypeを指定してPSOを取得する (メッシュ単位でPSOを切り替えたい場合に使用)
+        /// DrawTypeとBlendModeを指定してPSOを取得する
         /// </summary>
-        ID3D12PipelineState* GetPipelineState(DrawType drawType) const {
+        ID3D12PipelineState* GetPipelineState(DrawType drawType, BlendMode blendMode) const {
+            size_t blendIdx = static_cast<size_t>(blendMode);
             switch (drawType) {
-            case DrawType::REAL:          return realPipelineState_.Get();
-            case DrawType::REFLECT:       return reflectPipelineState_.Get();
-            case DrawType::NO_UV:         return noUVPipelineState_.Get();
-            case DrawType::REFLECT_NO_UV: return reflectNoUVPipelineState_.Get();
-            case DrawType::SHADOW:        return shadowPipelineState_.Get();
+            case DrawType::REAL:          return realPipelineStates_[blendIdx].Get();
+            case DrawType::REFLECT:       return reflectPipelineStates_[blendIdx].Get();
+            case DrawType::NO_UV:         return noUVPipelineStates_[blendIdx].Get();
+            case DrawType::REFLECT_NO_UV: return reflectNoUVPipelineStates_[blendIdx].Get();
+            case DrawType::SHADOW:        return shadowPipelineState_.Get(); // シャドウはブレンド関係なし
             }
-            return realPipelineState_.Get();
+            return realPipelineStates_[blendIdx].Get();
         }
 
         void SetDrawCommands(const std::function<void()>& function) { drawCommands_.push_back(function); }
-
         void CommandsClear() { drawCommands_.clear(); }
 
-        /// <summary>
-        /// 今まさにBeginDraw()でセットされているDrawTypeを取得する。
-        /// Model::InternalDraw()がメッシュごとにPSOを選び直す際、シャドウパス中かどうかを
-        /// 判定するために使う(シャドウパス中はUV有無やREFLECTに関係なく深度専用PSOを強制する)。
-        /// </summary>
         DrawType GetCurrentDrawType() const { return currentDrawType_; }
 
     private:
@@ -77,38 +61,31 @@ namespace RyoEngine {
         ModelCommon(const ModelCommon&) = delete;
         ModelCommon& operator=(const ModelCommon&) = delete;
 
-        // DirectXCommonのポインタ（初期化時にキャッシュする用）
         DirectXCommon* dxCommon_ = nullptr;
-
-        // ルートシグネチャ (UV有無・反射有無の全PSOで共通のものを使い回す)
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
-        // グラフィックスパイプライン
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> realPipelineState_;
-        // 反射用パイプライン
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> reflectPipelineState_;
-        // UVを持たないメッシュ用パイプライン (通常描画)
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> noUVPipelineState_;
-        // UVを持たないメッシュ用パイプライン (反射描画)
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> reflectNoUVPipelineState_;
-        // シャドウマップ用パイプライン (深度のみ、頂点シェーダーのみ)
+
+        // --- ブレンドモードごとのPSO配列 (各6個ずつ) ---
+        std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 6> realPipelineStates_;
+        std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 6> reflectPipelineStates_;
+        std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 6> noUVPipelineStates_;
+        std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 6> reflectNoUVPipelineStates_;
+
+        // シャドウはブレンド不要なので1つでOK
         Microsoft::WRL::ComPtr<ID3D12PipelineState> shadowPipelineState_;
 
-        // ルートシグネチャー作成
         void CreateRootSignature();
-        // パイプライン作成
-        void CreateRealPipelineState();
-        // 反射用パイプライン生成
-        void CreateReflectPipelineState();
-        // UVを持たないメッシュ用パイプライン生成 (通常描画)
-        void CreateNoUVPipelineState();
-        // UVを持たないメッシュ用パイプライン生成 (反射描画)
-        void CreateReflectNoUVPipelineState();
-        // シャドウマップ用パイプライン生成
+
+        // 内部で6つのブレンドモード分をまとめて生成するヘルパー関数
+        void CreateRealPipelineStates();
+        void CreateReflectPipelineStates();
+        void CreateNoUVPipelineStates();
+        void CreateReflectNoUVPipelineStates();
         void CreateShadowPipelineState();
 
-        std::vector<std::function<void()>> drawCommands_;
+        // 共通のD3D12_BLEND_DESCを構築するヘルパー
+        D3D12_BLEND_DESC CreateBlendDesc(BlendMode blendMode);
 
-        // 現在BeginDraw()でセットされているDrawType(GetCurrentDrawType()で参照する用)
+        std::vector<std::function<void()>> drawCommands_;
         DrawType currentDrawType_ = DrawType::REAL;
     };
 }

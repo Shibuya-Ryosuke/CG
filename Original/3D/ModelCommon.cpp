@@ -18,35 +18,92 @@ namespace RyoEngine {
 		Logger::Log("ModelCommon : Initializing...\n");
 		dxCommon_ = DirectXCommon::GetInstance();
 		CreateRootSignature();
-		CreateRealPipelineState();
-		CreateReflectPipelineState();
-		CreateNoUVPipelineState();
-		CreateReflectNoUVPipelineState();
+		CreateRealPipelineStates();
+		CreateReflectPipelineStates();
+		CreateNoUVPipelineStates();
+		CreateReflectNoUVPipelineStates();
 		CreateShadowPipelineState();
 		Logger::LogSuccess("ModelCommon : Initialized\n");
 	}
 
-	void ModelCommon::BeginDraw(DrawType drawType) {
+	// ブレンドモードに応じた D3D12_BLEND_DESC を生成するヘルパー
+	D3D12_BLEND_DESC ModelCommon::CreateBlendDesc(BlendMode blendMode) {
+		D3D12_BLEND_DESC blendDesc{};
+		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+		blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+
+		switch (blendMode) {
+		case BlendMode::None:
+			blendDesc.RenderTarget[0].BlendEnable = FALSE;
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+			break;
+
+		case BlendMode::Normal: // αブレンド
+			blendDesc.RenderTarget[0].BlendEnable = TRUE;
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+			break;
+
+		case BlendMode::Add: // 加算
+			blendDesc.RenderTarget[0].BlendEnable = TRUE;
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+			break;
+
+		case BlendMode::Subtract: // 減算
+			blendDesc.RenderTarget[0].BlendEnable = TRUE;
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
+			break;
+
+		case BlendMode::Multiply: // 乗算
+			blendDesc.RenderTarget[0].BlendEnable = TRUE;
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_SRC_COLOR;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+			break;
+
+		case BlendMode::Screen: // スクリーン
+			blendDesc.RenderTarget[0].BlendEnable = TRUE;
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+			break;
+		}
+
+		return blendDesc;
+	}
+
+	void ModelCommon::BeginDraw(DrawType drawType, BlendMode blendMode) {
 		currentDrawType_ = drawType;
 
 		auto commandList = dxCommon_->GetCommandList();
 		commandList->SetGraphicsRootSignature(rootSignature_.Get());
 
+		size_t blendIdx = static_cast<size_t>(blendMode);
+
 		switch (drawType) {
 		case DrawType::REAL:
-			commandList->SetPipelineState(realPipelineState_.Get());
+			commandList->SetPipelineState(realPipelineStates_[blendIdx].Get());
 			break;
 
 		case DrawType::REFLECT:
-			commandList->SetPipelineState(reflectPipelineState_.Get());
+			commandList->SetPipelineState(reflectPipelineStates_[blendIdx].Get());
 			break;
 
 		case DrawType::NO_UV:
-			commandList->SetPipelineState(noUVPipelineState_.Get());
+			commandList->SetPipelineState(noUVPipelineStates_[blendIdx].Get());
 			break;
 
 		case DrawType::REFLECT_NO_UV:
-			commandList->SetPipelineState(reflectNoUVPipelineState_.Get());
+			commandList->SetPipelineState(reflectNoUVPipelineStates_[blendIdx].Get());
 			break;
 
 		case DrawType::SHADOW:
@@ -59,21 +116,16 @@ namespace RyoEngine {
 		ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
 		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-		// NOTE: ライトのView-Projection行列とシャドウマップ本体は、オブジェクトごとではなく
-		//       パス全体で共通の値なので、ここ(パスの先頭)で1回だけバインドする。
-		//       各Mesh/ModelのInternalDraw()側では一切触らない。
 		if (drawType == DrawType::SHADOW) {
-			// シャドウパス：頂点シェーダーがWorld行列と掛け合わせるためのLightViewProjが必要
 			commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetInstance()->GetLightViewProjGPUVirtualAddress());
 		} else {
-			// 通常描画パス：ピクセルシェーダーがシャドウ判定に使うシャドウマップ本体とLightViewProjが必要
 			commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetInstance()->GetLightViewProjGPUVirtualAddress());
 			commandList->SetGraphicsRootDescriptorTable(7, TextureManager::GetInstance()->GetGPUHandle(ShadowMap::GetInstance()->GetShadowMapTextureHandle()));
 		}
 	}
 
-	void ModelCommon::Draw() {
-		BeginDraw();
+	void ModelCommon::Draw(BlendMode blendMode) {
+		BeginDraw(DrawType::REAL, blendMode);
 		for (const auto& command : drawCommands_) {
 			command();
 		}
@@ -90,10 +142,10 @@ namespace RyoEngine {
 		Logger::Log("ModelCommon : Finalizing...\n");
 		// グラフィックスパイプラインを解放
 		shadowPipelineState_.Reset();
-		reflectNoUVPipelineState_.Reset();
-		noUVPipelineState_.Reset();
-		reflectPipelineState_.Reset();
-		realPipelineState_.Reset();
+		for (auto& pso : reflectNoUVPipelineStates_) pso.Reset();
+		for (auto& pso : noUVPipelineStates_) pso.Reset();
+		for (auto& pso : reflectPipelineStates_) pso.Reset();
+		for (auto& pso : realPipelineStates_) pso.Reset();
 
 		// ルートシグネチャを解放
 		rootSignature_.Reset();
@@ -220,23 +272,17 @@ namespace RyoEngine {
 
 	}
 
-	void ModelCommon::CreateRealPipelineState() {
+	void ModelCommon::CreateRealPipelineStates() {
 		HRESULT hr = S_OK;
 
-		// InputLayout
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
 		inputElementDescs[0].SemanticName = "POSITION";
-		inputElementDescs[0].SemanticIndex = 0;
 		inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
 		inputElementDescs[1].SemanticName = "TEXCOORD";
-		inputElementDescs[1].SemanticIndex = 0;
 		inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 		inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
 		inputElementDescs[2].SemanticName = "NORMAL";
-		inputElementDescs[2].SemanticIndex = 0;
 		inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 		inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 
@@ -244,75 +290,57 @@ namespace RyoEngine {
 		inputLayoutDesc.pInputElementDescs = inputElementDescs;
 		inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-		// BlendStateの設定
-		D3D12_BLEND_DESC blendDesc{};
-		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-		blendDesc.RenderTarget[0].BlendEnable = TRUE;
-		blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-		blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-		blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-		blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-		blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-		blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-
-		// RasterizerStateの設定
 		D3D12_RASTERIZER_DESC rasterizerDesc{};
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		// Shaderをコンパイルする
 		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.VS.hlsl", L"vs_6_0");
-		assert(vertexShaderBlob != nullptr);
-
 		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.PS.hlsl", L"ps_6_0");
+		assert(vertexShaderBlob != nullptr);
 		assert(pixelShaderBlob != nullptr);
 
-		// DepthStencilStateの設定
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 		depthStencilDesc.DepthEnable = true;
 		depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
-		// PSOを生成
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-		graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();
-		graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;
-		graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),
-			vertexShaderBlob->GetBufferSize() };
-		graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),
-			pixelShaderBlob->GetBufferSize() };
-		graphicsPipelineStateDesc.BlendState = blendDesc;
-		graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
-		graphicsPipelineStateDesc.NumRenderTargets = 1;
-		graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR化：PostProcessのシーンカラーバッファに合わせる
-		graphicsPipelineStateDesc.PrimitiveTopologyType =
-			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		graphicsPipelineStateDesc.SampleDesc.Count = 1;
-		graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-		graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
-		graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
-			IID_PPV_ARGS(&realPipelineState_));
-		assert(SUCCEEDED(hr));
+		// 6つのブレンドモード分をループして生成
+		for (int i = 0; i < 6; ++i) {
+			BlendMode mode = static_cast<BlendMode>(i);
+			D3D12_BLEND_DESC blendDesc = CreateBlendDesc(mode);
+
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+			desc.pRootSignature = rootSignature_.Get();
+			desc.InputLayout = inputLayoutDesc;
+			desc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
+			desc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
+			desc.BlendState = blendDesc;
+			desc.RasterizerState = rasterizerDesc;
+			desc.NumRenderTargets = 1;
+			desc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			desc.SampleDesc.Count = 1;
+			desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+			desc.DepthStencilState = depthStencilDesc;
+			desc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+			hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&realPipelineStates_[i]));
+			assert(SUCCEEDED(hr));
+		}
 	}
 
-	void ModelCommon::CreateReflectPipelineState() {
+	void ModelCommon::CreateReflectPipelineStates() {
+		// 基本はRealと同様だが RasterizerState.CullMode = D3D12_CULL_MODE_FRONT にする
 		HRESULT hr = S_OK;
 
-		// InputLayout
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
 		inputElementDescs[0].SemanticName = "POSITION";
-		inputElementDescs[0].SemanticIndex = 0;
 		inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
 		inputElementDescs[1].SemanticName = "TEXCOORD";
-		inputElementDescs[1].SemanticIndex = 0;
 		inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 		inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-
 		inputElementDescs[2].SemanticName = "NORMAL";
-		inputElementDescs[2].SemanticIndex = 0;
 		inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 		inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 
@@ -320,74 +348,50 @@ namespace RyoEngine {
 		inputLayoutDesc.pInputElementDescs = inputElementDescs;
 		inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-		// BlendStateの設定
-		D3D12_BLEND_DESC blendDesc{};
-		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-		blendDesc.RenderTarget[0].BlendEnable = TRUE;
-		blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-		blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-		blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-		blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-		blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-		blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-
-		// RasterizerStateの設定 (反射なので表裏を反転)
 		D3D12_RASTERIZER_DESC rasterizerDesc{};
-		rasterizerDesc.CullMode = D3D12_CULL_MODE_FRONT;
+		rasterizerDesc.CullMode = D3D12_CULL_MODE_FRONT; // 反射用
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		// Shaderをコンパイルする
 		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.VS.hlsl", L"vs_6_0");
-		assert(vertexShaderBlob != nullptr);
-
 		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.PS.hlsl", L"ps_6_0");
-		assert(pixelShaderBlob != nullptr);
 
-		// DepthStencilStateの設定
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 		depthStencilDesc.DepthEnable = true;
 		depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
-		// PSOを生成
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-		graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();
-		graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;
-		graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),
-			vertexShaderBlob->GetBufferSize() };
-		graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),
-			pixelShaderBlob->GetBufferSize() };
-		graphicsPipelineStateDesc.BlendState = blendDesc;
-		graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
-		graphicsPipelineStateDesc.NumRenderTargets = 1;
-		graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR化：PostProcessのシーンカラーバッファに合わせる
-		graphicsPipelineStateDesc.PrimitiveTopologyType =
-			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		graphicsPipelineStateDesc.SampleDesc.Count = 1;
-		graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-		graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
-		graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
-			IID_PPV_ARGS(&reflectPipelineState_));
-		assert(SUCCEEDED(hr));
+		for (int i = 0; i < 6; ++i) {
+			BlendMode mode = static_cast<BlendMode>(i);
+			D3D12_BLEND_DESC blendDesc = CreateBlendDesc(mode);
+
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+			desc.pRootSignature = rootSignature_.Get();
+			desc.InputLayout = inputLayoutDesc;
+			desc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
+			desc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
+			desc.BlendState = blendDesc;
+			desc.RasterizerState = rasterizerDesc;
+			desc.NumRenderTargets = 1;
+			desc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			desc.SampleDesc.Count = 1;
+			desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+			desc.DepthStencilState = depthStencilDesc;
+			desc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+			hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&reflectPipelineStates_[i]));
+			assert(SUCCEEDED(hr));
+		}
 	}
 
-	void ModelCommon::CreateNoUVPipelineState() {
+	void ModelCommon::CreateNoUVPipelineStates() {
 		HRESULT hr = S_OK;
 
-		// InputLayout: TEXCOORDを含めない (POSITION / NORMALのみ)
-		// NOTE: 頂点バッファ自体は既存のVertexData(position/texcoord/normal)をそのまま使い回す想定。
-		//       TEXCOORDを読み飛ばすため、NORMALのオフセットはD3D12_APPEND_ALIGNED_ELEMENTではなく
-		//       offsetof(VertexData, normal) を明示的に指定する。
-		//       もしVertexDataのメンバ名が異なる場合は以下のoffsetof呼び出しを実際の名前に合わせてください。
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
 		inputElementDescs[0].SemanticName = "POSITION";
-		inputElementDescs[0].SemanticIndex = 0;
 		inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		inputElementDescs[0].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, position));
-
 		inputElementDescs[1].SemanticName = "NORMAL";
-		inputElementDescs[1].SemanticIndex = 0;
 		inputElementDescs[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 		inputElementDescs[1].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, normal));
 
@@ -395,69 +399,50 @@ namespace RyoEngine {
 		inputLayoutDesc.pInputElementDescs = inputElementDescs;
 		inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-		// BlendState (通常描画と同じ設定)
-		D3D12_BLEND_DESC blendDesc{};
-		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-		blendDesc.RenderTarget[0].BlendEnable = TRUE;
-		blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-		blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-		blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-		blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-		blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-		blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-
-		// RasterizerState (通常描画と同じ設定)
 		D3D12_RASTERIZER_DESC rasterizerDesc{};
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		// UV無し専用のShaderをコンパイルする
 		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model_NoUV.VS.hlsl", L"vs_6_0");
-		assert(vertexShaderBlob != nullptr);
-
 		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model_NoUV.PS.hlsl", L"ps_6_0");
-		assert(pixelShaderBlob != nullptr);
 
-		// DepthStencilState (通常描画と同じ設定)
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 		depthStencilDesc.DepthEnable = true;
 		depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-		graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();
-		graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;
-		graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),
-			vertexShaderBlob->GetBufferSize() };
-		graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),
-			pixelShaderBlob->GetBufferSize() };
-		graphicsPipelineStateDesc.BlendState = blendDesc;
-		graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
-		graphicsPipelineStateDesc.NumRenderTargets = 1;
-		graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR化：PostProcessのシーンカラーバッファに合わせる
-		graphicsPipelineStateDesc.PrimitiveTopologyType =
-			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		graphicsPipelineStateDesc.SampleDesc.Count = 1;
-		graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-		graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
-		graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
-			IID_PPV_ARGS(&noUVPipelineState_));
-		assert(SUCCEEDED(hr));
+		for (int i = 0; i < 6; ++i) {
+			BlendMode mode = static_cast<BlendMode>(i);
+			D3D12_BLEND_DESC blendDesc = CreateBlendDesc(mode);
+
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+			desc.pRootSignature = rootSignature_.Get();
+			desc.InputLayout = inputLayoutDesc;
+			desc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
+			desc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
+			desc.BlendState = blendDesc;
+			desc.RasterizerState = rasterizerDesc;
+			desc.NumRenderTargets = 1;
+			desc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			desc.SampleDesc.Count = 1;
+			desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+			desc.DepthStencilState = depthStencilDesc;
+			desc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+			hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&noUVPipelineStates_[i]));
+			assert(SUCCEEDED(hr));
+		}
 	}
 
-	void ModelCommon::CreateReflectNoUVPipelineState() {
+	void ModelCommon::CreateReflectNoUVPipelineStates() {
 		HRESULT hr = S_OK;
 
-		// InputLayout: CreateNoUVPipelineStateと同じ (POSITION / NORMALのみ)
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
 		inputElementDescs[0].SemanticName = "POSITION";
-		inputElementDescs[0].SemanticIndex = 0;
 		inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		inputElementDescs[0].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, position));
-
 		inputElementDescs[1].SemanticName = "NORMAL";
-		inputElementDescs[1].SemanticIndex = 0;
 		inputElementDescs[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 		inputElementDescs[1].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, normal));
 
@@ -465,54 +450,40 @@ namespace RyoEngine {
 		inputLayoutDesc.pInputElementDescs = inputElementDescs;
 		inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-		// BlendState (反射用と同じ設定)
-		D3D12_BLEND_DESC blendDesc{};
-		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-		blendDesc.RenderTarget[0].BlendEnable = TRUE;
-		blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-		blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-		blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-		blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-		blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-		blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-
-		// RasterizerState (反射なので表裏を反転)
 		D3D12_RASTERIZER_DESC rasterizerDesc{};
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_FRONT;
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		// UV無し専用のShaderをコンパイルする (反射時も同じShaderを使い、Rasterizerのみ変える)
 		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model_NoUV.VS.hlsl", L"vs_6_0");
-		assert(vertexShaderBlob != nullptr);
-
 		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model_NoUV.PS.hlsl", L"ps_6_0");
-		assert(pixelShaderBlob != nullptr);
 
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 		depthStencilDesc.DepthEnable = true;
 		depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-		graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();
-		graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;
-		graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),
-			vertexShaderBlob->GetBufferSize() };
-		graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),
-			pixelShaderBlob->GetBufferSize() };
-		graphicsPipelineStateDesc.BlendState = blendDesc;
-		graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
-		graphicsPipelineStateDesc.NumRenderTargets = 1;
-		graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDR化：PostProcessのシーンカラーバッファに合わせる
-		graphicsPipelineStateDesc.PrimitiveTopologyType =
-			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		graphicsPipelineStateDesc.SampleDesc.Count = 1;
-		graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-		graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
-		graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
-			IID_PPV_ARGS(&reflectNoUVPipelineState_));
-		assert(SUCCEEDED(hr));
+		for (int i = 0; i < 6; ++i) {
+			BlendMode mode = static_cast<BlendMode>(i);
+			D3D12_BLEND_DESC blendDesc = CreateBlendDesc(mode);
+
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+			desc.pRootSignature = rootSignature_.Get();
+			desc.InputLayout = inputLayoutDesc;
+			desc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
+			desc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
+			desc.BlendState = blendDesc;
+			desc.RasterizerState = rasterizerDesc;
+			desc.NumRenderTargets = 1;
+			desc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			desc.SampleDesc.Count = 1;
+			desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+			desc.DepthStencilState = depthStencilDesc;
+			desc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+			hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&reflectNoUVPipelineStates_[i]));
+			assert(SUCCEEDED(hr));
+		}
 	}
 
 	void ModelCommon::CreateShadowPipelineState() {
