@@ -342,7 +342,11 @@ namespace RyoEngine {
         return Audio::LoadSE(fullPath);
     }
 
-    void Change3DBledMode(BlendMode blendMode) {
+    void Change2DBlendMode(BlendMode blendMode) {
+        spriteCommon_->SetBlendMode(blendMode);
+    }
+
+    void Change3DBlendMode(BlendMode blendMode) {
         modelCommon_->SetBlendMode(blendMode);
         InstancedModelCommon::GetInstance()->SetBlendMode(blendMode);
     }

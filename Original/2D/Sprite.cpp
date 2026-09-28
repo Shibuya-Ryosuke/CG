@@ -42,6 +42,8 @@ namespace RyoEngine {
         indexData_[0] = 0; indexData_[1] = 1; indexData_[2] = 2;
         indexData_[3] = 1; indexData_[4] = 3; indexData_[5] = 2;
         indexCount_ = 6;
+
+        TransferMatrix();
     }
 
     void Sprite::Initialize(const std::string& filePath, Vector2 position, Anchor anchor) {

@@ -15,14 +15,18 @@ namespace RyoEngine {
         Logger::Log("SpriteCommon : Initializing...\n");
         dxCommon_ = DirectXCommon::GetInstance();
         CreateRootSignature();
-        CreatePipelineState();
+        CreatePipelineStates();
         Logger::LogSuccess("SpriteCommon : Initialized\n");
     }
 
     void SpriteCommon::BeginDraw() {
         auto commandList = dxCommon_->GetCommandList();
         commandList->SetGraphicsRootSignature(rootSignature_.Get());
-        commandList->SetPipelineState(graphicsPipelineState_.Get());
+
+        // 現在の blendMode_ に応じたPSOをセット
+        size_t blendIdx = static_cast<size_t>(blendMode_);
+        commandList->SetPipelineState(graphicsPipelineStates_[blendIdx].Get());
+
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
@@ -39,7 +43,9 @@ namespace RyoEngine {
     void SpriteCommon::Finalize() {
         Logger::Log("SpriteCommon : Finalizing...\n");
         // グラフィックスパイプラインを解放
-        graphicsPipelineState_.Reset();
+        for (auto& pso : graphicsPipelineStates_) {
+            pso.Reset();
+        }
 
         // ルートシグネチャを解放
         rootSignature_.Reset();
@@ -105,8 +111,7 @@ namespace RyoEngine {
         assert(SUCCEEDED(hr));
     }
 
-    void SpriteCommon::CreatePipelineState() {
-        // 頂点レイアウトの設定
+    void SpriteCommon::CreatePipelineStates() {
         D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
         inputElementDescs[0].SemanticName = "POSITION";
         inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -120,62 +125,94 @@ namespace RyoEngine {
         inputLayoutDesc.pInputElementDescs = inputElementDescs;
         inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-        // シェーダーのコンパイル (Sprite専用のHLSLがある場合はパスを変更してください)
         Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Sprite/Sprite.VS.hlsl", L"vs_6_0");
         Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Sprite/Sprite.PS.hlsl", L"ps_6_0");
 
-        // PSO の作成
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
-        psoDesc.pRootSignature = rootSignature_.Get();
-        psoDesc.InputLayout = inputLayoutDesc;
-        psoDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
-        psoDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
+        D3D12_RASTERIZER_DESC rasterizerDesc{};
+        rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
+        rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-        // --- 2D用の重要な設定 ---
+        D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
+        depthStencilDesc.DepthEnable = false;
+        depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+        depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
-        // 深度バッファを使わない
-        psoDesc.DepthStencilState.DepthEnable = false;
-        psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-        psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-        psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;                    // 深度バッファのフォーマット（環境に合わせてください）
+        // 6つのブレンドモード分のPSOを一括生成
+        for (int i = 0; i < 6; ++i) {
+            BlendMode mode = static_cast<BlendMode>(i);
+            D3D12_BLEND_DESC blendDesc = CreateBlendDesc(mode);
 
-        // 修正前(AL/summer-resource/obj1の時に変更した)
-        // PrimitiveRendererがSpriteで隠れないようにするには、PrimitiveRendererのFlush内で、SpriteCommonのdrawCommands_に積む必要があると思われる。
-        // 
-        // 1. デプスステンシル: 2Dは重なり順で描画するので、奥行き判定を無効化するか、比較を「常に通過」にする
-        //psoDesc.DepthStencilState.DepthEnable = true; // 有効にするが
-        //psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL; // 深度値を書き込む
-        //psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;// 手前のものを描画（同じ深度なら上書き）
-        //psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;                    // 深度バッファのフォーマット（環境に合わせてください）
+            D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
+            psoDesc.pRootSignature = rootSignature_.Get();
+            psoDesc.InputLayout = inputLayoutDesc;
+            psoDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
+            psoDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
+            psoDesc.BlendState = blendDesc;
+            psoDesc.RasterizerState = rasterizerDesc;
+            psoDesc.DepthStencilState = depthStencilDesc;
+            psoDesc.NumRenderTargets = 1;
+            psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+            psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+            psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+            psoDesc.SampleDesc.Count = 1;
+            psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-        // 2. ラスタライザ: カリングをしない（裏面も見えるようにする）
-        psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-        psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+            HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&graphicsPipelineStates_[i]));
+            assert(SUCCEEDED(hr));
+        }
+    }
 
-        // 3. ブレンドステート: アルファブレンディングを有効化[cite: 15]
-        D3D12_RENDER_TARGET_BLEND_DESC& blendDesc = psoDesc.BlendState.RenderTarget[0];
-        blendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-        blendDesc.BlendEnable = TRUE;
-        blendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-        blendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-        blendDesc.BlendOp = D3D12_BLEND_OP_ADD;
-        blendDesc.SrcBlendAlpha = D3D12_BLEND_INV_DEST_ALPHA;
-        blendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
-        blendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    D3D12_BLEND_DESC SpriteCommon::CreateBlendDesc(BlendMode blendMode) {
+        D3D12_BLEND_DESC blendDesc{};
+        blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_INV_DEST_ALPHA;
+        blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
+        blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 
-        // 書き込む RTV の情報 (DirectXCommon の設定に合わせる)[cite: 16]
-        psoDesc.NumRenderTargets = 1;
-        psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; //[cite: 16]
+        switch (blendMode) {
+        case BlendMode::None:
+            blendDesc.RenderTarget[0].BlendEnable = FALSE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            break;
 
-        // DSV の情報[cite: 16]
-        psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT; //[cite: 16]
+        case BlendMode::Normal: // αブレンド
+            blendDesc.RenderTarget[0].BlendEnable = TRUE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            break;
 
-        // 形状のタイプ (三角形)
-        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        psoDesc.SampleDesc.Count = 1;
-        psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        case BlendMode::Add: // 加算
+            blendDesc.RenderTarget[0].BlendEnable = TRUE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            break;
 
-        HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&graphicsPipelineState_));
-        assert(SUCCEEDED(hr));
+        case BlendMode::Subtract: // 減算
+            blendDesc.RenderTarget[0].BlendEnable = TRUE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
+            break;
+
+        case BlendMode::Multiply: // 乗算
+            blendDesc.RenderTarget[0].BlendEnable = TRUE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_SRC_COLOR;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            break;
+
+        case BlendMode::Screen: // スクリーン
+            blendDesc.RenderTarget[0].BlendEnable = TRUE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            break;
+        }
+
+        return blendDesc;
     }
 }

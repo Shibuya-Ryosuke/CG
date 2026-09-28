@@ -7,6 +7,8 @@ void TestManager::Initialize() {
 	ground_ = Model::Create("Resources/EngineResources/Test/ground.obj");
 	sky_ = Model::Create("Resources/EngineResources/Test/skydome.obj");
 
+	// テクスチャ初期化
+	flower.Initialize("Resources/EngineResources/Test/flower.png");
 	// 弾用のInstancedModel初期化
 	bulletInstancedModel_.Initialize("Resources/EngineResources/Test/TR.obj",5000);
 
@@ -45,6 +47,7 @@ void TestManager::Draw(RyoEngine::Camera camera) {
 	sky_->Draw();
 	player_.Draw(camera);
 
+	flower.Draw();
 	// 弾のインスタンス描画予約
 	bulletInstancedModel_.Draw(camera);
 }

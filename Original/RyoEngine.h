@@ -123,5 +123,6 @@ namespace RyoEngine {
         GetFontOutputter()->ScreenPrint(fmt, position,std::forward<Args>(args)...);
     }
 
-    void Change3DBledMode(BlendMode blendMode);
+    void Change2DBlendMode(BlendMode blendMode);
+    void Change3DBlendMode(BlendMode blendMode);
 }

@@ -25,6 +25,8 @@ private:
 	std::unique_ptr<RyoEngine::Model> ground_{};
 	std::unique_ptr<RyoEngine::Model> sky_{};
 
+	// テクスチャ表示
+	RyoEngine::Sprite flower{};
 	// プレイヤー
 	TestPlayer player_;
 
