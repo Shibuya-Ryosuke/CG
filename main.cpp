@@ -39,34 +39,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     while (GetWinApp()->ProcessMessage()) {
         // フレーム開始
         NewFrame();
-       
-        if (Input::TriggerKey(DIK_0)) {
-            Change3DBlendMode(BlendMode::None);
-        } else if (Input::TriggerKey(DIK_1)) {
-            Change3DBlendMode(BlendMode::Normal);
-        } else if (Input::TriggerKey(DIK_2)) {
-            Change3DBlendMode(BlendMode::Add);
-        } else if (Input::TriggerKey(DIK_3)) {
-            Change3DBlendMode(BlendMode::Subtract);
-        } else if (Input::TriggerKey(DIK_4)) {
-            Change3DBlendMode(BlendMode::Multiply);
-        } else if (Input::TriggerKey(DIK_5)) {
-            Change3DBlendMode(BlendMode::Screen);
-        }
 
-        if (Input::TriggerKey(DIK_Z)) {
-            Change2DBlendMode(BlendMode::None);
-        } else if (Input::TriggerKey(DIK_X)) {
-            Change2DBlendMode(BlendMode::Normal);
-        } else if (Input::TriggerKey(DIK_C)) {
-            Change2DBlendMode(BlendMode::Add);
-        } else if (Input::TriggerKey(DIK_V)) {
-            Change2DBlendMode(BlendMode::Subtract);
-        } else if (Input::TriggerKey(DIK_B)) {
-            Change2DBlendMode(BlendMode::Multiply);
-        } else if (Input::TriggerKey(DIK_N)) {
-            Change2DBlendMode(BlendMode::Screen);
-        }
         // ----------------------
         // -- 更新処理（Update） --
         // ----------------------
