@@ -20,7 +20,7 @@ public:
 	/// </summary>
 	/// <param name="image">登録した画像名</param>
 	/// <returns></returns>
-	uint32_t GetTex(Image image) {
+	uint32_t GetImage(Image image) {
 		return texHandles[static_cast<size_t>(image)];
 	}
 
