@@ -24,13 +24,13 @@ public:
 	/// </summary>
 	static void Initialize() {
 		// --- BGMのロード ---
-		// bgmHandles[static_cast<uint32_t>(BGM::Title)] = RyoEngine::Audio::LoadBGM("Resources/EngineResources/Sound/BGM/title.mp3");
-		// bgmHandles[static_cast<uint32_t>(BGM::Game)] = RyoEngine::Audio::LoadBGM("Resources/EngineResources/Sound/BGM/game.mp3"); など
+		// bgmHandles[static_cast<uint32_t>(BGM::Title)] = RyoEngine::Audio::LoadBGM("Resources/ApplicationResources/Sound/BGM/title.mp3");
+		// bgmHandles[static_cast<uint32_t>(BGM::Game)] = RyoEngine::Audio::LoadBGM("Resources/ApplicationResources/Sound/BGM/game.mp3"); など
 		
 
 		// --- SEのロード (System) ---
-		// seHandles[static_cast<uint32_t>(SE::Cancel)] = RyoEngine::Audio::LoadSE("Resources/EngineResources/Sound/SE/System/cancel.mp3");
-		// seHandles[static_cast<uint32_t>(SE::Decision)] = RyoEngine::Audio::LoadSE("Resources/EngineResources/Sound/SE/System/decision.mp3"); など
+		// seHandles[static_cast<uint32_t>(SE::Cancel)] = RyoEngine::Audio::LoadSE("Resources/ApplicationResources/Sound/SE/System/cancel.mp3");
+		// seHandles[static_cast<uint32_t>(SE::Decision)] = RyoEngine::Audio::LoadSE("Resources/ApplicationResources/Sound/SE/System/decision.mp3"); など
 		
 	}
 

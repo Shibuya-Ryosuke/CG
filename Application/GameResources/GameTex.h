@@ -12,7 +12,7 @@ public:
 
 	static void Initialize() {
 		// --- 背景関連 ---
-		// texHandles[static_cast<uint32_t>(Image::BackGround)] = RyoEngine::LoadTex("Resources/EngineResources/Images/BackGround.png"); など
+		// texHandles[static_cast<uint32_t>(Image::BackGround)] = RyoEngine::LoadTex("Resources/ApplicationResources/Images/BackGround.png"); など
 	}
 
 private:
