@@ -14,9 +14,33 @@ void TestManager::Initialize() {
 
 	// プレイヤー初期化（自分自身のポインタを渡して、弾を発射できるようにする）
 	player_.Initialize(this);
+
+	ParamEditor::BeginGroup("sprite");
+	ParamEditor::BeginGroup("transform");
+	ParamEditor::RegisterValue("scale", &scale_);
+	ParamEditor::RegisterValue("rotate", &rotate_);
+	ParamEditor::RegisterValue("translate", &translate_,1.0f,0.0f,1280.0f);
+	ParamEditor::EndGroup();
+	ParamEditor::BeginGroup("uvTransform");
+	ParamEditor::RegisterValue("scale", &uvScale_);
+	ParamEditor::RegisterValue("rotate", &uvRotate_);
+	ParamEditor::RegisterValue("translate", &uvTranslate_,1.0f,0.0f,1280.0f);
+	ParamEditor::EndGroup();
+	ParamEditor::RegisterColor("color",&color_);
+	ParamEditor::EndGroup();
 }
 
 void TestManager::Update() {
+	// 画像の更新
+	flower.SetTranslate(translate_);
+	flower.SetRotate(rotate_);
+	flower.SetScale(scale_);
+	flower.SetUVTranslate(uvTranslate_);
+	flower.SetUVRotate(uvRotate_);
+	flower.SetUVScale(uvScale_);
+	flower.SetColor(color_);
+	flower.TransferMatrix();
+
 	// プレイヤー更新
 	player_.Update();
 
