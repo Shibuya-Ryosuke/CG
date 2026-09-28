@@ -16,15 +16,26 @@ namespace RyoEngine {
     void InstancedModelCommon::Initialize() {
         Logger::Log("InstancedModelCommon : Initializing...\n");
         CreateRootSignature();
-        CreatePipelineState();
+        CreatePipelineStates();
         Logger::LogSuccess("InstancedModelCommon : Initialized\n");
     }
 
     void InstancedModelCommon::Finalize() {
         Logger::Log("InstancedModelCommon : Finalizing...\n");
-        pipelineState_.Reset();
+        for (auto& pso : pipelineStates_) {
+            pso.Reset();
+        }
         rootSignature_.Reset();
         Logger::LogSuccess("InstancedModelCommon : Finalized\n");
+    }
+
+    void InstancedModelCommon::BeginDraw() {
+        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        commandList->SetGraphicsRootSignature(rootSignature_.Get());
+
+        // 現在のblendMode_に対応するPSOをセット
+        size_t blendIdx = static_cast<size_t>(blendMode_);
+        commandList->SetPipelineState(pipelineStates_[blendIdx].Get());
     }
 
     void InstancedModelCommon::Draw() {
@@ -103,11 +114,10 @@ namespace RyoEngine {
         assert(SUCCEEDED(hr));
     }
 
-    void InstancedModelCommon::CreatePipelineState() {
+    void InstancedModelCommon::CreatePipelineStates() {
         auto device = DirectXCommon::GetInstance()->GetDevice();
         HRESULT hr = S_OK;
 
-        // 頂点フォーマットはModelと共通のVertexData(position/texcoord/normal)を使う
         D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
         inputElementDescs[0].SemanticName = "POSITION";
         inputElementDescs[0].SemanticIndex = 0;
@@ -126,9 +136,6 @@ namespace RyoEngine {
         inputLayoutDesc.pInputElementDescs = inputElementDescs;
         inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-        D3D12_BLEND_DESC blendDesc{};
-        blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-
         D3D12_RASTERIZER_DESC rasterizerDesc{};
         rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
         rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
@@ -143,22 +150,82 @@ namespace RyoEngine {
         depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
         depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
-        psoDesc.pRootSignature = rootSignature_.Get();
-        psoDesc.InputLayout = inputLayoutDesc;
-        psoDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
-        psoDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
-        psoDesc.BlendState = blendDesc;
-        psoDesc.RasterizerState = rasterizerDesc;
-        psoDesc.NumRenderTargets = 1;
-        psoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT; // PostProcessのHDRシーンバッファに合わせる(重要)
-        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        psoDesc.SampleDesc.Count = 1;
-        psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-        psoDesc.DepthStencilState = depthStencilDesc;
-        psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT; // メインの深度バッファと合わせる
+        // 6つのブレンドモード分のPSOを一括生成
+        for (int i = 0; i < 6; ++i) {
+            BlendMode mode = static_cast<BlendMode>(i);
+            D3D12_BLEND_DESC blendDesc = CreateBlendDesc(mode);
 
-        hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState_));
-        assert(SUCCEEDED(hr));
+            D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
+            psoDesc.pRootSignature = rootSignature_.Get();
+            psoDesc.InputLayout = inputLayoutDesc;
+            psoDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
+            psoDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
+            psoDesc.BlendState = blendDesc;
+            psoDesc.RasterizerState = rasterizerDesc;
+            psoDesc.NumRenderTargets = 1;
+            psoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+            psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+            psoDesc.SampleDesc.Count = 1;
+            psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+            psoDesc.DepthStencilState = depthStencilDesc;
+            psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+            hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStates_[i]));
+            assert(SUCCEEDED(hr));
+        }
+    }
+
+    D3D12_BLEND_DESC InstancedModelCommon::CreateBlendDesc(BlendMode blendMode) {
+        D3D12_BLEND_DESC blendDesc{};
+        blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+        blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+        blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+
+        switch (blendMode) {
+        case BlendMode::None:
+            blendDesc.RenderTarget[0].BlendEnable = FALSE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            break;
+
+        case BlendMode::Normal:
+            blendDesc.RenderTarget[0].BlendEnable = TRUE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            break;
+
+        case BlendMode::Add:
+            blendDesc.RenderTarget[0].BlendEnable = TRUE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            break;
+
+        case BlendMode::Subtract:
+            blendDesc.RenderTarget[0].BlendEnable = TRUE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
+            break;
+
+        case BlendMode::Multiply:
+            blendDesc.RenderTarget[0].BlendEnable = TRUE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_SRC_COLOR;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            break;
+
+        case BlendMode::Screen:
+            blendDesc.RenderTarget[0].BlendEnable = TRUE;
+            blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
+            blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+            blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            break;
+        }
+
+        return blendDesc;
     }
 }

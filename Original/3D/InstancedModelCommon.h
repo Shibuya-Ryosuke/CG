@@ -3,6 +3,8 @@
 #include <wrl.h>
 #include <vector>
 #include <functional>
+#include <array>
+#include "../Math/BlendMode.h"
 
 namespace RyoEngine {
 
@@ -25,7 +27,17 @@ namespace RyoEngine {
         void Finalize();
 
         ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
-        ID3D12PipelineState* GetPipelineState() const { return pipelineState_.Get(); }
+        // 現在のブレンドモードに応じたPSOを返す
+        ID3D12PipelineState* GetPipelineState() const {
+            return pipelineStates_[static_cast<size_t>(blendMode_)].Get();
+        }
+
+        // --- ブレンドモードの設定・取得 ---
+        void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
+        BlendMode GetBlendMode() const { return blendMode_; }
+
+        // 描画開始時に現在のブレンドモードのPSOをセットする
+        void BeginDraw();
 
         // 描画コマンドの予約(InstancedModel::Draw()から呼ばれる)
         void SetDrawCommands(const std::function<void()>& function) { drawCommands_.push_back(function); }
@@ -41,10 +53,14 @@ namespace RyoEngine {
         InstancedModelCommon& operator=(const InstancedModelCommon&) = delete;
 
         void CreateRootSignature();
-        void CreatePipelineState();
+        void CreatePipelineStates();
+        D3D12_BLEND_DESC CreateBlendDesc(BlendMode blendMode); // 追加
 
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState_;
+
+        // --- 内部で保持する現在のブレンドモードと、6種類分のPSO配列 ---
+        BlendMode blendMode_ = BlendMode::Normal;
+        std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 6> pipelineStates_;
 
         std::vector<std::function<void()>> drawCommands_;
     };

@@ -344,6 +344,7 @@ namespace RyoEngine {
 
     void Change3DBledMode(BlendMode blendMode) {
         modelCommon_->SetBlendMode(blendMode);
+        InstancedModelCommon::GetInstance()->SetBlendMode(blendMode);
     }
 
     // --- ゲッターの実装 ---
