@@ -19,6 +19,7 @@ void TestManager::Initialize() {
 	ParamEditor::RegisterValue("transform",&transform_);
 	ParamEditor::RegisterValue("uvTransform", &uvTransform_);
 	ParamEditor::RegisterColor("color",&color_);
+	ParamEditor::RegisterAnchor("anchor", &anchor_);
 	ParamEditor::EndGroup();
 }
 
@@ -27,6 +28,7 @@ void TestManager::Update() {
 	flower.SetTransform2D(transform_);
 	flower.SetUVTransform(uvTransform_);
 	flower.SetColor(color_);
+	flower.SetAnchor(anchor_);
 	flower.TransferMatrix();
 
 	// プレイヤー更新

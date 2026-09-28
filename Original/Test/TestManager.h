@@ -35,7 +35,7 @@ private:
 		.scale = {1.0f,1.0f}
 	};
 	RyoEngine::Vector4 color_ = { 1.0f,1.0f,1.0f,1.0f };
-	
+	RyoEngine::Anchor anchor_ = RyoEngine::Anchor::Center;
 
 	// プレイヤー
 	TestPlayer player_;

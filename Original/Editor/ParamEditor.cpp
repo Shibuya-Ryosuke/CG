@@ -2,6 +2,7 @@
 
 #include "ParamEditor.h"
 #include "../Base/Logger.h"
+#include "../2D/Sprite.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -176,6 +177,14 @@ namespace RyoEngine {
         GetInstance().AddEntry(e);
     }
 
+    void ParamEditor::RegisterAnchor(const std::string& name, Anchor* value) {
+        ParamEntry e{};
+        e.name = name;
+        e.type = EntryType::Anchor;
+        e.ptr = value;
+        GetInstance().AddEntry(e);
+    }
+
     // --- インターフェースの転送 ---
 
     void ParamEditor::DrawImGuiWindow(const char* windowName) {
@@ -276,6 +285,30 @@ namespace RyoEngine {
                     ImGui::ColorEdit4(e.name.c_str(), &v->x);
                 }
                 break;
+            case EntryType::Anchor:
+                if (e.ptr) {
+                    // 選択肢の定義（Sprite.h の enum class Anchor の順序に合わせる）
+                    const char* items[] = {
+                        "Center",
+                        "Top",
+                        "Bottom",
+                        "Left",
+                        "LeftTop",
+                        "LeftBottom",
+                        "Right",
+                        "RightTop",
+                        "RightBottom"
+                    };
+
+                    // 現在の値をint型にキャストしてインデックスとして扱う
+                    int currentItem = static_cast<int>(*static_cast<Anchor*>(e.ptr));
+
+                    if (ImGui::Combo(e.name.c_str(), &currentItem, items, IM_ARRAYSIZE(items))) {
+                        // 変更されたら元のポインタ（仲介変数）にキャストして代入
+                        *static_cast<Anchor*>(e.ptr) = static_cast<Anchor>(currentItem);
+                    }
+                }
+                break;
             }
 
             ImGui::PopID();
@@ -349,6 +382,23 @@ namespace RyoEngine {
                 case EntryType::Color4: {
                     auto* v = static_cast<Vector4*>(e.ptr);
                     j[e.name] = { v->x, v->y, v->z, v->w };
+                    break;
+                }
+                case EntryType::Anchor: {
+                    Anchor anchor = *static_cast<Anchor*>(e.ptr);
+                    std::string str = "Center";
+                    switch (anchor) {
+                    case Anchor::Center:      str = "Center"; break;
+                    case Anchor::Top:         str = "Top"; break;
+                    case Anchor::Bottom:      str = "Bottom"; break;
+                    case Anchor::Left:        str = "Left"; break;
+                    case Anchor::LeftTop:     str = "LeftTop"; break;
+                    case Anchor::LeftBottom:  str = "LeftBottom"; break;
+                    case Anchor::Right:       str = "Right"; break;
+                    case Anchor::RightTop:    str = "RightTop"; break;
+                    case Anchor::RightBottom: str = "RightBottom"; break;
+                    }
+                    j[e.name] = str;
                     break;
                 }
                 default:
@@ -425,6 +475,23 @@ namespace RyoEngine {
                         v->y = val[1].get<float>();
                         v->z = val[2].get<float>();
                         v->w = val[3].get<float>();
+                    }
+                    break;
+                case EntryType::Anchor:
+                    if (val.is_string()) {
+                        std::string str = val.get<std::string>();
+                        Anchor anchor = Anchor::Center;
+                        if (str == "Center")      anchor = Anchor::Center;
+                        else if (str == "Top")         anchor = Anchor::Top;
+                        else if (str == "Bottom")      anchor = Anchor::Bottom;
+                        else if (str == "Left")        anchor = Anchor::Left;
+                        else if (str == "LeftTop")     anchor = Anchor::LeftTop;
+                        else if (str == "LeftBottom")  anchor = Anchor::LeftBottom;
+                        else if (str == "Right")       anchor = Anchor::Right;
+                        else if (str == "RightTop")    anchor = Anchor::RightTop;
+                        else if (str == "RightBottom") anchor = Anchor::RightBottom;
+
+                        *static_cast<Anchor*>(e.ptr) = anchor;
                     }
                     break;
                 default:

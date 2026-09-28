@@ -7,6 +7,7 @@
 #include <json.hpp>
 
 namespace RyoEngine {
+    enum class Anchor;
     class ParamEditor {
     public:
         // シングルトンのインスタンス取得（内部用）
@@ -45,6 +46,9 @@ namespace RyoEngine {
         static void RegisterColor(const std::string& name, Vector3* value);
         static void RegisterColor(const std::string& name, Vector4* value);
 
+        // -- - 5. アンカー登録（Anchor専用）-- -
+        static void RegisterAnchor(const std::string & name, Anchor * value);
+
         // --- ImGui描画 ---
         static void DrawImGuiWindow(const char* windowName = "Parameter Editor");
 
@@ -67,6 +71,7 @@ namespace RyoEngine {
             Vector4,
             Color3,
             Color4,
+            Anchor,
             Group
         };
 
