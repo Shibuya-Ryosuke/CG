@@ -31,36 +31,43 @@ namespace RyoEngine {
         void Draw();
 
         // Getter
-        const Vector2& GetTranslate() const { return translate_; }
-        const float& GetRotate() const { return rotate_; }
-        const Vector2& GetScale() const { return scale_; }
-        const Vector2& GetUVTranslate() const { return uvTranslate_; }
-        float GetUVRotate() const { return uvRotate_; }
-        const Vector2& GetUVScale() const { return uvScale_; }
+        const Vector2& GetTranslate() const { return transform_.translate; }
+        const float& GetRotate() const { return transform_.rotate; }
+        const Vector2& GetScale() const { return transform_.scale; }
+        const Vector2& GetUVTranslate() const { return uvTransform_.translate; }
+        float GetUVRotate() const { return uvTransform_.rotate; }
+        const Vector2& GetUVScale() const { return uvTransform_.scale; }
         const Vector2& GetTexSize() const { return texSize_; }
         const Vector4& GetColor() const { return materialData_->color; };
+
         // Setter
-        void SetTranslate(const Vector2& translate) { translate_ = translate; }
-        void SetRotate(const float rotation) { rotate_ = rotation; }
-        void SetScale(const Vector2& scale) { scale_ = scale; };
+        void SetTranslate(const Vector2& translate) { transform_.translate = translate; }
+        void SetRotate(const float rotation) { transform_.rotate = rotation; }
+        void SetScale(const Vector2& scale) { transform_.scale = scale; };
+        // いちおう残しとくが今後はSetTransform2Dを使うこと
         void SetSRT(const Vector2& scale, float rotate, const Vector2& translate) {
-            scale_ = scale;
-            rotate_ = rotate;
-            translate_ = translate;
+            transform_.scale = scale;
+            transform_.rotate = rotate;
+            transform_.translate = translate;
         }
-        void SetUVTranslate(const Vector2& translate) { uvTranslate_ = translate; }
-        void SetUVRotate(float rotate) { uvRotate_ = rotate; }
-        void SetUVScale(const Vector2& scale) { uvScale_ = scale; }
+        void SetTransform2D(const Transform2D transform) { transform_ = transform; }
+
+        void SetUVTranslate(const Vector2& translate) { uvTransform_.translate = translate; }
+        void SetUVRotate(float rotate) { uvTransform_.rotate = rotate; }
+        void SetUVScale(const Vector2& scale) { uvTransform_.scale = scale; }
+        // いちおう残しとくが今後はSetUVTransformを使うこと
         void SetUVSRT(const Vector2& scale, float rotate, const Vector2& translate) {
-            uvScale_ = scale;
-            uvRotate_ = rotate;
-            uvTranslate_ = translate;
+            uvTransform_.scale = scale;
+            uvTransform_.rotate = rotate;
+            uvTransform_.translate = translate;
         }
+        void SetUVTransform(const UVTransform transform) { uvTransform_ = transform; }
+
         void SetTexSize(const Vector2& size);
         void SetAnchor(Anchor anchor);
         void SetTex(uint32_t textureHandle) { textureHandle_ = textureHandle; };
         void SetTex(const std::string& filePath);
-        void SetColor(const Vector4& color) {  materialData_->color = color; };
+        void SetColor(const Vector4& color) { materialData_->color = color; };
 
     private:
         void CreateVertexResource();
@@ -70,6 +77,7 @@ namespace RyoEngine {
         void UpdateVertexPositions();
 
         void InternalDraw();
+
     private:
         // リソース類
         Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
@@ -89,15 +97,12 @@ namespace RyoEngine {
 
         // スプライトのステータス
         uint32_t textureHandle_ = 0;
-        Vector2 translate_ = { 0.0f,0.0f };
-        float rotate_ = 0.0f;
-        Vector2 scale_ = { 1.0f,1.0f };
+
+        // 構造体への置き換え
+        Transform2D transform_ = { {1.0f, 1.0f}, 0.0f, {0.0f, 0.0f} };
+        UVTransform uvTransform_ = { {1.0f, 1.0f}, 0.0f, {0.0f, 0.0f} };
 
         Vector2 texSize_ = { 1280.0f, 720.0f };
-
-        Vector2 uvTranslate_ = { 0.0f, 0.0f };
-        float uvRotate_ = 0.0f;
-        Vector2 uvScale_ = { 1.0f, 1.0f };
         Anchor anchor_ = Anchor::Center;
     };
 }

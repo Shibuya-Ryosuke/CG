@@ -144,6 +144,22 @@ namespace RyoEngine {
         EndGroup();
     }
 
+    void ParamEditor::RegisterValue(const std::string& name, Transform2D* value, float speed, float min, float max) {
+        BeginGroup(name, false);
+        RegisterValue("scale", &value->scale, speed/100.0f, min, max);
+        RegisterValue("rotate", &value->rotate, speed/100.0f, -180.0f, 180.0f);
+        RegisterValue("translate", &value->translate, speed, -1000.0f, 1000.0f);
+        EndGroup();
+    }
+
+    void ParamEditor::RegisterValue(const std::string& name, UVTransform* value, float speed, float min, float max) {
+        BeginGroup(name, false);
+        RegisterValue("scale", &value->scale, speed, min, max);
+        RegisterValue("rotate", &value->rotate, speed, -180.0f, 180.0f);
+        RegisterValue("translate", &value->translate, speed, -1000.0f, 1000.0f);
+        EndGroup();
+    }
+
     void ParamEditor::RegisterColor(const std::string& name, Vector3* value) {
         ParamEntry e{};
         e.name = name;

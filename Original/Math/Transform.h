@@ -7,6 +7,16 @@ namespace RyoEngine {
 		Vector3 rotate;
 		Vector3 translate;
 	};
+	struct Transform2D {
+		Vector2 scale;
+		float rotate;
+		Vector2 translate;
+	};
+	struct UVTransform {
+		Vector2 scale;
+		float rotate;
+		Vector2 translate;
+	};
 	struct TransformationMatrix {
 		Matrix4x4 WVP;
 		Matrix4x4 World;

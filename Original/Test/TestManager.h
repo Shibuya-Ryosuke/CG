@@ -27,12 +27,13 @@ private:
 
 	// テクスチャ表示
 	RyoEngine::Sprite flower{};
-	RyoEngine::Vector2 translate_{640.0f,360.0f};
-	RyoEngine::Vector2 scale_{1.0f,1.0f};
-	float rotate_ = 0.0f;
-	RyoEngine::Vector2 uvTranslate_{};
-	RyoEngine::Vector2 uvScale_{1.0f,1.0f};
-	float uvRotate_{};
+	RyoEngine::Transform2D transform_{
+		.scale = {1.0f,1.0f},
+		.translate = {640.0f,360.0f}
+	};
+	RyoEngine::UVTransform uvTransform_{
+		.scale = {1.0f,1.0f}
+	};
 	RyoEngine::Vector4 color_ = { 1.0f,1.0f,1.0f,1.0f };
 	
 

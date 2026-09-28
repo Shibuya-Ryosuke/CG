@@ -16,28 +16,16 @@ void TestManager::Initialize() {
 	player_.Initialize(this);
 
 	ParamEditor::BeginGroup("sprite");
-	ParamEditor::BeginGroup("transform");
-	ParamEditor::RegisterValue("scale", &scale_);
-	ParamEditor::RegisterValue("rotate", &rotate_);
-	ParamEditor::RegisterValue("translate", &translate_,1.0f,0.0f,1280.0f);
-	ParamEditor::EndGroup();
-	ParamEditor::BeginGroup("uvTransform");
-	ParamEditor::RegisterValue("scale", &uvScale_);
-	ParamEditor::RegisterValue("rotate", &uvRotate_);
-	ParamEditor::RegisterValue("translate", &uvTranslate_,1.0f,0.0f,1280.0f);
-	ParamEditor::EndGroup();
+	ParamEditor::RegisterValue("transform",&transform_);
+	ParamEditor::RegisterValue("uvTransform", &uvTransform_);
 	ParamEditor::RegisterColor("color",&color_);
 	ParamEditor::EndGroup();
 }
 
 void TestManager::Update() {
 	// 画像の更新
-	flower.SetTranslate(translate_);
-	flower.SetRotate(rotate_);
-	flower.SetScale(scale_);
-	flower.SetUVTranslate(uvTranslate_);
-	flower.SetUVRotate(uvRotate_);
-	flower.SetUVScale(uvScale_);
+	flower.SetTransform2D(transform_);
+	flower.SetUVTransform(uvTransform_);
 	flower.SetColor(color_);
 	flower.TransferMatrix();
 

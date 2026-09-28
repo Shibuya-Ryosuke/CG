@@ -35,9 +35,11 @@ namespace RyoEngine {
         static void RegisterValue(const std::string& name, Vector2* value, float speed = 1.0f, float min = 0.0f, float max = 100.0f);
         static void RegisterValue(const std::string& name, Vector3* value, float speed = 1.0f, float min = 0.0f, float max = 100.0f);
         static void RegisterValue(const std::string& name, Vector4* value, float speed = 1.0f, float min = 0.0f, float max = 100.0f);
-
+        
         // --- 3. Transform登録（scale, rotate, translateを上から順にグループ展開） ---
         static void RegisterValue(const std::string& name, Transform* value, float speed = 0.01f, float min = -100.0f, float max = 100.0f);
+        static void RegisterValue(const std::string& name, Transform2D* value, float speed = 1.0f, float min = -100.0f, float max = 100.0f);
+        static void RegisterValue(const std::string& name, UVTransform* value, float speed = 0.01f, float min = -100.0f, float max = 100.0f);
 
         // --- 4. カラー登録（ColorEdit用） ---
         static void RegisterColor(const std::string& name, Vector3* value);
