@@ -81,13 +81,13 @@ namespace RyoEngine {
 		return blendDesc;
 	}
 
-	void ModelCommon::BeginDraw(DrawType drawType, BlendMode blendMode) {
+	void ModelCommon::BeginDraw(DrawType drawType) {
 		currentDrawType_ = drawType;
 
 		auto commandList = dxCommon_->GetCommandList();
 		commandList->SetGraphicsRootSignature(rootSignature_.Get());
 
-		size_t blendIdx = static_cast<size_t>(blendMode);
+		size_t blendIdx = static_cast<size_t>(blendMode_);
 
 		switch (drawType) {
 		case DrawType::REAL:
@@ -124,8 +124,8 @@ namespace RyoEngine {
 		}
 	}
 
-	void ModelCommon::Draw(BlendMode blendMode) {
-		BeginDraw(DrawType::REAL, blendMode);
+	void ModelCommon::Draw() {
+		BeginDraw(DrawType::REAL);
 		for (const auto& command : drawCommands_) {
 			command();
 		}

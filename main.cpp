@@ -40,7 +40,19 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // フレーム開始
         NewFrame();
        
-
+        if (Input::TriggerKey(DIK_0)) {
+            Change3DBledMode(BlendMode::None);
+        } else if (Input::TriggerKey(DIK_1)) {
+            Change3DBledMode(BlendMode::Normal);
+        } else if (Input::TriggerKey(DIK_2)) {
+            Change3DBledMode(BlendMode::Add);
+        } else if (Input::TriggerKey(DIK_3)) {
+            Change3DBledMode(BlendMode::Subtract);
+        } else if (Input::TriggerKey(DIK_4)) {
+            Change3DBledMode(BlendMode::Multiply);
+        } else if (Input::TriggerKey(DIK_5)) {
+            Change3DBledMode(BlendMode::Screen);
+        }
         // ----------------------
         // -- 更新処理（Update） --
         // ----------------------

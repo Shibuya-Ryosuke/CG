@@ -20,6 +20,7 @@
 #include "Easing/Easing.h"
 #include "Math/Math.h"
 #include "Math/Collision.h"
+#include "Math/BlendMode.h"
 #include "Camera/Camera.h"
 #include "Camera/DebugCamera.h"
 #include "Input/Input.h"
@@ -121,4 +122,6 @@ namespace RyoEngine {
         if (!GetFontOutputter()) return;
         GetFontOutputter()->ScreenPrint(fmt, position,std::forward<Args>(args)...);
     }
+
+    void Change3DBledMode(BlendMode blendMode);
 }
