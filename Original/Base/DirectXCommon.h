@@ -43,7 +43,7 @@ namespace RyoEngine {
 
 		// CPUのDescriptorHandleを取得
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
-			const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
+			const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index) const;
 
 
 		static Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device> device, size_t sizeInBytes);
@@ -67,7 +67,15 @@ namespace RyoEngine {
 		// PostProcess::Composite()が、HDR合成後の結果をgameRenderTargetResource_へ
 		// 書き戻す際にOMSetRenderTargetsで使うためのRTV CPUハンドル
 		D3D12_CPU_DESCRIPTOR_HANDLE GetGameRenderTargetRTVHandle() const {
+#ifdef _DEBUG
+			// Debug時: ImGui表示用のゲームテクスチャのRTVを返す
 			return gameRtvHeap_->GetCPUDescriptorHandleForHeapStart();
+#else
+			// Release時: スワップチェーンの現在のバックバッファのRTVを返す
+			uint32_t backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
+			const uint32_t descriptorSizeRTV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			return GetCPUDescriptorHandle(rtvHeap_, descriptorSizeRTV, backBufferIndex);
+#endif
 		}
 
 	private:
