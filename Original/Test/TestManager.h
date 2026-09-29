@@ -15,7 +15,7 @@ public:
 
 	void Initialize();
 	void Update();
-	void Draw(RyoEngine::Camera camera);
+	void Draw(RyoEngine::Camera& camera);
 
 	// プレイヤーから呼ばれる弾の発射口
 	void SpawnBullet(const RyoEngine::Vector3& position);

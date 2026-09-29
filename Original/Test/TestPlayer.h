@@ -15,7 +15,7 @@ public:
 	// TestManager のポインタを受け取るように変更
 	void Initialize(TestManager* manager);
 	void Update();
-	void Draw(RyoEngine::Camera camera);
+	void Draw(RyoEngine::Camera& camera);
 
 private:
 	// マネージャーへの参照（弾を発射してもらうため）

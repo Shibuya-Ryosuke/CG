@@ -1,5 +1,6 @@
 #include "DebugCamera.h"
 #include "../Input/Input.h"
+#include "../RyoEngine.h"
 
 namespace RyoEngine {
 
@@ -22,8 +23,14 @@ namespace RyoEngine {
 	}
 
 	void DebugCamera::Update() {
+		if (Input::PushKey(DIK_LCONTROL)) {
+			if (Input::TriggerKey(DIK_LSHIFT)) {
+				isAvailable_ = !isAvailable_;
+			}
+		}
 
-		if (isAvailable_) {
+		// 操作可能かつカーソルがゲーム画面上に存在するとき
+		if (isAvailable_ && GetOnTheGameView()) {
 			float wheel = static_cast<float>(Input::GetMouseWheel());
 			if (std::abs(wheel) > 0) {
 				translate_.z += wheel * wheelSpeed_;
@@ -69,5 +76,10 @@ namespace RyoEngine {
 		// (このクラスはUpdate()を完全に独自実装しているため、Camera::Update()側の
 		//  呼び出しに乗っかれない。呼び忘れると視錐台が更新されないので要注意)
 		UpdateFrustumPlanes();
+
+		// デバッグカメラを使用していることを表示
+		if (isAvailable_) {
+			PrintText("DebugCamera", { 10.0f,10.0f });
+		}
 	}
 }

@@ -20,6 +20,7 @@ namespace RyoEngine {
     }
 #else
     void SetImGuiViewSize(Vector2 viewSize) {};
+    bool GetOnTheGameView() { return true; };
 #endif
     // 匿名名前空間：この cpp ファイルの中からしかアクセスできない領域
     namespace {
@@ -42,7 +43,6 @@ namespace RyoEngine {
         std::chrono::steady_clock::time_point cpuStart_;
         float cpuFrameTime_ = 0.0f;
         float cpuFps_ = 0.0f;
-
     }
 
     void Initialize(const wchar_t* title) {
@@ -349,6 +349,19 @@ namespace RyoEngine {
     void Change3DBlendMode(BlendMode blendMode) {
         modelCommon_->SetBlendMode(blendMode);
         InstancedModelCommon::GetInstance()->SetBlendMode(blendMode);
+    }
+
+    Camera& GetActiveCamera(Camera& defaultCamera, DebugCamera& debugCamera) {
+#ifdef _DEBUG
+        // デバッグカメラが有効のとき
+        if (debugCamera.GetIsAvailable()) {
+            return debugCamera;
+        }
+#else
+        // 未使用引数の警告を防ぐ（リリース時）
+        (void)debugCamera;
+#endif
+        return defaultCamera;
     }
 
     // --- ゲッターの実装 ---

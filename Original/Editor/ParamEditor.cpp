@@ -222,6 +222,7 @@ namespace RyoEngine {
     }
 
     void ParamEditor::DrawEntries(std::list<ParamEntry>& entries) {
+#ifdef _DEBUG
         for (auto& e : entries) {
             ImGui::PushID(&e); // 一意なID保証
 
@@ -313,6 +314,7 @@ namespace RyoEngine {
 
             ImGui::PopID();
         }
+#endif
     }
 
     // --- 内部処理：JSONセーブ ---

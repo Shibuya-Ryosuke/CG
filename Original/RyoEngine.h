@@ -125,4 +125,12 @@ namespace RyoEngine {
 
     void Change2DBlendMode(BlendMode blendMode);
     void Change3DBlendMode(BlendMode blendMode);
+
+    /// <summary>
+    /// 現在有効なカメラを取得する（カメラの更新は各自で）
+    /// </summary>
+    /// <param name="defaultCamera">通常のカメラ</param>
+    /// <param name="debugCamera">デバッグカメラ</param>
+    /// <returns>有効なカメラの参照</returns>
+    Camera& GetActiveCamera(Camera& defaultCamera, DebugCamera& debugCamera);
 }

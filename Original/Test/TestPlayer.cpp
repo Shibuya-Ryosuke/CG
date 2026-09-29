@@ -72,7 +72,7 @@ void TestPlayer::Update() {
 	LightManager::SetLightPosition(bunnyLightId_, bunny_->GetTranslate());
 }
 
-void TestPlayer::Draw(RyoEngine::Camera camera) {
+void TestPlayer::Draw(RyoEngine::Camera& camera) {
 	// 行列の確定
 	bunny_->TransferMatrix(camera);
 

@@ -82,7 +82,7 @@ void TestManager::Update() {
 	bulletInstancedModel_.UpdateBuffer();
 }
 
-void TestManager::Draw(RyoEngine::Camera camera) {
+void TestManager::Draw(RyoEngine::Camera& camera) {
 	// 行列の確定
 	ground_->TransferMatrix(camera);
 	sky_->TransferMatrix(camera);

@@ -26,9 +26,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     TestManager test{};
     test.Initialize();
 
-    DebugCamera camera{};
-    camera.Initialize();
-    camera.SetAvailable(true);
+    Camera mainCamera{};
+    mainCamera.Initialize();
+
+    DebugCamera debugCamera{};
+    debugCamera.Initialize();
+    debugCamera.SetAvailable(true);
 
 
     // 全てのInitializeが終わったらJsonの読込
@@ -47,7 +50,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // 更新
         sceneManager.Update();
         test.Update();
-        camera.Update();
+
+        // カメラ
+        mainCamera.Update();
+        debugCamera.Update();
 
         // ----------------------
         // ------ 更新終了 -------
@@ -65,7 +71,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
        
         // 描画
         sceneManager.Draw();
-        test.Draw(camera);
+        test.Draw(GetActiveCamera(mainCamera,debugCamera));
 
         // ----------------------
         // ------ 描画終了 -------

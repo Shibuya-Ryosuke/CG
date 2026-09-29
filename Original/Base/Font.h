@@ -51,9 +51,7 @@ namespace RyoEngine {
             std::string formattedText = std::format(fmt, std::forward<Args>(args)...);
             RegisterText(formattedText, position, 1.0f);
 #else
-            void(fmt);
-            void(position);
-            void(args);
+            fmt;position;(void(args), ...);
 #endif
         }
 
