@@ -35,14 +35,6 @@ namespace RyoEngine {
         Font* fontOutputer_ = nullptr;
         Audio* audio_ = nullptr;
 
-        std::chrono::high_resolution_clock::time_point lastTime_;
-        float deltaTime_ = 0.0f;
-        float fps_ = 0.0f;
-        float smoothedFps_ = 0.0f;
-
-        std::chrono::steady_clock::time_point cpuStart_;
-        float cpuFrameTime_ = 0.0f;
-        float cpuFps_ = 0.0f;
     }
 
     void Initialize(const wchar_t* title) {
@@ -106,7 +98,7 @@ namespace RyoEngine {
         fontOutputer_ = new Font();
         fontOutputer_->Initialize("Resources/EngineResources/Debugfont/debugfont.fnt", "Resources/EngineResources/Debugfont/debugfont.png");
 
-        lastTime_ = std::chrono::high_resolution_clock::now();
+        TimeManager::Initialize();
 
         Logger::Log("\n\n\n* Game Start * \n\n");
     }
@@ -160,23 +152,6 @@ namespace RyoEngine {
     }
 
     void NewFrame() {
-        cpuStart_ = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> elapsed = currentTime - lastTime_;
-        deltaTime_ = elapsed.count();
-        lastTime_ = currentTime;
-        if (deltaTime_ > 0.0f) {
-            fps_ = 1.0f / deltaTime_;
-            smoothedFps_ = (smoothedFps_ * 0.9f) + (fps_ * 0.1f);
-        }
-
-        // 念のためゼロ除算（クラッシュ）防止
-        if (deltaTime_ > 0.0f) {
-            fps_ = 1.0f / deltaTime_;
-            // 毎フレーム数値がガタガタ動くと見づらいので、10%ずつ近づけて滑らかにする（お好みで）
-            smoothedFps_ = (smoothedFps_ * 0.9f) + (fps_ * 0.1f);
-        }
-
         PrimitiveRenderer::NewFrame();
         modelCommon_->CommandsClear();
         spriteCommon_->CommandsClear();
@@ -184,13 +159,15 @@ namespace RyoEngine {
 
         Input::Update();
 
+        TimeManager::NewFrame();
+
 #ifdef _DEBUG
 
         static float logTimer = 0.0f;
-        logTimer += deltaTime_;       // 毎フレームの経過時間を足していく
+        logTimer += TimeManager::GetDeltaTime();       // 毎フレームの経過時間を足していく
 
         if (logTimer >= 5.0f) {       // 1.0秒（以上）経ったら
-            Logger::Log("Engine is running... FPS: {:.1f}", smoothedFps_);
+            Logger::Log("Engine is running... FPS: {:.1f}", TimeManager::GetSmoothedFps());
 
             logTimer -= 5.0f;
         }
@@ -218,12 +195,12 @@ namespace RyoEngine {
 
         // fps
         ImGui::Begin("Performance");
-        ImGui::Text("FPS: %.1f", smoothedFps_);
-        ImGui::Text("DeltaTime: %.4f s (%.2f ms)", deltaTime_, deltaTime_ * 1000.0f);
+        ImGui::Text("FPS: %.1f", TimeManager::GetFps());
+        ImGui::Text("DeltaTime: %.4f s (%.2f ms)", TimeManager::GetDeltaTime(), TimeManager::GetDeltaTime() * 1000.0f);
         ImGui::NewLine();
 
-        ImGui::Text("cpuFps : %.1f", cpuFps_);
-        ImGui::Text("cpuFrameTime : %.6f s (%.3f ms)", cpuFrameTime_, cpuFrameTime_ * 1000.0f);
+        ImGui::Text("cpuFps : %.1f", TimeManager::GetCpuFps());
+        ImGui::Text("cpuFrameTime : %.6f s (%.3f ms)", TimeManager::GetCpuFrameTime(), TimeManager::GetCpuFrameTime() * 1000.0f);
         ImGui::End();
 
         // ログ
@@ -291,14 +268,7 @@ namespace RyoEngine {
 
         fontOutputer_->DrawAllText();
 
-        auto cpuEnd = std::chrono::high_resolution_clock::now();
-
-        // CPUの処理時間を計算 (秒単位)
-        std::chrono::duration<float> cpuElapsed = cpuEnd - cpuStart_;
-        cpuFrameTime_ = cpuElapsed.count();
-
-        // FPS換算 (もしこの処理だけでループしたら何FPS出るか)
-        cpuFps_ = (cpuFrameTime_ > 0.0f) ? (1.0f / cpuFrameTime_) : 0.0f;
+        TimeManager::EndFrame();
 
         GetDxCommon()->PostDraw();  // ImGuiの終了処理はこの中にいる
     }
@@ -375,6 +345,9 @@ namespace RyoEngine {
     Font* GetFontOutputter() { return fontOutputer_; }
 
 
-    float GetDeltaTime() { return deltaTime_; }
-    float GetFPS() { return fps_; }
+    float GetDeltaTime() { return TimeManager::GetDeltaTime(); }
+    float GetFps() { return TimeManager::GetFps(); }
+    float GetScaleTime() { return TimeManager::GetScaleTime(); }
+    float GetTimeScale() { return TimeManager::GetScale(); }
+    void SetTimeScale(float scale) { return TimeManager::SetScale(scale); }
 }

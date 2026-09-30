@@ -4,6 +4,7 @@
 #include "Base/DirectXCommon.h"
 #include "Base/Logger.h"
 #include "Base/Font.h"
+#include "Base/TimeManager.h"
 #include "Graphics/TextureManager.h"
 #include "Loader/ModelLoader.h"
 #include "Base/ShaderCompiler.h"
@@ -70,7 +71,25 @@ namespace RyoEngine {
     /// <summary>
     /// 現在のFPSを取得
     /// </summary>
-    float GetFPS();
+    float GetFps();
+
+    /// <summary>
+    /// deltaTimeにscaleがかけられたタイムを返す（スケールの初期値は1.0f。等倍である）
+    /// </summary>
+    /// <returns></returns>
+    float GetScaleTime();
+
+    /// <summary>
+    /// 現在のタイムスケールを取得
+    /// </summary>
+    /// <returns></returns>
+    float GetTimeScale();
+
+    /// <summary>
+    /// タイムスケールをセット
+    /// </summary>
+    /// <param name="scale"></param>
+    void SetTimeScale(float scale);
 
     /// <summary>
     /// ImGuiのゲーム画面サイズセット
