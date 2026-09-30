@@ -366,6 +366,7 @@
       <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191;4582;4774;5262;4061</DisableSpecificWarnings>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
+      <AdditionalIncludeDirectories>$(ProjectDir)Original;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -397,6 +398,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <Optimization>MaxSpeed</Optimization>
       <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191;4582;</DisableSpecificWarnings>
+      <AdditionalIncludeDirectories>$(ProjectDir)Original;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -427,6 +429,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <Optimization>Disabled</Optimization>
       <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191;4582;</DisableSpecificWarnings>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(ProjectDir)Original;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

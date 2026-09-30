@@ -37,12 +37,6 @@
     <Filter Include="Application">
       <UniqueIdentifier>{ddccd698-3b21-49f0-b6aa-f5b97efa3e95}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application\Scene">
-      <UniqueIdentifier>{d72d0e82-e098-4a50-9cae-8a26e2cda17a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\GameResources">
-      <UniqueIdentifier>{98731039-f783-4098-92b3-7ea8324b4530}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\リソース ファイル\HLSL\Shadow">
       <UniqueIdentifier>{6acd64d8-ed65-43c5-85fa-3473f6da641b}</UniqueIdentifier>
     </Filter>
@@ -51,6 +45,15 @@
     </Filter>
     <Filter Include="Engine\Test">
       <UniqueIdentifier>{20db6151-7cb6-4ae1-acd6-5d2c8b7b7634}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1">
+      <UniqueIdentifier>{e07392b4-93b2-44f3-a6c1-114979d0df19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1\GameResources">
+      <UniqueIdentifier>{98731039-f783-4098-92b3-7ea8324b4530}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1\Scene">
+      <UniqueIdentifier>{d72d0e82-e098-4a50-9cae-8a26e2cda17a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -161,13 +164,13 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Application\Scene\SceneManager.cpp">
-      <Filter>Application\Scene</Filter>
+      <Filter>Application\AL4-1\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Application\Scene\Title.cpp">
-      <Filter>Application\Scene</Filter>
+      <Filter>Application\AL4-1\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Application\Scene\Game.cpp">
-      <Filter>Application\Scene</Filter>
+      <Filter>Application\AL4-1\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Original\Shadow\ShadowMap.cpp">
       <Filter>Engine\ソース ファイル</Filter>
@@ -340,19 +343,19 @@
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Application\Scene\Title.h">
-      <Filter>Application\Scene</Filter>
+      <Filter>Application\AL4-1\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Application\Scene\Game.h">
-      <Filter>Application\Scene</Filter>
+      <Filter>Application\AL4-1\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Application\Scene\SceneManager.h">
-      <Filter>Application\Scene</Filter>
+      <Filter>Application\AL4-1\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Application\GameResources\GameSound.h">
-      <Filter>Application\GameResources</Filter>
+      <Filter>Application\AL4-1\GameResources</Filter>
     </ClInclude>
     <ClInclude Include="Application\GameResources\GameTex.h">
-      <Filter>Application\GameResources</Filter>
+      <Filter>Application\AL4-1\GameResources</Filter>
     </ClInclude>
     <ClInclude Include="Original\Shadow\ShadowMap.h">
       <Filter>Engine\ヘッダー ファイル</Filter>

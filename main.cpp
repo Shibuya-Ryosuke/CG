@@ -1,7 +1,7 @@
-#include "./Original/RyoEngine.h"
-#include "Original/Test/TestManager.h"
+#include "RyoEngine.h"
+#include "Test/TestManager.h"
 #ifdef _DEBUG
-#include "Original/ImGui/ImGuiAllInclude.h"
+#include "ImGui/ImGuiAllInclude.h"
 #endif
 
 #include "Application/Scene/SceneManager.h"
@@ -23,8 +23,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     sceneManager.Initialize(Scene::Title);
 
     // テスト型
-    TestManager test{};
-    test.Initialize();
+    //TestManager test{};
+    //test.Initialize();
 
     Camera mainCamera{};
     mainCamera.Initialize();
@@ -49,7 +49,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         
         // 更新
         sceneManager.Update();
-        test.Update();
+        //test.Update();
 
         // カメラ
         mainCamera.Update();
@@ -71,7 +71,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
        
         // 描画
         sceneManager.Draw();
-        test.Draw(GetActiveCamera(mainCamera,debugCamera));
+        //test.Draw(GetActiveCamera(mainCamera,debugCamera));
 
         // ----------------------
         // ------ 描画終了 -------
