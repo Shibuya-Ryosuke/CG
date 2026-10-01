@@ -218,14 +218,43 @@ namespace RyoEngine {
 #ifdef _DEBUG
         ImGui::Begin(windowName);
 
-        // 保存と読込
+        // --- フォルダパス・ファイル名の設定エリア ---
+        ImGui::Text("保存・読込先");
+
+        // 一時バッファの初期化（初回のみ）
+        if (folderPathBuffer_[0] == '\0' && !folderPath_.empty()) {
+            strcpy_s(folderPathBuffer_, sizeof(folderPathBuffer_), folderPath_.c_str());
+        }
+
+        // 1. フォルダ名入力欄
+        bool isEnterPressed = ImGui::InputText(
+            "フォルダパス",
+            folderPathBuffer_,
+            sizeof(folderPathBuffer_),
+            ImGuiInputTextFlags_EnterReturnsTrue
+        );
+
+        // Enterが押されたか、フォーカスが外れた（他をクリックした）タイミングで確定
+        if (isEnterPressed || ImGui::IsItemDeactivatedAfterEdit()) {
+            SetFolderPath(folderPathBuffer_);
+        }
+
+        // 2. ファイル名（読み取り専用表示）
+        ImGui::Text("ファイル名 : %s", kFileName.c_str());
+
+        ImGui::Spacing();
+
+        // --- 保存・読み込みボタン ---
         if (ImGui::Button("Save")) {
+            SetFolderPath(folderPathBuffer_);
             Save();
         }
         ImGui::SameLine();
         if (ImGui::Button("Load")) {
+            SetFolderPath(folderPathBuffer_);
             Load();
         }
+
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();

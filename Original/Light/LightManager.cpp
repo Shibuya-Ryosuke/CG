@@ -231,14 +231,46 @@ namespace RyoEngine {
 
         ImGui::Begin("LightManager");
 
+        // --- フォルダパス・ファイル名の設定エリア ---
+        ImGui::Text("保存・読込先");
+
+        // 一時バッファの初期化（初回のみ、またはSetFolderPath直後など）
+        if (instance->folderPathBuffer_[0] == '\0' && !instance->folderPath_.empty()) {
+            strcpy_s(instance->folderPathBuffer_, sizeof(instance->folderPathBuffer_), instance->folderPath_.c_str());
+        }
+
+        // 1. フォルダ名入力欄
+     // Enterを押した際に ImGui::InputText が true を返す
+        bool isEnterPressed = ImGui::InputText(
+            "フォルダパス",
+            instance->folderPathBuffer_,
+            sizeof(instance->folderPathBuffer_),
+            ImGuiInputTextFlags_EnterReturnsTrue
+        );
+
+        // Enterが押されたか、または入力後にフォーカスが外れた（別場所をクリックした）タイミングで確定
+        if (isEnterPressed || ImGui::IsItemDeactivatedAfterEdit()) {
+            SetFolderPath(instance->folderPathBuffer_);
+        }
+
+        // 2. ファイル名（読み取り専用表示）
+        ImGui::Text("ファイル名 : %s", kFileName.c_str());
+
+        ImGui::Spacing();
+
         // --- 保存・読み込みボタン ---
         if (ImGui::Button("Save")) {
+            // 保存直前に入力バッファの内容を最終反映させておく
+            SetFolderPath(instance->folderPathBuffer_);
             Save();
         }
         ImGui::SameLine();
         if (ImGui::Button("Load")) {
+            // 読み込み直前に入力バッファの内容を最終反映させておく
+            SetFolderPath(instance->folderPathBuffer_);
             Load();
         }
+
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();

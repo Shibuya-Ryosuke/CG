@@ -113,5 +113,8 @@ namespace RyoEngine {
 
         // 上書き確認モーダル表示フラグ
         bool showOverwriteModal_ = false;
+
+        // フォルダパス変更時の一時バッファ
+        char folderPathBuffer_[256] = {};
     };
 }
