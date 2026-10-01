@@ -15,9 +15,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Application\Scene\Game.cpp" />
-    <ClCompile Include="Application\Scene\SceneManager.cpp" />
-    <ClCompile Include="Application\Scene\Title.cpp" />
+    <ClCompile Include="Application\GameName\GameName.cpp" />
+    <ClCompile Include="Application\GameName\Scene\Game.cpp" />
+    <ClCompile Include="Application\GameName\Scene\SceneManager.cpp" />
+    <ClCompile Include="Application\GameName\Scene\Title.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
@@ -135,11 +136,12 @@
     <ClCompile Include="Original\Test\TestManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Application\GameResources\GameSound.h" />
-    <ClInclude Include="Application\GameResources\GameTex.h" />
-    <ClInclude Include="Application\Scene\Game.h" />
-    <ClInclude Include="Application\Scene\SceneManager.h" />
-    <ClInclude Include="Application\Scene\Title.h" />
+    <ClInclude Include="Application\GameName\GameName.h" />
+    <ClInclude Include="Application\GameName\GameResources\GameSound.h" />
+    <ClInclude Include="Application\GameName\GameResources\GameTex.h" />
+    <ClInclude Include="Application\GameName\Scene\Game.h" />
+    <ClInclude Include="Application\GameName\Scene\SceneManager.h" />
+    <ClInclude Include="Application\GameName\Scene\Title.h" />
     <ClInclude Include="Original\2D\Sprite.h" />
     <ClInclude Include="Original\2D\SpriteCommon.h" />
     <ClInclude Include="Original\3D\InstancedModel.h" />
@@ -149,6 +151,7 @@
     <ClInclude Include="Original\Audio\Audio.h" />
     <ClInclude Include="Original\Base\DirectXCommon.h" />
     <ClInclude Include="Original\Base\Font.h" />
+    <ClInclude Include="Original\Base\IGame.h" />
     <ClInclude Include="Original\Base\Logger.h" />
     <ClInclude Include="Original\Base\ShaderCompiler.h" />
     <ClInclude Include="Original\Base\TimeManager.h" />
@@ -366,6 +369,7 @@
       <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191;4582;4774;5262;4061</DisableSpecificWarnings>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
+      <AdditionalIncludeDirectories>$(ProjectDir)Original;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -397,6 +401,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <Optimization>MaxSpeed</Optimization>
       <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191;4582;</DisableSpecificWarnings>
+      <AdditionalIncludeDirectories>$(ProjectDir)Original;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -427,6 +432,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <Optimization>Disabled</Optimization>
       <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191;4582;</DisableSpecificWarnings>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(ProjectDir)Original;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

@@ -1,12 +1,11 @@
-#include "./Original/RyoEngine.h"
-#include "Original/Test/TestManager.h"
+#include <RyoEngine.h>
+#include <Test/TestManager.h>
 #ifdef _DEBUG
-#include "Original/ImGui/ImGuiAllInclude.h"
+#include <ImGui/ImGuiAllInclude.h>
 #endif
 
-#include "Application/Scene/SceneManager.h"
-#include "Application/GameResources/GameSound.h"
-#include "Application/GameResources/GameTex.h"
+#include "Application/GameName/GameName.h"
+
 
 using namespace RyoEngine;
 
@@ -14,25 +13,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize(L"Application");
 
-    // リソース初期化
-    GameImage::Initialize();
-    GameSound::Initialize();
-
-    // ゲーム初期化
-    SceneManager sceneManager{};
-    sceneManager.Initialize(Scene::Title);
-
     // テスト型
     TestManager test{};
     test.Initialize();
 
-    Camera mainCamera{};
-    mainCamera.Initialize();
-
+    // デバッグカメラ
     DebugCamera debugCamera{};
     debugCamera.Initialize();
     debugCamera.SetAvailable(true);
 
+    std::unique_ptr<IGame> game = std::make_unique<Game1::Game1>();
+    game->Initialize(debugCamera);
 
     // 全てのInitializeが終わったらJsonの読込
     ParamEditor::Load();
@@ -46,13 +37,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // -- 更新処理（Update） --
         // ----------------------
-        
-        // 更新
-        sceneManager.Update();
+        // テスト
         test.Update();
 
+
+        // ゲーム
+        //game->Update();
+
+
         // カメラ
-        mainCamera.Update();
         debugCamera.Update();
 
         // ----------------------
@@ -67,11 +60,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // --- 描画処理 (Draw) ---
         // ----------------------
+        // テスト
+        test.Draw(debugCamera);
         
-       
+
+        // ゲーム
+        //game->Draw();
+
+
         // 描画
-        sceneManager.Draw();
-        test.Draw(GetActiveCamera(mainCamera,debugCamera));
+        game->Draw();
+        
 
         // ----------------------
         // ------ 描画終了 -------
@@ -82,7 +81,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     }
     
     // ゲーム終了
-    sceneManager.Finalize();
+    game->Finalize();
 
     // エンジン終了
     RyoEngine::Finalize();

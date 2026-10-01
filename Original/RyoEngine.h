@@ -8,6 +8,7 @@
 #include "Graphics/TextureManager.h"
 #include "Loader/ModelLoader.h"
 #include "Base/ShaderCompiler.h"
+#include "Base/IGame.h"
 #include "3D/ModelCommon.h"
 #include "3D/Model.h"
 #include "3D/InstancedModelCommon.h"

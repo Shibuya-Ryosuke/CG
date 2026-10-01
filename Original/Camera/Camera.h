@@ -5,12 +5,15 @@
 namespace RyoEngine {
     class Camera {
     public:
+        // デストラクタを仮想関数として明示
+        virtual ~Camera() = default;
+
+        // 特殊メンバ関数（Rule of Five）をすべて明示的に = default 宣言する
         Camera() = default;
-        virtual  ~Camera() = default;
-        // コピーコンストラクタの明示
-        Camera(const Camera&) = default;
-        // activeCameraを決めるときに必要
-        Camera& operator=(const Camera&) = default;
+        Camera(const Camera&) = default;            // コピーコンストラクタ
+        Camera& operator=(const Camera&) = default; // コピー代入演算子
+        Camera(Camera&&) = default;                 // ムーブコンストラクタ
+        Camera& operator=(Camera&&) = default;      // ムーブ代入演算子
 
         virtual void Initialize();
 
