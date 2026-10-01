@@ -2,6 +2,8 @@
 #include "../Base/DirectXCommon.h"
 #include "../Base/Logger.h"
 #include <string>
+#include <filesystem>
+#include <fstream>
 #include "imgui.h"
 
 namespace RyoEngine {
@@ -9,6 +11,21 @@ namespace RyoEngine {
     LightManager* LightManager::GetInstance() {
         static LightManager instance;
         return &instance;
+    }
+
+    void LightManager::SetFolderPath(const std::string& folderPath) {
+        GetInstance()->folderPath_ = folderPath;
+    }
+
+    const std::string& LightManager::GetFolderPath() {
+        return GetInstance()->folderPath_;
+    }
+
+    std::string LightManager::GetFullFilePath() const {
+        namespace fs = std::filesystem;
+        fs::path p(folderPath_);
+        p /= kFileName;
+        return p.string();
     }
 
     void LightManager::Initialize() {
@@ -72,12 +89,20 @@ namespace RyoEngine {
         instance->lightCountData_->lightCount = count;
     }
 
-    void LightManager::Save(const std::string& filePath) {
+    void LightManager::Save() {
+        auto instance = GetInstance();
+        std::string fullPath = instance->GetFullFilePath();
+        if (std::filesystem::exists(fullPath)) {
+            instance->showOverwriteModal_ = true;
+        } else {
+            instance->SaveToFileInternal(fullPath);
+        }
+    }
+
+    void LightManager::SaveToFileInternal(const std::string& filePath) {
         Logger::Log("[LightManager] Save started: " + filePath);
 
         namespace fs = std::filesystem;
-
-        // ファイルパスから親ディレクトリのパスを抽出し、存在しない場合は自動で作成する
         fs::path path(filePath);
         if (path.has_parent_path()) {
             try {
@@ -92,27 +117,29 @@ namespace RyoEngine {
         auto instance = GetInstance();
         nlohmann::json root;
 
-        // アンビエントライトの保存
         root["ambient"] = *instance->ambientData_;
 
-        // ライト一覧の保存
         nlohmann::json lightsArray = nlohmann::json::array();
         for (const auto& light : instance->lights_) {
             lightsArray.push_back(light);
         }
         root["lights"] = lightsArray;
 
-        // ファイルへ書き込み
         std::ofstream file(filePath);
         if (file.is_open()) {
-            file << root.dump(4); // インデント付きで綺麗に出力
+            file << root.dump(4);
             Logger::LogSuccess("[LightManager] Save Successed.");
         } else {
             Logger::LogWarning("[LightManager] Save failed: Could not open file " + filePath);
         }
     }
 
-    void LightManager::Load(const std::string& filePath) {
+    void LightManager::Load() {
+        auto instance = GetInstance();
+        instance->LoadFromFileInternal(instance->GetFullFilePath());
+    }
+
+    void LightManager::LoadFromFileInternal(const std::string& filePath) {
         Logger::Log("[LightManager] Load started: " + filePath);
 
         if (!std::filesystem::exists(filePath)) {
@@ -131,15 +158,12 @@ namespace RyoEngine {
         file.close();
 
         auto instance = GetInstance();
-        // データのクリア
         instance->lights_.clear();
 
-        // アンビエントライトの読み込み
         if (root.contains("ambient")) {
             *instance->ambientData_ = root["ambient"].get<AmbientLight>();
         }
 
-        // ライト一覧の読み込み
         if (root.contains("lights") && root["lights"].is_array()) {
             for (const auto& jLight : root["lights"]) {
                 if (instance->lights_.size() >= kMaxLightCount) {
@@ -198,7 +222,6 @@ namespace RyoEngine {
 
     void LightManager::ClearLights() {
         auto instance = GetInstance();
-
         instance->lights_.clear();
     }
 
@@ -277,9 +300,36 @@ namespace RyoEngine {
             RemoveLight(removeIndex);
         }
 
+        // 上書き確認ポップアップ
+        if (instance->showOverwriteModal_) {
+            ImGui::OpenPopup("LightManager 上書き確認");
+            Logger::LogWarning("[LightManager] Overwrite check.");
+            instance->showOverwriteModal_ = false;
+        }
+
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("LightManager 上書き確認", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("該当フォルダには既に同名のファイルが存在します。上書きしますか？");
+            ImGui::Text("フォルダパス : %s", instance->folderPath_.c_str());
+            ImGui::Separator();
+
+            if (ImGui::Button("上書きする", ImVec2(120, 0))) {
+                instance->SaveToFileInternal(instance->GetFullFilePath());
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button("キャンセル", ImVec2(120, 0))) {
+                Logger::Log("[LightManager] Save cancelled.");
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
         ImGui::End();
 #endif
-        // RyoEngineで呼び出してるのはDrawImguiなのでこのUpdateは残す
         Update();
     }
 }

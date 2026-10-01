@@ -3,37 +3,38 @@
 #include <wrl.h>
 #include <vector>
 #include <cstdint>
+#include <string>
 #include "Light.h"
 #include "../Math/Math.h"
 
 namespace RyoEngine {
 
-    // シーン内で同時に扱えるライトの最大数（64灯）
     constexpr uint32_t kMaxLightCount = 64;
 
     class LightManager {
     public:
-        // シングルトンインスタンスの取得
         static LightManager* GetInstance();
 
         static void Initialize();
         static void Finalize();
         static void Update();
 
-        // --- JSON 保存・読み込み ---
-        static void Save(const std::string& filePath = "Resources/ApplicationResources/Json/Manager/lightManager.json");
-        static void Load(const std::string& filePath = "Resources/ApplicationResources/Json/Manager/lightManager.json");
+        // --- フォルダパス設定 ---
+        static void SetFolderPath(const std::string& folderPath);
+        static const std::string& GetFolderPath();
 
-        // --- ライト操作（コードからの追加・削除） ---
+        // --- JSON 保存・読み込み ---
+        static void Save();
+        static void Load();
+
+        // --- ライト操作 ---
         static int AddLight(LightType type);
         static int AddLight(const Light& light);
         static void RemoveLight(int index);
         static void ClearLights();
 
-        // --- ライトの個別Getter / Setter（ID指定） ---
+        // --- ライトの個別Getter / Setter ---
         static size_t GetLightCount() { return GetInstance()->lights_.size(); }
-
-        //static Light& GetLight(int index) { return GetInstance()->lights_[index]; }
         static const Light& GetLight(int index) { return GetInstance()->lights_[index]; }
 
         static void SetLightType(int index, LightType type) {
@@ -92,7 +93,6 @@ namespace RyoEngine {
         }
         static float GetLightSpotFalloff(int index) { return GetInstance()->lights_[index].spotFalloff; }
 
-
         // --- アンビエントライト ---
         static void SetAmbientLight(const AmbientLight& ambient) {
             GetInstance()->ambientData_->color = ambient.color;
@@ -104,7 +104,6 @@ namespace RyoEngine {
         static const AmbientLight& GetAmbientLight() { return *GetInstance()->ambientData_; }
         static const Vector4& GetAmbientColor() { return GetInstance()->ambientData_->color; }
         static float GetAmbientIntensity() { return GetInstance()->ambientData_->intensity; }
-
 
         // --- GPUリソース取得 ---
         static ID3D12Resource* GetLightResource() { return GetInstance()->lightResource_.Get(); }
@@ -144,7 +143,12 @@ namespace RyoEngine {
         LightManager(const LightManager&) = delete;
         LightManager& operator=(const LightManager&) = delete;
 
-        // 非静的メンバ変数（インスタンスごとに保持される実データ）
+        static inline const std::string kFileName = "lightManager.json";
+
+        std::string GetFullFilePath() const;
+        void SaveToFileInternal(const std::string& filePath);
+        void LoadFromFileInternal(const std::string& filePath);
+
         std::vector<Light> lights_;
 
         Microsoft::WRL::ComPtr<ID3D12Resource> lightResource_;
@@ -155,5 +159,11 @@ namespace RyoEngine {
 
         Microsoft::WRL::ComPtr<ID3D12Resource> ambientResource_;
         AmbientLight* ambientData_ = nullptr;
+
+        // 保持するフォルダパス
+        std::string folderPath_ = "Resources/ApplicationResources/Json/Manager";
+
+        // 上書き確認モーダル表示フラグ
+        bool showOverwriteModal_ = false;
     };
 }

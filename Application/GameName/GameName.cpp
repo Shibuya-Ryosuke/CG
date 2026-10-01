@@ -13,6 +13,11 @@ namespace Game1 {
 		// ゲーム初期化
 		sceneManager_ = std::make_unique<SceneManager>();
 		sceneManager_->Initialize(Scene::Title);
+
+		ParamEditor::SetFolderPath("Resources/ApplicationResources/Game1/Json/");
+		LightManager::SetFolderPath("Resources/ApplicationResources/Game1/Json/");
+		ParamEditor::Load();
+		LightManager::Load();
 	}
 	void Game1::Update() {
 		sceneManager_->Update();

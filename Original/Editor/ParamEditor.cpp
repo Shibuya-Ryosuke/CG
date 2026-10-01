@@ -11,6 +11,23 @@
 
 namespace RyoEngine {
 
+    // --- フォルダパス管理 ---
+
+    void ParamEditor::SetFolderPath(const std::string& folderPath) {
+        GetInstance().folderPath_ = folderPath;
+    }
+
+    const std::string& ParamEditor::GetFolderPath() {
+        return GetInstance().folderPath_;
+    }
+
+    std::string ParamEditor::GetFullFilePath() const {
+        namespace fs = std::filesystem;
+        fs::path p(folderPath_);
+        p /= kFileName;
+        return p.string();
+    }
+
     // --- グループ階層管理 ---
 
     void ParamEditor::BeginGroup(const std::string& name, bool open) {
@@ -29,7 +46,6 @@ namespace RyoEngine {
 
         AddEntry(groupEntry);
 
-        // スタックの末尾（今追加したグループの children へのポインタをセット）
         if (groupStack_.empty()) {
             groupStack_.push_back(&rootEntries_.back());
         } else {
@@ -44,11 +60,6 @@ namespace RyoEngine {
     }
 
     void ParamEditor::AddEntry(ParamEntry entry) {
-        // ロード済みデータがあれば初期値を上書き適用
-        if (isLoaded_) {
-            // パスの解決は簡易的に名前マッチまたはロード時に一括適用
-        }
-
         if (groupStack_.empty()) {
             rootEntries_.push_back(entry);
         } else {
@@ -63,10 +74,6 @@ namespace RyoEngine {
         e.name = name;
         e.type = EntryType::Flag;
         e.ptr = value;
-
-        if (GetInstance().isLoaded_) {
-            // 後述のロード処理で一括紐づけするためここではポインタだけ保持
-        }
         GetInstance().AddEntry(e);
     }
 
@@ -137,18 +144,17 @@ namespace RyoEngine {
     }
 
     void ParamEditor::RegisterValue(const std::string& name, Transform* value, float speed, float min, float max) {
-        // Transformは内部でグループを作り、上から順に scale, rotate, translate を展開する
         BeginGroup(name, false);
         RegisterValue("scale", &value->scale, speed, min, max);
-        RegisterValue("rotate", &value->rotate, speed, -180.0f, 180.0f); // 回転は一般的によく使う範囲に調整可能
+        RegisterValue("rotate", &value->rotate, speed, -180.0f, 180.0f);
         RegisterValue("translate", &value->translate, speed, -1000.0f, 1000.0f);
         EndGroup();
     }
 
     void ParamEditor::RegisterValue(const std::string& name, Transform2D* value, float speed, float min, float max) {
         BeginGroup(name, false);
-        RegisterValue("scale", &value->scale, speed/100.0f, min, max);
-        RegisterValue("rotate", &value->rotate, speed/100.0f, -180.0f, 180.0f);
+        RegisterValue("scale", &value->scale, speed / 100.0f, min, max);
+        RegisterValue("rotate", &value->rotate, speed / 100.0f, -180.0f, 180.0f);
         RegisterValue("translate", &value->translate, speed, -1000.0f, 1000.0f);
         EndGroup();
     }
@@ -191,12 +197,19 @@ namespace RyoEngine {
         GetInstance().DrawImGuiInternal(windowName);
     }
 
-    void ParamEditor::Save(const std::string& filepath) {
-        GetInstance().SaveToJsonInternal(filepath);
+    void ParamEditor::Save() {
+        auto& inst = GetInstance();
+        std::string fullPath = inst.GetFullFilePath();
+        if (std::filesystem::exists(fullPath)) {
+            inst.showOverwriteModal_ = true;
+        } else {
+            inst.SaveToJsonInternal(fullPath);
+        }
     }
 
-    void ParamEditor::Load(const std::string& filepath) {
-        GetInstance().LoadFromJsonInternal(filepath);
+    void ParamEditor::Load() {
+        auto& inst = GetInstance();
+        inst.LoadFromJsonInternal(inst.GetFullFilePath());
     }
 
     // --- 内部処理：ImGui描画 ---
@@ -204,6 +217,7 @@ namespace RyoEngine {
     void ParamEditor::DrawImGuiInternal(const char* windowName) {
 #ifdef _DEBUG
         ImGui::Begin(windowName);
+
         // 保存と読込
         if (ImGui::Button("Save")) {
             Save();
@@ -217,6 +231,35 @@ namespace RyoEngine {
         ImGui::Spacing();
 
         DrawEntries(rootEntries_);
+
+        // 上書き確認ポップアップ
+        if (showOverwriteModal_) {
+            ImGui::OpenPopup("ParamEditor 上書き確認");
+            Logger::LogWarning("[ParamEditor] Overwrite check.");
+            showOverwriteModal_ = false;
+        }
+
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("ParamEditor 上書き確認", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("該当フォルダには既に同名のファイルが存在します。上書きしますか？");
+            ImGui::Text("フォルダパス : %s", folderPath_.c_str());
+            ImGui::Separator();
+
+            if (ImGui::Button("上書きする", ImVec2(120, 0))) {
+                SaveToJsonInternal(GetFullFilePath());
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button("キャンセル", ImVec2(120, 0))) {
+                Logger::Log("[ParamEditor] Save cancelled.");
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
         ImGui::End();
 #endif
     }
@@ -224,7 +267,7 @@ namespace RyoEngine {
     void ParamEditor::DrawEntries(std::list<ParamEntry>& entries) {
 #ifdef _DEBUG
         for (auto& e : entries) {
-            ImGui::PushID(&e); // 一意なID保証
+            ImGui::PushID(&e);
 
             switch (e.type) {
             case EntryType::Group: {
@@ -288,24 +331,11 @@ namespace RyoEngine {
                 break;
             case EntryType::Anchor:
                 if (e.ptr) {
-                    // 選択肢の定義（Sprite.h の enum class Anchor の順序に合わせる）
                     const char* items[] = {
-                        "Center",
-                        "Top",
-                        "Bottom",
-                        "Left",
-                        "LeftTop",
-                        "LeftBottom",
-                        "Right",
-                        "RightTop",
-                        "RightBottom"
+                        "Center", "Top", "Bottom", "Left", "LeftTop", "LeftBottom", "Right", "RightTop", "RightBottom"
                     };
-
-                    // 現在の値をint型にキャストしてインデックスとして扱う
                     int currentItem = static_cast<int>(*static_cast<Anchor*>(e.ptr));
-
                     if (ImGui::Combo(e.name.c_str(), &currentItem, items, IM_ARRAYSIZE(items))) {
-                        // 変更されたら元のポインタ（仲介変数）にキャストして代入
                         *static_cast<Anchor*>(e.ptr) = static_cast<Anchor>(currentItem);
                     }
                 }
@@ -323,11 +353,8 @@ namespace RyoEngine {
         Logger::Log("[ParamEditor] Save started: " + filepath);
 
         namespace fs = std::filesystem;
-
-        // ファイルパスから親ディレクトリのパスを抽出し、存在しない場合は自動で作成する
         fs::path path(filepath);
         if (path.has_parent_path()) {
-            // ここでフォルダ作成に失敗した場合の対策として try-catch で囲むとより安全です
             try {
                 fs::create_directories(path.parent_path());
             }
@@ -424,7 +451,6 @@ namespace RyoEngine {
         file >> loadedJson_;
         isLoaded_ = true;
 
-        // 再帰的にロードデータを各エントリに反映
         LoadEntriesFromJson(loadedJson_, rootEntries_);
 
         Logger::LogSuccess("[ParamEditor] Load Successed.");
@@ -483,7 +509,7 @@ namespace RyoEngine {
                     if (val.is_string()) {
                         std::string str = val.get<std::string>();
                         Anchor anchor = Anchor::Center;
-                        if (str == "Center")      anchor = Anchor::Center;
+                        if (str == "Center")           anchor = Anchor::Center;
                         else if (str == "Top")         anchor = Anchor::Top;
                         else if (str == "Bottom")      anchor = Anchor::Bottom;
                         else if (str == "Left")        anchor = Anchor::Left;
