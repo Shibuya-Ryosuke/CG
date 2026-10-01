@@ -23,6 +23,10 @@ namespace Test {
 		ParamEditor::RegisterColor("color", &color_);
 		ParamEditor::RegisterAnchor("anchor", &anchor_);
 		ParamEditor::EndGroup();
+
+		fireEmitter_.Initialize("Resources/EngineResources/Test/Particle/quad.obj", 2000, /*billboard=*/true, GPUParticleCommon::BlendMode::Additive);
+		fireEmitter_.SetGravity(-2.0f); // 上昇する炎なら負の値(浮力っぽさ)も試してみてください
+		fireEmitter_.Emit({0.0f,2.0f,0.0f}, {1.0f,2.0f,0.0f}, {1.0f, 0.6f, 0.1f, 1.0f}, 0.5f, {0,0,0}, 1.2f);
 	}
 
 	void TestManager::Update() {
@@ -64,6 +68,7 @@ namespace Test {
 		flower.SetAnchor(anchor_);
 		flower.TransferMatrix();
 
+		fireEmitter_.Update(GetDeltaTime());
 		// プレイヤー更新
 		player_.Update();
 
@@ -98,6 +103,8 @@ namespace Test {
 		flower.Draw();
 		// 弾のインスタンス描画予約
 		bulletInstancedModel_.Draw(GetDebugCamera());
+
+		fireEmitter_.Draw(GetDebugCamera());
 	}
 
 	void TestManager::SpawnBullet(const Vector3& position) {

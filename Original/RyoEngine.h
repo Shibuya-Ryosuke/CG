@@ -33,6 +33,8 @@
 #include "Shadow/ShadowMap.h"
 #include "PostProcess/PostProcess.h"
 #include "PrimitiveRenderer/PrimitiveRenderer.h"
+#include "GPUParticle/GPUParticleCommon.h"
+#include "GPUParticle/GPUParticleEmitter.h"
 #include <cstdint>
 #include <string>
 #include <format>

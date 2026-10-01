@@ -119,6 +119,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Original\GPUParticle\GPUParticleCommon.cpp" />
+    <ClCompile Include="Original\GPUParticle\GPUParticleEmitter.cpp" />
     <ClCompile Include="Original\Graphics\TextureManager.cpp" />
     <ClCompile Include="Original\ImGui\ImGuiManager.cpp" />
     <ClCompile Include="Original\Input\Input.cpp" />
@@ -178,6 +180,8 @@
     <ClInclude Include="Original\Externals\imgui\imstb_truetype.h" />
     <ClInclude Include="Original\Externals\imgui\ImVectorEditor.h" />
     <ClInclude Include="Original\Externals\imgui\ImZoomSlider.h" />
+    <ClInclude Include="Original\GPUParticle\GPUParticleCommon.h" />
+    <ClInclude Include="Original\GPUParticle\GPUParticleEmitter.h" />
     <ClInclude Include="Original\Graphics\TextureManager.h" />
     <ClInclude Include="Original\ImGui\ImGuiAllInclude.h" />
     <ClInclude Include="Original\ImGui\ImGuiManager.h" />
@@ -230,6 +234,31 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="HLSL\GPUParticle\GPUParticle.PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="HLSL\GPUParticle\GPUParticle.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="HLSL\GPUParticle\GPUParticleBillboard.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="HLSL\GPUParticle\GPUParticleReset.CS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="HLSL\GPUParticle\GPUParticleSimulate.CS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="HLSL\Model\Instanced.PS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

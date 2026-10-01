@@ -77,6 +77,8 @@ namespace RyoEngine {
 
         InstancedModelCommon::GetInstance()->Initialize();
 
+        GPUParticleCommon::GetInstance()->Initialize();
+
         spriteCommon_ = SpriteCommon::GetInstance();
         spriteCommon_->Initialize();
 
@@ -127,6 +129,7 @@ namespace RyoEngine {
 
         //reflectCommon_->Finalize();
         spriteCommon_->Finalize();
+        GPUParticleCommon::GetInstance()->Finalize();
         InstancedModelCommon::GetInstance()->Finalize();
         modelCommon_->Finalize();
         PrimitiveRenderer::Finalize();
@@ -166,6 +169,7 @@ namespace RyoEngine {
         modelCommon_->CommandsClear();
         spriteCommon_->CommandsClear();
         InstancedModelCommon::GetInstance()->CommandsClear();
+        GPUParticleCommon::GetInstance()->CommandsClear();
 
         Input::Update();
 
@@ -258,6 +262,9 @@ namespace RyoEngine {
         ParamEditor::DrawImGuiWindow();
 
         PrimitiveRenderer::Flush();
+
+        // GPUパーティクルのシミュレーション(Dispatch)：RTV/DSVに依存しないので一番早く実行する
+        GPUParticleCommon::GetInstance()->Dispatch();
 
         // シャドウパス：ライト視点で深度だけ先に描画する
         ShadowMap::BeginShadowPass();

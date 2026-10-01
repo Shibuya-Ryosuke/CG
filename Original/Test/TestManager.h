@@ -22,6 +22,7 @@ namespace Test {
 		void SpawnBullet(const RyoEngine::Vector3& position);
 
 	private:
+		RyoEngine::GPUParticleEmitter fireEmitter_;
 
 		// 地面と空
 		std::unique_ptr<RyoEngine::Model> ground_{};
