@@ -275,6 +275,7 @@ namespace RyoEngine {
         Begin3dDraw();
         modelCommon_->Draw();
         InstancedModelCommon::GetInstance()->Draw();
+        GPUParticleCommon::GetInstance()->Draw();
 
         // HDR→LDR合成 (トーンマッピングのON/OFFはここで反映される)
         PostProcess::GetInstance()->EndScenePass();
