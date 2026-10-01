@@ -1,5 +1,5 @@
 #include <RyoEngine.h>
-#include <Test/TestManager.h>
+#include <Test/Test.h>
 #ifdef _DEBUG
 #include <ImGui/ImGuiAllInclude.h>
 #endif
@@ -13,17 +13,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize(L"Application");
 
-    // テスト型
-    TestManager test{};
-    test.Initialize();
-
-    // デバッグカメラ
-    DebugCamera debugCamera{};
-    debugCamera.Initialize();
-    debugCamera.SetAvailable(true);
-
-    std::unique_ptr<IGame> game = std::make_unique<Game1::Game1>();
-    game->Initialize(debugCamera);
+    std::unique_ptr<IGame> game = std::make_unique<Test::Test>();
+    game->Initialize();
 
     // 全てのInitializeが終わったらJsonの読込
     ParamEditor::Load();
@@ -37,16 +28,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // -- 更新処理（Update） --
         // ----------------------
-        // テスト
-        test.Update();
-
 
         // ゲーム
-        //game->Update();
-
-
-        // カメラ
-        debugCamera.Update();
+        game->Update();
 
         // ----------------------
         // ------ 更新終了 -------
@@ -60,17 +44,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
         // ----------------------
         // --- 描画処理 (Draw) ---
         // ----------------------
-        // テスト
-        test.Draw(debugCamera);
-        
-
+       
         // ゲーム
-        //game->Draw();
-
-
-        // 描画
         game->Draw();
-        
 
         // ----------------------
         // ------ 描画終了 -------

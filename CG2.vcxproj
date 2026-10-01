@@ -131,6 +131,7 @@
     <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />
     <ClCompile Include="Original\Shadow\ShadowMap.cpp" />
+    <ClCompile Include="Original\Test\Test.cpp" />
     <ClCompile Include="Original\Test\TestBullet.cpp" />
     <ClCompile Include="Original\Test\TestPlayer.cpp" />
     <ClCompile Include="Original\Test\TestManager.cpp" />
@@ -197,6 +198,7 @@
     <ClInclude Include="Original\PrimitiveRenderer\PrimitiveRenderer.h" />
     <ClInclude Include="Original\RyoEngine.h" />
     <ClInclude Include="Original\Shadow\ShadowMap.h" />
+    <ClInclude Include="Original\Test\Test.h" />
     <ClInclude Include="Original\Test\TestBullet.h" />
     <ClInclude Include="Original\Test\TestPlayer.h" />
     <ClInclude Include="Original\Test\TestManager.h" />

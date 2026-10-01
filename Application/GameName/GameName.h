@@ -15,7 +15,7 @@ namespace Game1 {
 		Game1& operator=(const Game1&) = delete;
 
 
-		void Initialize(RyoEngine::DebugCamera& debugCamera) override;
+		void Initialize() override;
 		void Update() override;
 		void Draw() override;
 		void Finalize() override;

@@ -35,6 +35,7 @@ namespace RyoEngine {
         Font* fontOutputer_ = nullptr;
         Audio* audio_ = nullptr;
 
+        DebugCamera debugCamera_{};
     }
 
     void Initialize(const wchar_t* title) {
@@ -99,6 +100,15 @@ namespace RyoEngine {
         fontOutputer_->Initialize("Resources/EngineResources/Debugfont/debugfont.fnt", "Resources/EngineResources/Debugfont/debugfont.png");
 
         TimeManager::Initialize();
+
+        // デバッグカメラ初期化
+        debugCamera_.Initialize();
+        // デバッグ時操作有効、それ以外では無効
+#ifdef _DEBUG
+        debugCamera_.SetAvailable(true);
+#else
+        debugCamera_.SetAvailable(false);
+#endif
 
         Logger::Log("\n\n\n* Game Start * \n\n");
     }
@@ -173,6 +183,7 @@ namespace RyoEngine {
         }
 
         ImGuiManager::NewFrame();
+        debugCamera_.Update();
 
         // ゲーム画面
         ImGui::Begin("Game View");
@@ -321,17 +332,18 @@ namespace RyoEngine {
         InstancedModelCommon::GetInstance()->SetBlendMode(blendMode);
     }
 
-    Camera& GetActiveCamera(Camera& defaultCamera, DebugCamera& debugCamera) {
+    Camera& GetActiveCamera(Camera& mainCamera) {
 #ifdef _DEBUG
         // デバッグカメラが有効のとき
-        if (debugCamera.GetIsAvailable()) {
-            return debugCamera;
+        if (debugCamera_.GetIsAvailable()) {
+            return debugCamera_;
         }
-#else
-        // 未使用引数の警告を防ぐ（リリース時）
-        (void)debugCamera;
 #endif
-        return defaultCamera;
+        return mainCamera;
+    }
+
+    DebugCamera& GetDebugCamera() {
+        return debugCamera_;
     }
 
     // --- ゲッターの実装 ---

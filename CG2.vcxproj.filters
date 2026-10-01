@@ -208,6 +208,9 @@
     <ClCompile Include="Application\GameName\Scene\Title.cpp">
       <Filter>Application\GameName\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Original\Test\Test.cpp">
+      <Filter>Engine\Test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Math\Math.h">
@@ -401,6 +404,9 @@
     </ClInclude>
     <ClInclude Include="Application\GameName\GameResources\GameTex.h">
       <Filter>Application\GameName\GameResources</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Test\Test.h">
+      <Filter>Engine\Test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

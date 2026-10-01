@@ -1,8 +1,8 @@
 #include "SceneManager.h"
 
 namespace Game1 {
-	void SceneManager::Initialize(RyoEngine::DebugCamera& debugCamera, Scene scene) {
-		debugCamera_ = debugCamera;
+	void SceneManager::Initialize(Scene scene) {
+		camera_.Initialize();
 
 		title_.Initialize();
 		game_.Initialize();

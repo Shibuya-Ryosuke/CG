@@ -12,15 +12,15 @@ namespace Game1 {
 
 	class SceneManager {
 	public:
-		void Initialize(RyoEngine::DebugCamera& debugCamera, Scene scene);
+		void Initialize(Scene scene);
 		void Update();
 		void Draw();
 		void Finalize();
 
 	private:
-		RyoEngine::DebugCamera debugCamera_{};
-
 		Scene scene_ = Scene::Title;
+
+		RyoEngine::Camera camera_{};
 
 		Title title_{};
 		Game game_{};
