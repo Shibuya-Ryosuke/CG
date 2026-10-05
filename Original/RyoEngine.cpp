@@ -246,12 +246,13 @@ namespace RyoEngine {
     void EndFrame() {
         ParamEditor::DrawImGuiWindow();
 
-        PrimitiveRenderer::Flush();
-
         // シャドウパス：ライト視点で深度だけ先に描画する
         ShadowMap::BeginShadowPass();
         modelCommon_->DrawShadow();
         ShadowMap::GetInstance()->EndShadowPass();
+
+        // 即時描画
+        PrimitiveRenderer::Flush();
 
         // 3d描画
         Begin3dDraw();
