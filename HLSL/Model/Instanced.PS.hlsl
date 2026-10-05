@@ -75,7 +75,10 @@ PixelShaderOutput main(VertexShaderOutput input)
     PixelShaderOutput output;
 
     float4 textureColor = gTexture.Sample(gSampler, input.texcoord);
-
+    if (textureColor.a <= 0.05f)
+    {
+        discard;
+    }
     if (gEnableLighting != 0 && gShadingMode != 0)
     {
         float3 normal = normalize(input.normal);
