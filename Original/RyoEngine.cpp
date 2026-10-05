@@ -261,8 +261,6 @@ namespace RyoEngine {
     void EndFrame() {
         ParamEditor::DrawImGuiWindow();
 
-        PrimitiveRenderer::Flush();
-
         // GPUパーティクルのシミュレーション(Dispatch)：RTV/DSVに依存しないので一番早く実行する
         GPUParticleCommon::GetInstance()->Dispatch();
 
