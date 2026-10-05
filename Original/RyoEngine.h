@@ -8,6 +8,7 @@
 #include "Graphics/TextureManager.h"
 #include "Loader/ModelLoader.h"
 #include "Base/ShaderCompiler.h"
+#include "Base/IGame.h"
 #include "3D/ModelCommon.h"
 #include "3D/Model.h"
 #include "3D/InstancedModelCommon.h"
@@ -32,6 +33,8 @@
 #include "Shadow/ShadowMap.h"
 #include "PostProcess/PostProcess.h"
 #include "PrimitiveRenderer/PrimitiveRenderer.h"
+#include "GPUParticle/GPUParticleCommon.h"
+#include "GPUParticle/GPUParticleEmitter.h"
 #include <cstdint>
 #include <string>
 #include <format>
@@ -148,8 +151,14 @@ namespace RyoEngine {
     /// <summary>
     /// 現在有効なカメラを取得する（カメラの更新は各自で）
     /// </summary>
-    /// <param name="defaultCamera">通常のカメラ</param>
+    /// <param name="mainCamera">通ゲーム内で使用するカメラ</param>
     /// <param name="debugCamera">デバッグカメラ</param>
     /// <returns>有効なカメラの参照</returns>
-    Camera& GetActiveCamera(Camera& defaultCamera, DebugCamera& debugCamera);
+    Camera& GetActiveCamera(Camera& mainCamera);
+
+    /// <summary>
+    /// デバッグカメラの取得（デバッグカメラは全体でひとつあれば良いのでエンジンが保持）
+    /// </summary>
+    /// <returns></returns>
+    DebugCamera& GetDebugCamera();
 }

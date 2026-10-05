@@ -7,6 +7,13 @@ namespace RyoEngine {
 		DebugCamera() = default;
 		~DebugCamera() override = default;
 
+		// 代入演算子・コピーコンストラクタ等の明示的デフォルト宣言
+		DebugCamera(const DebugCamera&) = default;
+		DebugCamera& operator=(const DebugCamera&) = default;
+		DebugCamera(DebugCamera&&) = default;
+		DebugCamera& operator=(DebugCamera&&) = default;
+
+
 		void Initialize() override;
 
 		void Update() override;

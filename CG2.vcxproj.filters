@@ -37,12 +37,6 @@
     <Filter Include="Application">
       <UniqueIdentifier>{ddccd698-3b21-49f0-b6aa-f5b97efa3e95}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application\Scene">
-      <UniqueIdentifier>{d72d0e82-e098-4a50-9cae-8a26e2cda17a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\GameResources">
-      <UniqueIdentifier>{98731039-f783-4098-92b3-7ea8324b4530}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\リソース ファイル\HLSL\Shadow">
       <UniqueIdentifier>{6acd64d8-ed65-43c5-85fa-3473f6da641b}</UniqueIdentifier>
     </Filter>
@@ -51,6 +45,18 @@
     </Filter>
     <Filter Include="Engine\Test">
       <UniqueIdentifier>{20db6151-7cb6-4ae1-acd6-5d2c8b7b7634}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\GameName">
+      <UniqueIdentifier>{b5a71e37-4b83-42ed-8b4e-13e5dfc33ea7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\GameName\GameResources">
+      <UniqueIdentifier>{98731039-f783-4098-92b3-7ea8324b4530}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\GameName\Scene">
+      <UniqueIdentifier>{d72d0e82-e098-4a50-9cae-8a26e2cda17a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\リソース ファイル\HLSL\GPUParticle">
+      <UniqueIdentifier>{a7beeaab-0e3f-4d54-bf60-96ff32d1b795}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -160,15 +166,6 @@
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Application\Scene\SceneManager.cpp">
-      <Filter>Application\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\Scene\Title.cpp">
-      <Filter>Application\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\Scene\Game.cpp">
-      <Filter>Application\Scene</Filter>
-    </ClCompile>
     <ClCompile Include="Original\Shadow\ShadowMap.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
@@ -200,6 +197,27 @@
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Base\TimeManager.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\GameName\GameName.cpp">
+      <Filter>Application\GameName</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\GameName\Scene\Game.cpp">
+      <Filter>Application\GameName\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\GameName\Scene\SceneManager.cpp">
+      <Filter>Application\GameName\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\GameName\Scene\Title.cpp">
+      <Filter>Application\GameName\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Test\Test.cpp">
+      <Filter>Engine\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\GPUParticle\GPUParticleCommon.cpp">
+      <Filter>Engine\ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\GPUParticle\GPUParticleEmitter.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -339,21 +357,6 @@
     <ClInclude Include="Original\PrimitiveRenderer\PrimitiveRenderer.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Application\Scene\Title.h">
-      <Filter>Application\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\Scene\Game.h">
-      <Filter>Application\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\Scene\SceneManager.h">
-      <Filter>Application\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameResources\GameSound.h">
-      <Filter>Application\GameResources</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameResources\GameTex.h">
-      <Filter>Application\GameResources</Filter>
-    </ClInclude>
     <ClInclude Include="Original\Shadow\ShadowMap.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
@@ -388,6 +391,36 @@
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Base\TimeManager.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Base\IGame.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\GameName\GameName.h">
+      <Filter>Application\GameName</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\GameName\Scene\Game.h">
+      <Filter>Application\GameName\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\GameName\Scene\SceneManager.h">
+      <Filter>Application\GameName\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\GameName\Scene\Title.h">
+      <Filter>Application\GameName\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\GameName\GameResources\GameSound.h">
+      <Filter>Application\GameName\GameResources</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\GameName\GameResources\GameTex.h">
+      <Filter>Application\GameName\GameResources</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Test\Test.h">
+      <Filter>Engine\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\GPUParticle\GPUParticleCommon.h">
+      <Filter>Engine\ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\GPUParticle\GPUParticleEmitter.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -450,6 +483,21 @@
     </FxCompile>
     <FxCompile Include="HLSL\Model\Instanced.VS.hlsl">
       <Filter>Engine\リソース ファイル\HLSL\Model</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\GPUParticle\GPUParticleReset.CS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\GPUParticle</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\GPUParticle\GPUParticleSimulate.CS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\GPUParticle</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\GPUParticle\GPUParticle.PS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\GPUParticle</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\GPUParticle\GPUParticle.VS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\GPUParticle</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\GPUParticle\GPUParticleBillboard.VS.hlsl">
+      <Filter>Engine\リソース ファイル\HLSL\GPUParticle</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

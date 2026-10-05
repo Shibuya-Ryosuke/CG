@@ -35,6 +35,7 @@ namespace RyoEngine {
         Font* fontOutputer_ = nullptr;
         Audio* audio_ = nullptr;
 
+        DebugCamera debugCamera_{};
     }
 
     void Initialize(const wchar_t* title) {
@@ -76,6 +77,8 @@ namespace RyoEngine {
 
         InstancedModelCommon::GetInstance()->Initialize();
 
+        GPUParticleCommon::GetInstance()->Initialize();
+
         spriteCommon_ = SpriteCommon::GetInstance();
         spriteCommon_->Initialize();
 
@@ -100,6 +103,15 @@ namespace RyoEngine {
 
         TimeManager::Initialize();
 
+        // デバッグカメラ初期化
+        debugCamera_.Initialize();
+        // デバッグ時操作有効、それ以外では無効
+#ifdef _DEBUG
+        debugCamera_.SetAvailable(true);
+#else
+        debugCamera_.SetAvailable(false);
+#endif
+
         Logger::Log("\n\n\n* Game Start * \n\n");
     }
 
@@ -117,6 +129,7 @@ namespace RyoEngine {
 
         //reflectCommon_->Finalize();
         spriteCommon_->Finalize();
+        GPUParticleCommon::GetInstance()->Finalize();
         InstancedModelCommon::GetInstance()->Finalize();
         modelCommon_->Finalize();
         PrimitiveRenderer::Finalize();
@@ -156,6 +169,7 @@ namespace RyoEngine {
         modelCommon_->CommandsClear();
         spriteCommon_->CommandsClear();
         InstancedModelCommon::GetInstance()->CommandsClear();
+        GPUParticleCommon::GetInstance()->CommandsClear();
 
         Input::Update();
 
@@ -173,6 +187,7 @@ namespace RyoEngine {
         }
 
         ImGuiManager::NewFrame();
+        debugCamera_.Update();
 
         // ゲーム画面
         ImGui::Begin("Game View");
@@ -246,6 +261,11 @@ namespace RyoEngine {
     void EndFrame() {
         ParamEditor::DrawImGuiWindow();
 
+        PrimitiveRenderer::Flush();
+
+        // GPUパーティクルのシミュレーション(Dispatch)：RTV/DSVに依存しないので一番早く実行する
+        GPUParticleCommon::GetInstance()->Dispatch();
+
         // シャドウパス：ライト視点で深度だけ先に描画する
         ShadowMap::BeginShadowPass();
         modelCommon_->DrawShadow();
@@ -258,6 +278,7 @@ namespace RyoEngine {
         Begin3dDraw();
         modelCommon_->Draw();
         InstancedModelCommon::GetInstance()->Draw();
+        GPUParticleCommon::GetInstance()->Draw();
 
         // HDR→LDR合成 (トーンマッピングのON/OFFはここで反映される)
         PostProcess::GetInstance()->EndScenePass();
@@ -322,17 +343,18 @@ namespace RyoEngine {
         InstancedModelCommon::GetInstance()->SetBlendMode(blendMode);
     }
 
-    Camera& GetActiveCamera(Camera& defaultCamera, DebugCamera& debugCamera) {
+    Camera& GetActiveCamera(Camera& mainCamera) {
 #ifdef _DEBUG
         // デバッグカメラが有効のとき
-        if (debugCamera.GetIsAvailable()) {
-            return debugCamera;
+        if (debugCamera_.GetIsAvailable()) {
+            return debugCamera_;
         }
-#else
-        // 未使用引数の警告を防ぐ（リリース時）
-        (void)debugCamera;
 #endif
-        return defaultCamera;
+        return mainCamera;
+    }
+
+    DebugCamera& GetDebugCamera() {
+        return debugCamera_;
     }
 
     // --- ゲッターの実装 ---
