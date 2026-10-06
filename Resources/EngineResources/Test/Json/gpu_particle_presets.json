@@ -1,0 +1,61 @@
+{
+    "emitters": {
+        "flush": {
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "billboard": true,
+            "blendMode": "Additive",
+            "color": [
+                0.19031141698360443,
+                0.3649502098560333,
+                0.6470588445663452,
+                1.0
+            ],
+            "conditionFlagKey": "test emit",
+            "continuousWhileTrue": true,
+            "emitInterval": 0.0,
+            "fixedRotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "gravity": 0.27000001072883606,
+            "lifeTime": 2.7799999713897705,
+            "maxParticleCount": 518,
+            "meshPath": "Resources/EngineResources/Test/Particle/quad.obj",
+            "positionOffsetRandomMax": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "positionOffsetRandomMin": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": 0.5899999737739563,
+            "texturePath": "",
+            "trackedPositionKey": "tracked pos",
+            "useRandomVelocity": true,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityRandomMax": [
+                0.30000001192092896,
+                7.829999923706055,
+                2.5999999046325684
+            ],
+            "velocityRandomMin": [
+                -2.0199999809265137,
+                1.7899999618530273,
+                -2.119999885559082
+            ]
+        }
+    },
+    "version": 1
+}

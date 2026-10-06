@@ -24,9 +24,14 @@ namespace Test {
 		ParamEditor::RegisterAnchor("anchor", &anchor_);
 		ParamEditor::EndGroup();
 
-		fireEmitter_.Initialize("Resources/EngineResources/Test/Particle/quad.obj", 2000, /*billboard=*/true, GPUParticleCommon::BlendMode::Additive);
-		fireEmitter_.SetGravity(-2.0f); // 上昇する炎なら負の値(浮力っぽさ)も試してみてください
 		
+		
+		// gpuパーティクルマネージャーに登録
+		GPUParticleManager::GetInstance()->RegisterFlag("test emit", &particleEmit_);
+		GPUParticleManager::GetInstance()->RegisterPosition("tracked pos", &player_.GetTranslate());
+
+		// ↓ パーティクルのobjファイルパス
+		// Resources/EngineResources/Test/Particle/quad.obj
 	}
 
 	void TestManager::Update() {
@@ -69,20 +74,21 @@ namespace Test {
 		flower.TransferMatrix();
 
 		if (Input::TriggerKey(DIK_L)) {
-			for (int i = 0; i < 10;i++) {
-				Vector3 pos{};
-				pos.x = RandomFloat(-2.0f, 2.0f);
-				pos.y = RandomFloat(0.0f, 4.0f);
-				pos.z = RandomFloat(-2.0f, 2.0f);
-				Vector3 vel{};
-				vel.x = RandomFloat(-2.0f, 2.0f);
-				vel.y = RandomFloat(0.5f, 2.0f);
-				vel.z = RandomFloat(-2.0f, 2.0f);
+			//for (int i = 0; i < 10;i++) {
+			//	Vector3 pos{};
+			//	pos.x = RandomFloat(-2.0f, 2.0f);
+			//	pos.y = RandomFloat(0.0f, 4.0f);
+			//	pos.z = RandomFloat(-2.0f, 2.0f);
+			//	Vector3 vel{};
+			//	vel.x = RandomFloat(-2.0f, 2.0f);
+			//	vel.y = RandomFloat(0.5f, 2.0f);
+			//	vel.z = RandomFloat(-2.0f, 2.0f);
 
-				fireEmitter_.Emit(pos, { 1.0f,2.0f,0.0f }, { 1.0f, 0.6f, 0.1f, 1.0f }, 0.5f, { 0,0,0 }, 100000.2f);
-			}
+			//	//fireEmitter_.Emit(pos, { 1.0f,2.0f,0.0f }, { 1.0f, 0.6f, 0.1f, 1.0f }, 0.5f, { 0,0,0 }, 10.0f);
+			//}
+			particleEmit_ = !particleEmit_;
 		}
-		fireEmitter_.Update(GetDeltaTime());
+		//fireEmitter_.Update(GetDeltaTime());
 		// プレイヤー更新
 		player_.Update();
 
@@ -101,6 +107,9 @@ namespace Test {
 
 		// 最後に一括でバッファを更新
 		bulletInstancedModel_.UpdateBuffer();
+
+		// gpuパーティクル
+		GPUParticleManager::GetInstance()->Update(GetScaleTime());
 	}
 
 	void TestManager::Draw() {
@@ -118,7 +127,10 @@ namespace Test {
 		// 弾のインスタンス描画予約
 		bulletInstancedModel_.Draw(GetDebugCamera());
 
-		fireEmitter_.Draw(GetDebugCamera());
+		//fireEmitter_.Draw(GetDebugCamera());
+
+		// gpuパーティクル
+		GPUParticleManager::GetInstance()->Draw(GetDebugCamera());
 	}
 
 	void TestManager::SpawnBullet(const Vector3& position) {

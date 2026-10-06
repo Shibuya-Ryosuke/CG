@@ -265,6 +265,9 @@
     <ClCompile Include="Original\RyoEngine.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleManager.cpp">
+      <Filter>Engine\Graphics\GPUParticle</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Externals\imgui\imconfig.h">
@@ -467,6 +470,9 @@
     </ClInclude>
     <ClInclude Include="Original\RyoEngine.h">
       <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleManager.h">
+      <Filter>Engine\Graphics\GPUParticle</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

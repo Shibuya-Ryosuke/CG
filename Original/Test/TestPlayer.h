@@ -1,5 +1,5 @@
 #pragma once
-#include "../RyoEngine.h"
+#include <RyoEngine.h>
 
 namespace Test {
 	// 前方宣言
@@ -17,6 +17,8 @@ namespace Test {
 		void Initialize(TestManager* manager);
 		void Update();
 		void Draw(RyoEngine::Camera& camera);
+
+		const RyoEngine::Vector3& GetTranslate()const { return bunny_->GetTranslate(); }
 
 	private:
 		// マネージャーへの参照（弾を発射してもらうため）

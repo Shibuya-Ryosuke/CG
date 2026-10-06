@@ -1,5 +1,5 @@
 #pragma once
-#include "../RyoEngine.h"
+#include <RyoEngine.h>
 #include "TestPlayer.h"
 #include "TestBullet.h"
 #include <vector>
@@ -22,7 +22,7 @@ namespace Test {
 		void SpawnBullet(const RyoEngine::Vector3& position);
 
 	private:
-		RyoEngine::GPUParticleEmitter fireEmitter_;
+		//RyoEngine::GPUParticleEmitter fireEmitter_;
 
 		// 地面と空
 		std::unique_ptr<RyoEngine::Model> ground_{};
@@ -46,5 +46,8 @@ namespace Test {
 		// --- 弾のインスタンス描画と管理 ---
 		RyoEngine::InstancedModel bulletInstancedModel_;
 		std::vector<TestBullet> bullets_;
+
+		// お試しフラグ
+		bool particleEmit_ = false;
 	};
 }

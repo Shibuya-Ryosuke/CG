@@ -1,5 +1,5 @@
 #pragma once
-#include "../RyoEngine.h"
+#include <RyoEngine.h>
 
 namespace Test {
     class TestBullet {

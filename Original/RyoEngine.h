@@ -28,6 +28,7 @@
 #include "Graphics/PrimitiveRenderer/PrimitiveRenderer.h"
 #include "Graphics/GPUParticle/GPUParticleCommon.h"
 #include "Graphics/GPUParticle/GPUParticleEmitter.h"
+#include "Graphics/GPUParticle/GPUParticleManager.h"
 
 #include "Audio/Audio.h"
 #include "Camera/Camera.h"

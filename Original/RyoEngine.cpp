@@ -78,6 +78,7 @@ namespace RyoEngine {
         InstancedModelCommon::GetInstance()->Initialize();
 
         GPUParticleCommon::GetInstance()->Initialize();
+        GPUParticleManager::GetInstance()->Initialize();
 
         spriteCommon_ = SpriteCommon::GetInstance();
         spriteCommon_->Initialize();
@@ -129,6 +130,7 @@ namespace RyoEngine {
 
         //reflectCommon_->Finalize();
         spriteCommon_->Finalize();
+        GPUParticleManager::GetInstance()->Finalize();
         GPUParticleCommon::GetInstance()->Finalize();
         InstancedModelCommon::GetInstance()->Finalize();
         modelCommon_->Finalize();
@@ -207,6 +209,8 @@ namespace RyoEngine {
         LightManager::GetInstance()->DrawImGui();
         // ポストプロセス(HDR/ブルームのON-OFF)
         PostProcess::GetInstance()->DrawImGui();
+        // GPUパーティクル
+        GPUParticleManager::GetInstance()->DrawImGui();
 
         // fps
         ImGui::Begin("Performance");

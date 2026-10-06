@@ -9,8 +9,10 @@ namespace Test {
 
 		ParamEditor::SetFolderPath("Resources/EngineResources/Test/Json/");
 		LightManager::SetFolderPath("Resources/EngineResources/Test/Json/");
+		GPUParticleManager::GetInstance()->SetFolderPath("Resources/EngineResources/Test/Json/");
 		ParamEditor::Load();
 		LightManager::Load();
+		GPUParticleManager::GetInstance()->Load();
 	}
 	void Test::Update() {
 		testManager_->Update();

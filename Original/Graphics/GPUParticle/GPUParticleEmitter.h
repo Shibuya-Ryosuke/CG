@@ -6,7 +6,7 @@
 #include <memory>
 #include <cstdint>
 #include "GPUParticleCommon.h"
-#include "../3D/Mesh/InstancedMesh.h"
+#include "../../Graphics/3D/Mesh/InstancedMesh.h"
 
 namespace RyoEngine {
     class Camera;
@@ -48,6 +48,12 @@ namespace RyoEngine {
         float GetGravity() const { return gravity_; }
 
         /// <summary>
+        /// 描画に使うテクスチャを、メッシュ(obj/mtl)が持つものとは別に上書き指定する。
+        /// 空文字を渡すと上書きを解除し、メッシュ本来のテクスチャに戻る。
+        /// </summary>
+        void SetTexture(const std::string& filePath);
+
+        /// <summary>
         /// シミュレーションの実行を予約する。deltaTimeを渡すこと。
         /// NOTE: Model::Draw()等と同じく、呼んだ直後にGPUコマンドが発行されるわけではない。
         ///       実際のDispatchは、EndFrame()内でGPUParticleCommon::Dispatch()がまとめて実行する
@@ -72,6 +78,9 @@ namespace RyoEngine {
         bool billboard_ = true;
         GPUParticleCommon::BlendMode blendMode_ = GPUParticleCommon::BlendMode::Additive;
         float gravity_ = 0.0f;
+
+        // 0ならメッシュ本来のテクスチャを使う。SetTexture()で設定されていればそちらを優先する
+        uint32_t overrideTextureHandle_ = 0;
 
         // パーティクル本体 (DEFAULT heap、UAV/SRV両対応のStructuredBuffer。maxParticleCount_件ぶん固定確保)
         Microsoft::WRL::ComPtr<ID3D12Resource> particleResource_;

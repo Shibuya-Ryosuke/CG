@@ -122,6 +122,7 @@
     <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleCommon.cpp" />
     <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleEmitter.cpp" />
     <ClCompile Include="Original\Graphics\2D\TextureManager.cpp" />
+    <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleManager.cpp" />
     <ClCompile Include="Original\ImGui\ImGuiManager.cpp" />
     <ClCompile Include="Original\Core\Input\Input.cpp" />
     <ClCompile Include="Original\Graphics\Light\LightManager.cpp" />
@@ -183,6 +184,7 @@
     <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleCommon.h" />
     <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleEmitter.h" />
     <ClInclude Include="Original\Graphics\2D\TextureManager.h" />
+    <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleManager.h" />
     <ClInclude Include="Original\ImGui\ImGuiAllInclude.h" />
     <ClInclude Include="Original\ImGui\ImGuiManager.h" />
     <ClInclude Include="Original\Core\Input\Input.h" />

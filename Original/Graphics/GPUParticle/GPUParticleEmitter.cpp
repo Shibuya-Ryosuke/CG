@@ -101,6 +101,14 @@ namespace RyoEngine {
         pendingSpawnRequests_.push_back(data);
     }
 
+    void GPUParticleEmitter::SetTexture(const std::string& filePath) {
+        if (filePath.empty()) {
+            overrideTextureHandle_ = 0; // メッシュ本来のテクスチャに戻す
+            return;
+        }
+        overrideTextureHandle_ = TextureManager::GetInstance()->Load(filePath);
+    }
+
     void GPUParticleEmitter::Update(float deltaTime) {
         uint32_t requestCount = static_cast<uint32_t>(pendingSpawnRequests_.size());
         if (requestCount > kMaxSpawnRequestsPerFrame) {
@@ -120,7 +128,7 @@ namespace RyoEngine {
 
         GPUParticleCommon::GetInstance()->SetDispatchCommands([this]() {
             InternalDispatch();
-        });
+            });
     }
 
     void GPUParticleEmitter::Draw(const Camera& camera) {
@@ -136,7 +144,7 @@ namespace RyoEngine {
 
         GPUParticleCommon::GetInstance()->SetDrawCommands([this]() {
             InternalDraw();
-        });
+            });
     }
 
     void GPUParticleEmitter::TransitionParticleBuffer(D3D12_RESOURCE_STATES newState) {
@@ -199,9 +207,12 @@ namespace RyoEngine {
         D3D12_VERTEX_BUFFER_VIEW vbv = mesh_->GetVertexBufferView();
         commandList->IASetVertexBuffers(0, 1, &vbv);
 
+        // overrideTextureHandle_が設定されていればそちらを優先し、無ければメッシュ本来のテクスチャを使う
+        uint32_t textureHandle = (overrideTextureHandle_ != 0) ? overrideTextureHandle_ : mesh_->GetTextureHandle();
+
         commandList->SetGraphicsRootShaderResourceView(0, particleResource_->GetGPUVirtualAddress());
         commandList->SetGraphicsRootConstantBufferView(1, cameraResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(mesh_->GetTextureHandle()));
+        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle));
 
         // maxParticleCount_ぶん常に全部描く(簡易版)。死んでいるスロットは寿命フェードで
         // アルファ0になるため、見た目上は問題にならない。
