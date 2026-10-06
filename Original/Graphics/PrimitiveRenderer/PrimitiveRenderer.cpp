@@ -7,8 +7,8 @@
 #include <cassert>
 
 // 使用するシェーダー: Resources/HLSL/Primitive/Primitive_VS.hlsl, Primitive_PS.hlsl, Primitive.hlsli
-// (ModelCommon.cppの ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.VS.hlsl", ...) と
-//  同じ呼び方に合わせて "HLSL/Primitive/Primitive_VS.hlsl" を読みに行っている。
+// (ModelCommon.cppの ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model.VS.hlsl", ...) と
+//  同じ呼び方に合わせて "Resources/EngineResources/HLSL/Primitive/Primitive_VS.hlsl" を読みに行っている。
 //  実際の配置フォルダがHLSL/Model/以外の場所であれば、CreatePipelineStates()内のパスを合わせて変更すること)
 
 namespace RyoEngine {
@@ -144,11 +144,11 @@ namespace RyoEngine {
         depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
         Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob =
-            ShaderCompiler::GetInstance()->Compile(L"HLSL/Primitive/Primitive_VS.hlsl", L"vs_6_0");
+            ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Primitive/Primitive_VS.hlsl", L"vs_6_0");
         assert(vertexShaderBlob != nullptr);
 
         Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob =
-            ShaderCompiler::GetInstance()->Compile(L"HLSL/Primitive/Primitive_PS.hlsl", L"ps_6_0");
+            ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Primitive/Primitive_PS.hlsl", L"ps_6_0");
         assert(pixelShaderBlob != nullptr);
 
         D3D12_GRAPHICS_PIPELINE_STATE_DESC baseDesc{};

@@ -169,9 +169,9 @@ namespace RyoEngine {
         hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&compositeRootSignature_));
         assert(SUCCEEDED(hr));
 
-        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/PostProcess/Composite.VS.hlsl", L"vs_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/PostProcess/Composite.VS.hlsl", L"vs_6_0");
         assert(vertexShaderBlob != nullptr);
-        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/PostProcess/Composite.PS.hlsl", L"ps_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/PostProcess/Composite.PS.hlsl", L"ps_6_0");
         assert(pixelShaderBlob != nullptr);
 
         D3D12_BLEND_DESC blendDesc{};
@@ -260,7 +260,7 @@ namespace RyoEngine {
         auto device = DirectXCommon::GetInstance()->GetDevice();
         HRESULT hr = S_OK;
 
-        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/PostProcess/Composite.VS.hlsl", L"vs_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/PostProcess/Composite.VS.hlsl", L"vs_6_0");
         assert(vertexShaderBlob != nullptr);
 
         D3D12_RASTERIZER_DESC rasterizerDesc{};
@@ -282,7 +282,7 @@ namespace RyoEngine {
 
         // --- 閾値抽出パス (上書き) ---
         {
-            Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/PostProcess/BloomThreshold.PS.hlsl", L"ps_6_0");
+            Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/PostProcess/BloomThreshold.PS.hlsl", L"ps_6_0");
             assert(pixelShaderBlob != nullptr);
 
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = baseDesc;
@@ -297,7 +297,7 @@ namespace RyoEngine {
 
         // ダウンサンプル・アップサンプルは全く同じシェーダー(単純なサンプル→出力)を使い回し、
         // PSOのBlendStateの違い(上書き/加算)だけで役割を変える
-        Microsoft::WRL::ComPtr<IDxcBlob> sampleShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/PostProcess/BloomSample.PS.hlsl", L"ps_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> sampleShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/PostProcess/BloomSample.PS.hlsl", L"ps_6_0");
         assert(sampleShaderBlob != nullptr);
 
         // --- ダウンサンプルパス (上書き) ---

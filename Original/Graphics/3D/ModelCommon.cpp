@@ -294,8 +294,8 @@ namespace RyoEngine {
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.VS.hlsl", L"vs_6_0");
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.PS.hlsl", L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model.PS.hlsl", L"ps_6_0");
 		assert(vertexShaderBlob != nullptr);
 		assert(pixelShaderBlob != nullptr);
 
@@ -352,8 +352,8 @@ namespace RyoEngine {
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_FRONT; // 反射用
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.VS.hlsl", L"vs_6_0");
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model.PS.hlsl", L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model.PS.hlsl", L"ps_6_0");
 
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 		depthStencilDesc.DepthEnable = true;
@@ -403,8 +403,8 @@ namespace RyoEngine {
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model_NoUV.VS.hlsl", L"vs_6_0");
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model_NoUV.PS.hlsl", L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.PS.hlsl", L"ps_6_0");
 
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 		depthStencilDesc.DepthEnable = true;
@@ -454,8 +454,8 @@ namespace RyoEngine {
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_FRONT;
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model_NoUV.VS.hlsl", L"vs_6_0");
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Model/Model_NoUV.PS.hlsl", L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.PS.hlsl", L"ps_6_0");
 
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 		depthStencilDesc.DepthEnable = true;
@@ -512,7 +512,7 @@ namespace RyoEngine {
 		rasterizerDesc.SlopeScaledDepthBias = 1.5f;
 
 		// シャドウ専用の頂点シェーダーのみ使用 (ピクセルシェーダーは無し＝深度だけ書く)
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"HLSL/Shadow/ShadowMap.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Shadow/ShadowMap.VS.hlsl", L"vs_6_0");
 		assert(vertexShaderBlob != nullptr);
 
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
