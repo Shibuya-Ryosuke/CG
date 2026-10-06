@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Math/Math.h"
+#include "../../Core/Math/Math.h"
 #include <string>
 #include <vector>
 #include <list>

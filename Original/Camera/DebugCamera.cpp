@@ -1,5 +1,5 @@
 #include "DebugCamera.h"
-#include "../Input/Input.h"
+#include "../Core/Input/Input.h"
 #include "../RyoEngine.h"
 
 namespace RyoEngine {

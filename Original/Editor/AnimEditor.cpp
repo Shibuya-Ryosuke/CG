@@ -1,9 +1,9 @@
 #include "AnimEditor.h"
-#include "../Base/Logger.h"
-#include "../3D/Model.h"
+#include "../../Core/Base/Logger.h"
+#include "../Graphics/3D/Model.h"
 // ★追加：Camera対応のため。プロジェクトの実際の配置に合わせてパスを調整してください。
-#include "../Camera/Camera.h"
-#include "../Easing/Easing.h"
+#include "../../Camera/Camera.h"
+#include "../Core/Easing/Easing.h"
 #include <vector>
 #include <string>
 #include <map>

@@ -60,46 +60,46 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Original\Loader\ModelLoader.cpp">
+    <ClCompile Include="Original\Core\Loader\ModelLoader.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Audio\Audio.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Base\Logger.cpp">
+    <ClCompile Include="Original\Core\Base\Logger.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Base\WinApp.cpp">
+    <ClCompile Include="Original\Core\Base\WinApp.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Base\DirectXCommon.cpp">
+    <ClCompile Include="Original\Core\Base\DirectXCommon.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Base\ShaderCompiler.cpp">
+    <ClCompile Include="Original\Core\Base\ShaderCompiler.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Graphics\TextureManager.cpp">
+    <ClCompile Include="Original\Graphics\2D\TextureManager.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\3D\ModelCommon.cpp">
+    <ClCompile Include="Original\Graphics\3D\ModelCommon.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\3D\Model.cpp">
+    <ClCompile Include="Original\Graphics\3D\Model.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Camera\Camera.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\2D\Sprite.cpp">
+    <ClCompile Include="Original\Graphics\2D\Sprite.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\2D\SpriteCommon.cpp">
+    <ClCompile Include="Original\Graphics\2D\SpriteCommon.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\RyoEngine.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Input\Input.cpp">
+    <ClCompile Include="Original\Core\Input\Input.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Camera\DebugCamera.cpp">
@@ -129,10 +129,10 @@
     <ClCompile Include="Original\Externals\imgui\imgui_widgets.cpp">
       <Filter>Externals\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Mesh\Mesh.cpp">
+    <ClCompile Include="Original\Graphics\3D\Mesh\Mesh.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Base\Font.cpp">
+    <ClCompile Include="Original\Core\Base\Font.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Externals\imgui\GraphEditor.cpp">
@@ -153,32 +153,32 @@
     <ClCompile Include="Original\Externals\imgui\ImVectorEditor.cpp">
       <Filter>Externals\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Easing\Easing.cpp">
+    <ClCompile Include="Original\Core\Easing\Easing.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Light\LightManager.cpp">
+    <ClCompile Include="Original\Graphics\Light\LightManager.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Math\Collision.cpp">
+    <ClCompile Include="Original\Core\Math\Collision.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\PrimitiveRenderer\PrimitiveRenderer.cpp">
+    <ClCompile Include="Original\Graphics\PrimitiveRenderer\PrimitiveRenderer.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Original\Shadow\ShadowMap.cpp">
+    <ClCompile Include="Original\Graphics\Shadow\ShadowMap.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\PostProcess\PostProcess.cpp">
+    <ClCompile Include="Original\Graphics\PostProcess\PostProcess.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Mesh\InstancedMesh.cpp">
+    <ClCompile Include="Original\Graphics\3D\Mesh\InstancedMesh.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\3D\InstancedModel.cpp">
+    <ClCompile Include="Original\Graphics\3D\InstancedModel.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\3D\InstancedModelCommon.cpp">
+    <ClCompile Include="Original\Graphics\3D\InstancedModelCommon.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Original\Test\TestPlayer.cpp">
@@ -196,7 +196,7 @@
     <ClCompile Include="Original\Editor\ParamEditor.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Base\TimeManager.cpp">
+    <ClCompile Include="Original\Core\Base\TimeManager.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Application\GameName\GameName.cpp">
@@ -214,72 +214,72 @@
     <ClCompile Include="Original\Test\Test.cpp">
       <Filter>Engine\Test</Filter>
     </ClCompile>
-    <ClCompile Include="Original\GPUParticle\GPUParticleCommon.cpp">
+    <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleCommon.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Original\GPUParticle\GPUParticleEmitter.cpp">
+    <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleEmitter.cpp">
       <Filter>Engine\ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Original\Math\Math.h">
+    <ClInclude Include="Original\Core\Math\Math.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Math\Vector.h">
+    <ClInclude Include="Original\Core\Math\Vector.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Math\Matrix.h">
+    <ClInclude Include="Original\Core\Math\Matrix.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Math\Geometry.h">
+    <ClInclude Include="Original\Core\Math\Geometry.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Math\Transform.h">
+    <ClInclude Include="Original\Core\Math\Transform.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Light\Light.h">
+    <ClInclude Include="Original\Graphics\Light\Light.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Loader\ModelLoader.h">
+    <ClInclude Include="Original\Core\Loader\ModelLoader.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Audio\Audio.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Base\WinApp.h">
+    <ClInclude Include="Original\Core\Base\WinApp.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Base\Logger.h">
+    <ClInclude Include="Original\Core\Base\Logger.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Base\DirectXCommon.h">
+    <ClInclude Include="Original\Core\Base\DirectXCommon.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Base\ShaderCompiler.h">
+    <ClInclude Include="Original\Core\Base\ShaderCompiler.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Graphics\TextureManager.h">
+    <ClInclude Include="Original\Graphics\2D\TextureManager.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\3D\ModelCommon.h">
+    <ClInclude Include="Original\Graphics\3D\ModelCommon.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\3D\Model.h">
+    <ClInclude Include="Original\Graphics\3D\Model.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Camera\Camera.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\2D\Sprite.h">
+    <ClInclude Include="Original\Graphics\2D\Sprite.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\2D\SpriteCommon.h">
+    <ClInclude Include="Original\Graphics\2D\SpriteCommon.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\RyoEngine.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Input\Input.h">
+    <ClInclude Include="Original\Core\Input\Input.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Camera\DebugCamera.h">
@@ -312,10 +312,10 @@
     <ClInclude Include="Original\Externals\imgui\imstb_truetype.h">
       <Filter>Externals\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Mesh\Mesh.h">
+    <ClInclude Include="Original\Graphics\3D\Mesh\Mesh.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Base\Font.h">
+    <ClInclude Include="Original\Core\Base\Font.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Externals\imgui\GraphEditor.h">
@@ -345,31 +345,31 @@
     <ClInclude Include="Original\ImGui\ImGuiAllInclude.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Easing\Easing.h">
+    <ClInclude Include="Original\Core\Easing\Easing.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Light\LightManager.h">
+    <ClInclude Include="Original\Graphics\Light\LightManager.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Math\Collision.h">
+    <ClInclude Include="Original\Core\Math\Collision.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\PrimitiveRenderer\PrimitiveRenderer.h">
+    <ClInclude Include="Original\Graphics\PrimitiveRenderer\PrimitiveRenderer.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Shadow\ShadowMap.h">
+    <ClInclude Include="Original\Graphics\Shadow\ShadowMap.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\PostProcess\PostProcess.h">
+    <ClInclude Include="Original\Graphics\PostProcess\PostProcess.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Mesh\InstancedMesh.h">
+    <ClInclude Include="Original\Graphics\3D\Mesh\InstancedMesh.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\3D\InstancedModel.h">
+    <ClInclude Include="Original\Graphics\3D\InstancedModel.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\3D\InstancedModelCommon.h">
+    <ClInclude Include="Original\Graphics\3D\InstancedModelCommon.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Original\Test\TestManager.h">
@@ -387,13 +387,13 @@
     <ClInclude Include="Original\Editor\ParamEditor.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Math\BlendMode.h">
+    <ClInclude Include="Original\Core\Math\BlendMode.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Base\TimeManager.h">
+    <ClInclude Include="Original\Core\Base\TimeManager.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Base\IGame.h">
+    <ClInclude Include="Original\Core\Base\IGame.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Application\GameName\GameName.h">
@@ -417,10 +417,10 @@
     <ClInclude Include="Original\Test\Test.h">
       <Filter>Engine\Test</Filter>
     </ClInclude>
-    <ClInclude Include="Original\GPUParticle\GPUParticleCommon.h">
+    <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleCommon.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Original\GPUParticle\GPUParticleEmitter.h">
+    <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleEmitter.h">
       <Filter>Engine\ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

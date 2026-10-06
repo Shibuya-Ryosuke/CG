@@ -28,7 +28,7 @@
 #include <set>
 #include <vector>
 #include "imgui.h"
-#include "../../Easing/Easing.h"
+#include "../../Core/Easing/Easing.h"
 
 struct ImRect;
 

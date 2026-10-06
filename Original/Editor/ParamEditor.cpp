@@ -1,8 +1,8 @@
 #pragma warning(disable: 4866)
 
 #include "ParamEditor.h"
-#include "../Base/Logger.h"
-#include "../2D/Sprite.h"
+#include "../../Core/Base/Logger.h"
+#include "../Graphics/2D/Sprite.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>

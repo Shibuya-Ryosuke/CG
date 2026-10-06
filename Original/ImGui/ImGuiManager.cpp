@@ -1,6 +1,6 @@
 #include "ImGuiManager.h"
-#include "../Graphics/TextureManager.h"
-#include "../Base/Logger.h"
+#include "../Graphics/2D/TextureManager.h"
+#include "../../Core/Base/Logger.h"
 
 #ifdef _DEBUG
 

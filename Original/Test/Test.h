@@ -1,5 +1,5 @@
 #pragma once
-#include "../Base/IGame.h"
+#include "../Core/Base/IGame.h"
 
 #include "TestManager.h"
 
