@@ -75,7 +75,7 @@ namespace RyoEngine {
     }
 
     void GPUParticleManager::ApplyConfig(ManagedEmitter& managed) {
-        // NOTE: メッシュ・最大数・ビルボード・ブレンドモードのいずれかが変わった場合、
+        // NOTE: メッシュ・最大数・ビルボード・ブレンドモードのいずれかが変わった場合
         //       GPUParticleEmitterは内部バッファを作り直す必要があるため、一旦Finalize()してから
         //       Initialize()し直す(初回生成時もFinalize()は安全な空振りになる)。
         managed.emitter.Finalize();
