@@ -1,5 +1,5 @@
 # RyoEngine 使用方法
-
+[![DebugBuild](https://github.com/Shibuya-Ryosuke/CG/actions/workflows/DebugBuild.yml/badge.svg)](https://github.com/Shibuya-Ryosuke/CG/actions/workflows/DebugBuild.yml)
 ## 目次
 * [アプリ開発にあたって（プログラマ向け）](#アプリ開発にあたってプログラマ向け)
 * [アプリ開発にあたって（プランナー向け）](#アプリ開発にあたってプランナー向け)
