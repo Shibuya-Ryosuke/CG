@@ -1,6 +1,10 @@
 #include "GPUParticleManager.h"
 #include "../../Core/Base/Logger.h"
-#include "../../Externals/imgui/imgui.h"
+
+#ifdef _DEBUG
+#include <imgui.h>
+#endif
+
 #pragma warning(disable: 4866)
 
 #include <RyoEngine.h>
@@ -8,11 +12,11 @@
 #include <vector>
 #include <utility>
 #include <json.hpp>
-#include <imgui.h>
 
 namespace RyoEngine {
 
     namespace {
+#ifdef _DEBUG
         // 登録済みキーの一覧から1つ選ぶコンボ。選択が変わったらtrueを返す
         template <typename Map>
         bool DrawKeyCombo(const char* label, std::string& selectedKey, const Map& registry) {
@@ -41,6 +45,7 @@ namespace RyoEngine {
             }
             return changed;
         }
+#endif
     }
 
     const std::string GPUParticleManager::kFileName = "gpu_particle_presets.json";
@@ -52,7 +57,9 @@ namespace RyoEngine {
 
     void GPUParticleManager::Initialize() {
         Logger::Log("GPUParticleManager : Initializing...\n");
+#ifdef _DEBUG
         strcpy_s(folderPathBuffer_, sizeof(folderPathBuffer_), folderPath_.c_str());
+#endif
         Logger::LogSuccess("GPUParticleManager : Initialized\n");
     }
 
@@ -114,8 +121,10 @@ namespace RyoEngine {
 
         auto managed = std::make_unique<ManagedEmitter>();
         managed->config = config;
+#ifdef _DEBUG
         strcpy_s(managed->meshPathBuffer, sizeof(managed->meshPathBuffer), config.meshPath.c_str());
         strcpy_s(managed->texturePathBuffer, sizeof(managed->texturePathBuffer), config.texturePath.c_str());
+#endif
 
         ApplyConfig(*managed);
 
@@ -258,8 +267,10 @@ namespace RyoEngine {
         if (!folderPath_.empty() && folderPath_.back() != '/') {
             folderPath_ += '/';
         }
+#ifdef _DEBUG
         // ImGui用の入力バッファも同期する
         strcpy_s(folderPathBuffer_, sizeof(folderPathBuffer_), folderPath_.c_str());
+#endif
     }
 
     namespace {
@@ -371,11 +382,15 @@ namespace RyoEngine {
 
     void GPUParticleManager::Save() {
         std::string fullPath = GetFullFilePath();
+#ifdef _DEBUG
         if (std::filesystem::exists(fullPath)) {
             showOverwriteModal_ = true;
         } else {
             SaveToFileInternal(fullPath);
         }
+#else
+        SaveToFileInternal(fullPath);
+#endif
     }
 
     void GPUParticleManager::Load() {
@@ -406,7 +421,6 @@ namespace RyoEngine {
         }
 
         // 読み込んだ内容で作り直すため、既存のEmitterは一旦全部破棄する
-        // (座標・フラグの登録はEmitterとは独立しているので、Load後に登録し直す必要はない)
         for (auto& [name, managed] : emitters_) {
             managed->emitter.Finalize();
         }
@@ -420,6 +434,7 @@ namespace RyoEngine {
     }
 
     void GPUParticleManager::DrawImGui() {
+#ifdef _DEBUG
         ImGui::Begin("GPUParticleManager");
 
         // --- 保存・読込エリア ---
@@ -608,5 +623,6 @@ namespace RyoEngine {
         }
 
         ImGui::End();
+#endif
     }
 }

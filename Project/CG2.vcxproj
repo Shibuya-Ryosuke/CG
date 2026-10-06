@@ -379,14 +379,20 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ExternalIncludePath>$(ProjectDir)Original\Externals\imgui;$(ProjectDir)Original\Externals\nlohmann;$(ProjectDir)Original\Externals\DirectXTex;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(SolutionDir)Original\Externals\DirectXTex\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IntDir>$(SolutionDir)..\Generated\Obj\$(ProjectName)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)..\Generated\Outputs\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExternalIncludePath>$(ProjectDir)Original\Externals\imgui;$(ProjectDir)Original\Externals\nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(SolutionDir)Original\Externals\DirectXTex\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)..\Generated\Outputs\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\Generated\Obj\$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
     <ExternalIncludePath>$(ProjectDir)Original\Externals\imgui;$(ProjectDir)Original\Externals\nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(SolutionDir)Original\Externals\DirectXTex\Bin\Desktop_2022_Win10\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)..\Generated\Outputs\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\Generated\Obj\$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
