@@ -1,5 +1,5 @@
 #pragma once
-#include <RyoEngine.h>
+#include "../RyoEngine.h"
 
 namespace Test {
 	// 前方宣言
@@ -37,7 +37,7 @@ namespace Test {
 		float emissiveIntensity_ = 0.0f;
 		RyoEngine::Vector3 emissiveColor_{};
 
-		// ライトのid
-		uint32_t bunnyLightId_ = 0;
+		// ライトの点灯用フラグ
+		bool isIllumination_ = true;
 	};
 }

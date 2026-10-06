@@ -14,7 +14,13 @@ namespace RyoEngine {
     }
 
     void LightManager::SetFolderPath(const std::string& folderPath) {
-        GetInstance()->folderPath_ = folderPath;
+        auto instance = GetInstance();
+        instance->folderPath_ = folderPath;
+        if (!instance->folderPath_.empty() && instance->folderPath_.back() != '/') {
+            instance->folderPath_ += '/';
+        }
+        // ImGui用の入力バッファも同期する
+        strcpy_s(instance->folderPathBuffer_, sizeof(instance->folderPathBuffer_), instance->folderPath_.c_str());
     }
 
     const std::string& LightManager::GetFolderPath() {
@@ -44,13 +50,13 @@ namespace RyoEngine {
         instance->ambientResource_ = DirectXCommon::CreateBufferResource(device, sizeof(AmbientLight));
         instance->ambientResource_->Map(0, nullptr, reinterpret_cast<void**>(&instance->ambientData_));
 
-        // デフォルトライトの登録
+        // デフォルトライトの登録（JSONが無い場合のフォールバック）
         Light defaultLight{};
         defaultLight.type = LightType::Directional;
         defaultLight.color = { 1.0f, 1.0f, 1.0f, 1.0f };
         defaultLight.direction = Normalize(Vector3{ 0.0f, -1.0f, 0.0f });
         defaultLight.intensity = 1.0f;
-        AddLight(defaultLight);
+        AddLight(defaultLight, "MainLight");
 
         instance->ambientData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
         instance->ambientData_->intensity = 0.1f;
@@ -71,6 +77,7 @@ namespace RyoEngine {
         instance->ambientResource_.Reset();
         instance->ambientData_ = nullptr;
         instance->lights_.clear();
+        instance->warnedNames_.clear();
         Logger::LogSuccess("LightManager : Finalized\n");
     }
 
@@ -84,11 +91,95 @@ namespace RyoEngine {
         }
 
         for (uint32_t i = 0; i < count; ++i) {
-            instance->lightMappedData_[i] = instance->lights_[i];
+            // 設定値(lights_)は壊さず、GPUへ渡すコピーだけ加工する
+            Light gpuLight = instance->lights_[i].light;
+            if (!instance->lights_[i].enabled) {
+                gpuLight.intensity = 0.0f;
+            }
+            instance->lightMappedData_[i] = gpuLight;
         }
         instance->lightCountData_->lightCount = count;
     }
 
+    // ============================================================
+    // 名前関連
+    // ============================================================
+    int LightManager::FindLight(const std::string& name) {
+        const auto& lights = GetInstance()->lights_;
+        for (size_t i = 0; i < lights.size(); ++i) {
+            if (lights[i].name == name) {
+                return static_cast<int>(i);
+            }
+        }
+        return -1;
+    }
+
+    bool LightManager::HasLight(const std::string& name) {
+        return FindLight(name) >= 0;
+    }
+
+    LightEntry* LightManager::FindEntry(const std::string& name) {
+        auto instance = GetInstance();
+        int index = FindLight(name);
+        if (index < 0) {
+            // 毎フレーム呼ばれてもログが溢れないよう、同じ名前につき1回だけ
+            if (instance->warnedNames_.insert(name).second) {
+                Logger::LogWarning("[LightManager] Light not found: \"" + name +
+                    "\" (綴り、またはImGuiでのライト作成・Saveを確認してください)");
+            }
+            return nullptr;
+        }
+        return &instance->lights_[index];
+    }
+
+    bool LightManager::IsNameUsed(const std::string& name, int ignoreIndex) const {
+        for (size_t i = 0; i < lights_.size(); ++i) {
+            if (static_cast<int>(i) == ignoreIndex) continue;
+            if (lights_[i].name == name) return true;
+        }
+        return false;
+    }
+
+    std::string LightManager::MakeUniqueName(const std::string& base, int ignoreIndex) const {
+        std::string baseName = base.empty() ? "Light" : base;
+        if (!IsNameUsed(baseName, ignoreIndex)) {
+            return baseName;
+        }
+        for (int n = 1;; ++n) {
+            std::string candidate = baseName + "_" + std::to_string(n);
+            if (!IsNameUsed(candidate, ignoreIndex)) {
+                return candidate;
+            }
+        }
+    }
+
+    void LightManager::SetLightPosition(const std::string& name, const Vector3& position) {
+        if (auto* e = FindEntry(name)) e->light.position = position;
+    }
+
+    void LightManager::SetLightEnabled(const std::string& name, bool enabled) {
+        if (auto* e = FindEntry(name)) e->enabled = enabled;
+    }
+
+    void LightManager::SetLightDirection(const std::string& name, const Vector3& direction) {
+        if (auto* e = FindEntry(name)) e->light.direction = Normalize(direction);
+    }
+
+    void LightManager::SetLightColor(const std::string& name, const Vector4& color) {
+        if (auto* e = FindEntry(name)) e->light.color = color;
+    }
+
+    void LightManager::SetLightIntensity(const std::string& name, float intensity) {
+        if (auto* e = FindEntry(name)) e->light.intensity = intensity;
+    }
+
+    void LightManager::SetLightRange(const std::string& name, float range) {
+        if (auto* e = FindEntry(name)) e->light.range = range;
+    }
+
+    // ============================================================
+    // 保存・読み込み
+    // ============================================================
     void LightManager::Save() {
         auto instance = GetInstance();
         std::string fullPath = instance->GetFullFilePath();
@@ -120,8 +211,12 @@ namespace RyoEngine {
         root["ambient"] = *instance->ambientData_;
 
         nlohmann::json lightsArray = nlohmann::json::array();
-        for (const auto& light : instance->lights_) {
-            lightsArray.push_back(light);
+        for (const auto& entry : instance->lights_) {
+            // Light本体のJSONに、名前と点灯フラグを足して保存する
+            nlohmann::json jLight = entry.light;
+            jLight["name"] = entry.name;
+            jLight["enabled"] = entry.enabled;
+            lightsArray.push_back(jLight);
         }
         root["lights"] = lightsArray;
 
@@ -159,6 +254,7 @@ namespace RyoEngine {
 
         auto instance = GetInstance();
         instance->lights_.clear();
+        instance->warnedNames_.clear();
 
         if (root.contains("ambient")) {
             *instance->ambientData_ = root["ambient"].get<AmbientLight>();
@@ -169,8 +265,25 @@ namespace RyoEngine {
                 if (instance->lights_.size() >= kMaxLightCount) {
                     break;
                 }
-                Light light = jLight.get<Light>();
-                instance->lights_.push_back(light);
+
+                LightEntry entry;
+                entry.light = jLight.get<Light>();
+                // 古いJSON（name/enabled無し）でも読めるようにデフォルト値を用意する
+                entry.name = jLight.value("name", std::string());
+                entry.enabled = jLight.value("enabled", true);
+
+                // 名前が空なら連番で補い、重複していれば自動で別名にする
+                std::string requested = entry.name;
+                if (requested.empty()) {
+                    requested = "Light_" + std::to_string(instance->lights_.size());
+                }
+                entry.name = instance->MakeUniqueName(requested);
+                if (!entry.name.empty() && !jLight.value("name", std::string()).empty() && entry.name != requested) {
+                    Logger::LogWarning("[LightManager] Duplicate light name \"" + requested +
+                        "\" renamed to \"" + entry.name + "\"");
+                }
+
+                instance->lights_.push_back(entry);
             }
         }
 
@@ -178,13 +291,10 @@ namespace RyoEngine {
         Logger::LogSuccess("[LightManager] Load Successed.");
     }
 
-    int LightManager::AddLight(LightType type) {
-        auto instance = GetInstance();
-
-        if (instance->lights_.size() >= kMaxLightCount) {
-            Logger::Log("LightManager : Cannot add light, kMaxLightCount reached.\n");
-            return -1;
-        }
+    // ============================================================
+    // ライト操作
+    // ============================================================
+    int LightManager::AddLight(LightType type, const std::string& name) {
         Light newLight{};
         newLight.type = type;
         newLight.color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -195,18 +305,23 @@ namespace RyoEngine {
         newLight.spotAngle = 0.5f;
         newLight.spotFalloff = 0.1f;
 
-        instance->lights_.push_back(newLight);
-        return static_cast<int>(instance->lights_.size() - 1);
+        return AddLight(newLight, name);
     }
 
-    int LightManager::AddLight(const Light& light) {
+    int LightManager::AddLight(const Light& light, const std::string& name) {
         auto instance = GetInstance();
 
         if (instance->lights_.size() >= kMaxLightCount) {
             Logger::Log("LightManager : Cannot add light, kMaxLightCount reached.\n");
             return -1;
         }
-        instance->lights_.push_back(light);
+
+        LightEntry entry;
+        entry.light = light;
+        entry.name = instance->MakeUniqueName(name);
+        entry.enabled = true;
+
+        instance->lights_.push_back(entry);
         return static_cast<int>(instance->lights_.size() - 1);
     }
 
@@ -218,11 +333,13 @@ namespace RyoEngine {
             return;
         }
         instance->lights_.erase(instance->lights_.begin() + index);
+        instance->warnedNames_.clear();
     }
 
     void LightManager::ClearLights() {
         auto instance = GetInstance();
         instance->lights_.clear();
+        instance->warnedNames_.clear();
     }
 
     void LightManager::DrawImGui() {
@@ -240,7 +357,7 @@ namespace RyoEngine {
         }
 
         // 1. フォルダ名入力欄
-     // Enterを押した際に ImGui::InputText が true を返す
+        // Enterを押した際に ImGui::InputText が true を返す
         bool isEnterPressed = ImGui::InputText(
             "フォルダパス",
             instance->folderPathBuffer_,
@@ -295,10 +412,28 @@ namespace RyoEngine {
 
         for (size_t i = 0; i < instance->lights_.size(); ++i) {
             ImGui::PushID(static_cast<int>(i));
-            Light& light = instance->lights_[i];
+            LightEntry& entry = instance->lights_[i];
+            Light& light = entry.light;
 
-            std::string header = "ライト " + std::to_string(i);
+            // "###" 以降をIDにして、名前を編集してもヘッダーの開閉状態が変わらないようにする
+            std::string header = "[" + std::to_string(i) + "] " + entry.name + "###header";
             if (ImGui::CollapsingHeader(header.c_str())) {
+
+                // 名前（コードから SetLightPosition("名前", ...) で引く）
+                char nameBuffer[64] = {};
+                strncpy_s(nameBuffer, sizeof(nameBuffer), entry.name.c_str(), _TRUNCATE);
+                if (ImGui::InputText("名前", nameBuffer, sizeof(nameBuffer))) {
+                    entry.name = nameBuffer;
+                    instance->warnedNames_.clear();
+                }
+                if (entry.name.empty()) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "名前が空です（コードから引けません）");
+                } else if (instance->IsNameUsed(entry.name, static_cast<int>(i))) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "名前が重複しています（先頭のライトにしか効きません）");
+                }
+
+                ImGui::Checkbox("点灯", &entry.enabled);
+
                 int typeIndex = static_cast<int>(light.type);
                 if (ImGui::Combo("種類", &typeIndex, typeNames, IM_ARRAYSIZE(typeNames))) {
                     light.type = static_cast<LightType>(typeIndex);

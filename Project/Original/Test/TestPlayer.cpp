@@ -14,8 +14,6 @@ namespace Test {
 		transform_.scale = { 1.0f,1.0f,1.0f };
 		transform_.rotate = { 0.0f,2.8f,0.0f };
 
-		// ライト追加
-		bunnyLightId_ = LightManager::AddLight(LightType::Point);
 
 		// パラメータ操作の登録
 		// SRT
@@ -62,6 +60,10 @@ namespace Test {
 			}
 		}
 
+		if (Input::TriggerKey(DIK_RSHIFT)) {
+			isIllumination_ = !isIllumination_;
+		}
+
 		// SRT更新
 		bunny_->SetTransform(transform_);
 		// モデル自体の色更新
@@ -70,7 +72,9 @@ namespace Test {
 		bunny_->SetEmissive(emissiveColor_, emissiveIntensity_);
 
 		// ライト追従
-		LightManager::SetLightPosition(bunnyLightId_, bunny_->GetTranslate());
+		LightManager::SetLightPosition("bunnyLight", bunny_->GetTranslate());
+		// ライト点灯フラグ
+		LightManager::SetLightEnabled("bunnyLight", isIllumination_);
 	}
 
 	void TestPlayer::Draw(RyoEngine::Camera& camera) {
