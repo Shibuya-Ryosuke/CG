@@ -13,7 +13,6 @@ namespace AL4_1 {
 
 		scene_ = scene;
 
-		ground_ = Model::Create("Resources/ApplicationResources/AL4-1/ground.obj");
 		sky_ = Model::Create("Resources/ApplicationResources/AL4-1/SkyDome/skydome.obj");
 	}
 
@@ -33,9 +32,7 @@ namespace AL4_1 {
 	}
 
 	void SceneManager::Draw(RyoEngine::Camera& camera) {
-		ground_->TransferMatrix(camera);
 		sky_->TransferMatrix(camera);
-		ground_->Draw();
 		sky_->Draw();
 		switch (scene_) {
 		case Scene::Title:

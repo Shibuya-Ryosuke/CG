@@ -3,6 +3,7 @@
 #include "../Player/Player.h"
 #include "../Enemy/EnemyBase.h"
 #include "../Enemy/WalkEnemy/WalkEnemy.h"
+#include "../MapChipField/MapChipField.h"
 
 namespace AL4_1 {
 	class Game {
@@ -22,9 +23,13 @@ namespace AL4_1 {
 		void Finalize();
 
 	private:
-		void SpawnWalkEnemy(RyoEngine::Vector3 position);
+		// position は足元中心
+		void SpawnWalkEnemy(const RyoEngine::Vector3& position);
 
 	private:
+		// マップ（Player/敵はこのアドレスを持つので、Initialize後は動かさない）
+		MapChipField mapChipField_{};
+
 		Player player_{};
 
 		// 全敵のリスト

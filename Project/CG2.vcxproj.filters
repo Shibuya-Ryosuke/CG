@@ -112,6 +112,9 @@
     <Filter Include="Application\AL4-1\GameResources">
       <UniqueIdentifier>{058f99e3-22b7-4acb-92e8-babf33f8d746}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Application\AL4-1\MapChipField">
+      <UniqueIdentifier>{51abb9b8-bc6c-46ca-91e7-6c50bbe8dbd1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Original\Externals\imgui\imgui.cpp">
@@ -282,6 +285,9 @@
     </ClCompile>
     <ClCompile Include="Application\AL4-1\AL4_1.cpp">
       <Filter>Application\AL4-1</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\MapChipField\MapChipField.cpp">
+      <Filter>Application\AL4-1\MapChipField</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -497,6 +503,9 @@
     </ClInclude>
     <ClInclude Include="Application\AL4-1\AL4_1.h">
       <Filter>Application\AL4-1</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\MapChipField\MapChipField.h">
+      <Filter>Application\AL4-1\MapChipField</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

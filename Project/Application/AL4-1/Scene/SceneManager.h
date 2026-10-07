@@ -27,7 +27,6 @@ namespace AL4_1 {
 		void Finalize();
 
 	private:
-		std::unique_ptr<RyoEngine::Model> ground_ = nullptr;
 		std::unique_ptr<RyoEngine::Model> sky_ = nullptr;
 
 		Scene scene_ = Scene::Title;

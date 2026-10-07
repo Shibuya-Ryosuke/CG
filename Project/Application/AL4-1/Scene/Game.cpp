@@ -1,18 +1,44 @@
 #include "Game.h"
+#include <algorithm>
 
 using namespace RyoEngine;
 using namespace std;
 
 namespace AL4_1 {
+	// CSVに書くスポーン指定の値
+	namespace SpawnId {
+		constexpr int kPlayer = 2;
+		constexpr int kWalkEnemy = 3;
+	}
+
 	Game::Game() = default;
 	Game::~Game() = default;
 
 	void Game::Initialize() {
-		player_.Initialize();
-		// 弾用のInstancedModel初期化
-		walkEnemyInstancedModel_.Initialize("Resources/ApplicationResources/AL4-1/Enemy/WalkEnemy/TR.obj", 50);
+		// マップ読み込み（ブロックのモデルは 1x1x1・原点が中心のobjを用意する）
+		mapChipField_.Load(
+			"Resources/ApplicationResources/AL4-1/Csv/stage1.csv",
+			"Resources/ApplicationResources/AL4-1/Stage/Block/block.obj");
 
-		SpawnWalkEnemy({ 0.0f,0.0f,0.0f });
+		player_.Initialize();
+		player_.SetMap(&mapChipField_);
+
+		// 敵用のInstancedModel初期化
+		walkEnemyInstancedModel_.Initialize("Resources/ApplicationResources/AL4-1/Enemy/WalkEnemy/walkEnemy.obj", 50);
+
+		// CSVのスポーン指定からプレイヤーと敵を配置
+		for (const auto& spawn : mapChipField_.GetSpawns()) {
+			switch (spawn.id) {
+			case SpawnId::kPlayer:
+				player_.SetPosition(spawn.position);
+				break;
+			case SpawnId::kWalkEnemy:
+				SpawnWalkEnemy(spawn.position);
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	void Game::Update() {
@@ -34,6 +60,8 @@ namespace AL4_1 {
 	}
 
 	void Game::Draw(RyoEngine::Camera& camera) {
+		mapChipField_.Draw(camera);
+
 		player_.Draw(camera);
 
 		walkEnemyInstancedModel_.Draw(camera);
@@ -41,16 +69,11 @@ namespace AL4_1 {
 
 	void Game::Finalize() {}
 
-	void Game::SpawnWalkEnemy(RyoEngine::Vector3 position) {
-		for (int i = 0;i < 5;i++) {
-			position.x += 1.0f * float(i);
-			// 生成
-			auto walkEnemy = make_unique<WalkEnemy>();
-			walkEnemy->Initialize(&walkEnemyInstancedModel_, position);
+	void Game::SpawnWalkEnemy(const RyoEngine::Vector3& position) {
+		auto walkEnemy = make_unique<WalkEnemy>();
+		walkEnemy->SetMap(&mapChipField_);
+		walkEnemy->Initialize(&walkEnemyInstancedModel_, position);
 
-			// 追加
-			allEnemies_.push_back(move(walkEnemy));
-		}
+		allEnemies_.push_back(std::move(walkEnemy));
 	}
-
 }

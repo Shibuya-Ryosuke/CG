@@ -1,4 +1,5 @@
 #include "Player.h"
+#include <algorithm>
 
 using namespace RyoEngine;
 using namespace std;
@@ -8,28 +9,44 @@ namespace AL4_1 {
 	Player::~Player() = default;
 
 	void Player::Initialize() {
-		model_ = Model::Create("Resources/ApplicationResources/AL4-1/Player/bunny.obj");
+		model_ = Model::Create("Resources/ApplicationResources/AL4-1/Player/player.obj");
 		RegisterInParamEditor();
 	}
 
 	void Player::Update() {
-		Move();
+		const float dt = GetScaleTime();
+
+		// --- 入力 ---
+		float moveX = 0.0f;
+		if (Input::PushKey(DIK_D)) moveX += 1.0f;
+		if (Input::PushKey(DIK_A)) moveX -= 1.0f;
 		Jump();
 
-		// 空中にいるとき
-		if (!onGround_) {
-			velocity_.y -= gravity_;
+		// --- 速度の更新 ---
+		velocity_.x = moveX * moveSpeed_;
+		velocity_.y -= gravity_ * dt;
+		velocity_.y = max(velocity_.y, -maxFallSpeed_);
 
-			transform_.translate.y += velocity_.y;
+		Vector3 delta = { velocity_.x * dt, velocity_.y * dt, 0.0f };
 
+		// --- マップとの判定付き移動 ---
+		if (map_) {
+			MapHit hit;
+			transform_.translate = map_->MoveAndCollide(transform_.translate, delta, halfSize_, hit);
 
-			// 地面以下になったとき（後々マップチップでやりたい）
+			if (hit.bottom) velocity_.y = 0.0f;                    // 着地
+			if (hit.top && velocity_.y > 0.0f) velocity_.y = 0.0f; // 天井に頭をぶつけた
+			onGround_ = hit.bottom;
+		} else {
+			// マップ未設定のときは従来どおり y=0 を地面にする
+			transform_.translate.x += delta.x;
+			transform_.translate.y += delta.y;
 			if (transform_.translate.y < 0.0f) {
-				// 0に戻す
 				transform_.translate.y = 0.0f;
-
 				velocity_.y = 0.0f;
 				onGround_ = true;
+			} else {
+				onGround_ = false;
 			}
 		}
 
@@ -48,27 +65,16 @@ namespace AL4_1 {
 	void Player::RegisterInParamEditor() {
 		ParamEditor::BeginGroup("Player");
 		ParamEditor::RegisterValue("transform", &transform_);
-		ParamEditor::RegisterValue("velocity", &velocity_, 0.01f, 0.0f, 10.0f);
-		ParamEditor::RegisterValue("jumpPower", &jumpPower_, 0.1f, 0.0f, 10.0f);
-		ParamEditor::RegisterValue("gravity_", &gravity_, 0.01f, 0.0f, 10.0f);
-	}
-
-	void Player::Move() {
-		if (Input::PushKey(DIK_D)) {
-			transform_.translate.x += velocity_.x * GetScaleTime();
-		}
-		if (Input::PushKey(DIK_A)) {
-			transform_.translate.x -= velocity_.x * GetScaleTime();
-		}
+		ParamEditor::RegisterValue("moveSpeed", &moveSpeed_, 0.1f, 0.0f, 20.0f);
+		ParamEditor::RegisterValue("jumpPower", &jumpPower_, 0.1f, 0.0f, 40.0f);
+		ParamEditor::RegisterValue("gravity_", &gravity_, 0.1f, 0.0f, 100.0f);
 	}
 
 	void Player::Jump() {
 		// 接地状態のみ判断
-		if (onGround_) {
-			if (Input::TriggerKey(DIK_W)) {
-				velocity_.y = jumpPower_;
-				onGround_ = false;
-			}
+		if (onGround_ && Input::TriggerKey(DIK_W)) {
+			velocity_.y = jumpPower_;
+			onGround_ = false;
 		}
 	}
 }
