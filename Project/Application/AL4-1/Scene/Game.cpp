@@ -39,10 +39,16 @@ namespace AL4_1 {
 				break;
 			}
 		}
+
+		// 追従カメラ（スポーン位置が決まった後に初期化する）
+		followCamera_.Initialize(&mapChipField_);
 	}
 
 	void Game::Update() {
 		player_.Update();
+
+		// プレイヤーの移動後にカメラを更新
+		followCamera_.Update(player_.GetPosition());
 
 		for (auto& enemy : allEnemies_) {
 			enemy->Update();

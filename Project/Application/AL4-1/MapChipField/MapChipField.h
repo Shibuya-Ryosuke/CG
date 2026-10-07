@@ -66,6 +66,12 @@ namespace AL4_1 {
 		int GetWidth() const { return width_; }
 		int GetHeight() const { return height_; }
 
+		/// <summary>マップ全体のワールド座標での範囲（マスの外縁）。カメラの移動制限などに使う</summary>
+		RyoEngine::Vector3 GetWorldMin() const { return { -tileSize_ * 0.5f, -tileSize_ * 0.5f, 0.0f }; }
+		RyoEngine::Vector3 GetWorldMax() const {
+			return { (width_ - 0.5f) * tileSize_, (height_ - 0.5f) * tileSize_, 0.0f };
+		}
+
 	private:
 		// マス番号 → 判定。範囲外：左右は壁、下は穴、上は空
 		bool IsSolid(int x, int y) const;

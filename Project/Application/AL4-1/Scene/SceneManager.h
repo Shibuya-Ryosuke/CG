@@ -23,13 +23,16 @@ namespace AL4_1 {
 
 		void Initialize(Scene scene);
 		void Update();
-		void Draw(RyoEngine::Camera& camera);
+		void Draw(RyoEngine::Camera& debugCamera);
 		void Finalize();
 
+		RyoEngine::Camera& GetCamera() { return game_.GetCamera(); }
+
 	private:
+		std::unique_ptr<RyoEngine::Model> ground_ = nullptr;
 		std::unique_ptr<RyoEngine::Model> sky_ = nullptr;
 
-		Scene scene_ = Scene::Title;
+		Scene scene_ = Scene::Game;
 
 		Title title_{};
 		Game game_{};

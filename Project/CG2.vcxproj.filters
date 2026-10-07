@@ -115,6 +115,9 @@
     <Filter Include="Application\AL4-1\MapChipField">
       <UniqueIdentifier>{51abb9b8-bc6c-46ca-91e7-6c50bbe8dbd1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Application\AL4-1\FollowCamera">
+      <UniqueIdentifier>{37380ec8-d940-4713-9628-5c1fa1d504a0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Original\Externals\imgui\imgui.cpp">
@@ -288,6 +291,9 @@
     </ClCompile>
     <ClCompile Include="Application\AL4-1\MapChipField\MapChipField.cpp">
       <Filter>Application\AL4-1\MapChipField</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\FollowCamera\FollowCamera.cpp">
+      <Filter>Application\AL4-1\FollowCamera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -506,6 +512,9 @@
     </ClInclude>
     <ClInclude Include="Application\AL4-1\MapChipField\MapChipField.h">
       <Filter>Application\AL4-1\MapChipField</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\FollowCamera\FollowCamera.h">
+      <Filter>Application\AL4-1\FollowCamera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

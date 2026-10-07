@@ -4,6 +4,7 @@
 #include "../Enemy/EnemyBase.h"
 #include "../Enemy/WalkEnemy/WalkEnemy.h"
 #include "../MapChipField/MapChipField.h"
+#include "../FollowCamera/FollowCamera.h"
 
 namespace AL4_1 {
 	class Game {
@@ -22,6 +23,9 @@ namespace AL4_1 {
 		void Draw(RyoEngine::Camera& camera);
 		void Finalize();
 
+		// ゲームシーン用の追従カメラ
+		RyoEngine::Camera& GetCamera() { return followCamera_.GetCamera(); }
+
 	private:
 		// position は足元中心
 		void SpawnWalkEnemy(const RyoEngine::Vector3& position);
@@ -31,6 +35,9 @@ namespace AL4_1 {
 		MapChipField mapChipField_{};
 
 		Player player_{};
+
+		// プレイヤー追従カメラ
+		FollowCamera followCamera_{};
 
 		// 全敵のリスト
 		std::vector<std::unique_ptr<EnemyBase>> allEnemies_{};

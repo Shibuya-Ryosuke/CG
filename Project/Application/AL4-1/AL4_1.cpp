@@ -20,11 +20,13 @@ namespace AL4_1 {
 		LightManager::Load();
 	}
 	void AL4_1::Update() {
-		PrimitiveRenderer::SetCamera(GetDebugCamera());
 		sceneManager_->Update();
+
+		
+		PrimitiveRenderer::SetCamera(GetActiveCamera(sceneManager_->GetCamera()));
 	}
 	void AL4_1::Draw() {
-		sceneManager_->Draw(GetDebugCamera());
+		sceneManager_->Draw(GetActiveCamera(sceneManager_->GetCamera()));
 	}
 	void AL4_1::Finalize() {
 		sceneManager_->Finalize();

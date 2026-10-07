@@ -1,0 +1,32 @@
+{
+    "FollowCamera": {
+        "distance": 44.599998474121094,
+        "followDelay": 0.20000000298023224,
+        "lookOffsetX": 6.0,
+        "lookOffsetY": 1.2000000476837158,
+        "pitch": 9.0,
+        "yaw": 0.0
+    },
+    "Player": {
+        "gravity_": 80.0,
+        "jumpPower": 28.0,
+        "moveSpeed": 12.0,
+        "transform": {
+            "rotate": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "translate": [
+                35.288204193115234,
+                11.0,
+                0.0
+            ]
+        }
+    }
+}

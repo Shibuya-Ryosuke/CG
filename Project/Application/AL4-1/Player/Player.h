@@ -21,6 +21,9 @@ namespace AL4_1 {
 
 		// 判定を取るマップを渡す（Gameが所有）
 		void SetMap(const MapChipField* map) { map_ = map; }
+		// 足元の位置（カメラの追従などに使う）
+		const RyoEngine::Vector3& GetPosition() const { return transform_.translate; }
+
 		// 当たり判定の大きさ（幅,高さ,奥行き）を設定する。モデルの大きさとは無関係に変更できる
 		void SetCollideSize(const RyoEngine::Vector3& size) {
 			halfSize_ = { size.x * 0.5f, size.y * 0.5f, size.z * 0.5f };

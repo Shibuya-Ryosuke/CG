@@ -68,6 +68,7 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("moveSpeed", &moveSpeed_, 0.1f, 0.0f, 20.0f);
 		ParamEditor::RegisterValue("jumpPower", &jumpPower_, 0.1f, 0.0f, 40.0f);
 		ParamEditor::RegisterValue("gravity_", &gravity_, 0.1f, 0.0f, 100.0f);
+		ParamEditor::EndGroup();
 	}
 
 	void Player::Jump() {
