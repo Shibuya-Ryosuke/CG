@@ -133,7 +133,7 @@ namespace AL4_1 {
 			targetY_ = desiredY;
 			needSnap_ = false;
 		} else {
-			const float dt = GetDeltaTime();
+			const float dt = GetScaleTime();
 			const float alpha = followDelay_ <= 0.0f ? 1.0f : 1.0f - std::exp(-dt / followDelay_);
 			targetX_ += (desiredX - targetX_) * alpha;
 			targetY_ += (desiredY - targetY_) * alpha;

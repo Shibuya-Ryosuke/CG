@@ -16,11 +16,18 @@ namespace AL4_1 {
 	void Player::Update() {
 		const float dt = GetScaleTime();
 
-		// --- 入力 ---
+		// 移動
 		float moveX = 0.0f;
-		if (Input::PushKey(DIK_D)) moveX += 1.0f;
-		if (Input::PushKey(DIK_A)) moveX -= 1.0f;
+		if (Input::PushKey(DIK_D)) {
+			moveX += 1.0f;
+		}
+		if (Input::PushKey(DIK_A)) {
+			moveX -= 1.0f;
+		}
+		// ジャンプ
 		Jump();
+		// 観察
+		Observation();
 
 		// --- 速度の更新 ---
 		velocity_.x = moveX * moveSpeed_;
@@ -77,5 +84,42 @@ namespace AL4_1 {
 			velocity_.y = jumpPower_;
 			onGround_ = false;
 		}
+	}
+
+	void Player::Observation() {
+		// ポストプロセスインスタンス
+		auto instance = PostProcess::GetInstance();
+
+		if (Input::TriggerKey(DIK_SPACE)) {
+			isObsevation_ = !isObsevation_;
+
+			if (isObsevation_) {
+				// 白黒化
+				instance->SetGrayscaleEnabled(true);
+				instance->SetGrayscaleIntensity(observationGrayIntensity_);
+				// 時間速度の低下
+				SetTimeScale(observationTimeScale_);
+			} else {
+				// 白黒化解除
+				instance->SetGrayscaleEnabled(false);
+				instance->SetGrayscaleIntensity(0.0f);
+				// 時間速度等倍
+				SetTimeScale(1.0f);
+			}
+		}
+
+		// ゲージの増減
+		if (isObsevation_) {
+			if (observationGuarge_ > 0.0f) {
+				observationGuarge_ -= observationGuargeDecreaseValue_;
+			}
+		} else {
+			if (observationGuarge_ < observationGuargeLimit_) {
+				observationGuarge_ += observationGuargeIncreaseValue_;
+			}
+		}
+
+		instance->SetChromaticAberrationEnabled(true);
+		instance->SetChromaticAberrationStrength(observationGuarge_ / observationGuargeLimit_ -1.0f);
 	}
 }

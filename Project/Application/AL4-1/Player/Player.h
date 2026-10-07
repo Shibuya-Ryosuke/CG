@@ -35,6 +35,7 @@ namespace AL4_1 {
 		void RegisterInParamEditor();
 		void Jump();
 		void Attack() {};
+		void Observation();
 
 	private:
 		// 自身
@@ -66,5 +67,20 @@ namespace AL4_1 {
 		float gravity_ = 80.0f;
 		// 落下速度の上限
 		float maxFallSpeed_ = 60.0f;
+
+
+		// --- 観察モード関係 ---
+		// フラグ
+		bool isObsevation_ = false;
+		// 時間倍率
+		float observationTimeScale_ = 0.05f;
+		float observationGrayIntensity_ = 0.8f;
+
+		// 観察をずっとやってると減ってくゲージ
+		// 0に近づくほど色ズレ、ノイズが激しくなる
+		float observationGuarge_ = 100.0f;
+		float observationGuargeLimit_ = 100.0f;
+		float observationGuargeDecreaseValue_ = 0.2f;
+		float observationGuargeIncreaseValue_ = 0.2f;
 	};
 }
