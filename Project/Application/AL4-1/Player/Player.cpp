@@ -119,7 +119,15 @@ namespace AL4_1 {
 			}
 		}
 
+		// 色収差の強さ計算（ゲージ量に連動）
 		instance->SetChromaticAberrationEnabled(true);
-		instance->SetChromaticAberrationStrength(observationGuarge_ / observationGuargeLimit_ -1.0f);
+		float chormaticAberrationStrength = observationGuarge_ / observationGuargeLimit_ - 0.5f;
+		if (chormaticAberrationStrength >= 0.0f) {
+			chormaticAberrationStrength = 0.0f;
+		} else {
+			// これで最大でも-1.000に収まる
+			chormaticAberrationStrength /= 5.0f;
+		}
+		instance->SetChromaticAberrationStrength(chormaticAberrationStrength);
 	}
 }

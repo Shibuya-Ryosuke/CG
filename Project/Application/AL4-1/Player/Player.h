@@ -80,7 +80,7 @@ namespace AL4_1 {
 		// 0に近づくほど色ズレ、ノイズが激しくなる
 		float observationGuarge_ = 100.0f;
 		float observationGuargeLimit_ = 100.0f;
-		float observationGuargeDecreaseValue_ = 0.2f;
-		float observationGuargeIncreaseValue_ = 0.2f;
+		float observationGuargeDecreaseValue_ = 0.1f;
+		float observationGuargeIncreaseValue_ = 0.1f;
 	};
 }
