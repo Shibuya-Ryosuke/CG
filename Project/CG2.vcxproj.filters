@@ -16,15 +16,6 @@
     <Filter Include="Engine\Test">
       <UniqueIdentifier>{20db6151-7cb6-4ae1-acd6-5d2c8b7b7634}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application\GameName">
-      <UniqueIdentifier>{b5a71e37-4b83-42ed-8b4e-13e5dfc33ea7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\GameName\GameResources">
-      <UniqueIdentifier>{98731039-f783-4098-92b3-7ea8324b4530}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\GameName\Scene">
-      <UniqueIdentifier>{d72d0e82-e098-4a50-9cae-8a26e2cda17a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\Core">
       <UniqueIdentifier>{11fbdd79-b011-4242-815f-89dc97da7b0c}</UniqueIdentifier>
     </Filter>
@@ -103,6 +94,24 @@
     <Filter Include="HLSL\GPUParticle">
       <UniqueIdentifier>{a7beeaab-0e3f-4d54-bf60-96ff32d1b795}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Application\AL4-1">
+      <UniqueIdentifier>{4e78818a-3b09-499e-b3a5-d90b07658bd5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1\Player">
+      <UniqueIdentifier>{fe3ebbd5-ae98-4733-b517-7e7bb3fc6a33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1\Enemy">
+      <UniqueIdentifier>{28cb0f6d-a741-4e73-bce2-2cc41ebc8854}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1\Enemy\WalkEnemy">
+      <UniqueIdentifier>{92e91fc3-988e-437b-acbf-2126c43b340f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1\Scene">
+      <UniqueIdentifier>{6e5bceca-f365-4ec9-b44d-d43161aaaa6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1\GameResources">
+      <UniqueIdentifier>{058f99e3-22b7-4acb-92e8-babf33f8d746}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Original\Externals\imgui\imgui.cpp">
@@ -153,18 +162,6 @@
     </ClCompile>
     <ClCompile Include="Original\Test\TestBullet.cpp">
       <Filter>Engine\Test</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\GameName\GameName.cpp">
-      <Filter>Application\GameName</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\GameName\Scene\Game.cpp">
-      <Filter>Application\GameName\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\GameName\Scene\SceneManager.cpp">
-      <Filter>Application\GameName\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\GameName\Scene\Title.cpp">
-      <Filter>Application\GameName\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Original\Test\Test.cpp">
       <Filter>Engine\Test</Filter>
@@ -268,6 +265,24 @@
     <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleManager.cpp">
       <Filter>Engine\Graphics\GPUParticle</Filter>
     </ClCompile>
+    <ClCompile Include="Application\AL4-1\Player\Player.cpp">
+      <Filter>Application\AL4-1\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\Enemy\WalkEnemy\WalkEnemy.cpp">
+      <Filter>Application\AL4-1\Enemy\WalkEnemy</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\Scene\Game.cpp">
+      <Filter>Application\AL4-1\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\Scene\SceneManager.cpp">
+      <Filter>Application\AL4-1\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\Scene\Title.cpp">
+      <Filter>Application\AL4-1\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\AL4_1.cpp">
+      <Filter>Application\AL4-1</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Externals\imgui\imconfig.h">
@@ -326,24 +341,6 @@
     </ClInclude>
     <ClInclude Include="Original\Test\TestBullet.h">
       <Filter>Engine\Test</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\GameName.h">
-      <Filter>Application\GameName</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\Scene\Game.h">
-      <Filter>Application\GameName\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\Scene\SceneManager.h">
-      <Filter>Application\GameName\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\Scene\Title.h">
-      <Filter>Application\GameName\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\GameResources\GameSound.h">
-      <Filter>Application\GameName\GameResources</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\GameResources\GameTex.h">
-      <Filter>Application\GameName\GameResources</Filter>
     </ClInclude>
     <ClInclude Include="Original\Test\Test.h">
       <Filter>Engine\Test</Filter>
@@ -473,6 +470,33 @@
     </ClInclude>
     <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleManager.h">
       <Filter>Engine\Graphics\GPUParticle</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\Player\Player.h">
+      <Filter>Application\AL4-1\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\Enemy\EnemyBase.h">
+      <Filter>Application\AL4-1\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\Enemy\WalkEnemy\WalkEnemy.h">
+      <Filter>Application\AL4-1\Enemy\WalkEnemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\GameResources\GameSound.h">
+      <Filter>Application\AL4-1\GameResources</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\GameResources\GameTex.h">
+      <Filter>Application\AL4-1\GameResources</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\Scene\Game.h">
+      <Filter>Application\AL4-1\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\Scene\SceneManager.h">
+      <Filter>Application\AL4-1\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\Scene\Title.h">
+      <Filter>Application\AL4-1\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\AL4_1.h">
+      <Filter>Application\AL4-1</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

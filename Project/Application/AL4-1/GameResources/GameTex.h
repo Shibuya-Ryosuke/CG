@@ -1,7 +1,7 @@
 #pragma once
 #include <RyoEngine.h>
 
-namespace Game1 {
+namespace AL4_1 {
 	class GameImage {
 	public:
 		enum class Image : uint32_t {

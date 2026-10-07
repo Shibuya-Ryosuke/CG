@@ -4,15 +4,15 @@
 
 #include "Scene/SceneManager.h"
 
-namespace Game1 {
-	class Game1 : public RyoEngine::IGame {
+namespace AL4_1 {
+	class AL4_1 : public RyoEngine::IGame {
 	public:
 		// コンストラクタ、デストラクタ
-		Game1() = default;
-		~Game1() override = default;
+		AL4_1() = default;
+		~AL4_1() override = default;
 		// コピーコンストラクタとコピー代入演算子の禁止
-		Game1(const Game1&) = delete;
-		Game1& operator=(const Game1&) = delete;
+		AL4_1(const AL4_1&) = delete;
+		AL4_1& operator=(const AL4_1&) = delete;
 
 
 		void Initialize() override;

@@ -4,7 +4,7 @@
 #include <ImGui/ImGuiAllInclude.h>
 #endif
 
-#include "Application/GameName/GameName.h"
+#include "Application/AL4-1/AL4_1.h"
 
 
 using namespace RyoEngine;
@@ -13,7 +13,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
     RyoEngine::Initialize(L"Application");
 
-    std::unique_ptr<IGame> game = std::make_unique<Test::Test>();
+    std::unique_ptr<IGame> game = std::make_unique<AL4_1::AL4_1>();
     game->Initialize();
 
     // --- メインループ ---

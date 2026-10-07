@@ -1,6 +1,9 @@
 #include "Title.h"
 
-namespace Game1 {
+using namespace RyoEngine;
+using namespace std;
+
+namespace AL4_1 {
 	void Title::Initialize() {}
 
 	void Title::Update() {}
