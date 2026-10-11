@@ -1,296 +1,206 @@
 #pragma once
-#include <d3d12.h>
-#include <wrl.h>
+#include <cstdint>
+#include <functional>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include <cstdint>
 #include "../../Core/Math/Math.h"
-#include "../../Core/Loader/ModelLoader.h"
+#include "../../Core/Math/Transform.h"
+#include "../../Core/Math/Geometry.h"
 #include "../../Camera/Camera.h"
-#include "../../Camera/DebugCamera.h"
-#include "../../Core/Math/Collision.h"
-#include "ModelCommon.h"
+#include "ModelManager.h"
+#include "../../Editor/ModelLayout.h"
 
 namespace RyoEngine {
-    class ReflectModel;
 
+    /// <summary>
+    /// 「1体分の持ち物」だけを持つ軽いクラス。
+    /// objの頂点やGPUバッファは ModelManager が1つだけ持ち、Model は modelIndex で指し示す。
+    ///
+    /// 使い方:
+    ///   uint32_t idx = RyoEngine::LoadObj("Models/enemy/enemy.obj");   // 1回だけ
+    ///   auto m = Model::Create(idx);                                    // 何体でも
+    ///   m->SetTranslate({0,0,0}); m->SetRotate({0, 90, 0});            // 角度は度数法
+    ///   m->TransferMatrix(camera);   // 毎フレーム (行列確定+カリング)
+    ///   m->Draw();                   // 毎フレーム (ModelManagerへ提出。実描画はEndFrame)
+    ///
+    /// 個別に変えられるもの: transform / テクスチャ / 色 / 発光 / UV(SRT) / ライティング / シェーディング
+    /// 同じ (obj, メッシュ, テクスチャ) のモデルは自動で1回のDrawInstancedにまとまる。
+    /// </summary>
     class Model {
     public:
-        // メッシュ単位で保持するリソース (頂点・マテリアル・テクスチャ)
-        struct MeshResource {
-            // 頂点バッファ
-            Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;
-            D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-            uint32_t vertexCount = 0;
-
-            // マテリアル
-            Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
-            Material* materialData = nullptr;
-
-            // テクスチャ
-            uint32_t textureHandle = 0;
-
-            // 元となったmtlのマテリアル名 (newmtl名。名前引きのために保持)
-            std::string materialName;
-
-            // UVのSRT (メッシュ=マテリアルごとに個別に持つ。ここからmaterialData->uvTransformを計算する)
-            Vector2 uvScale = { 1.0f, 1.0f };
-            float uvRotate = 0.0f;
-            Vector2 uvTranslate = { 0.0f, 0.0f };
-
-            // このメッシュがUV(テクスチャ座標)を持っているか
-            // ModelLoaderがobjの面(f)にvtが無いことを検出すると自動的にfalseになる(Suzanneなど)。
-            // false の場合、Draw()内でModelCommon::DrawType::NO_UV系のPSO(TEXCOORDを使わない専用Shader)で描画する。
-            bool hasUV = true;
-        };
-
-        void Initialize();
-        void TransferMatrix(const Camera& camera);
-
-        /// <summary>
-        /// 描画
-        /// </summary>
-        /// <param name="drawType">
-        /// 通常描画(REAL)か反射描画(REFLECT)かを指定する。
-        /// メッシュごとにhasUVがfalseの場合は、内部で自動的にNO_UV / REFLECT_NO_UVへ読み替えてPSOを切り替える。
-        /// </param>
-        void Draw(ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL);
-
-        /// <summary>
-        /// パーティクルなど、同じモデルを大量に・独立した位置で描画したい場合に使う。
-        /// 呼び出し側が用意した「1インスタンス分のTransformationMatrix(World/WVP)」が
-        /// 書き込まれたバッファのGPUアドレスを渡して描画する。
-        /// このモデル自身が持つwvpResource_は使わないため、何回呼んでも互いのデータを
-        /// 上書きし合わない(＝Update()を毎回呼んでも最後の1個しか描画されない問題を回避できる)。
-        /// </summary>
-        /// <param name="externalWVP">1インスタンス分のTransformationMatrixが書き込まれたCBのGPU仮想アドレス</param>
-        /// <param name="drawType">通常描画(REAL)か反射描画(REFLECT)か</param>
-        void DrawInstance(D3D12_GPU_VIRTUAL_ADDRESS externalWVP, uint32_t externalTextureHandle = 0, ModelCommon::DrawType drawType = ModelCommon::DrawType::REAL);
+        Model() = default;
+        ~Model(); // エディタの選択(ModelPicker)と保存用の登録(ModelLayout)を解除する
+        // エンジンが Model* で管理しているのでコピー/ムーブは不可 (unique_ptr で持つこと)
+        Model(const Model&) = delete;
+        Model& operator=(const Model&) = delete;
 
         /// <summary>
         /// モデルの作成
         /// </summary>
-        /// <param name="filePath">objまでのファイルパス</param>
-        /// <param name="registAnimEdit">アニメエディタに登録するか</param>
-        /// <param name="name">登録名</param>
-        /// <returns></returns>
-        static std::unique_ptr<Model> Create(const std::string& filePath, bool registAnimEdit = false, const std::string& name = "NoName");
-        /// <summary>
-        /// モデルの作成 (代入・書き換え時に使用)
-        /// </summary>
-        /// <param name="filePath">objファイルまでのファイルパス</param>
-        void CreateModel(const std::string& filePath);
+        /// <param name="modelIndex">ModelManager::LoadObj / RyoEngine::LoadObj の戻り値</param>
+        /// <param name="textureIndex">0なら「objのmap_Kd、無ければwhite1x1」。指定すると全メッシュがそのテクスチャになる</param>
+        static std::unique_ptr<Model> Create(uint32_t modelIndex, uint32_t textureIndex = 0);
 
         /// <summary>
-        /// このモデルの各メッシュにデフォルトのシェーディングモード(HALF_LAMBERT)を設定する。
-        /// NOTE: 以前はここでモデルごとのDirectionalLight用リソースも作成していたが、
-        ///       ライトはシーンで1つに一本化したいという方針のため LightManager に移した。
-        ///       関数名は互換性のため残しているが、実質「デフォルトのシェーディングモード設定」のみを行う。
+        /// ファイルパスからの作成 (内部で LoadObj を呼ぶ。同じパスは読み込み1回のみ)
         /// </summary>
-        void CreateDirectionalLight();
+        static std::unique_ptr<Model> Create(const std::string& filePath, uint32_t textureIndex = 0);
 
+        /// <summary>
+        /// 作り直し / 代入用
+        /// </summary>
+        void CreateModel(uint32_t modelIndex, uint32_t textureIndex = 0);
+        void CreateModel(const std::string& filePath, uint32_t textureIndex = 0);
 
-        // メッシュ数の取得 (マルチメッシュ対応)
+        /// <summary>
+        /// ワールド行列の確定とフラスタムカリング。毎フレーム、Draw()の前に呼ぶ。
+        /// 引数のカメラのView-Projectionが、そのフレームの3D描画全体に使われる。
+        /// </summary>
+        /// <param name="frustumCulling">false にすると視錐台判定をせず常に描画する (既定 true)</param>
+        void TransferMatrix(const Camera& camera, bool frustumCulling = true);
+
+        /// <summary>
+        /// 描画の提出。視錐台の外ならスキップ(影も落とさない)。
+        /// 実際のGPU描画は RyoEngine::EndFrame 内で、まとめて行われる。
+        /// </summary>
+        void Draw();
+
+        // ---------------- エディタ (DEBUGのみ有効) ----------------
+        /// <summary>画面クリックで選べるか (既定 true)。選ぶと自動でギズモが出る</summary>
+        void SetPickable(bool pickable) { pickable_ = pickable; }
+        bool IsPickable() const { return pickable_; }
+        /// <summary>
+        /// ギズモで編集されたときに呼ばれる。持ち主が Transform を別に持っていて、毎フレーム
+        /// SetTransform() で上書きしている場合は、ここで持ち主側の値も更新すること。
+        /// (Modelの GetTransform() をそのまま使っている場合は設定不要)
+        /// </summary>
+        void SetOnTransformEdited(std::function<void(const Transform&)> callback) { onTransformEdited_ = std::move(callback); }
+        /// <summary>ギズモ(ModelPicker)から呼ばれる。Transformを書き換えてコールバックを呼ぶ</summary>
+        void ApplyEditedTransform(const Transform& transform);
+
+        /// <summary>
+        /// 保存用の名前を付ける (任意)。付けない場合は "objのパス#何番目" が自動で付く。
+        /// 毎回同じ順で生成されないもの、特定したいもの(Playerなど)に使う。
+        /// </summary>
+        void SetName(const std::string& name);
+        const std::string& GetLayoutKey() const { return layoutSlot_.key; }
+        /// <summary>ギズモで動かされたか (保存の対象)</summary>
+        bool IsLayoutEdited() const { return layoutEdited_; }
+
+        // ---------------- Getter ----------------
+        uint32_t GetModelIndex() const { return modelIndex_; }
         size_t GetMeshCount() const { return meshes_.size(); }
-
-        /// <summary>
-        /// mtlのマテリアル名からメッシュのインデックスを検索する
-        /// </summary>
-        /// <param name="materialName">newmtlで定義された名前</param>
-        /// <returns>見つからなければ -1</returns>
-        int32_t GetMeshIndexByName(const std::string& materialName) const {
-            for (size_t i = 0; i < meshes_.size(); ++i) {
-                if (meshes_[i].materialName == materialName) {
-                    return static_cast<int32_t>(i);
-                }
-            }
-            return -1;
-        }
-
-        /// <summary>
-        /// メッシュが参照しているmtlのマテリアル名を取得する
-        /// </summary>
-        const std::string& GetMaterialName(size_t meshIndex = 0) const { return meshes_[meshIndex].materialName; }
-
-        // Getter
-        const Vector3& GetScale() const { return transform_.scale; }
-        const Vector3& GetRotate() const { return transform_.rotate; }
-        const Vector3& GetTranslate() const { return transform_.translate; }
-        // NOTE: 以前はここに「指向性ライトの取得(GetDirectionalLight/GetDLColor/GetDLDirection/GetDLIntensity)」
-        //       「ライトリソースの取得(GetLightResource/GetLightResourceGVA)」があったが、
-        //       ライトはModel固有の情報ではなくシーン共有の情報であるため削除した。
-        //       ライトの状態を知りたい/描画バッファを直接触りたい場合は LightManager::GetInstance() に直接アクセスすること。
-
-        // --- 以下、マテリアル/テクスチャ/頂点関連は meshIndex 指定版 ---
-        // 既存コード互換のため meshIndex 省略時は 0番目 (先頭メッシュ) を対象にする
-
-        /// <summary>
-        /// ランバートの取得
-        /// </summary>
-        const ShadingMode& GetLambert(size_t meshIndex = 0) const { return meshes_[meshIndex].materialData->shadingMode; }
-
-        Vector4& GetColor(size_t meshIndex = 0) const { return meshes_[meshIndex].materialData->color; };
-        const Vector4& GetEmissiveColor(size_t meshIndex = 0) const { return meshes_[meshIndex].materialData->emissiveColor; }
-        float GetEmissiveIntensity(size_t meshIndex = 0) const { return meshes_[meshIndex].materialData->emissiveIntensity; }
-        ID3D12Resource* GetMaterialResource(size_t meshIndex = 0) const { return meshes_[meshIndex].materialResource.Get(); };
-        uint32_t GetTxHandle(size_t meshIndex = 0) const { return meshes_[meshIndex].textureHandle; }
-        D3D12_VERTEX_BUFFER_VIEW GetVBV(size_t meshIndex = 0) const { return meshes_[meshIndex].vertexBufferView; }
-        uint32_t GetVertexCount(size_t meshIndex = 0) const { return meshes_[meshIndex].vertexCount; }
-        D3D12_GPU_VIRTUAL_ADDRESS GetMaterialResourceGVA(size_t meshIndex = 0) const { return meshes_[meshIndex].materialResource->GetGPUVirtualAddress(); }
-
-        // このメッシュがUVを持っているか
-        bool GetHasUV(size_t meshIndex = 0) const { return meshes_[meshIndex].hasUV; }
-
-        ID3D12Resource* GetWvpResource() const { return wvpResource_.Get(); };
-
-        Matrix4x4& GetWorldMatrix() const { return wvpData_->World; }
-        Vector3 GetWorldPos() const { return { wvpData_->World.m[3][0],wvpData_->World.m[3][1],wvpData_->World.m[3][2] }; }
-        Vector3 GetOrientationX() const { return Normalize({ wvpData_->World.m[0][0], wvpData_->World.m[0][1], wvpData_->World.m[0][2] }); }
-        Vector3 GetOrientationY() const { return Normalize({ wvpData_->World.m[1][0], wvpData_->World.m[1][1], wvpData_->World.m[1][2] }); }
-        Vector3 GetOrientationZ() const { return Normalize({ wvpData_->World.m[2][0], wvpData_->World.m[2][1], wvpData_->World.m[2][2] }); }
-
-        int32_t GetAnimEditID() const { return animEditID_; }
-
-        /// <summary>
-        /// 直近のTransferMatrix(camera)時点で、視錐台と重なっていたか(=描画対象かどうか)。
-        /// Draw()はこれがfalseの場合、描画コマンドの予約自体をスキップする(フラスタムカリング)。
-        /// </summary>
         bool IsVisible() const { return isVisible_; }
 
+        Transform& GetTransform() { return transform_; }
+        const Vector3& GetScale() const { return transform_.scale; }
+        /// <summary>回転(度数法)</summary>
+        const Vector3& GetRotate() const { return transform_.rotate; }
+        const Vector3& GetTranslate() const { return transform_.translate; }
 
-        // Setter
-        /// <summary>
-        /// トランスフォームの指定
-        /// </summary>
-        /// <param name="transform">トランスフォーム構造体</param>
-        void SetTransform(const Transform& transform) { transform_ = transform; }
-        void SetScale(const Vector3& scale) { transform_.scale = scale; }
-        void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
-        void SetRotateY(float rotateY) { transform_.rotate.y = rotateY; }
-        void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
-        void SetTranslateX(float translateX) { transform_.translate.x = translateX; }
-        void SetTranslateY(float translateY) { transform_.translate.y = translateY; }
-        void SetTranslateZ(float translateZ) { transform_.translate.z = translateZ; }
-        void SetWVPData(RyoEngine::Matrix4x4 world, RyoEngine::Matrix4x4 wvp) { wvpData_->World = world; wvpData_->WVP = wvp; }
+        const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
+        Vector3 GetWorldPos() const { return { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] }; }
+        Vector3 GetOrientationX() const { return Normalize({ worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] }); }
+        Vector3 GetOrientationY() const { return Normalize({ worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] }); }
+        Vector3 GetOrientationZ() const { return Normalize({ worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] }); }
 
-        // NOTE: 以前はここに「指向性ライトの指定(SetDirectionalLight/SetDLColor/SetDLDirection/SetDLIntensity)」
-        //       があったが、これは実態が「シーン全体の共有ライトを書き換える」グローバルな操作であり、
-        //       Model個別のセッターとして生えているのは実態と見た目が食い違っていたため削除した。
-        //       ライトを変更したい場合は LightManager::GetInstance() に直接アクセスすること。
-
-        /// <summary>
-        /// シェーディングモードの指定
-        /// </summary>
-        /// <param name="lambertMode">モード</param>
-        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
-        void SetLambert(const ShadingMode lambertMode, int32_t meshIndex = -1);
-
-        void SetEnableLighting(bool enableLighting, int32_t meshIndex = -1);
-        /// <summary>
-        /// テクスチャの指定 (ハンドル)
-        /// </summary>
-        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
-        void SetTex(uint32_t handle, int32_t meshIndex = -1);
-        /// <summary>
-        /// テクスチャの指定 (ファイルパス)
-        /// </summary>
-        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
-        void SetTex(const std::string& filePath, int32_t meshIndex = -1);
-        /// <summary>
-        /// 色の指定
-        /// </summary>
-        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
-        void SetColor(const Vector4& color, int32_t meshIndex = -1);
-        /// <summary>
-        /// 発光(エミッシブ)の指定。ライティング計算を経由せず、最終的な色に無条件で加算される。
-        /// </summary>
-        /// <param name="color">発光色(rgbのみ使用)</param>
-        /// <param name="intensity">発光強度(1.0を超えられる)</param>
-        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
-        void SetEmissive(const Vector3& color, float intensity, int32_t meshIndex = -1);
-
-        /// <summary>
-        /// このメッシュがUVを持つかどうかを指定する。
-        /// falseにすると、Draw()時にUV無し専用PSO(TEXCOORDを使わないShader)で描画されるようになる。
-        /// </summary>
-        /// <param name="hasUV">UVを持つか</param>
-        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
-        void SetHasUV(bool hasUV, int32_t meshIndex = -1);
-
-        /// <summary>
-        /// UVのスケール指定
-        /// </summary>
-        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
-        void SetUVScale(const Vector2& scale, int32_t meshIndex = -1);
-        /// <summary>
-        /// UVの回転指定 (Z軸回転)
-        /// </summary>
-        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
-        void SetUVRotate(float rotate, int32_t meshIndex = -1);
-        /// <summary>
-        /// UVの平行移動指定
-        /// </summary>
-        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
-        void SetUVTranslate(const Vector2& translate, int32_t meshIndex = -1);
-        /// <summary>
-        /// UVのSRTをまとめて指定
-        /// </summary>
-        /// <param name="meshIndex">対象メッシュ (負の値なら全メッシュに適用)</param>
-        void SetUVSRT(const Vector2& scale, float rotate, const Vector2& translate, int32_t meshIndex = -1);
-
+        // meshIndex省略時は0番目
+        uint32_t GetTxHandle(size_t meshIndex = 0) const { return meshes_[meshIndex].textureHandle; }
+        const Vector4& GetColor(size_t meshIndex = 0) const { return meshes_[meshIndex].color; }
+        const Vector3& GetEmissiveColor(size_t meshIndex = 0) const { return meshes_[meshIndex].emissiveColor; }
+        float GetEmissiveIntensity(size_t meshIndex = 0) const { return meshes_[meshIndex].emissiveIntensity; }
+        bool GetEnableLighting(size_t meshIndex = 0) const { return meshes_[meshIndex].enableLighting; }
+        ShadingMode GetLambert(size_t meshIndex = 0) const { return meshes_[meshIndex].shadingMode; }
+        bool GetHasUV(size_t meshIndex = 0) const;
         Vector2 GetUVScale(size_t meshIndex = 0) const { return meshes_[meshIndex].uvScale; }
+        /// <summary>UV回転(度数法)</summary>
         float GetUVRotate(size_t meshIndex = 0) const { return meshes_[meshIndex].uvRotate; }
         Vector2 GetUVTranslate(size_t meshIndex = 0) const { return meshes_[meshIndex].uvTranslate; }
 
+        const std::string& GetMaterialName(size_t meshIndex = 0) const;
+        /// <summary>mtlのマテリアル名からメッシュ番号を探す。無ければ -1</summary>
+        int32_t GetMeshIndexByName(const std::string& materialName) const;
 
-        // マルチマテリアル版 (名前指定)
-        ShadingMode GetLambertByName(const std::string& materialName) const;
-        Vector4 GetColorByName(const std::string& materialName) const;
+        // ---------------- Setter: Transform ----------------
+        void SetTransform(const Transform& transform) { transform_ = transform; }
+        void SetScale(const Vector3& scale) { transform_.scale = scale; }
+        /// <summary>回転(度数法)</summary>
+        void SetRotate(const Vector3& rotateDeg) { transform_.rotate = rotateDeg; }
+        void SetRotateY(float rotateYDeg) { transform_.rotate.y = rotateYDeg; }
+        void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
+        void SetTranslateX(float x) { transform_.translate.x = x; }
+        void SetTranslateY(float y) { transform_.translate.y = y; }
+        void SetTranslateZ(float z) { transform_.translate.z = z; }
 
-        void SetLambertByName(const ShadingMode lambertMode, const std::string& materialName);
+        // ---------------- Setter: 見た目 (meshIndex が負なら全メッシュ) ----------------
+        /// <summary>テクスチャ。0を渡すと初期値(map_Kd or white1x1)へ戻る</summary>
+        void SetTex(uint32_t handle, int32_t meshIndex = -1);
+        void SetTex(const std::string& filePath, int32_t meshIndex = -1);
+        void SetColor(const Vector4& color, int32_t meshIndex = -1);
+        /// <summary>発光。ライティングを通さず最終色へ加算される</summary>
+        void SetEmissive(const Vector3& color, float intensity, int32_t meshIndex = -1);
+        void SetEnableLighting(bool enable, int32_t meshIndex = -1);
+        void SetLambert(ShadingMode mode, int32_t meshIndex = -1);
+
+        void SetUVScale(const Vector2& scale, int32_t meshIndex = -1);
+        /// <summary>UV回転(度数法)</summary>
+        void SetUVRotate(float rotateDeg, int32_t meshIndex = -1);
+        void SetUVTranslate(const Vector2& translate, int32_t meshIndex = -1);
+        void SetUVSRT(const Vector2& scale, float rotateDeg, const Vector2& translate, int32_t meshIndex = -1);
+
+        // ---------------- 名前指定版 (mtlのnewmtl名) ----------------
         void SetTexByName(uint32_t handle, const std::string& materialName);
         void SetTexByName(const std::string& filePath, const std::string& materialName);
         void SetColorByName(const Vector4& color, const std::string& materialName);
-
+        void SetLambertByName(ShadingMode mode, const std::string& materialName);
         void SetUVScaleByName(const Vector2& scale, const std::string& materialName);
-        void SetUVRotateByName(float rotate, const std::string& materialName);
+        void SetUVRotateByName(float rotateDeg, const std::string& materialName);
         void SetUVTranslateByName(const Vector2& translate, const std::string& materialName);
-        void SetUVSRTByName(const Vector2& scale, float rotate, const Vector2& translate, const std::string& materialName);
-
-
-        // アニメエディタに登録する番号
-        void SetAnimEditID(uint32_t id) { animEditID_ = id; }
+        void SetUVSRTByName(const Vector2& scale, float rotateDeg, const Vector2& translate, const std::string& materialName);
 
     private:
-        // 内部用初期化（CreateModelや将来のCreateSphereから呼ばれる）
-        void InternalInitialize(const ModelLoader::ModelData& modelData);
-        void InternalDraw(ModelCommon::DrawType drawType, D3D12_GPU_VIRTUAL_ADDRESS externalWVP = 0, uint32_t externalTextureHandle = 0);
-        // 指定メッシュのuvScale/uvRotate/uvTranslateから、materialData->uvTransformを再計算して書き込む
-        void UpdateUVTransform(MeshResource& mesh);
+        // メッシュごとに変えられる状態 (頂点データはModelManagerが持つ)
+        struct MeshState {
+            uint32_t textureHandle = 0;      // 実際に使うテクスチャ
+            bool textureOverridden = false;  // SetTexで上書きされたか
+            Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+            Vector3 emissiveColor = { 0.0f, 0.0f, 0.0f };
+            float emissiveIntensity = 0.0f;
+            bool enableLighting = true;
+            ShadingMode shadingMode = ShadingMode::HALF_LAMBERT;
+            Vector2 uvScale = { 1.0f, 1.0f };
+            float uvRotate = 0.0f; // 度数法
+            Vector2 uvTranslate = { 0.0f, 0.0f };
+        };
 
-        Transform transform_{};
+        // meshIndex<0 なら全メッシュ、それ以外なら指定メッシュにfuncを適用
+        template <typename Func>
+        void ForEachMesh(int32_t meshIndex, Func&& func) {
+            if (meshIndex < 0) {
+                for (auto& mesh : meshes_) func(mesh);
+            } else if (static_cast<size_t>(meshIndex) < meshes_.size()) {
+                func(meshes_[meshIndex]);
+            }
+        }
 
-        // メッシュ配列 (マルチメッシュ/マルチマテリアル対応)
-        std::vector<MeshResource> meshes_;
+        uint32_t modelIndex_ = ModelManager::kInvalidModelIndex;
+        Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+        std::vector<MeshState> meshes_;
 
-        // NOTE: ライト用のリソースはここでは持たない。
-        //       シーン全体で1つに共有するため LightManager (Singleton) が保持している。
-        //       ライトの読み書きはLightManagerへ直接アクセスすること(Model経由の転送APIは廃止した)。
-        //       InternalDraw()内でのみ、描画バインドのためにLightManagerのGPUアドレスを取得する。
-
-        // 座標変換行列（WVP）用 (モデル全体で共有)
-        Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_;
-        TransformationMatrix* wvpData_ = nullptr;
-
-        Matrix4x4 worldMatrix_{};
-
-        // フラスタムカリング用。モデルのローカル座標系での「原点から一番遠い頂点までの距離」
-        // (InternalInitialize()で全頂点から計算する。実際の判定時はワールドスケールぶん拡大して使う)
-        float boundingRadius_ = 0.0f;
-        // 直近のTransferMatrix(camera)時点で視錐台と重なっていたか。Draw()がこれを見て描画をスキップする
+        Matrix4x4 worldMatrix_ = MakeIdentity4x4();
         bool isVisible_ = true;
 
-        int32_t animEditID_ = 0;
+        // クリック選択用 (TransferMatrixで更新)
+        bool pickable_ = true;
+        Vector3 pickCenter_{ 0.0f, 0.0f, 0.0f };
+        float pickRadius_ = 0.0f;
+        std::function<void(const Transform&)> onTransformEdited_;
+
+        // 保存/復元用 (ModelLayout)
+        ModelLayout::Slot layoutSlot_;
+        bool layoutRegistered_ = false;
+        bool layoutApplied_ = false; // 保存値を適用済みか (最初のTransferMatrixで1回だけ適用)
+        bool layoutEdited_ = false;
     };
 }

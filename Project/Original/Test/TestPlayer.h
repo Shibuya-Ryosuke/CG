@@ -26,8 +26,7 @@ namespace Test {
 
 		// 自身
 		std::unique_ptr<RyoEngine::Model> bunny_{};
-		// SRT
-		RyoEngine::Transform transform_{};
+		// SRT は Model が持つ (bunny_->GetTransform())。位置調整はギズモ→Model Layout保存で行う
 		// モデル自体の色
 		RyoEngine::Vector4 color_{ 1.0f,1.0f,1.0f,1.0f };
 		// 速さ

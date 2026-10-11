@@ -178,16 +178,10 @@
     <ClCompile Include="Original\Graphics\3D\Mesh\Mesh.cpp">
       <Filter>Engine\Graphics\3D\Mesh</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Graphics\3D\Mesh\InstancedMesh.cpp">
-      <Filter>Engine\Graphics\3D\Mesh</Filter>
-    </ClCompile>
     <ClCompile Include="Original\Graphics\3D\Model.cpp">
       <Filter>Engine\Graphics\3D</Filter>
     </ClCompile>
     <ClCompile Include="Original\Graphics\3D\ModelCommon.cpp">
-      <Filter>Engine\Graphics\3D</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Graphics\3D\InstancedModel.cpp">
       <Filter>Engine\Graphics\3D</Filter>
     </ClCompile>
     <ClCompile Include="Original\Graphics\3D\InstancedModelCommon.cpp">
@@ -267,6 +261,21 @@
     </ClCompile>
     <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleManager.cpp">
       <Filter>Engine\Graphics\GPUParticle</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Editor\Gizmo.cpp">
+      <Filter>Engine\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Editor\ModelLayout.cpp">
+      <Filter>Engine\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Editor\ModelPicker.cpp">
+      <Filter>Engine\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Graphics\3D\ModelManager.cpp">
+      <Filter>Engine\Graphics\3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Graphics\3D\Mesh\InstancedMesh.cpp">
+      <Filter>Engine\Graphics\3D\Mesh</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -393,13 +402,7 @@
     <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleEmitter.h">
       <Filter>Engine\Graphics\GPUParticle</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Graphics\3D\Mesh\InstancedMesh.h">
-      <Filter>Engine\Graphics\3D\Mesh</Filter>
-    </ClInclude>
     <ClInclude Include="Original\Graphics\3D\InstancedModelCommon.h">
-      <Filter>Engine\Graphics\3D</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Graphics\3D\InstancedModel.h">
       <Filter>Engine\Graphics\3D</Filter>
     </ClInclude>
     <ClInclude Include="Original\Graphics\3D\Mesh\Mesh.h">
@@ -474,6 +477,21 @@
     <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleManager.h">
       <Filter>Engine\Graphics\GPUParticle</Filter>
     </ClInclude>
+    <ClInclude Include="Original\Editor\Gizmo.h">
+      <Filter>Engine\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Editor\ModelLayout.h">
+      <Filter>Engine\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Editor\ModelPicker.h">
+      <Filter>Engine\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Graphics\3D\ModelManager.h">
+      <Filter>Engine\Graphics\3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Graphics\3D\Mesh\InstancedMesh.h">
+      <Filter>Engine\Graphics\3D\Mesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\EngineResources\HLSL\Sprite\Sprite.hlsli">
@@ -487,6 +505,15 @@
     </None>
     <None Include="Resources\EngineResources\HLSL\Primitive\Primitive.hlsli">
       <Filter>HLSL\Primitive</Filter>
+    </None>
+    <None Include="Resources\EngineResources\HLSL\Model\ModelBatch.hlsli">
+      <Filter>HLSL\Model</Filter>
+    </None>
+    <None Include="Resources\EngineResources\HLSL\Model\ModelInstance.hlsli">
+      <Filter>HLSL\Model</Filter>
+    </None>
+    <None Include="Resources\EngineResources\HLSL\Model\Dither.hlsli">
+      <Filter>HLSL\Model</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -549,6 +576,15 @@
     </FxCompile>
     <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticleBillboard.VS.hlsl">
       <Filter>HLSL\GPUParticle</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\EngineResources\HLSL\Model\ModelBatch.PS.hlsl">
+      <Filter>HLSL\Model</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\EngineResources\HLSL\Model\ModelBatch.VS.hlsl">
+      <Filter>HLSL\Model</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\EngineResources\HLSL\Model\ModelBatchShadow.VS.hlsl">
+      <Filter>HLSL\Model</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

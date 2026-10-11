@@ -1,5 +1,8 @@
 #include "RyoEngine.h"
 #include "Externals/imgui/imgui.h"
+#include "Graphics/3D/ModelManager.h"
+#include "Editor/Gizmo.h"
+#include "Editor/ModelPicker.h"
 #include <random>
 #include <chrono>
 #include <dxgidebug.h>
@@ -75,7 +78,7 @@ namespace RyoEngine {
         modelCommon_ = ModelCommon::GetInstance();
         modelCommon_->Initialize();
 
-        InstancedModelCommon::GetInstance()->Initialize();
+        ModelManager::GetInstance()->Initialize();
 
         GPUParticleCommon::GetInstance()->Initialize();
         GPUParticleManager::GetInstance()->Initialize();
@@ -132,7 +135,7 @@ namespace RyoEngine {
         spriteCommon_->Finalize();
         GPUParticleManager::GetInstance()->Finalize();
         GPUParticleCommon::GetInstance()->Finalize();
-        InstancedModelCommon::GetInstance()->Finalize();
+        ModelManager::GetInstance()->Finalize();
         modelCommon_->Finalize();
         PrimitiveRenderer::Finalize();
         ShadowMap::Finalize();
@@ -170,7 +173,7 @@ namespace RyoEngine {
         PrimitiveRenderer::NewFrame();
         modelCommon_->CommandsClear();
         spriteCommon_->CommandsClear();
-        InstancedModelCommon::GetInstance()->CommandsClear();
+        ModelManager::GetInstance()->NewFrame();
         GPUParticleCommon::GetInstance()->CommandsClear();
 
         Input::Update();
@@ -189,6 +192,7 @@ namespace RyoEngine {
         }
 
         ImGuiManager::NewFrame();
+        Gizmo::BeginFrame();
         debugCamera_.Update();
 
         // ゲーム画面
@@ -196,8 +200,12 @@ namespace RyoEngine {
         D3D12_GPU_DESCRIPTOR_HANDLE gameTexHandle = dxCommon_->GetGameTextureGPUHandle();
         ImVec2 viewSize{ viewSize_.x,viewSize_.y };
         ImGui::Image(reinterpret_cast<ImTextureID>(gameTexHandle.ptr), viewSize);
+        // ギズモの描画範囲 = ゲーム画面の画像範囲
+        Gizmo::SetViewRect(ImGui::GetItemRectMin().x, ImGui::GetItemRectMin().y,
+            ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y);
         if (!Input::IsMousePush(0) && !Input::IsMousePush(1) && !Input::IsMousePush(2)) {
-            if (ImGui::IsItemHovered()) {
+            // ギズモ操作中はデバッグカメラ・クリック選択を止める
+            if (ImGui::IsItemHovered() && !Gizmo::IsBusy()) {
                 onTheGameView = true;
             } else {
                 onTheGameView = false;
@@ -207,6 +215,8 @@ namespace RyoEngine {
 
         // ライト
         LightManager::GetInstance()->DrawImGui();
+        // ギズモ操作モード(W/E/R・ローカル/ワールド・スナップ)
+        Gizmo::DrawToolbar();
         // ポストプロセス(HDR/ブルームのON-OFF)
         PostProcess::GetInstance()->DrawImGui();
         // GPUパーティクル
@@ -271,6 +281,7 @@ namespace RyoEngine {
         // シャドウパス：ライト視点で深度だけ先に描画する
         ShadowMap::BeginShadowPass();
         modelCommon_->DrawShadow();
+        ModelManager::GetInstance()->DrawShadow();
         ShadowMap::GetInstance()->EndShadowPass();
 
         // 即時描画
@@ -279,7 +290,7 @@ namespace RyoEngine {
         // 3d描画
         Begin3dDraw();
         modelCommon_->Draw();
-        InstancedModelCommon::GetInstance()->Draw();
+        ModelManager::GetInstance()->Draw();
         GPUParticleCommon::GetInstance()->Draw();
 
         // HDR→LDR合成 (トーンマッピングのON/OFFはここで反映される)
@@ -293,6 +304,9 @@ namespace RyoEngine {
         fontOutputer_->DrawAllText();
 
         TimeManager::EndFrame();
+
+        // クリック選択・ギズモ編集(ゲーム画面上のModelを自動で対象にする)
+        ModelPicker::Update(GetOnTheGameView());
 
         GetDxCommon()->PostDraw();  // ImGuiの終了処理はこの中にいる
     }
@@ -321,6 +335,11 @@ namespace RyoEngine {
         return dist(gen);
     }
 
+    uint32_t LoadObj(const std::string& filePath) {
+        std::string fullPath = "Resources/ApplicationResources/" + filePath;
+        return ModelManager::GetInstance()->LoadObj(fullPath);
+    }
+
     uint32_t LoadTex(const std::string& filePath) {
         std::string fullPath = "Resources/ApplicationResources/" + filePath;
         return GetTexManager()->Load(fullPath);
@@ -342,7 +361,7 @@ namespace RyoEngine {
 
     void Change3DBlendMode(BlendMode blendMode) {
         modelCommon_->SetBlendMode(blendMode);
-        InstancedModelCommon::GetInstance()->SetBlendMode(blendMode);
+        ModelManager::GetInstance()->SetBlendMode(blendMode);
     }
 
     Camera& GetActiveCamera(Camera& mainCamera) {

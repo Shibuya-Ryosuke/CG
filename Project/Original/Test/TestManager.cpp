@@ -1,4 +1,5 @@
 #include "TestManager.h"
+#include <algorithm>
 
 using namespace RyoEngine;
 
@@ -11,8 +12,8 @@ namespace Test {
 
 		// テクスチャ初期化
 		flower.Initialize("Resources/EngineResources/Test/flower.png");
-		// 弾用のInstancedModel初期化
-		bulletInstancedModel_.Initialize("Resources/EngineResources/Test/TR.obj", 5000);
+		// 弾用モデルを1回だけ読み込む (modelIndex を全弾で共有)
+		bulletModelIndex_ = ModelManager::GetInstance()->LoadObj("Resources/EngineResources/Test/TR.obj");
 
 		// プレイヤー初期化（自分自身のポインタを渡して、弾を発射できるようにする）
 		player_.Initialize(this);
@@ -24,8 +25,8 @@ namespace Test {
 		ParamEditor::RegisterAnchor("anchor", &anchor_);
 		ParamEditor::EndGroup();
 
-		
-		
+
+
 		// gpuパーティクルマネージャーに登録
 		GPUParticleManager::GetInstance()->RegisterFlag("test emit", &particleEmit_);
 		GPUParticleManager::GetInstance()->RegisterPosition("tracked pos", &player_.GetTranslate());
@@ -74,18 +75,6 @@ namespace Test {
 		flower.TransferMatrix();
 
 		if (Input::TriggerKey(DIK_L)) {
-			//for (int i = 0; i < 10;i++) {
-			//	Vector3 pos{};
-			//	pos.x = RandomFloat(-2.0f, 2.0f);
-			//	pos.y = RandomFloat(0.0f, 4.0f);
-			//	pos.z = RandomFloat(-2.0f, 2.0f);
-			//	Vector3 vel{};
-			//	vel.x = RandomFloat(-2.0f, 2.0f);
-			//	vel.y = RandomFloat(0.5f, 2.0f);
-			//	vel.z = RandomFloat(-2.0f, 2.0f);
-
-			//	//fireEmitter_.Emit(pos, { 1.0f,2.0f,0.0f }, { 1.0f, 0.6f, 0.1f, 1.0f }, 0.5f, { 0,0,0 }, 10.0f);
-			//}
 			particleEmit_ = !particleEmit_;
 		}
 		//fireEmitter_.Update(GetDeltaTime());
@@ -94,19 +83,17 @@ namespace Test {
 
 		// すべての弾の更新
 		for (auto& bullet : bullets_) {
-			bullet.Update();
+			bullet->Update();
 		}
 
 		// 寿命などで死亡した弾を削除 (isDead_ が true のものを除去)
 		bullets_.erase(
-			std::remove_if(bullets_.begin(), bullets_.end(), [](const TestBullet& b) {
-				return b.IsDead();
+			std::remove_if(bullets_.begin(), bullets_.end(),
+				[](const std::unique_ptr<TestBullet>& bullet) {
+					return bullet->IsDead(); // 削除条件
 				}),
 			bullets_.end()
 		);
-
-		// 最後に一括でバッファを更新
-		bulletInstancedModel_.UpdateBuffer();
 
 		// gpuパーティクル
 		GPUParticleManager::GetInstance()->Update(GetScaleTime());
@@ -124,8 +111,10 @@ namespace Test {
 		player_.Draw(GetDebugCamera());
 
 		flower.Draw();
-		// 弾のインスタンス描画予約
-		bulletInstancedModel_.Draw(GetDebugCamera());
+		// 弾の描画提出 (同じモデル・テクスチャは自動でまとめて描画される)
+		for (auto& bullet : bullets_) {
+			bullet->Draw(GetDebugCamera());
+		}
 
 		//fireEmitter_.Draw(GetDebugCamera());
 
@@ -134,9 +123,8 @@ namespace Test {
 	}
 
 	void TestManager::SpawnBullet(const Vector3& position) {
-		TestBullet newBullet;
-		// TestBullet::Initialize 内で bulletInstancedModel_ を使って AddInstance する
-		newBullet.Initialize(&bulletInstancedModel_, position);
-		bullets_.push_back(newBullet);
+		auto bullet = std::make_unique<TestBullet>();
+		bullet->Initialize(bulletModelIndex_, position);
+		bullets_.push_back(std::move(bullet));
 	}
 }

@@ -1,8 +1,8 @@
 #include "InstancedMesh.h"
-#include "../../Core/Base/DirectXCommon.h"
-#include "../../Core/Base/Logger.h"
-#include "../../Graphics/2D/TextureManager.h"
+#include "../../../Core/Base/DirectXCommon.h"
+#include "../../../Core/Base/Logger.h"
 #include "../../../Core/Loader/ModelLoader.h"
+#include "../../2D/TextureManager.h"
 #include <algorithm>
 
 namespace RyoEngine {
@@ -23,7 +23,7 @@ namespace RyoEngine {
     void InstancedMesh::LoadFromFile(const std::string& filePath) {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
-        ModelLoader::ModelData modelData = ModelLoader::LoadObjFile(filePath);
+        ModelLoader::ModelData modelData = ModelLoader::LoadModelFile(filePath);
 
         if (modelData.meshes.empty()) {
             Logger::Log("[InstancedMesh] メッシュが1つも読み込めませんでした: " + filePath + "\n");

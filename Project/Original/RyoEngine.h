@@ -18,7 +18,6 @@
 #include "Graphics/3D/ModelCommon.h"
 #include "Graphics/3D/Model.h"
 #include "Graphics/3D/InstancedModelCommon.h"
-#include "Graphics/3D/InstancedModel.h"
 #include "Graphics/2D/SpriteCommon.h"
 #include "Graphics/2D/Sprite.h"
 #include "Graphics/3D/Mesh/Mesh.h"

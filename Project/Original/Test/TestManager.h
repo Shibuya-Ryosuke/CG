@@ -43,9 +43,9 @@ namespace Test {
 		// プレイヤー
 		TestPlayer player_;
 
-		// --- 弾のインスタンス描画と管理 ---
-		RyoEngine::InstancedModel bulletInstancedModel_;
-		std::vector<TestBullet> bullets_;
+		// --- 弾の管理 (描画は同じモデルなら自動で1回のDrawInstancedにまとまる) ---
+		uint32_t bulletModelIndex_ = 0;
+		std::vector<std::unique_ptr<TestBullet>> bullets_;
 
 		// お試しフラグ
 		bool particleEmit_ = false;

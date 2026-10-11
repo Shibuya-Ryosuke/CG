@@ -77,8 +77,6 @@ StyleCopReport.xml
 *.ilk
 *.meta
 *.obj
-!Resources/*.obj
-!Resources/**/*.obj
 *.iobj
 *.pch
 *.pdb
@@ -370,3 +368,13 @@ FodyWeavers.xsd
 *.dmp
 Dumps/
 imgui.ini
+
+# Assimpのlibを追跡対象に許可
+!**/Externals/assimp/lib/Debug/
+!**/Externals/assimp/lib/Release/
+!**/Externals/assimp/lib/**/*.lib
+!**/Externals/assimp/lib/**/*.pdb
+
+# Resources内の.objファイルを追跡対象に許可
+!Resources/**/*.obj
+!**/Resources/**/*.obj

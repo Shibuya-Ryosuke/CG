@@ -1,19 +1,29 @@
 #pragma once
 #include <RyoEngine.h>
+#include <memory>
 
 namespace Test {
     class TestBullet {
     public:
-        void Initialize(RyoEngine::InstancedModel* owner, const RyoEngine::Vector3& position);
+        TestBullet() = default;
+        // コピーコンストラクタの削除
+        TestBullet(const TestBullet&) = delete;
+        // コピー代入演算子の削除
+        TestBullet& operator=(const TestBullet&) = delete;
+
+        // modelIndex: LoadObj で読み込んだ弾モデル (全弾で共有。GPU側は自動で1回のDrawInstancedにまとまる)
+        void Initialize(uint32_t modelIndex, const RyoEngine::Vector3& position);
         void Update();
+        // 行列確定+描画の提出 (弾は大量なのでフラスタムカリングはModel側で行う)
+        void Draw(const RyoEngine::Camera& camera);
         void ResolveDead();
 
         // 削除判定用
         bool IsDead() const { return isDead_; }
     private:
-        RyoEngine::InstancedModel* owner_ = nullptr;
-        RyoEngine::InstancedModel::Handle handle_ = RyoEngine::InstancedModel::kInvalidHandle;
-        RyoEngine::Transform transform_{};
+        // 弾1発 = Model 1体。Transformの持ち主はModel (GetTransform())
+        // Modelはコピー不可なので TestBullet もムーブ専用になる (vector には std::move / emplace_back で入れる)
+        std::unique_ptr<RyoEngine::Model> model_{};
         RyoEngine::Vector3 velocity_{};
         bool isDead_ = false;
 

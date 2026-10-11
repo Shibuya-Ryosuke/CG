@@ -1,429 +1,291 @@
 #include "Model.h"
-#include "../../Core/Base/DirectXCommon.h"
-#include "../../Graphics/2D/TextureManager.h"
-//#include "../Reflect/ReflectCommon.h"
-//#include "../Reflect/ReflectModel.h"
-#include "../../Editor/AnimEditor.h"
-#include "../Light/Light.h"
-#include "../Light/LightManager.h"
+#include "../2D/TextureManager.h"
+#include "../../Core/Math/Collision.h"
+#include "../../Editor/ModelPicker.h"
+#include <cassert>
 
 namespace RyoEngine {
 
-    void Model::Initialize() {
-        // デフォルト設定などが必要ならここに書く
-        // scale rotate translate
-        transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-    }
+    namespace {
+        constexpr float kDegToRad = 3.14159265358979323846f / 180.0f;
 
-    void Model::CreateModel(const std::string& filePath) {
-        // モデルロード (複数メッシュ・複数マテリアルに対応)
-        ModelLoader::ModelData modelData = ModelLoader::LoadObjFile(filePath);
-
-        // リソース作成
-        InternalInitialize(modelData);
-        transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-    }
-
-    void Model::CreateDirectionalLight() {
-        // NOTE: 以前はここでモデルごとのDirectionalLight用定数バッファを作成していたが、
-        //       ライトはシーンで1つに共有する方針になったため、その生成処理は
-        //       LightManager::Initialize() 側に移動した(エンジン起動時に一度だけ呼ばれる想定)。
-        //       この関数名は互換性のため残しているが、実質的にやっているのは
-        //       「全メッシュのデフォルトシェーディングモードをHALF_LAMBERTにする」ことだけ。
-
-        // 全メッシュのデフォルトシェーディングモードをHALF_LAMBERTにする
-        for (auto& mesh : meshes_) {
-            mesh.materialData->shadingMode = ShadingMode::HALF_LAMBERT;
+        Vector3 DegToRad(const Vector3& deg) {
+            return { deg.x * kDegToRad, deg.y * kDegToRad, deg.z * kDegToRad };
         }
     }
 
-    void Model::SetTex(uint32_t handle, int32_t meshIndex) {
-        if (meshIndex < 0) {
-            for (auto& mesh : meshes_) {
-                mesh.textureHandle = handle;
-            }
-        } else {
-            meshes_[meshIndex].textureHandle = handle;
+    Model::~Model() {
+        ModelPicker::OnModelDestroyed(this);
+        if (layoutRegistered_) {
+            ModelLayout::Unregister(this, layoutSlot_);
         }
     }
 
-    void Model::SetTex(const std::string& filePath, int32_t meshIndex) {
-        uint32_t handle = TextureManager::GetInstance()->Load(filePath);
-        SetTex(handle, meshIndex);
+    void Model::SetName(const std::string& name) {
+        if (!layoutRegistered_) return;
+        layoutSlot_ = ModelLayout::Rename(this, layoutSlot_, name);
+        layoutApplied_ = false; // 新しい名前で保存値を引き直す
     }
 
-    void Model::SetLambert(const ShadingMode lambertMode, int32_t meshIndex) {
-        if (meshIndex < 0) {
-            for (auto& mesh : meshes_) {
-                mesh.materialData->shadingMode = lambertMode;
-            }
-        } else {
-            meshes_[meshIndex].materialData->shadingMode = lambertMode;
+    void Model::ApplyEditedTransform(const Transform& transform) {
+        layoutEdited_ = true;
+        transform_ = transform;
+        if (onTransformEdited_) {
+            onTransformEdited_(transform);
         }
     }
 
-    void Model::SetEnableLighting(bool enableLighting, int32_t meshIndex) {
-        if (meshIndex < 0) {
-            for (auto& mesh : meshes_) {
-                mesh.materialData->enableLighting = enableLighting;
-            }
-        } else {
-            meshes_[meshIndex].materialData->enableLighting = enableLighting;
+    // ------------------------------------------------------------------
+    // 作成
+    // ------------------------------------------------------------------
+    std::unique_ptr<Model> Model::Create(uint32_t modelIndex, uint32_t textureIndex) {
+        std::unique_ptr<Model> instance = std::make_unique<Model>();
+        instance->CreateModel(modelIndex, textureIndex);
+        return instance;
+    }
+
+    std::unique_ptr<Model> Model::Create(const std::string& filePath, uint32_t textureIndex) {
+        std::unique_ptr<Model> instance = std::make_unique<Model>();
+        instance->CreateModel(filePath, textureIndex);
+        return instance;
+    }
+
+    void Model::CreateModel(const std::string& filePath, uint32_t textureIndex) {
+        CreateModel(ModelManager::GetInstance()->LoadObj(filePath), textureIndex);
+    }
+
+    void Model::CreateModel(uint32_t modelIndex, uint32_t textureIndex) {
+        // 作り直しのときは、古い登録を外す
+        if (layoutRegistered_) {
+            ModelLayout::Unregister(this, layoutSlot_);
+            layoutRegistered_ = false;
         }
-    }
+        layoutApplied_ = false;
+        layoutEdited_ = false;
 
-    void Model::SetColor(const Vector4& color, int32_t meshIndex) {
-        if (meshIndex < 0) {
-            for (auto& mesh : meshes_) {
-                mesh.materialData->color = color;
-            }
-        } else {
-            meshes_[meshIndex].materialData->color = color;
-        }
-    }
-
-    void Model::SetEmissive(const Vector3& color, float intensity, int32_t meshIndex) {
-        Vector4 emissiveColor = { color.x, color.y, color.z, 0.0f };
-        if (meshIndex < 0) {
-            for (auto& mesh : meshes_) {
-                mesh.materialData->emissiveColor = emissiveColor;
-                mesh.materialData->emissiveIntensity = intensity;
-            }
-        } else {
-            meshes_[meshIndex].materialData->emissiveColor = emissiveColor;
-            meshes_[meshIndex].materialData->emissiveIntensity = intensity;
-        }
-    }
-
-    void Model::SetHasUV(bool hasUV, int32_t meshIndex) {
-        if (meshIndex < 0) {
-            for (auto& mesh : meshes_) {
-                mesh.hasUV = hasUV;
-            }
-        } else {
-            meshes_[meshIndex].hasUV = hasUV;
-        }
-    }
-
-    ShadingMode Model::GetLambertByName(const std::string& materialName) const {
-        int32_t index = GetMeshIndexByName(materialName);
-        if (index >= 0) {
-            return GetLambert(index);
-        }
-        // 見つからない場合のデフォルト値やエラーハンドリング
-        return {}; // または適切なデフォルトの ShadingMode
-    }
-
-    Vector4 Model::GetColorByName(const std::string& materialName) const {
-        int32_t index = GetMeshIndexByName(materialName);
-        if (index >= 0) {
-            return GetColor(index);
-        }
-        return Vector4(0, 0, 0, 0); // デフォルトカラー
-    }
-
-    void Model::SetLambertByName(const ShadingMode lambertMode, const std::string& materialName) {
-        int32_t index = GetMeshIndexByName(materialName);
-        if (index >= 0) {
-            SetLambert(lambertMode, index);
-        }
-    }
-
-    void Model::SetTexByName(uint32_t handle, const std::string& materialName) {
-        int32_t index = GetMeshIndexByName(materialName);
-        if (index >= 0) {
-            SetTex(handle, index);
-        }
-    }
-
-    void Model::SetTexByName(const std::string& filePath, const std::string& materialName) {
-        int32_t index = GetMeshIndexByName(materialName);
-        if (index >= 0) {
-            SetTex(filePath, index);
-        }
-    }
-
-    void Model::SetColorByName(const Vector4& color, const std::string& materialName) {
-        int32_t index = GetMeshIndexByName(materialName);
-        if (index >= 0) {
-            SetColor(color, index);
-        }
-    }
-
-    void Model::UpdateUVTransform(MeshResource& mesh) {
-        // UV用のSRT行列を作成してmaterialDataへ書き込む (materialDataはUpload Heapへ常時Mapされているので、
-        // ここで代入した時点でGPU側の値もそのまま更新される)
-        mesh.materialData->uvTransform = MakeAffineMatrix(
-            { mesh.uvScale.x, mesh.uvScale.y, 1.0f },
-            { 0.0f, 0.0f, mesh.uvRotate },
-            { mesh.uvTranslate.x, mesh.uvTranslate.y, 0.0f }
-        );
-    }
-
-    void Model::SetUVScale(const Vector2& scale, int32_t meshIndex) {
-        if (meshIndex < 0) {
-            for (auto& mesh : meshes_) {
-                mesh.uvScale = scale;
-                UpdateUVTransform(mesh);
-            }
-        } else {
-            meshes_[meshIndex].uvScale = scale;
-            UpdateUVTransform(meshes_[meshIndex]);
-        }
-    }
-
-    void Model::SetUVRotate(float rotate, int32_t meshIndex) {
-        if (meshIndex < 0) {
-            for (auto& mesh : meshes_) {
-                mesh.uvRotate = rotate;
-                UpdateUVTransform(mesh);
-            }
-        } else {
-            meshes_[meshIndex].uvRotate = rotate;
-            UpdateUVTransform(meshes_[meshIndex]);
-        }
-    }
-
-    void Model::SetUVTranslate(const Vector2& translate, int32_t meshIndex) {
-        if (meshIndex < 0) {
-            for (auto& mesh : meshes_) {
-                mesh.uvTranslate = translate;
-                UpdateUVTransform(mesh);
-            }
-        } else {
-            meshes_[meshIndex].uvTranslate = translate;
-            UpdateUVTransform(meshes_[meshIndex]);
-        }
-    }
-
-    void Model::SetUVSRT(const Vector2& scale, float rotate, const Vector2& translate, int32_t meshIndex) {
-        if (meshIndex < 0) {
-            for (auto& mesh : meshes_) {
-                mesh.uvScale = scale;
-                mesh.uvRotate = rotate;
-                mesh.uvTranslate = translate;
-                UpdateUVTransform(mesh);
-            }
-        } else {
-            meshes_[meshIndex].uvScale = scale;
-            meshes_[meshIndex].uvRotate = rotate;
-            meshes_[meshIndex].uvTranslate = translate;
-            UpdateUVTransform(meshes_[meshIndex]);
-        }
-    }
-
-    void Model::SetUVScaleByName(const Vector2& scale, const std::string& materialName) {
-        int32_t index = GetMeshIndexByName(materialName);
-        if (index >= 0) {
-            SetUVScale(scale, index);
-        }
-    }
-
-    void Model::SetUVRotateByName(float rotate, const std::string& materialName) {
-        int32_t index = GetMeshIndexByName(materialName);
-        if (index >= 0) {
-            SetUVRotate(rotate, index);
-        }
-    }
-
-    void Model::SetUVTranslateByName(const Vector2& translate, const std::string& materialName) {
-        int32_t index = GetMeshIndexByName(materialName);
-        if (index >= 0) {
-            SetUVTranslate(translate, index);
-        }
-    }
-
-    void Model::SetUVSRTByName(const Vector2& scale, float rotate, const Vector2& translate, const std::string& materialName) {
-        int32_t index = GetMeshIndexByName(materialName);
-        if (index >= 0) {
-            SetUVSRT(scale, rotate, translate, index);
-        }
-    }
-
-    void Model::InternalInitialize(const ModelLoader::ModelData& modelData) {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
-
+        modelIndex_ = modelIndex;
         meshes_.clear();
-        meshes_.reserve(modelData.meshes.size());
+        transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+        worldMatrix_ = MakeIdentity4x4();
+        isVisible_ = true;
 
-        // フラスタムカリング用：全メッシュの全頂点から、原点から一番遠い頂点までの距離(=半径)を求める
-        boundingRadius_ = 0.0f;
-
-        for (const auto& srcMesh : modelData.meshes) {
-            MeshResource mesh;
-
-            // 1. 頂点バッファ作成
-            mesh.vertexResource = DirectXCommon::CreateBufferResource(device, sizeof(VertexData) * srcMesh.vertices.size());
-            mesh.vertexBufferView.BufferLocation = mesh.vertexResource->GetGPUVirtualAddress();
-            mesh.vertexBufferView.SizeInBytes = static_cast<UINT>(sizeof(VertexData) * srcMesh.vertices.size());
-            mesh.vertexBufferView.StrideInBytes = sizeof(VertexData);
-
-            VertexData* vertexData = nullptr;
-            mesh.vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-            std::memcpy(vertexData, srcMesh.vertices.data(), sizeof(VertexData) * srcMesh.vertices.size());
-            mesh.vertexCount = static_cast<uint32_t>(srcMesh.vertices.size());
-
-            // 各頂点のローカル座標(原点からの距離)を見て、boundingRadius_を更新していく
-            for (const auto& vertex : srcMesh.vertices) {
-                Vector3 position = { vertex.position.x, vertex.position.y, vertex.position.z };
-                float distance = Length(position);
-                if (distance > boundingRadius_) {
-                    boundingRadius_ = distance;
-                }
-            }
-
-            // 2. マテリアルバッファ作成 (メッシュごとに1つ)
-            mesh.materialResource = DirectXCommon::CreateBufferResource(device, sizeof(Material));
-            mesh.materialResource->Map(0, nullptr, reinterpret_cast<void**>(&mesh.materialData));
-            mesh.materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-            mesh.materialData->enableLighting = 1;
-            mesh.materialData->shadingMode = ShadingMode::LAMBERT;
-            mesh.materialData->emissiveColor = { 0.0f, 0.0f, 0.0f, 0.0f };
-            mesh.materialData->emissiveIntensity = 0.0f;
-            UpdateUVTransform(mesh); // uvScale(1,1)/uvRotate(0)/uvTranslate(0,0)のデフォルト値から単位行列相当が入る
-
-            // 3. テクスチャ (メッシュが参照するマテリアルのmap_Kdから読み込む。無ければ白テクスチャ)
-            //    あわせて、あとで名前引きできるようにmtlのマテリアル名も控えておく
-            if (srcMesh.materialIndex < modelData.materials.size()) {
-                mesh.materialName = modelData.materials[srcMesh.materialIndex].name;
-                if (!modelData.materials[srcMesh.materialIndex].textureFilePath.empty()) {
-                    mesh.textureHandle = TextureManager::GetInstance()->Load(modelData.materials[srcMesh.materialIndex].textureFilePath);
-                } else {
-                    mesh.textureHandle = TextureManager::GetInstance()->GetWhiteTex();
-                }
-            } else {
-                mesh.textureHandle = TextureManager::GetInstance()->GetWhiteTex();
-            }
-
-            // ModelLoaderが「objの面(f)にvt(UV)が無かったか」を判定した結果をそのまま反映する。
-            // (Suzanneのようにvtを持たないobjは、ここで自動的にfalseになる)
-            mesh.hasUV = srcMesh.hasUV;
-
-            meshes_.push_back(mesh);
+        const ModelManager::ModelAsset* asset = ModelManager::GetInstance()->GetAsset(modelIndex);
+        if (!asset) {
+            return; // 無効なindex。描画されないだけで落とさない
         }
 
-        // 4. WVPバッファ作成 (モデル全体で共有するので1つでよい)
-        wvpResource_ = DirectXCommon::CreateBufferResource(device, sizeof(TransformationMatrix));
-        wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&wvpData_));
-        wvpData_->WVP = MakeIdentity4x4();
-        wvpData_->World = MakeIdentity4x4();
-        wvpData_->alpha = 1.0f;
+        layoutSlot_ = ModelLayout::Register(this, asset->filePath);
+        layoutRegistered_ = true;
 
-        CreateDirectionalLight();
-    }
-
-    void Model::InternalDraw(ModelCommon::DrawType drawType, D3D12_GPU_VIRTUAL_ADDRESS externalWVP, uint32_t externalTextureHandle) {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        auto lightManager = LightManager::GetInstance(); // ループの外で取得
-        // NOTE: 複数灯対応により、ライト関連は3リソースに分かれた。
-        //   ・lightArrayGVA : Light配列本体 (StructuredBuffer。Root DescriptorのSRVとして直接バインド)
-        //   ・lightCountGVA : 現在の有効ライト数 (cbuffer)
-        //   ・ambientGVA    : アンビエントライト (cbuffer)
-        // ルートシグネチャ側で root param 3をCBVからSRVに変更し、4・5番を新規追加する必要がある。
-        // (現状のRootSignature定義ファイルが手元に無いため、番号はMesh.cppと合わせて仮に3/4/5としている。
-        //  実際のRootSignature生成コードと食い違っていないか要確認)
-        D3D12_GPU_VIRTUAL_ADDRESS lightArrayGVA = lightManager->GetLightGPUVirtualAddress();
-        D3D12_GPU_VIRTUAL_ADDRESS lightCountGVA = lightManager->GetLightCountGPUVirtualAddress();
-        D3D12_GPU_VIRTUAL_ADDRESS ambientGVA = lightManager->GetAmbientGPUVirtualAddress();
-
-        // externalWVPが指定されていれば(パーティクル等の外部インスタンスバッファ)そちらを優先し、
-        // 指定が無ければ従来通りモデル自身が持つ1個のwvpResource_を使う
-        D3D12_GPU_VIRTUAL_ADDRESS wvpGVA = (externalWVP != 0) ? externalWVP : wvpResource_->GetGPUVirtualAddress();
-
-        // 最後にセットしたPSOを保持しておき、変更時のみ切り替える（最適化）
-        ID3D12PipelineState* lastPSO = nullptr;
-
-        for (const auto& mesh : meshes_) {
-            ModelCommon::DrawType actualDrawType = drawType;
-            if (!mesh.hasUV) {
-                actualDrawType = (drawType == ModelCommon::DrawType::REFLECT)
-                    ? ModelCommon::DrawType::REFLECT_NO_UV
-                    : ModelCommon::DrawType::NO_UV;
-            }
-
-            // シャドウパス中は、UV有無やREFLECTのロジックを無視して深度専用PSOを強制する。
-            // (drawTypeはDraw()呼び出し時点でラムダに焼き付けられた古い値のため、
-            //  「今このフレームで実際にシャドウパス中かどうか」はModelCommon側の状態を見て判定する)
-            if (ModelCommon::GetInstance()->GetCurrentDrawType() == ModelCommon::DrawType::SHADOW) {
-                actualDrawType = ModelCommon::DrawType::SHADOW;
-            }
-
-            ID3D12PipelineState* currentPSO = ModelCommon::GetInstance()->GetPipelineState(actualDrawType);
-            if (currentPSO != lastPSO) {
-                commandList->SetPipelineState(currentPSO);
-                lastPSO = currentPSO;
-            }
-
-
-            // externalTextureHandleが指定されていれば(パーティクル等)そちらを優先し、
-            // 無ければ従来通りメッシュ自身が持つtextureHandleを使う
-            uint32_t texHandle = (externalTextureHandle != 0) ? externalTextureHandle : mesh.textureHandle;
-            commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(texHandle));
-
-            //// SRV(テクスチャ)は DescriptorTable でセット
-            //commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(mesh.textureHandle));
-
-            commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
-            commandList->SetGraphicsRootConstantBufferView(0, mesh.materialResource->GetGPUVirtualAddress());
-            commandList->SetGraphicsRootConstantBufferView(1, wvpGVA);
-            commandList->SetGraphicsRootShaderResourceView(3, lightArrayGVA);  // Light配列 (Root Descriptor SRV)
-            commandList->SetGraphicsRootConstantBufferView(4, lightCountGVA); // 有効ライト数
-            commandList->SetGraphicsRootConstantBufferView(5, ambientGVA);    // アンビエントライト
-
-            commandList->DrawInstanced(mesh.vertexCount, 1, 0, 0);
+        meshes_.resize(asset->meshes.size());
+        for (size_t i = 0; i < meshes_.size(); ++i) {
+            meshes_[i].textureHandle = asset->meshes[i].defaultTextureHandle;
+        }
+        if (textureIndex != 0) {
+            SetTex(textureIndex);
         }
     }
 
-    void Model::DrawInstance(D3D12_GPU_VIRTUAL_ADDRESS externalWVP, uint32_t externalTextureHandle, ModelCommon::DrawType drawType) {
-        ModelCommon::GetInstance()->SetDrawCommands([this, externalWVP, externalTextureHandle, drawType]() {
-            InternalDraw(drawType, externalWVP, externalTextureHandle);
-            });
-    }
+    // ------------------------------------------------------------------
+    // 毎フレーム
+    // ------------------------------------------------------------------
+    void Model::TransferMatrix(const Camera& camera, bool frustumCulling) {
+        // 保存された Transform があれば、最初の1回だけ適用する (コードで入れた初期値より保存値が勝つ)
+        if (!layoutApplied_ && layoutRegistered_) {
+            layoutApplied_ = true;
+            Transform saved{};
+            if (ModelLayout::TryGetSaved(layoutSlot_.key, saved)) {
+                transform_ = saved;
+            }
+        }
 
-    void Model::TransferMatrix(const Camera& camera) {
-        // ワールド行列の作成
-        worldMatrix_ = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+        worldMatrix_ = MakeAffineMatrix(transform_.scale, DegToRad(transform_.rotate), transform_.translate);
 
-        // WVP行列の計算 (World * ViewProjection)
-        Matrix4x4 wvpMatrix = worldMatrix_ * camera.GetViewProjectionMatrix();
+        // 3D描画全体で使うVPを渡す (最後に呼ばれたカメラが有効)
+        ModelManager::GetInstance()->SetViewProjection(camera.GetViewProjectionMatrix());
+        ModelPicker::SetCamera(camera);
 
-        wvpData_->World = worldMatrix_;
-        wvpData_->WVP = wvpMatrix;
+        const ModelManager::ModelAsset* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
+        if (!asset) {
+            isVisible_ = false;
+            return;
+        }
 
-        // フラスタムカリング判定
-        // NOTE: スケールが非一様(x/y/zで値が違う)でも安全なように、一番大きい成分で半径を拡大する
-        //       (実際の形より少し大きめの球になるが、誤って消してしまうよりは安全)
+        // フラスタムカリング。非一様スケールでも安全なよう一番大きい成分で球を拡大する
         float maxScale = transform_.scale.x;
         if (transform_.scale.y > maxScale) maxScale = transform_.scale.y;
         if (transform_.scale.z > maxScale) maxScale = transform_.scale.z;
 
         Sphere boundingSphere{};
         boundingSphere.center = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
-        boundingSphere.radius = boundingRadius_ * maxScale;
+        boundingSphere.radius = asset->boundingRadius * maxScale;
+        // frustumCulling=false の場合は常に描画する (球の計算はクリック選択のため常に行う)
+        isVisible_ = frustumCulling ? IsCollision(boundingSphere, camera.GetFrustumPlanes()) : true;
 
-        isVisible_ = IsCollision(boundingSphere, camera.GetFrustumPlanes());
+        pickCenter_ = boundingSphere.center;
+        pickRadius_ = boundingSphere.radius;
     }
 
-    void Model::Draw(ModelCommon::DrawType drawType) {
-        // フラスタムカリング：視錐台の外にあるなら、描画コマンドの予約自体をしない
+    void Model::Draw() {
         if (!isVisible_) {
             return;
         }
+        auto manager = ModelManager::GetInstance();
+        const ModelManager::ModelAsset* asset = manager->GetAsset(modelIndex_);
+        if (!asset) {
+            return;
+        }
 
-        ModelCommon::GetInstance()->SetDrawCommands([=, this]() {
-            InternalDraw(drawType);
+        if (pickable_) {
+            ModelPicker::Submit(this, pickCenter_, pickRadius_);
+        }
+
+        for (size_t i = 0; i < meshes_.size() && i < asset->meshes.size(); ++i) {
+            const MeshState& state = meshes_[i];
+            const ModelManager::MeshAsset& meshAsset = asset->meshes[i];
+
+            ModelInstanceData data;
+            data.world = worldMatrix_;
+            data.color = state.color;
+            data.emissive = { state.emissiveColor.x, state.emissiveColor.y, state.emissiveColor.z, state.emissiveIntensity };
+
+            // UV変換 (2x2 + 平行移動だけGPUへ渡す)
+            const Matrix4x4 uv = MakeAffineMatrix(
+                { state.uvScale.x, state.uvScale.y, 1.0f },
+                { 0.0f, 0.0f, state.uvRotate * kDegToRad },
+                { state.uvTranslate.x, state.uvTranslate.y, 0.0f });
+            data.uvMat = { uv.m[0][0], uv.m[0][1], uv.m[1][0], uv.m[1][1] };
+            data.uvOffset = { uv.m[3][0], uv.m[3][1] };
+
+            data.enableLighting = state.enableLighting ? 1 : 0;
+            data.shadingMode = static_cast<int32_t>(state.shadingMode);
+
+            // UVを持たないメッシュはテクスチャを引けないので、上書きされていても既定(white)を使う
+            const uint32_t textureHandle = meshAsset.hasUV ? state.textureHandle : meshAsset.defaultTextureHandle;
+
+            manager->Submit(modelIndex_, static_cast<uint32_t>(i), textureHandle, data);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Getter
+    // ------------------------------------------------------------------
+    bool Model::GetHasUV(size_t meshIndex) const {
+        const auto* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
+        return asset && meshIndex < asset->meshes.size() ? asset->meshes[meshIndex].hasUV : true;
+    }
+
+    const std::string& Model::GetMaterialName(size_t meshIndex) const {
+        static const std::string empty;
+        const auto* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
+        return asset && meshIndex < asset->meshes.size() ? asset->meshes[meshIndex].materialName : empty;
+    }
+
+    int32_t Model::GetMeshIndexByName(const std::string& materialName) const {
+        const auto* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
+        if (!asset) return -1;
+        for (size_t i = 0; i < asset->meshes.size(); ++i) {
+            if (asset->meshes[i].materialName == materialName) {
+                return static_cast<int32_t>(i);
+            }
+        }
+        return -1;
+    }
+
+    // ------------------------------------------------------------------
+    // Setter
+    // ------------------------------------------------------------------
+    void Model::SetTex(uint32_t handle, int32_t meshIndex) {
+        const auto* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
+        if (!asset) return;
+        ForEachMesh(meshIndex, [&](MeshState& mesh) {
+            const size_t index = static_cast<size_t>(&mesh - meshes_.data());
+            if (handle == 0) {
+                mesh.textureHandle = asset->meshes[index].defaultTextureHandle; // 初期値へ戻す
+                mesh.textureOverridden = false;
+            } else {
+                mesh.textureHandle = handle;
+                mesh.textureOverridden = true;
+            }
             });
     }
 
-    std::unique_ptr<Model> Model::Create(const std::string& filePath, bool registAnimEdit, const std::string& name) {
-        std::unique_ptr<Model> instance = std::make_unique<Model>();
-        instance->Initialize(); // 共通の初期化
-        instance->CreateModel(filePath); // モデル読み込みとリソース作成 (複数メッシュに対応)
+    void Model::SetTex(const std::string& filePath, int32_t meshIndex) {
+        SetTex(TextureManager::GetInstance()->Load(filePath), meshIndex);
+    }
 
-        if (registAnimEdit) {
-            AnimEditor::SetTargetModel(instance.get(), name);
-        }
+    void Model::SetColor(const Vector4& color, int32_t meshIndex) {
+        ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.color = color; });
+    }
 
-        return instance;
+    void Model::SetEmissive(const Vector3& color, float intensity, int32_t meshIndex) {
+        ForEachMesh(meshIndex, [&](MeshState& mesh) {
+            mesh.emissiveColor = color;
+            mesh.emissiveIntensity = intensity;
+            });
+    }
+
+    void Model::SetEnableLighting(bool enable, int32_t meshIndex) {
+        ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.enableLighting = enable; });
+    }
+
+    void Model::SetLambert(ShadingMode mode, int32_t meshIndex) {
+        ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.shadingMode = mode; });
+    }
+
+    void Model::SetUVScale(const Vector2& scale, int32_t meshIndex) {
+        ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.uvScale = scale; });
+    }
+
+    void Model::SetUVRotate(float rotateDeg, int32_t meshIndex) {
+        ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.uvRotate = rotateDeg; });
+    }
+
+    void Model::SetUVTranslate(const Vector2& translate, int32_t meshIndex) {
+        ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.uvTranslate = translate; });
+    }
+
+    void Model::SetUVSRT(const Vector2& scale, float rotateDeg, const Vector2& translate, int32_t meshIndex) {
+        ForEachMesh(meshIndex, [&](MeshState& mesh) {
+            mesh.uvScale = scale;
+            mesh.uvRotate = rotateDeg;
+            mesh.uvTranslate = translate;
+            });
+    }
+
+    // ------------------------------------------------------------------
+    // 名前指定版
+    // ------------------------------------------------------------------
+    void Model::SetTexByName(uint32_t handle, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetTex(handle, index);
+    }
+    void Model::SetTexByName(const std::string& filePath, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetTex(filePath, index);
+    }
+    void Model::SetColorByName(const Vector4& color, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetColor(color, index);
+    }
+    void Model::SetLambertByName(ShadingMode mode, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetLambert(mode, index);
+    }
+    void Model::SetUVScaleByName(const Vector2& scale, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetUVScale(scale, index);
+    }
+    void Model::SetUVRotateByName(float rotateDeg, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetUVRotate(rotateDeg, index);
+    }
+    void Model::SetUVTranslateByName(const Vector2& translate, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetUVTranslate(translate, index);
+    }
+    void Model::SetUVSRTByName(const Vector2& scale, float rotateDeg, const Vector2& translate, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetUVSRT(scale, rotateDeg, translate, index);
     }
 }

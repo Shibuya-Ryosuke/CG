@@ -5,8 +5,15 @@
 #include <array>
 #include <unordered_map>
 #include <algorithm>
+#include <cctype>
 #include <dxgidebug.h>
 #include "../../Core/Base/Logger.h"
+#pragma warning(push)
+#pragma warning(disable: 4865 4267 5267 4619 4351)
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#pragma warning(pop)
 
 namespace RyoEngine {
 
@@ -204,6 +211,113 @@ namespace RyoEngine {
 			std::remove_if(modelData.meshes.begin(), modelData.meshes.end(),
 				[](const MeshData& mesh) { return mesh.vertices.empty(); }),
 			modelData.meshes.end());
+
+		return modelData;
+	}
+
+	ModelLoader::ModelData ModelLoader::LoadModelFile(const std::string& filePath) {
+		size_t dot = filePath.find_last_of('.');
+		std::string ext = (dot != std::string::npos) ? filePath.substr(dot) : "";
+		std::transform(ext.begin(), ext.end(), ext.begin(),
+			[](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+
+		if (ext == ".obj") {
+			return LoadObjFile(filePath);  // objは既存の自作ローダーをそのまま使う
+		}
+		return LoadWithAssimp(filePath);
+	}
+
+	ModelLoader::ModelData ModelLoader::LoadWithAssimp(const std::string& filePath) {
+		OutputDebugStringA((filePath + "\n").c_str());
+		ModelData modelData;
+
+		// テクスチャパスの解決に使うディレクトリ (末尾に区切り文字を含む)
+		std::string directoryPath;
+		size_t dirPos = filePath.find_last_of("/\\");
+		if (dirPos != std::string::npos) {
+			directoryPath = filePath.substr(0, dirPos + 1);
+		}
+
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(filePath,
+			aiProcess_Triangulate |           // 全ポリゴンを三角形化
+			aiProcess_GenSmoothNormals |      // 法線が無ければ生成
+			aiProcess_PreTransformVertices);  // ノード階層のTransformを頂点に焼き込む (静的モデル用)
+
+		if (!scene || !scene->mRootNode) {
+			Logger::LogWarning("[ModelLoader] Assimp load failed.\n");
+			OutputDebugStringA((std::string(importer.GetErrorString()) + "\n").c_str());  // 失敗理由を出力
+			assert(false && "Assimp load failed");
+			return modelData;
+		}
+
+		// ---- マテリアル ----
+		for (unsigned int i = 0; i < scene->mNumMaterials; ++i) {
+			const aiMaterial* src = scene->mMaterials[i];
+			MaterialData material;
+			material.name = src->GetName().C_Str();
+
+			aiString texPath;
+			// glTFのbaseColorTextureは BASE_COLOR に入る (環境によっては DIFFUSE にも入る)
+			if (src->GetTexture(aiTextureType_BASE_COLOR, 0, &texPath) == AI_SUCCESS ||
+				src->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
+				// "*0" のような形式は glb の埋め込みテクスチャ (現状は未対応なのでパスは空のまま)
+				if (texPath.length > 0 && texPath.C_Str()[0] != '*') {
+					material.textureFilePath = directoryPath + texPath.C_Str();
+				} else if (texPath.length > 0) {
+					Logger::LogWarning("[ModelLoader] Embedded texture is not supported yet.\n");
+				}
+			}
+			modelData.materials.push_back(material);
+		}
+		// マテリアルが1つも無ければダミーを1つ入れておく (白テクスチャ扱い)
+		if (modelData.materials.empty()) {
+			modelData.materials.push_back(MaterialData{});
+		}
+
+		// ---- メッシュ ----
+		for (unsigned int m = 0; m < scene->mNumMeshes; ++m) {
+			const aiMesh* src = scene->mMeshes[m];
+
+			MeshData mesh;
+			mesh.materialIndex = (src->mMaterialIndex < modelData.materials.size()) ? src->mMaterialIndex : 0;
+			mesh.hasUV = src->HasTextureCoords(0);
+
+			// 頂点1つぶんをVertexDataに変換する (objローダーと同じ座標系変換を行う)
+			auto buildVertex = [&](unsigned int idx) -> VertexData {
+				Vector4 position = { src->mVertices[idx].x, src->mVertices[idx].y, src->mVertices[idx].z, 1.0f };
+
+				Vector3 normal = { 0.0f, 1.0f, 0.0f };
+				if (src->HasNormals()) {
+					normal = { src->mNormals[idx].x, src->mNormals[idx].y, src->mNormals[idx].z };
+				}
+
+				Vector2 texcoord = { 0.0f, 0.0f };
+				if (mesh.hasUV) {
+					texcoord = { src->mTextureCoords[0][idx].x, 1.0f - src->mTextureCoords[0][idx].y };
+				}
+
+				position.x *= -1.0f;
+				normal.x *= -1.0f;
+
+				return { position, texcoord, normal };
+				};
+
+			mesh.vertices.reserve(static_cast<size_t>(src->mNumFaces) * 3);
+			for (unsigned int f = 0; f < src->mNumFaces; ++f) {
+				const aiFace& face = src->mFaces[f];
+				if (face.mNumIndices != 3) continue;  // 点・線は無視
+
+				// objローダーと同じく、頂点を逆順で積んで周り順を反転させる
+				mesh.vertices.push_back(buildVertex(face.mIndices[2]));
+				mesh.vertices.push_back(buildVertex(face.mIndices[1]));
+				mesh.vertices.push_back(buildVertex(face.mIndices[0]));
+			}
+
+			if (!mesh.vertices.empty()) {
+				modelData.meshes.push_back(std::move(mesh));
+			}
+		}
 
 		return modelData;
 	}

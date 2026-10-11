@@ -44,5 +44,17 @@ namespace RyoEngine {
 		/// </summary>
 		static ModelData LoadObjFile(const std::string& filePath);
 
+		/// <summary>
+		/// 拡張子を見て読み込み方法を振り分ける。
+		/// .obj は自作ローダー (LoadObjFile)、それ以外 (.gltf / .glb など) は Assimp (LoadWithAssimp) で読み込む。
+		/// </summary>
+		static ModelData LoadModelFile(const std::string& filePath);
+
+		/// <summary>
+		/// Assimpでモデルを読み込む (gltf / glb など)。
+		/// ノード階層のTransformは頂点に焼き込むため、静的モデル専用 (ボーン・スキンアニメーションは非対応)。
+		/// </summary>
+		static ModelData LoadWithAssimp(const std::string& filePath);
+
 	};
 }
