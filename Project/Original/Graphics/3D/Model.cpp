@@ -40,33 +40,40 @@ namespace RyoEngine {
     // ------------------------------------------------------------------
     std::unique_ptr<Model> Model::Create(uint32_t modelIndex, uint32_t textureIndex) {
         std::unique_ptr<Model> instance = std::make_unique<Model>();
-        instance->CreateModel(modelIndex, textureIndex);
+        instance->SetModel(modelIndex, textureIndex);
         return instance;
     }
 
     std::unique_ptr<Model> Model::Create(const std::string& filePath, uint32_t textureIndex) {
         std::unique_ptr<Model> instance = std::make_unique<Model>();
-        instance->CreateModel(filePath, textureIndex);
+        instance->SetModel(filePath, textureIndex);
         return instance;
     }
 
-    void Model::CreateModel(const std::string& filePath, uint32_t textureIndex) {
-        CreateModel(ModelManager::GetInstance()->LoadObj(filePath), textureIndex);
+    void Model::SetModel(const std::string& filePath, uint32_t textureIndex) {
+        SetModel(ModelManager::GetInstance()->LoadObj(filePath), textureIndex);
     }
 
-    void Model::CreateModel(uint32_t modelIndex, uint32_t textureIndex) {
-        // 作り直しのときは、古い登録を外す
-        if (layoutRegistered_) {
+    void Model::SetModel(uint32_t modelIndex, uint32_t textureIndex) {
+        // 同じモデルなら何もしない (見た目をリセットしない)。ただしテクスチャ指定があれば反映する
+        if (modelIndex != ModelManager::kInvalidModelIndex && modelIndex == modelIndex_) {
+            if (textureIndex != 0) {
+                SetTex(textureIndex);
+            }
+            return;
+        }
+
+        // 自動キー("objのパス#何番目")のときは、モデルが変わるので登録を外して付け直す。
+        // SetNameで名前を付けている場合は、キーが変わらないのでそのまま。
+        // NOTE: layoutApplied_ / layoutEdited_ / transform_ には触らない
+        //       (差し替えでTransformが保存値に巻き戻らないように、また編集済みの印を残すため)
+        if (layoutRegistered_ && !layoutSlot_.path.empty()) {
             ModelLayout::Unregister(this, layoutSlot_);
             layoutRegistered_ = false;
         }
-        layoutApplied_ = false;
-        layoutEdited_ = false;
 
         modelIndex_ = modelIndex;
         meshes_.clear();
-        transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-        worldMatrix_ = MakeIdentity4x4();
         isVisible_ = true;
 
         const ModelManager::ModelAsset* asset = ModelManager::GetInstance()->GetAsset(modelIndex);
@@ -74,8 +81,10 @@ namespace RyoEngine {
             return; // 無効なindex。描画されないだけで落とさない
         }
 
-        layoutSlot_ = ModelLayout::Register(this, asset->filePath);
-        layoutRegistered_ = true;
+        if (!layoutRegistered_) {
+            layoutSlot_ = ModelLayout::Register(this, asset->filePath);
+            layoutRegistered_ = true;
+        }
 
         meshes_.resize(asset->meshes.size());
         for (size_t i = 0; i < meshes_.size(); ++i) {

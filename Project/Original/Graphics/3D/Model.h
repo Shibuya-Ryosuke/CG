@@ -48,10 +48,11 @@ namespace RyoEngine {
         static std::unique_ptr<Model> Create(const std::string& filePath, uint32_t textureIndex = 0);
 
         /// <summary>
-        /// 作り直し / 代入用
+        /// 既にあるModelのobjデータを差し替える
         /// </summary>
-        void CreateModel(uint32_t modelIndex, uint32_t textureIndex = 0);
-        void CreateModel(const std::string& filePath, uint32_t textureIndex = 0);
+        void SetModel(uint32_t modelIndex, uint32_t textureIndex = 0);
+        /// <summary>ファイルパス版 (内部で LoadObj を呼ぶ。同じパスは読み込み1回のみ)</summary>
+        void SetModel(const std::string& filePath, uint32_t textureIndex = 0);
 
         /// <summary>
         /// ワールド行列の確定とフラスタムカリング。毎フレーム、Draw()の前に呼ぶ。
