@@ -180,7 +180,7 @@ namespace RyoEngine{
 		assert(SUCCEEDED(hr));
 
 		// Fenceのsignalを待つためのイベントを作成する
-		fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
+		fenceEvent_ = CreateEvent(nullptr, false, false, nullptr);
 		assert(fenceEvent_ != nullptr);
 
 		Logger::LogSuccess("DxCommon : Initialized\n");

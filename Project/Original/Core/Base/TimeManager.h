@@ -40,7 +40,7 @@ namespace RyoEngine {
 		static void SetScale(float scale) {
 			GetInstance()->scale_ = scale;
 		}
-		static void SetTragetFps(float fps) {
+		static void SetTargetFps(float fps) {
 			TimeManager* instance = GetInstance();
 			instance->targetFps_ = fps;
 
