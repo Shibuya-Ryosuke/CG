@@ -51,6 +51,9 @@ namespace RyoEngine {
         dxCommon_ = DirectXCommon::GetInstance();
         dxCommon_->Initialize(winApp_);
 
+        // srvマネージャーの初期化
+        SrvManager::GetInstance()->Initialize();
+
         shaderCompiler_ = RyoEngine::ShaderCompiler::GetInstance();
         shaderCompiler_->Initialize();
 
@@ -141,6 +144,7 @@ namespace RyoEngine {
         ShadowMap::Finalize();
         LightManager::Finalize();
         textureManager_->Finalize();
+        SrvManager::GetInstance()->Finalize();
         shaderCompiler_->Finalize();
 
         PostProcess::GetInstance()->Finalize();

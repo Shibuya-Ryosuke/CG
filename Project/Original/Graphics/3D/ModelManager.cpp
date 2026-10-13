@@ -2,6 +2,7 @@
 #include "../../Core/Base/DirectXCommon.h"
 #include "../../Core/Base/Logger.h"
 #include "../../Core/Base/ShaderCompiler.h"
+#include "../../Core/Base/SrvManager.h"
 #include "../2D/TextureManager.h"
 #include "../Light/LightManager.h"
 #include "../Shadow/ShadowMap.h"
@@ -248,8 +249,8 @@ namespace RyoEngine {
         commandList->SetGraphicsRootSignature(rootSignature_.Get());
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        ID3D12DescriptorHeap* heaps[] = { textureManager->GetDescriptorHeap() };
-        commandList->SetDescriptorHeaps(_countof(heaps), heaps);
+       
+        SrvManager::GetInstance()->PreDraw(commandList);
 
         // root 0: カメラVP / 3: ライト配列 / 4: ライト数 / 5: アンビエント / 6: ライトVP / 7: シャドウマップ
         commandList->SetGraphicsRootConstantBufferView(0, cameraVPResource_->GetGPUVirtualAddress());

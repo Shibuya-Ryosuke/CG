@@ -2,6 +2,7 @@
 #define _USE_MATH_DEFINES
 #include "Core/Base/WinApp.h"
 #include "Core/Base/DirectXCommon.h"
+#include "Core/Base/SrvManager.h"
 #include "Core/Base/Logger.h"
 #include "Core/Base/Font.h"
 #include "Core/Base/TimeManager.h"

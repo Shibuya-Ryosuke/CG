@@ -2,6 +2,7 @@
 #include "../../Core/Base/DirectXCommon.h"
 #include "../../Core/Base/Logger.h"
 #include "../../Core/Base/ShaderCompiler.h"
+#include "../../Core/Base/SrvManager.h"
 #include "../../Graphics/2D/TextureManager.h"
 #include "../../Externals/imgui/imgui.h"
 #include <cassert>
@@ -447,8 +448,8 @@ namespace RyoEngine {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
         commandList->SetGraphicsRootSignature(compositeRootSignature_.Get());
-        ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
-        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+        
+        SrvManager::GetInstance()->PreDraw(commandList);
         // NOTE: root param1(t1)はRootSignature上、常に何か有効な値がバインドされている必要があるため、
         //       ブルームを使わない/まだ計算していない段階ではひとまずシーンカラー自体を仮に入れておく
         //       (Threshold/Downsample/Upsampleの各シェーダーはt1を一切参照しないので実害無し)

@@ -1,6 +1,7 @@
 #include "GPUParticleEmitter.h"
 #include "../../Core/Base/DirectXCommon.h"
 #include "../../Core/Base/Logger.h"
+#include "../../Core/Base/SrvManager.h"
 #include "../../Graphics/2D/TextureManager.h"
 #include "../../Camera/Camera.h"
 #include <cassert>
@@ -200,8 +201,8 @@ namespace RyoEngine {
         commandList->SetGraphicsRootSignature(common->GetRenderRootSignature());
         commandList->SetPipelineState(common->GetRenderPipelineState(billboard_, blendMode_));
 
-        ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
-        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+       
+        SrvManager::GetInstance()->PreDraw(commandList);
 
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         D3D12_VERTEX_BUFFER_VIEW vbv = mesh_->GetVertexBufferView();

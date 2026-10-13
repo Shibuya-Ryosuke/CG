@@ -29,8 +29,8 @@ namespace RyoEngine {
 
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
-        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+        SrvManager::GetInstance()->PreDraw(commandList);
     }
 
     void SpriteCommon::Draw() {
