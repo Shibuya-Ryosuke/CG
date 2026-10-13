@@ -105,7 +105,6 @@ namespace RyoEngine {
 
     bool GetOnTheGameView();
 
-
     inline void SetCameraForPrimitive(const Camera& camera) {
         PrimitiveRenderer::SetCamera(camera);
     }
