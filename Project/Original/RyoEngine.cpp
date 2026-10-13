@@ -1,5 +1,5 @@
 #include "RyoEngine.h"
-#include "Externals/imgui/imgui.h"
+#include <imgui.h>
 #include "Graphics/3D/ModelManager.h"
 #include "Editor/Gizmo.h"
 #include "Editor/ModelPicker.h"

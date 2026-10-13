@@ -7,7 +7,6 @@
 #include <cassert>
 
 #include "../../Externals/DirectXTex/DirectXTex.h"
-#pragma comment(lib, "DirectXTex.lib")
 
 namespace RyoEngine {
 	/// <summary>

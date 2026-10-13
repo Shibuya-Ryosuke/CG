@@ -6,9 +6,9 @@
 
 // ImGui使いますよー
 #ifdef USE_IMGUI
-#include "../../../Original/Externals/imgui/imgui.h"
-#include "../../../Original/Externals/imgui/imgui_impl_dx12.h"
-#include "../../../Original/Externals/imgui/imgui_impl_win32.h"
+#include <imgui.h>
+#include <imgui_impl_dx12.h>
+#include <imgui_impl_win32.h>
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
 

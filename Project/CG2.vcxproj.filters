@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Externals">
-      <UniqueIdentifier>{2072f028-1924-4696-a6a7-4be793480c22}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Externals\imgui">
-      <UniqueIdentifier>{f8e73db1-1900-4825-8904-3a2c1c51d53c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine">
       <UniqueIdentifier>{410416bb-c79b-4e16-94ed-8ae276e5fd76}</UniqueIdentifier>
     </Filter>
@@ -105,45 +99,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Original\Externals\imgui\imgui.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_demo.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_draw.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_impl_dx12.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_impl_win32.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_tables.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\imgui_widgets.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\GraphEditor.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\ImCurveEdit.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\ImGradient.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\ImGuizmo.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\ImSequencer.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Externals\imgui\ImVectorEditor.cpp">
-      <Filter>Externals\imgui</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Original\Test\TestPlayer.cpp">
       <Filter>Engine\Test</Filter>
@@ -282,54 +237,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Original\Externals\imgui\imconfig.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imgui.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imgui_impl_dx12.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imgui_impl_win32.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imgui_internal.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imstb_rectpack.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imstb_textedit.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\imstb_truetype.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\GraphEditor.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\ImCurveEdit.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\ImGradient.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\ImGuizmo.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\ImLightRig.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\ImSequencer.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\ImVectorEditor.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="Original\Externals\imgui\ImZoomSlider.h">
-      <Filter>Externals\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="Original\Test\TestManager.h">
       <Filter>Engine\Test</Filter>
     </ClInclude>
