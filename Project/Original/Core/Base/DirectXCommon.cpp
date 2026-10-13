@@ -3,13 +3,14 @@
 #include "Logger.h"
 #include "../../ImGui/ImGuiManager.h"
 #include "ShaderCompiler.h"
+#include "SrvManager.h"
 #include <format>
 #include <cassert>
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 
-namespace RyoEngine{
+namespace RyoEngine {
 	DirectXCommon* DirectXCommon::GetInstance() {
 		static DirectXCommon instance;
 		return &instance;
@@ -75,7 +76,7 @@ namespace RyoEngine{
 		// 初期化完了のログを出力
 		Logger::LogSuccess("DxCommon : Device created.\n");
 
-        #ifdef _DEBUG
+#ifdef _DEBUG
 		Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
 		if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
 			// ヤバいエラー時に止まる
@@ -101,7 +102,7 @@ namespace RyoEngine{
 			// 指定したメッセージの表示を抑制する
 			infoQueue->PushStorageFilter(&filter);
 		}
-        #endif
+#endif
 
 
 		// コマンドキュー生成
@@ -405,8 +406,11 @@ namespace RyoEngine{
 		// RTVの作成
 		device_->CreateRenderTargetView(gameRenderTargetResource_.Get(), nullptr, gameRtvHeap_->GetCPUDescriptorHandleForHeapStart());
 
-		// 3. TextureManagerにリソースを登録してSRVを自動生成してもらう！
-		gameTextureHandle_ = TextureManager::GetInstance()->RegisterResource(gameRenderTargetResource_);
+		// 3. SrvManagerでスロットを確保し、ImGui::Image等で表示するためのSRVを作る
+		//    (SrvManager::Initialize()より後に呼ぶこと)
+		SrvManager* srvManager = SrvManager::GetInstance();
+		gameTextureSrvIndex_ = srvManager->Allocate();
+		srvManager->CreateSRVForTexture2D(gameTextureSrvIndex_, gameRenderTargetResource_.Get(), texDesc.Format, 1);
 
 		Logger::LogSuccess("* Created *\n");
 	}

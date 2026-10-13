@@ -277,6 +277,9 @@
     <ClCompile Include="Original\Graphics\3D\Mesh\InstancedMesh.cpp">
       <Filter>Engine\Graphics\3D\Mesh</Filter>
     </ClCompile>
+    <ClCompile Include="Original\Core\Base\SrvManager.cpp">
+      <Filter>Engine\Core\Base</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Externals\imgui\imconfig.h">
@@ -491,6 +494,9 @@
     </ClInclude>
     <ClInclude Include="Original\Graphics\3D\Mesh\InstancedMesh.h">
       <Filter>Engine\Graphics\3D\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Core\Base\SrvManager.h">
+      <Filter>Engine\Core\Base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -3,6 +3,7 @@
 #include "../../Core/Base/DirectXCommon.h"
 #include "../../Core/Base/ShaderCompiler.h"
 #include "../../Graphics/2D/TextureManager.h"
+#include "../../Core/Base/SrvManager.h"
 #include "../Shadow/ShadowMap.h"
 #include "ModelCommon.h"
 #include <cassert>
@@ -113,14 +114,13 @@ namespace RyoEngine {
 
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap() };
-		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		SrvManager::GetInstance()->PreDraw(commandList);
 
 		if (drawType == DrawType::SHADOW) {
 			commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetInstance()->GetLightViewProjGPUVirtualAddress());
 		} else {
 			commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetInstance()->GetLightViewProjGPUVirtualAddress());
-			commandList->SetGraphicsRootDescriptorTable(7, TextureManager::GetInstance()->GetGPUHandle(ShadowMap::GetInstance()->GetShadowMapTextureHandle()));
+			commandList->SetGraphicsRootDescriptorTable(7, SrvManager::GetInstance()->GetGPUHandle(ShadowMap::GetInstance()->GetShadowMapTextureHandle()));
 		}
 	}
 

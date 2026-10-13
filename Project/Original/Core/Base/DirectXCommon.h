@@ -1,5 +1,6 @@
 #pragma once
-#include "../../Graphics/2D/TextureManager.h"
+#include "../../Graphics/2D/TextureManager.h" // 既存コードが間接includeに頼っている可能性があるので残す
+#include "SrvManager.h"
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
@@ -61,7 +62,7 @@ namespace RyoEngine {
 
 		// メインループでImGui::Imageに渡すためのGPUハンドルを取得するゲッター
 		D3D12_GPU_DESCRIPTOR_HANDLE GetGameTextureGPUHandle() const {
-			return TextureManager::GetInstance()->GetGPUHandle(gameTextureHandle_);
+			return SrvManager::GetInstance()->GetGPUHandle(gameTextureSrvIndex_);
 		}
 
 		// PostProcess::Composite()が、HDR合成後の結果をgameRenderTargetResource_へ
@@ -114,7 +115,7 @@ namespace RyoEngine {
 		// ゲーム画面のリソース系 
 		Microsoft::WRL::ComPtr<ID3D12Resource> gameRenderTargetResource_;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> gameRtvHeap_;
-		uint32_t gameTextureHandle_ = 0;
+		uint32_t gameTextureSrvIndex_ = 0; // SrvManagerのスロット番号
 
 		// DSV作成用の内部関数
 		void CreateDepthStencilView();

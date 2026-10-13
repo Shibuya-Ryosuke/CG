@@ -1,5 +1,5 @@
 #include "ImGuiManager.h"
-#include "../Graphics/2D/TextureManager.h"
+#include "../Core/Base/SrvManager.h"
 #include "../../Core/Base/Logger.h"
 
 #ifdef _DEBUG
@@ -20,14 +20,19 @@ namespace RyoEngine {
         ImGui::CreateContext();
 
         // 3. 各種初期化
+        // フォントテクスチャ用のSRVスロットをSrvManagerから確保する(以前は0番固定だった)
+        SrvManager* srvManager = SrvManager::GetInstance();
+        ImGuiManager* instance = GetInstance();
+        instance->fontSrvIndex_ = srvManager->Allocate();
+
         ImGui_ImplWin32_Init(hwnd);
         ImGui_ImplDX12_Init(
             device,
             bufferCount,
             rtvFormat,
-            TextureManager::GetInstance()->GetDescriptorHeap(),
-            TextureManager::GetInstance()->GetCPUHandle(0),
-            TextureManager::GetInstance()->GetGPUHandle(0)
+            srvManager->GetDescriptorHeap(),
+            srvManager->GetCPUHandle(instance->fontSrvIndex_),
+            srvManager->GetGPUHandle(instance->fontSrvIndex_)
         );
 
         ImGuiIO& io = ImGui::GetIO();
@@ -122,8 +127,7 @@ namespace RyoEngine {
         ImGui::Render();
 
         // DescriptorHeapのセット
-        ID3D12DescriptorHeap* ppHeaps[] = { TextureManager::GetInstance()->GetDescriptorHeap()};
-        commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+        SrvManager::GetInstance()->PreDraw(commandList);
 
         // 描画コマンド発行
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
@@ -137,8 +141,8 @@ namespace RyoEngine {
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
 
-        
-        instance->srvHeap_.Reset();
+        // フォント用に確保していたスロットを返却
+        SrvManager::GetInstance()->Free(instance->fontSrvIndex_);
         Logger::LogSuccess("ImGuiManager : Finalized\n");
     }
 }

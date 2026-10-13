@@ -1,6 +1,7 @@
 #include "TextureManager.h"
 #include "../../Core/Base/Logger.h"
 #include "../../Core/Base/DirectXCommon.h"
+#include "../../Core/Base/SrvManager.h"
 #include "../../Externals/DirectXTex/d3dx12.h"
 
 
@@ -14,25 +15,12 @@ namespace RyoEngine {
         Logger::Log("TexManager : Initializing...\n");
         device_ = DirectXCommon::GetInstance()->GetDevice();
 
-        // 1. ヒープの設定
-        D3D12_DESCRIPTOR_HEAP_DESC srvDescriptorHeapDesc = {};
-        srvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV; // SRV用
-        srvDescriptorHeapDesc.NumDescriptors = static_cast<UINT>(kMaxTextures); // 最大数(128など)
-        srvDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE; // シェーダーから見えるように
+        // ヒープの生成・ImGui用スロットの予約はSrvManager/ImGuiManager側の責務になったので、ここでは行わない
+        assert(SrvManager::GetInstance()->GetDescriptorHeap() != nullptr && "SrvManager::Initialize()を先に呼ぶこと");
 
-        // 2. 設定を元にヒープを生成
-        HRESULT hr = device_->CreateDescriptorHeap(&srvDescriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap_));
-        assert(SUCCEEDED(hr));
+        whiteTex_ = Load("Resources/EngineResources/white1x1.png");
 
-        // 3. 1マス分のサイズを取得しておく（GetGPUHandleで使用するため）
-        descriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-        // 0番目のスロットをImGui用に予約
-        textures_.push_back({ nullptr });
-
-        whiteTex = Load("Resources/EngineResources/white1x1.png");
-
-        Logger::LogSuccess("Input : Initialized\n");
+        Logger::LogSuccess("TexManager : Initialized\n");
     }
 
     void TextureManager::Finalize() {
@@ -40,14 +28,14 @@ namespace RyoEngine {
         // 中間リソース解放
         intermediateResources_.clear();
 
-        // テクスチャの実体解放
+        // 確保していたスロットをSrvManagerへ返却してから、テクスチャの実体を解放
+        for (auto& [index, resource] : textures_) {
+            SrvManager::GetInstance()->Free(index);
+        }
         textures_.clear();
 
         // 重複読み込み防止用のマップをクリア
         filePathMap_.clear();
-
-        // ディスクリプタヒープの開放
-        descriptorHeap_.Reset();
 
         // デバイスポインタを初期化
         device_ = nullptr;
@@ -55,33 +43,23 @@ namespace RyoEngine {
     }
 
     uint32_t TextureManager::Load(const std::string& filePath) {
-        assert(textures_.size() < kMaxTextures);
-
-        if (filePathMap_.contains(filePath)) return filePathMap_[filePath];
+        // 読み込み済みならそのまま返す(上限チェックより先に行うことで、満杯時でも既存テクスチャは取得できる)
+        if (auto it = filePathMap_.find(filePath); it != filePathMap_.end()) {
+            return it->second;
+        }
 
         DirectX::ScratchImage mipImages = LoadTexture(filePath);
         auto resource = CreateTextureResource(mipImages.GetMetadata());
         auto intermediate = UploadTextureData(resource, mipImages, DirectXCommon::GetInstance()->GetCommandList());
         intermediateResources_.push_back(intermediate);
 
-        uint32_t handle = static_cast<uint32_t>(textures_.size());
-        textures_.push_back({ resource });
+        // SRVのスロットを確保して生成(上限チェックはSrvManager::Allocate()内で行う)
+        SrvManager* srvManager = SrvManager::GetInstance();
+        uint32_t handle = srvManager->Allocate();
+        srvManager->CreateSRVForTexture2D(handle, resource.Get(), resource->GetDesc().Format);
+
+        textures_[handle] = resource;
         filePathMap_[filePath] = handle;
-
-        // --- ここを追加：SRVの作成 ---
-        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-        srvDesc.Format = resource->GetDesc().Format;
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srvDesc.Texture2D.MipLevels = resource->GetDesc().MipLevels;
-
-        // ヒープの該当する場所のハンドルを取得
-        D3D12_CPU_DESCRIPTOR_HANDLE lCpuHandle = descriptorHeap_->GetCPUDescriptorHandleForHeapStart();
-        lCpuHandle.ptr += static_cast<unsigned long long>(descriptorSize_) * handle;
-
-        // SRVの生成
-        device_->CreateShaderResourceView(resource.Get(), &srvDesc, lCpuHandle);
-        // ----------------------------
 
         return handle;
     }
@@ -90,34 +68,36 @@ namespace RyoEngine {
         intermediateResources_.clear();
     }
 
+    ID3D12Resource* TextureManager::GetResource(uint32_t handle) const {
+        auto it = textures_.find(handle);
+        assert(it != textures_.end() && "TextureManagerに登録されていないハンドル");
+        return it->second.Get();
+    }
+
+    ID3D12DescriptorHeap* TextureManager::GetDescriptorHeap() const {
+        return SrvManager::GetInstance()->GetDescriptorHeap();
+    }
+
+    D3D12_CPU_DESCRIPTOR_HANDLE TextureManager::GetCPUHandle(uint32_t index) const {
+        return SrvManager::GetInstance()->GetCPUHandle(index);
+    }
+
+    D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetGPUHandle(uint32_t index) const {
+        return SrvManager::GetInstance()->GetGPUHandle(index);
+    }
 
     uint32_t TextureManager::RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT srvFormatOverride) {
-        // 現在のテクスチャ配列の末尾をインデックスとする
-        uint32_t index = static_cast<uint32_t>(textures_.size());
-        assert(index < kMaxTextures);
-
-        Texture texture;
-        texture.resource = resource;
-        textures_.push_back(texture);
-
-        // シェーダーリソースビュー (SRV) の設定
         // NOTE: srvFormatOverrideが指定されていればそちらを優先する。
         //       DXGI_FORMAT_R32_TYPELESS等のTYPELESSリソース(シャドウマップの深度テクスチャ等)は
         //       resource自体のFormatをそのままSRVに渡すと失敗するため、呼び出し側で
         //       具体的な型(例：DXGI_FORMAT_R32_FLOAT)を明示的に渡す必要がある。
-        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-        srvDesc.Format = (srvFormatOverride != DXGI_FORMAT_UNKNOWN) ? srvFormatOverride : resource->GetDesc().Format;
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srvDesc.Texture2D.MipLevels = 1;
+        DXGI_FORMAT format = (srvFormatOverride != DXGI_FORMAT_UNKNOWN) ? srvFormatOverride : resource->GetDesc().Format;
 
-        // CPUハンドルを取得してSRVを作成
-        device_->CreateShaderResourceView(
-            resource.Get(),
-            &srvDesc,
-            GetCPUHandle(index)
-        );
+        SrvManager* srvManager = SrvManager::GetInstance();
+        uint32_t index = srvManager->Allocate();
+        srvManager->CreateSRVForTexture2D(index, resource.Get(), format, 1);
 
+        textures_[index] = resource;
         return index;
     }
 

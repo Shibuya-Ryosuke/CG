@@ -4,21 +4,25 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl/client.h>
+#include <cstdint>
 
 namespace RyoEngine {
 
     class ImGuiManager {
     public:
 #ifdef _DEBUG
+        // SrvManager::Initialize()より後に呼ぶこと(フォント用のSRVスロットをSrvManagerから確保するため)
         static void Initialize(HWND hwnd, ID3D12Device* device, int bufferCount, DXGI_FORMAT rtvFormat);
+        // SrvManager::Finalize()より前に呼ぶこと
         static void Finalize();
         static void NewFrame();
         static void EndFrame(ID3D12GraphicsCommandList* commandList);
 #else
+        // Debug側と同じ名前にしておく(呼び出し側を#ifdefで囲まなくても済むように)
         static void Initialize(HWND, ID3D12Device*, int, DXGI_FORMAT) {}
         static void Finalize() {}
-        static void Begin() {}
-        static void End(ID3D12GraphicsCommandList*) {}
+        static void NewFrame() {}
+        static void EndFrame(ID3D12GraphicsCommandList*) {}
 #endif
 
     private:
@@ -29,6 +33,6 @@ namespace RyoEngine {
         ImGuiManager(const ImGuiManager&) = delete;
         ImGuiManager& operator=(const ImGuiManager&) = delete;
 
-        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvHeap_;
+        uint32_t fontSrvIndex_ = 0;  // フォントテクスチャ用にSrvManagerから確保したスロット
     };
 }

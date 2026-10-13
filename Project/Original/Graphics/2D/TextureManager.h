@@ -4,24 +4,30 @@
 #include <unordered_map>
 #include <wrl.h>
 #include <vector>
+#include <cassert>
 
 #include "../../Externals/DirectXTex/DirectXTex.h"
 #pragma comment(lib, "DirectXTex.lib")
 
 namespace RyoEngine {
+	/// <summary>
+	/// 画像ファイルの読み込み・GPUへの転送を担当するクラス。
+	/// ディスクリプタヒープの管理はSrvManagerに移譲した。
+	/// Load()が返すハンドルはSrvManagerのスロット番号(index)そのものなので、
+	/// SrvManager::GetGPUHandle(handle) でも TextureManager::GetGPUHandle(handle) でも同じ場所を指す。
+	/// </summary>
 	class TextureManager {
 	public:
 		// インスタンス取得
 		static TextureManager* GetInstance();
 
 		/// <summary>
-		/// 初期化
+		/// 初期化 (SrvManager::Initialize()より後に呼ぶこと)
 		/// </summary>
-		/// <param name="device"></param>
 		void Initialize();
 
 		/// <summary>
-		/// 解放
+		/// 解放 (SrvManager::Finalize()より前に呼ぶこと)
 		/// </summary>
 		void Finalize();
 
@@ -30,45 +36,24 @@ namespace RyoEngine {
 		/// テクスチャの読み込み
 		/// </summary>
 		/// <param name="filePath">ファイルパス</param>
-		/// <returns>該当テクスチャが格納された場所を示すインデックス</returns>
+		/// <returns>テクスチャのSRVが格納されたSrvManagerのスロット番号</returns>
 		uint32_t Load(const std::string& filePath);
 
 		void ClearIntermediateResources();
 
 		// ゲッター
-		ID3D12Resource* GetResource(uint32_t handle) const {
-			assert(handle < textures_.size());
-			return textures_[handle].resource.Get();
-		}
+		ID3D12Resource* GetResource(uint32_t handle) const;
 
-		ID3D12DescriptorHeap* GetDescriptorHeap() const {
-			return descriptorHeap_.Get();
-		}
+		uint32_t GetWhiteTex() const { return whiteTex_; }
 
-		D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index) const {
-			assert(index < kMaxTextures);
-			D3D12_CPU_DESCRIPTOR_HANDLE handleCPU = descriptorHeap_->GetCPUDescriptorHandleForHeapStart();
-			handleCPU.ptr += static_cast<size_t>(descriptorSize_) * index;
-			return handleCPU;
-		}
+		// --- 互換用(既存コードがそのままコンパイルできるように残している) ---
+		// 新しく書くコードではSrvManagerの同名関数を直接使うこと。
+		ID3D12DescriptorHeap* GetDescriptorHeap() const;
+		D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index) const;
+		D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) const;
 
-		D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) const {
-			assert(index < kMaxTextures); // 最大数を超えていないかチェック
-
-			// 1. ヒープの先頭住所を取得
-			D3D12_GPU_DESCRIPTOR_HANDLE handleGPU = descriptorHeap_->GetGPUDescriptorHandleForHeapStart();
-
-			// 2. インデックス分だけ後ろにずらす
-			// (1つあたりのサイズ * 何番目か)
-			handleGPU.ptr += static_cast<unsigned long long>(descriptorSize_) * index;
-
-			return handleGPU;
-		}
-
-		uint32_t GetWhiteTex() { return whiteTex; }
-
-		// 外部で作ったリソースを登録してインデックスを返す
-		// srvFormatOverride省略時(DXGI_FORMAT_UNKNOWN)は今まで通りresource自体のFormatをSRVに使う。
+		// 外部で作ったリソースを登録してSRVのスロット番号を返す(互換用。中身はSrvManagerへの委譲)
+		// srvFormatOverride省略時(DXGI_FORMAT_UNKNOWN)はresource自体のFormatをSRVに使う。
 		// DXGI_FORMAT_R32_TYPELESS等、TYPELESSなリソース(シャドウマップの深度テクスチャ等)を登録する場合は、
 		// SRVとして解釈させたい具体的なフォーマット(例：DXGI_FORMAT_R32_FLOAT)を明示的に渡すこと。
 		uint32_t RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT srvFormatOverride = DXGI_FORMAT_UNKNOWN);
@@ -79,20 +64,11 @@ namespace RyoEngine {
 		TextureManager(const TextureManager&) = delete;
 		TextureManager& operator=(const TextureManager&) = delete;
 
-
-		struct Texture {
-			Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-			// 必要に応じて SRV の場所などもここに保持
-		};
-
 		ID3D12Device* device_ = nullptr;
-		std::vector<Texture> textures_; // インデックスがハンドルになる
+		// SrvManagerのスロット番号 → リソース実体
+		std::unordered_map<uint32_t, Microsoft::WRL::ComPtr<ID3D12Resource>> textures_;
 		std::unordered_map<std::string, uint32_t> filePathMap_; // 重複読み込み防止
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources_;  // 中間リソースを一時的に貯めておく
-
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_; // SRV用の棚
-		uint32_t descriptorSize_ = 0;                                 // 1マス分のサイズ
-		const size_t kMaxTextures = 128;                             // 最大数（任意）
 
 		// Textureデータ読み込み
 		DirectX::ScratchImage LoadTexture(const std::string& filePath);
@@ -108,6 +84,6 @@ namespace RyoEngine {
 		);
 
 
-		uint32_t whiteTex = 0;
+		uint32_t whiteTex_ = 0;
 	};
 }
