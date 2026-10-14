@@ -13,7 +13,8 @@ namespace AL4_1 {
 		if (isDestroy_)return;
 		Shot();
 
-		obb_.center = transform_.translate;
+		Vector3 translate = transform_.translate;
+		obb_.center = { translate.x,translate.y + halfSize_.y,translate.z };
 		owner_->SetInstanceTransform(handle_, transform_);
 	}
 

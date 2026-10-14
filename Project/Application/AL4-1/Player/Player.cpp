@@ -26,9 +26,10 @@ namespace AL4_1 {
 		}
 		// ジャンプ
 		Jump();
-
+		// 無敵時間のアップデート
+		InvincibleUpdate();
 		// 被ダメージ時のアップデート
-		DamageTakenEffect();
+		DamageTakenUpdate();
 
 		// 速度の更新
 		velocity_.x = moveX * moveSpeed_;
@@ -70,6 +71,28 @@ namespace AL4_1 {
 		model_->Draw();
 	}
 
+	void Player::OnDamage(float damage) {
+		// 既に無敵中なら無効化
+		if (isInvincible_) return;
+
+		// ダメージ処理
+		hp_ -= damage;
+		if (hp_ <= 0.0f) {
+			hp_ = 0.0f;
+			isDead_ = true;
+			return;
+		}
+
+		// 無敵有効
+		isInvincible_ = true;
+		invincibleDuration_ = maxInvincibleDuration_;
+		// 被ダメージ演出有効
+		isDamageTaken_ = true;
+		damageTakenDuration_ = maxDamageTakenDuration_;
+		// ポストエフェクトオン
+		PostProcess::GetInstance()->SetChromaticAberrationEnabled(true);
+	}
+
 	void Player::RegisterInParamEditor() {
 		ParamEditor::BeginGroup("Player");
 		ParamEditor::RegisterValue("transform", &transform_);
@@ -87,29 +110,40 @@ namespace AL4_1 {
 		}
 	}
 
-	void Player::DamageTakenEffect() {
+	void Player::DamageTakenUpdate() {
 		if (!isDamageTaken_) return;
 		// ここはdeltaタイムを引く
-		damageTakenDuration_ -= TimeManager::GetDeltaTime();
+		damageTakenDuration_ -= GetDeltaTime();
 		float t = 1.0f - std::clamp(damageTakenDuration_ / maxDamageTakenDuration_, 0.0f, 1.0f);
 
 		// ポストプロセスインスタンス取得
 		auto ppInstance = PostProcess::GetInstance();
 		// 色収差
 		float strength = EaseOutCubic(t, maxDamageTakenChromaticAberrationStrength_, 0.0f);
-		ppInstance->SetChromaticAberrationEnabled(true);
 		ppInstance->SetChromaticAberrationStrength(strength);
 		// スロー
-		TimeManager::SetScale(damageTakenTimeScale_);
+		SetTimeScale(damageTakenTimeScale_);
 
 		// 被ダメージ時間の終了
 		if (damageTakenDuration_ <= 0.0f) {
 			damageTakenDuration_ = 0.0f;
 			ppInstance->SetChromaticAberrationEnabled(false);
 			ppInstance->SetChromaticAberrationStrength(0.0f);
-			TimeManager::SetScale(1.0f);
+			SetTimeScale(1.0f);
 
 			isDamageTaken_ = false;
+		}
+	}
+
+	void Player::InvincibleUpdate() {
+		if (!isInvincible_)return;
+
+		// ここはスケールタイムを引く
+		invincibleDuration_ -= GetScaleTime();
+		// 無敵終了
+		if (invincibleDuration_ <= 0.0f) {
+			invincibleDuration_ = 0.0f;
+			isInvincible_ = false;
 		}
 	}
 

@@ -31,12 +31,18 @@ namespace AL4_1 {
 		// 足元の位置を設定（スポーン用）
 		void SetPosition(const RyoEngine::Vector3& feet) { transform_.translate = feet; }
 
+
+		void OnDamage(float damage);
+		const RyoEngine::OBB GetOBB()const { return obb_; }
+		float GetHP() const { return hp_; }
+
 	private:
 		void RegisterInParamEditor();
 		void Jump();
 		void Attack() {};
 		
-		void DamageTakenEffect();
+		void DamageTakenUpdate();
+		void InvincibleUpdate();
 
 	private:
 		// 自身
@@ -63,6 +69,8 @@ namespace AL4_1 {
 
 		// hp
 		float hp_ = 100.0f;
+		// 死亡フラグ
+		bool isDead_ = false;
 
 		// --- ジャンプ関係 ---
 		// 接地判定（マップとの判定結果で毎フレーム更新される）
@@ -81,6 +89,11 @@ namespace AL4_1 {
 		float maxDamageTakenDuration_ = 0.5f;
 		float maxDamageTakenChromaticAberrationStrength_ = 0.2f;
 		float damageTakenTimeScale_ = 0.1f;
+
+		// 無敵
+		bool isInvincible_ = false;
+		float invincibleDuration_ = 2.0f;
+		float maxInvincibleDuration_ = 2.0f;
 
 		// hp量に応じて画面白黒化、ほんの少しのノイズ
 		float maxGrayScale_ = 0.5f;

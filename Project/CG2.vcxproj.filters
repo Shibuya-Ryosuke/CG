@@ -118,14 +118,14 @@
     <Filter Include="Application\AL4-1\FollowCamera">
       <UniqueIdentifier>{37380ec8-d940-4713-9628-5c1fa1d504a0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application\AL4-1\Boss">
-      <UniqueIdentifier>{9c3b8892-19db-456a-a03a-56274255ae34}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Application\AL4-1\Enemy\ShotEnemy">
       <UniqueIdentifier>{9ef8d95e-13a6-4b29-9ccb-2b444c1e685e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Application\AL4-1\Bullet">
       <UniqueIdentifier>{67865676-ac2f-4c97-b341-18ba531089c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1\Enemy\Boss">
+      <UniqueIdentifier>{69d083ed-445d-4600-ac84-98fb95115993}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -304,14 +304,14 @@
     <ClCompile Include="Application\AL4-1\FollowCamera\FollowCamera.cpp">
       <Filter>Application\AL4-1\FollowCamera</Filter>
     </ClCompile>
-    <ClCompile Include="Application\AL4-1\Boss\Boss.cpp">
-      <Filter>Application\AL4-1\Boss</Filter>
-    </ClCompile>
     <ClCompile Include="Application\AL4-1\Enemy\ShotEnemy\ShotEnemy.cpp">
       <Filter>Application\AL4-1\Enemy\ShotEnemy</Filter>
     </ClCompile>
     <ClCompile Include="Application\AL4-1\Bullet\Bullet.cpp">
       <Filter>Application\AL4-1\Bullet</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\Enemy\Boss\Boss.cpp">
+      <Filter>Application\AL4-1\Enemy\Boss</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -534,14 +534,14 @@
     <ClInclude Include="Application\AL4-1\FollowCamera\FollowCamera.h">
       <Filter>Application\AL4-1\FollowCamera</Filter>
     </ClInclude>
-    <ClInclude Include="Application\AL4-1\Boss\Boss.h">
-      <Filter>Application\AL4-1\Boss</Filter>
-    </ClInclude>
     <ClInclude Include="Application\AL4-1\Enemy\ShotEnemy\ShotEnemy.h">
       <Filter>Application\AL4-1\Enemy\ShotEnemy</Filter>
     </ClInclude>
     <ClInclude Include="Application\AL4-1\Bullet\Bullet.h">
       <Filter>Application\AL4-1\Bullet</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\Enemy\Boss\Boss.h">
+      <Filter>Application\AL4-1\Enemy\Boss</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

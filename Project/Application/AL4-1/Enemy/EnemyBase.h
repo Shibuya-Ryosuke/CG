@@ -43,11 +43,15 @@ namespace AL4_1 {
 			hp_ -= damage;
 
 			if (hp_ < 0.0f) {
-				isDead_ = true;
+				isDestroy_ = true;
 			}
 		}
 
 		bool IsDead() const { return isDead_; }
+
+		const RyoEngine::OBB& GetOBB() const { return obb_; }
+		float GetDamage() const { return damage_; }
+		bool IsCollidable() const { return !isDestroy_ && !isDead_; }
 
 	protected:
 		/// <summary>

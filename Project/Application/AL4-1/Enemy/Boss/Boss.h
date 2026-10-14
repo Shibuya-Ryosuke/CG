@@ -58,6 +58,7 @@ namespace AL4_1 {
 		bool IsCollidable() const { return state_ != State::Appear && state_ != State::Destroy && state_ != State::Dead; }
 		const RyoEngine::OBB& GetOBB() const { return obb_; }
 		float GetHP() const { return hp_; }
+		float GetDamage() const { return damage_; }
 
 	private:
 		// ---- 状態管理 ----
@@ -140,5 +141,7 @@ namespace AL4_1 {
 		const RyoEngine::Vector3* target_ = nullptr;
 
 		std::mt19937 randomEngine_{ std::random_device{}() };
+
+		float damage_ = 10.0f;
 	};
 }

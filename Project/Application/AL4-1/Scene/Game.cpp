@@ -82,4 +82,38 @@ namespace AL4_1 {
 
 		allEnemies_.push_back(std::move(walkEnemy));
 	}
+
+	void Game::SpawnShotEnemy(const RyoEngine::Vector3& position) {
+		auto shotEnemy = make_unique<ShotEnemy>();
+		shotEnemy->SetMap(&mapChipField_);
+		shotEnemy->Initialize(&walkEnemyInstancedModel_, position);
+
+		allEnemies_.push_back(std::move(shotEnemy));
+	}
+
+	void Game::CheckAllCollisions() {
+		const RyoEngine::OBB& playerOBB = player_.GetOBB();
+
+		// プレイヤー × 敵本体
+		for (auto& enemy : allEnemies_) {
+			if (!enemy->IsCollidable()) continue;
+			if (IsCollision(playerOBB, enemy->GetOBB())) {
+				player_.OnDamage(enemy->GetDamage());
+			}
+		}
+
+		// プレイヤー × 敵弾
+		for (auto& bullet : allEnemyBullets_) {
+			if (bullet->IsDead()) continue;
+			if (IsCollision(playerOBB, bullet->GetOBB())) {
+				player_.OnDamage(bullet->GetDamage());
+				bullet->OnCollision();
+			}
+		}
+
+		// プレイヤー × ボス
+		if (boss_.IsCollidable() && IsCollision(playerOBB, boss_.GetOBB())) {
+			player_.OnDamage(boss_.GetDamage());
+		}
+	}
 }
