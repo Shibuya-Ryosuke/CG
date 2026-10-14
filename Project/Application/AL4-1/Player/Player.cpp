@@ -26,6 +26,8 @@ namespace AL4_1 {
 		}
 		// ジャンプ
 		Jump();
+		// hp残量に応じた演出のアップデート
+		HpEffectUpdate();
 		// 無敵時間のアップデート
 		InvincibleUpdate();
 		// 被ダメージ時のアップデート
@@ -112,6 +114,21 @@ namespace AL4_1 {
 		}
 	}
 
+	void Player::HpEffectUpdate() {
+		// ポストプロセスのインスタンス取得
+		auto ppInstance = PostProcess::GetInstance();
+
+		// 減った割合 0（満タン）→ 1（瀕死）
+		float lost = std::clamp((hpEffectStartRaito_ - hp_ / maxHp_) / hpEffectStartRaito_, 0.0f, 1.0f);
+
+		// 白黒化
+		ppInstance->SetGrayscaleEnabled(lost > 0.0f);
+		ppInstance->SetGrayscaleIntensity(maxGrayScale_ * lost);
+		// ノイズ
+		ppInstance->SetNoiseEnabled(lost > 0.0f);
+		ppInstance->SetNoiseIntensity(maxNoiseIntensity_ * lost);
+	}
+
 	void Player::DamageTakenUpdate() {
 		if (!isDamageTaken_) return;
 		// ここはdeltaタイムを引く
@@ -142,6 +159,14 @@ namespace AL4_1 {
 
 		// ここはスケールタイムを引く
 		invincibleDuration_ -= GetScaleTime();
+
+		// 点滅
+		float t = 1.0f - std::clamp(invincibleDuration_ / maxInvincibleDuration_, 0.0f, 1.0f);
+		// cos で 1 → min → 1 を blinkCount_ 回
+		float wave = (std::cos(t * blinkCount_ * 2.0f * std::numbers::pi_v<float>) + 1.0f) * 0.5f; // 1→0→1
+		float alpha = minAlpha_ + (1.0f - minAlpha_) * wave;
+		model_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+
 		// 無敵終了
 		if (invincibleDuration_ <= 0.0f) {
 			invincibleDuration_ = 0.0f;

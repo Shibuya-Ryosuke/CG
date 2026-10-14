@@ -41,6 +41,7 @@ namespace AL4_1 {
 		void Jump();
 		void Attack() {};
 		
+		void HpEffectUpdate();
 		void DamageTakenUpdate();
 		void InvincibleUpdate();
 
@@ -69,7 +70,9 @@ namespace AL4_1 {
 		float moveSpeed_ = 12.0f;
 
 		// hp
-		float hp_ = 100.0f;
+		float maxHp_ = 100.0f;
+		float hp_ = maxHp_;
+
 		// 死亡フラグ
 		bool isDead_ = false;
 
@@ -86,18 +89,21 @@ namespace AL4_1 {
 
 		// 被ダメージ時色収差、スロー
 		bool isDamageTaken_ = false;
-		float damageTakenDuration_ = 0.5f;
 		float maxDamageTakenDuration_ = 0.5f;
-		float maxDamageTakenChromaticAberrationStrength_ = 0.2f;
-		float damageTakenTimeScale_ = 0.1f;
+		float damageTakenDuration_ = maxDamageTakenDuration_;
+		float maxDamageTakenChromaticAberrationStrength_ = 0.5f;
+		float damageTakenTimeScale_ = 0.08f;
 
 		// 無敵
 		bool isInvincible_ = false;
-		float invincibleDuration_ = 2.0f;
 		float maxInvincibleDuration_ = 2.0f;
-
+		float invincibleDuration_ = maxInvincibleDuration_;
+		// アルファ往復回数、アルファ最低保証値
+		int32_t blinkCount_ = 5;
+		float minAlpha_ = 0.5f;
 		// hp量に応じて画面白黒化、ほんの少しのノイズ
-		float maxGrayScale_ = 0.5f;
+		float maxGrayScale_ = 0.7f;
 		float maxNoiseIntensity_ = 0.3f;
+		float hpEffectStartRaito_ = 0.5f;  // hp残量エフェクトの開始はhpが5割を切ってから
 	};
 }

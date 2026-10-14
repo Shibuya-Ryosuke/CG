@@ -18,6 +18,8 @@ namespace AL4_1 {
 		LightManager::SetFolderPath("Resources/ApplicationResources/AL4-1/Json/");
 		ParamEditor::Load();
 		LightManager::Load();
+
+		GetDebugCamera().SetAvailable(false);
 	}
 	void AL4_1::Update() {
 		sceneManager_->Update();
