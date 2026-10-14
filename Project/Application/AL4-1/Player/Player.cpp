@@ -100,9 +100,27 @@ namespace AL4_1 {
 	void Player::RegisterInParamEditor() {
 		ParamEditor::BeginGroup("Player");
 		ParamEditor::RegisterValue("transform", &transform_);
-		ParamEditor::RegisterValue("moveSpeed", &moveSpeed_, 0.1f, 0.0f, 20.0f);
-		ParamEditor::RegisterValue("jumpPower", &jumpPower_, 0.1f, 0.0f, 40.0f);
-		ParamEditor::RegisterValue("gravity_", &gravity_, 0.1f, 0.0f, 100.0f);
+		ParamEditor::RegisterValue("moveSpeed", &moveSpeed_, 0.1f, 0.0f, 30.0f);
+		ParamEditor::RegisterValue("jumpPower", &jumpPower_, 0.1f, 0.0f, 60.0f);
+		ParamEditor::RegisterValue("gravity", &gravity_, 0.1f, 0.0f, 200.0f);
+		ParamEditor::RegisterValue("maxFallSpeed", &maxFallSpeed_, 0.1f, 0.0f, 120.0f);
+		ParamEditor::RegisterValue("maxHp", &maxHp_, 1.0f, 1.0f, 500.0f);
+		ParamEditor::RegisterValue("halfSize", &halfSize_, 0.01f, 0.1f, 5.0f);
+		ParamEditor::EndGroup();
+
+		ParamEditor::BeginGroup("PlayerDamage");
+		ParamEditor::RegisterValue("effectDuration", &maxDamageTakenDuration_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::RegisterValue("chromaticStrength", &maxDamageTakenChromaticAberrationStrength_, 0.01f, 0.0f, 2.0f);
+		ParamEditor::RegisterValue("timeScale", &damageTakenTimeScale_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("invincibleDuration", &maxInvincibleDuration_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("blinkCount", &blinkCount_, 1.0f, 1, 20);
+		ParamEditor::RegisterValue("minAlpha", &minAlpha_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::EndGroup();
+
+		ParamEditor::BeginGroup("PlayerHpEffect");
+		ParamEditor::RegisterValue("maxGrayScale", &maxGrayScale_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("maxNoise", &maxNoiseIntensity_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("startRatio", &hpEffectStartRaito_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 	}
 

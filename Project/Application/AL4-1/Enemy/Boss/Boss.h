@@ -60,6 +60,7 @@ namespace AL4_1 {
 		float GetHP() const { return hp_; }
 		float GetDamage() const { return damage_; }
 
+		void RegisterInParamEditor();
 	private:
 		// ---- 状態管理 ----
 		void ChangeState(State next);

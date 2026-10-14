@@ -17,6 +17,7 @@ namespace AL4_1 {
 
 		void Update() override;
 
+		static void RegisterInParamEditor();
 	private:
 		void Move();
 		void WalkAnimation() {};
@@ -24,6 +25,14 @@ namespace AL4_1 {
 		float kWalkAnimInterval = 0.5f;
 
 	private:
+		struct Param {
+			float moveSpeed = 1.0f;
+			float maxHp = 10.0f;
+			float damage = 10.0f;
+			RyoEngine::Vector3 halfSize = { 0.8f, 0.8f, 0.8f };
+		};
+		inline static Param param_{};
+
 		RyoEngine::Vector3 velocity_ = { -1.0f,0.0f,0.0f };
 	};
 }

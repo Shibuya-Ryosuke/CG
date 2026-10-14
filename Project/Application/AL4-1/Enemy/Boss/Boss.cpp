@@ -10,10 +10,11 @@ namespace AL4_1 {
 	void Boss::Initialize() {
 		model_ = Model::Create("Resources/ApplicationResources/AL4-1/Enemy/Boss/boss.obj");
 
-		hp_ = maxHp_;
 		attackType_ = AttackType::None;
 		prevAttackType_ = AttackType::None;
 		transform_.scale = baseScale_;
+
+		RegisterInParamEditor();
 
 		ChangeState(State::Appear);
 	}
@@ -67,6 +68,25 @@ namespace AL4_1 {
 	// 状態管理
 	//==================================================
 
+	void Boss::RegisterInParamEditor() {
+		ParamEditor::BeginGroup("Boss");
+		ParamEditor::RegisterValue("maxHp", &maxHp_, 1.0f, 1.0f, 2000.0f);
+		ParamEditor::RegisterValue("damage", &damage_, 1.0f, 0.0f, 100.0f);
+		ParamEditor::RegisterValue("obbHalfSize", &obb_.size, 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("baseScale", &baseScale_, 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("appearOffset", &appearOffset_, 0.1f, -50.0f, 50.0f);
+		ParamEditor::RegisterValue("appearTime", &appearTime_, 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("idleTime", &idleTime_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("moveTime", &moveTime_, 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("destroyTime", &destroyTime_, 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("attackTime_Shot", &attackTime_[static_cast<size_t>(AttackType::Shot)], 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("attackTime_Homing", &attackTime_[static_cast<size_t>(AttackType::HomingShot)], 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("attackTime_Rush", &attackTime_[static_cast<size_t>(AttackType::Rush)], 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("shotInterval", &shotInterval_, 0.01f, 0.05f, 5.0f);
+		ParamEditor::RegisterValue("destroyShake", &destroyShake_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::EndGroup();
+	}
+
 	void Boss::ChangeState(State next) {
 		state_ = next;
 		stateTimer_ = 0.0f;
@@ -74,6 +94,7 @@ namespace AL4_1 {
 		// 状態に入った瞬間の処理
 		switch (state_) {
 		case State::Appear:
+			hp_ = maxHp_;
 			transform_.translate = homePosition_ + appearOffset_;
 			transform_.scale = baseScale_;
 			break;

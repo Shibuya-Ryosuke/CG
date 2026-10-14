@@ -6,6 +6,10 @@ using namespace std;
 namespace AL4_1 {
 	void WalkEnemy::Initialize(RyoEngine::InstancedModel* owner, const RyoEngine::Vector3& position) {
 		EnemyBase::Initialize(owner, position);
+		hp_ = param_.maxHp;
+		damage_ = param_.damage;
+		halfSize_ = param_.halfSize;
+		obb_.size = halfSize_;
 	}
 
 	void WalkEnemy::Update() {
@@ -19,9 +23,18 @@ namespace AL4_1 {
 		owner_->SetInstanceTransform(handle_, transform_);
 	}
 
+	void WalkEnemy::RegisterInParamEditor() {
+		ParamEditor::BeginGroup("WalkEnemy");
+		ParamEditor::RegisterValue("moveSpeed", &param_.moveSpeed, 0.1f, 0.0f, 20.0f);
+		ParamEditor::RegisterValue("maxHp", &param_.maxHp, 1.0f, 1.0f, 100.0f);
+		ParamEditor::RegisterValue("damage", &param_.damage, 1.0f, 0.0f, 100.0f);
+		ParamEditor::RegisterValue("halfSize", &param_.halfSize, 0.01f, 0.1f, 5.0f);
+		ParamEditor::EndGroup();
+	}
+
 	void WalkEnemy::Move() {
 		// 重力＋マップ判定つきで移動
-		MapHit hit = MoveWithMap(velocity_.x);
+		MapHit hit = MoveWithMap(velocity_.x * param_.moveSpeed);
 
 		// 壁にぶつかったら折り返す
 		if (hit.left || hit.right) {

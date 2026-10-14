@@ -10,12 +10,14 @@ namespace AL4_1 {
 		GameImage::Initialize();
 		GameSound::Initialize();
 
+		// フォルダパスの指定
+		ParamEditor::SetFolderPath("Resources/ApplicationResources/AL4-1/Json/");
+		LightManager::SetFolderPath("Resources/ApplicationResources/AL4-1/Json/");
+
 		// ゲーム初期化
 		sceneManager_ = std::make_unique<SceneManager>();
 		sceneManager_->Initialize(Scene::Game);
 
-		ParamEditor::SetFolderPath("Resources/ApplicationResources/AL4-1/Json/");
-		LightManager::SetFolderPath("Resources/ApplicationResources/AL4-1/Json/");
 		ParamEditor::Load();
 		LightManager::Load();
 

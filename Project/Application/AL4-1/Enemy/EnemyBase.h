@@ -96,9 +96,6 @@ namespace AL4_1 {
 			// 自分のモデルにセット
 			owner_->SetInstanceTransform(handle_, transform_);
 		}
-
-		float kMaxHp_ = 10.0f;
-		float kMaxDamage_ = 10.0f;
 		float kAnimDuration_ = 1.2f;
 
 	protected:
@@ -123,8 +120,8 @@ namespace AL4_1 {
 		float maxFallSpeed_ = 60.0f;
 		bool onGround_ = false;
 
-		float hp_ = kMaxHp_;
-		float damage_ = kMaxDamage_;
+		float hp_ = 0.0f;
+		float damage_ = 0.0f;
 
 		// 死亡アニメーション
 		float animTimer_ = 0.0f;

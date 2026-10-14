@@ -17,13 +17,23 @@ namespace AL4_1 {
 	Game::~Game() = default;
 
 	void Game::Initialize() {
+		// 敵・弾の共有パラメータを登録（インスタンスが増減するので1回だけ）
+		WalkEnemy::RegisterInParamEditor();
+		ShotEnemy::RegisterInParamEditor();
+		Bullet::RegisterInParamEditor();
+
 		// マップ読み込み（ブロックのモデルは 1x1x1・原点が中心のobjを用意する）
 		mapChipField_.Load(
 			"Resources/ApplicationResources/AL4-1/Csv/stage1.csv",
 			"Resources/ApplicationResources/AL4-1/Stage/Block/block.obj");
 
+		// プレイヤーとボス初期化
 		player_.Initialize();
 		player_.SetMap(&mapChipField_);
+		boss_.Initialize();
+		// 登録が済んだのでスポーン前にロード。プレイヤーhp、死亡フラグをリセット
+		ParamEditor::Load();
+		player_.ResetStatus();
 
 		// InstancedModel初期化
 		walkEnemyInstancedModel_.Initialize("Resources/ApplicationResources/AL4-1/Enemy/WalkEnemy/walkEnemy.obj", 50);

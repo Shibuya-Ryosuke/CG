@@ -15,7 +15,16 @@ namespace AL4_1 {
 		bool IsDead() const { return isDead_; }
 		void OnCollision() { isDead_ = true; }
 
+		static void RegisterInParamEditor();
+
 	private:
+		struct Param {
+			float damage = 10.0f;
+			float lifeTime = 3.0f;
+			RyoEngine::Vector3 halfSize = { 0.3f, 0.3f, 0.3f };
+		};
+		inline static Param param_{};
+
 		RyoEngine::Transform transform_{
 			.scale={1.0f,1.0f,1.0f}
 		};
