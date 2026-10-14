@@ -8,7 +8,7 @@ namespace AL4_1 {
 	Boss::~Boss() = default;
 
 	void Boss::Initialize() {
-		model_ = Model::Create("Resources/ApplicationResources/AL4-1/Boss/boss.obj");
+		model_ = Model::Create("Resources/ApplicationResources/AL4-1/Enemy/Boss/boss.obj");
 
 		hp_ = maxHp_;
 		attackType_ = AttackType::None;
@@ -154,7 +154,7 @@ namespace AL4_1 {
 			destroyBasePosition_.y + RandomFloat(-shake, shake),
 			destroyBasePosition_.z,
 		};
-		float s = 1.0f - EaseInOutCubic(t,1.0f,0.0f);
+		float s = EaseInOutCubic(t,1.0f,0.0f);
 		transform_.scale = { baseScale_.x * s, baseScale_.y * s, baseScale_.z * s };
 
 		if (t >= 1.0f) {

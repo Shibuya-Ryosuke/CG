@@ -112,6 +112,7 @@ namespace AL4_1 {
 
 		// プレイヤーとの当たり判定用
 		RyoEngine::OBB obb_{
+			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
 			.size = {1.0f,1.0f,1.0f}
 		};
 		// --- マップ判定用 ---

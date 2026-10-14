@@ -159,7 +159,7 @@ namespace RyoEngine {
         baseDesc.BlendState = blendDesc;
         baseDesc.RasterizerState = rasterizerDesc;
         baseDesc.NumRenderTargets = 1;
-        baseDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        baseDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
         baseDesc.SampleDesc.Count = 1;
         baseDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
         baseDesc.DepthStencilState = depthStencilDesc;

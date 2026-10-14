@@ -30,6 +30,7 @@ namespace AL4_1 {
 		RyoEngine::Camera& GetCamera() { return followCamera_.GetCamera(); }
 
 	private:
+		void SpawnFromMap();
 		// position は足元中心
 		void SpawnWalkEnemy(const RyoEngine::Vector3& position);
 		void SpawnShotEnemy(const RyoEngine::Vector3& position);
@@ -53,8 +54,8 @@ namespace AL4_1 {
 		// 歩く敵のインスタンスモデル
 		RyoEngine::InstancedModel walkEnemyInstancedModel_{};
 		// 撃ってくる敵のインスタンスモデル
-		RyoEngine::InstancedModel shotEnemyInstanceModel_{};
+		RyoEngine::InstancedModel shotEnemyInstancedModel_{};
 		// 弾のインスタンスモデル
-		RyoEngine::InstancedModel enemyBulletInstanceModel_{};
+		RyoEngine::InstancedModel enemyBulletInstancedModel_{};
 	};
 }

@@ -58,7 +58,8 @@ namespace AL4_1 {
 				onGround_ = false;
 			}
 		}
-
+		Vector3 translate = transform_.translate;
+		obb_.center = { translate.x,translate.y + halfSize_.y,translate.z };
 		// modelにセット
 		model_->SetTransform(transform_);
 	}
@@ -69,6 +70,7 @@ namespace AL4_1 {
 
 		// 描画
 		model_->Draw();
+		PrimitiveRenderer::DrawOBB(obb_, { 0.0f,1.0f,0.0f,1.0f },PrimitiveDrawMode::Wireframe);
 	}
 
 	void Player::OnDamage(float damage) {

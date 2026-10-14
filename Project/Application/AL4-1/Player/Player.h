@@ -52,6 +52,7 @@ namespace AL4_1 {
 
 		// 敵や弾との当たり判定
 		RyoEngine::OBB obb_{
+			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
 			.size = {1.0f,1.0f,1.0f}
 		};
 

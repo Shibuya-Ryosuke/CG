@@ -92,6 +92,7 @@ namespace AL4_1 {
 		float hp_ = 100.0f;
 
 		RyoEngine::OBB obb_{
+			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
 			.size = {1.0f,1.0f,1.0f}
 		};
 

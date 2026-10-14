@@ -9,6 +9,8 @@ namespace AL4_1 {
 	namespace SpawnId {
 		constexpr int kPlayer = 2;
 		constexpr int kWalkEnemy = 3;
+		constexpr int kShotEnemy = 4;
+		constexpr int kBoss = 5;
 	}
 
 	Game::Game() = default;
@@ -23,22 +25,12 @@ namespace AL4_1 {
 		player_.Initialize();
 		player_.SetMap(&mapChipField_);
 
-		// 敵用のInstancedModel初期化
+		// InstancedModel初期化
 		walkEnemyInstancedModel_.Initialize("Resources/ApplicationResources/AL4-1/Enemy/WalkEnemy/walkEnemy.obj", 50);
-
-		// CSVのスポーン指定からプレイヤーと敵を配置
-		for (const auto& spawn : mapChipField_.GetSpawns()) {
-			switch (spawn.id) {
-			case SpawnId::kPlayer:
-				player_.SetPosition(spawn.position);
-				break;
-			case SpawnId::kWalkEnemy:
-				SpawnWalkEnemy(spawn.position);
-				break;
-			default:
-				break;
-			}
-		}
+		shotEnemyInstancedModel_.Initialize("Resources/ApplicationResources/AL4-1/Enemy/ShotEnemy/shotEnemy.obj", 50);
+		enemyBulletInstancedModel_.Initialize("Resources/ApplicationResources/AL4-1/Bullet/bullet.obj", 100);
+		// 敵のスポーン
+		SpawnFromMap();
 
 		// 追従カメラ（スポーン位置が決まった後に初期化する）
 		followCamera_.Initialize(&mapChipField_);
@@ -63,6 +55,9 @@ namespace AL4_1 {
 		);
 
 		walkEnemyInstancedModel_.UpdateBuffer();
+
+		// 当たり判定走査
+		CheckAllCollisions();
 	}
 
 	void Game::Draw(RyoEngine::Camera& camera) {
@@ -71,9 +66,38 @@ namespace AL4_1 {
 		player_.Draw(camera);
 
 		walkEnemyInstancedModel_.Draw(camera);
+		shotEnemyInstancedModel_.Draw(camera);
+		enemyBulletInstancedModel_.Draw(camera);
+
+		for (auto& enemy : allEnemies_) {
+			PrimitiveRenderer::DrawOBB(enemy->GetOBB(), {0.0f,1.0f,0.0f,1.0f}, PrimitiveDrawMode::Wireframe);
+		}
 	}
 
 	void Game::Finalize() {}
+
+	void Game::SpawnFromMap() {
+		// CSVのスポーン指定からプレイヤーと敵を配置
+		for (const auto& spawn : mapChipField_.GetSpawns()) {
+			switch (spawn.id) {
+			case SpawnId::kPlayer:
+				player_.SetPosition(spawn.position);
+				break;
+			case SpawnId::kWalkEnemy:
+				SpawnWalkEnemy(spawn.position);
+				break;
+			case SpawnId::kShotEnemy:
+				SpawnShotEnemy(spawn.position);   // SpawnWalkEnemy と同じ形で作る
+				break;
+			case SpawnId::kBoss:
+				//bossSpawnPos_ = spawn.position;   // 位置だけ覚えておく
+				//hasBoss_ = true;
+				break;
+			default:
+				break;
+			}
+		}
+	}
 
 	void Game::SpawnWalkEnemy(const RyoEngine::Vector3& position) {
 		auto walkEnemy = make_unique<WalkEnemy>();
@@ -86,7 +110,7 @@ namespace AL4_1 {
 	void Game::SpawnShotEnemy(const RyoEngine::Vector3& position) {
 		auto shotEnemy = make_unique<ShotEnemy>();
 		shotEnemy->SetMap(&mapChipField_);
-		shotEnemy->Initialize(&walkEnemyInstancedModel_, position);
+		shotEnemy->Initialize(&shotEnemyInstancedModel_, position);
 
 		allEnemies_.push_back(std::move(shotEnemy));
 	}
