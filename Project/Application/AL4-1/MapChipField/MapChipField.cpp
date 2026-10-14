@@ -74,7 +74,7 @@ namespace AL4_1 {
 			}
 		}
 
-		// --- ブロックをインスタンスとして登録 ---
+		// ブロックをインスタンスとして登録
 		blockModel_.Initialize(blockModelPath, static_cast<uint32_t>(std::max<size_t>(blockPositions.size(), 1)));
 		const float blockScale = tileSize_ / kBlockModelSize;
 		for (const auto& pos : blockPositions) {

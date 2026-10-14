@@ -35,13 +35,19 @@ namespace AL4_1 {
 		void RegisterInParamEditor();
 		void Jump();
 		void Attack() {};
-		void Observation();
+		
+		void DamageTakenEffect();
 
 	private:
 		// 自身
 		std::unique_ptr<RyoEngine::Model> model_ = nullptr;
 		// 判定を取るマップ
 		const MapChipField* map_ = nullptr;
+
+		// 敵や弾との当たり判定
+		RyoEngine::OBB obb_{
+			.size = {1.0f,1.0f,1.0f}
+		};
 
 		// transform（translateは「足元中心」として扱う）
 		RyoEngine::Transform transform_{
@@ -69,18 +75,15 @@ namespace AL4_1 {
 		float maxFallSpeed_ = 60.0f;
 
 
-		// --- 観察モード関係 ---
-		// フラグ
-		bool isObsevation_ = false;
-		// 時間倍率
-		float observationTimeScale_ = 0.05f;
-		float observationGrayIntensity_ = 0.8f;
+		// 被ダメージ時色収差、スロー
+		bool isDamageTaken_ = false;
+		float damageTakenDuration_ = 0.5f;
+		float maxDamageTakenDuration_ = 0.5f;
+		float maxDamageTakenChromaticAberrationStrength_ = 0.2f;
+		float damageTakenTimeScale_ = 0.1f;
 
-		// 観察をずっとやってると減ってくゲージ
-		// 0に近づくほど色ズレ、ノイズが激しくなる
-		float observationGuarge_ = 100.0f;
-		float observationGuargeLimit_ = 100.0f;
-		float observationGuargeDecreaseValue_ = 0.1f;
-		float observationGuargeIncreaseValue_ = 0.1f;
+		// hp量に応じて画面白黒化、ほんの少しのノイズ
+		float maxGrayScale_ = 0.5f;
+		float maxNoiseIntensity_ = 0.3f;
 	};
 }

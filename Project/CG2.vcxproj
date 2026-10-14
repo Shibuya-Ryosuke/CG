@@ -16,6 +16,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application\AL4-1\AL4_1.cpp" />
+    <ClCompile Include="Application\AL4-1\Boss\Boss.cpp" />
+    <ClCompile Include="Application\AL4-1\Bullet\Bullet.cpp" />
+    <ClCompile Include="Application\AL4-1\Enemy\ShotEnemy\ShotEnemy.cpp" />
     <ClCompile Include="Application\AL4-1\Enemy\WalkEnemy\WalkEnemy.cpp" />
     <ClCompile Include="Application\AL4-1\FollowCamera\FollowCamera.cpp" />
     <ClCompile Include="Application\AL4-1\MapChipField\MapChipField.cpp" />
@@ -145,7 +148,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AL4-1\AL4_1.h" />
+    <ClInclude Include="Application\AL4-1\Boss\Boss.h" />
+    <ClInclude Include="Application\AL4-1\Bullet\Bullet.h" />
     <ClInclude Include="Application\AL4-1\Enemy\EnemyBase.h" />
+    <ClInclude Include="Application\AL4-1\Enemy\ShotEnemy\ShotEnemy.h" />
     <ClInclude Include="Application\AL4-1\Enemy\WalkEnemy\WalkEnemy.h" />
     <ClInclude Include="Application\AL4-1\FollowCamera\FollowCamera.h" />
     <ClInclude Include="Application\AL4-1\GameResources\GameSound.h" />

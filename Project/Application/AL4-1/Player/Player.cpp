@@ -26,10 +26,11 @@ namespace AL4_1 {
 		}
 		// ジャンプ
 		Jump();
-		// 観察
-		Observation();
 
-		// --- 速度の更新 ---
+		// 被ダメージ時のアップデート
+		DamageTakenEffect();
+
+		// 速度の更新
 		velocity_.x = moveX * moveSpeed_;
 		velocity_.y -= gravity_ * dt;
 		velocity_.y = max(velocity_.y, -maxFallSpeed_);
@@ -86,48 +87,30 @@ namespace AL4_1 {
 		}
 	}
 
-	void Player::Observation() {
-		// ポストプロセスインスタンス
-		auto instance = PostProcess::GetInstance();
+	void Player::DamageTakenEffect() {
+		if (!isDamageTaken_) return;
+		// ここはdeltaタイムを引く
+		damageTakenDuration_ -= TimeManager::GetDeltaTime();
+		float t = 1.0f - std::clamp(damageTakenDuration_ / maxDamageTakenDuration_, 0.0f, 1.0f);
 
-		if (Input::TriggerKey(DIK_SPACE)) {
-			isObsevation_ = !isObsevation_;
+		// ポストプロセスインスタンス取得
+		auto ppInstance = PostProcess::GetInstance();
+		// 色収差
+		float strength = EaseOutCubic(t, maxDamageTakenChromaticAberrationStrength_, 0.0f);
+		ppInstance->SetChromaticAberrationEnabled(true);
+		ppInstance->SetChromaticAberrationStrength(strength);
+		// スロー
+		TimeManager::SetScale(damageTakenTimeScale_);
 
-			if (isObsevation_) {
-				// 白黒化
-				instance->SetGrayscaleEnabled(true);
-				instance->SetGrayscaleIntensity(observationGrayIntensity_);
-				// 時間速度の低下
-				SetTimeScale(observationTimeScale_);
-			} else {
-				// 白黒化解除
-				instance->SetGrayscaleEnabled(false);
-				instance->SetGrayscaleIntensity(0.0f);
-				// 時間速度等倍
-				SetTimeScale(1.0f);
-			}
+		// 被ダメージ時間の終了
+		if (damageTakenDuration_ <= 0.0f) {
+			damageTakenDuration_ = 0.0f;
+			ppInstance->SetChromaticAberrationEnabled(false);
+			ppInstance->SetChromaticAberrationStrength(0.0f);
+			TimeManager::SetScale(1.0f);
+
+			isDamageTaken_ = false;
 		}
-
-		// ゲージの増減
-		if (isObsevation_) {
-			if (observationGuarge_ > 0.0f) {
-				observationGuarge_ -= observationGuargeDecreaseValue_;
-			}
-		} else {
-			if (observationGuarge_ < observationGuargeLimit_) {
-				observationGuarge_ += observationGuargeIncreaseValue_;
-			}
-		}
-
-		// 色収差の強さ計算（ゲージ量に連動）
-		instance->SetChromaticAberrationEnabled(true);
-		float chormaticAberrationStrength = observationGuarge_ / observationGuargeLimit_ - 0.5f;
-		if (chormaticAberrationStrength >= 0.0f) {
-			chormaticAberrationStrength = 0.0f;
-		} else {
-			// これで最大でも-1.000に収まる
-			chormaticAberrationStrength /= 5.0f;
-		}
-		instance->SetChromaticAberrationStrength(chormaticAberrationStrength);
 	}
+
 }

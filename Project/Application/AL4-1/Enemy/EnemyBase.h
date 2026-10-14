@@ -106,6 +106,10 @@ namespace AL4_1 {
 			.scale{1.0f,1.0f,1.0f}
 		};
 
+		// プレイヤーとの当たり判定用
+		RyoEngine::OBB obb_{
+			.size = {1.0f,1.0f,1.0f}
+		};
 		// --- マップ判定用 ---
 		const MapChipField* map_ = nullptr;
 		RyoEngine::Vector3 halfSize_ = { 0.8f,0.8f,0.8f };  // 体の当たり判定の半分のサイズ（SetCollideSizeで変更）

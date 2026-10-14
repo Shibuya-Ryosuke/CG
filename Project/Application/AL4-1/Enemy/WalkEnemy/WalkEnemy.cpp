@@ -14,6 +14,7 @@ namespace AL4_1 {
 		if (isDestroy_)return;
 		Move();
 
+		obb_.center = transform_.translate;
 		owner_->SetInstanceTransform(handle_, transform_);
 	}
 
