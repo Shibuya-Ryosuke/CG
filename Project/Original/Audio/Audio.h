@@ -1,6 +1,7 @@
 #pragma once
 #include <xaudio2.h>
 #include <wrl/client.h>
+#include <atomic>
 #include <vector>
 #include <cstdint>
 #include <string>
@@ -85,8 +86,17 @@ namespace RyoEngine {
 		// SEの再生終了を検知するためのコールバック
 		class SEVoiceCallback : public IXAudio2VoiceCallback {
 		public:
+			SEVoiceCallback() = default;
 			virtual ~SEVoiceCallback() = default;
-			void STDMETHODCALLTYPE OnStreamEnd() override { isFinished = true; }
+
+			// std::atomicを持つためコピー・ムーブ不可(newで作りポインタで持つだけなので問題ない)
+			// 暗黙の削除警告(C4625/C4626/C5026/C5027)を避けるため明示する
+			SEVoiceCallback(const SEVoiceCallback&) = delete;
+			SEVoiceCallback& operator=(const SEVoiceCallback&) = delete;
+			SEVoiceCallback(SEVoiceCallback&&) = delete;
+			SEVoiceCallback& operator=(SEVoiceCallback&&) = delete;
+
+			void STDMETHODCALLTYPE OnStreamEnd() override { isFinished.store(true); }
 			void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) override {}
 			void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() override {}
 			void STDMETHODCALLTYPE OnBufferStart(void*) override {}
@@ -94,7 +104,8 @@ namespace RyoEngine {
 			void STDMETHODCALLTYPE OnLoopEnd(void*) override {}
 			void STDMETHODCALLTYPE OnVoiceError(void*, HRESULT) override {}
 
-			bool isFinished = false;
+			// XAudio2の内部スレッド(OnStreamEnd)から書き込まれ、メインスレッドで読まれるためatomicにする
+			std::atomic<bool> isFinished{ false };
 		};
 
 		// 再生中のSEボイス1つ分

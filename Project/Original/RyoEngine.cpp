@@ -177,6 +177,8 @@ namespace RyoEngine {
 
         Input::Update();
 
+        Audio::Update();
+
         TimeManager::NewFrame();
 
 #ifdef _DEBUG

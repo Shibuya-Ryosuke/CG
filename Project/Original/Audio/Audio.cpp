@@ -86,7 +86,7 @@ namespace RyoEngine {
 
 	void Audio::CleanupFinishedSE() {
 		for (auto it = playingSEs.begin(); it != playingSEs.end(); ) {
-			if (it->pCallback->isFinished) {
+			if (it->pCallback->isFinished.load()) {
 				it->pSourceVoice->DestroyVoice();
 				delete it->pCallback;
 				it = playingSEs.erase(it);
@@ -136,7 +136,13 @@ namespace RyoEngine {
 		while (true) {
 			DWORD dwFlags = 0;
 			Microsoft::WRL::ComPtr<IMFSample> pSample;
-			pReader->ReadSample(static_cast<DWORD>(MF_SOURCE_READER_FIRST_AUDIO_STREAM), 0, nullptr, &dwFlags, nullptr, &pSample);
+			hr = pReader->ReadSample(static_cast<DWORD>(MF_SOURCE_READER_FIRST_AUDIO_STREAM), 0, nullptr, &dwFlags, nullptr, &pSample);
+
+			// 読み込みに失敗した場合はENDOFSTREAMが立たず無限ループになるので、ここで抜ける
+			if (FAILED(hr)) {
+				Logger::LogError("[Audio] 音声データの読み込みに失敗しました: " + filename + "\n");
+				break;
+			}
 
 			if (dwFlags & MF_SOURCE_READERF_ENDOFSTREAM) break;  // ファイルの終わり
 
@@ -273,7 +279,7 @@ namespace RyoEngine {
 		buf.pAudioData = sound.buffer.data();
 		buf.AudioBytes = static_cast<UINT32>(sound.buffer.size());
 		buf.Flags = XAUDIO2_END_OF_STREAM;
-		
+
 		hr = playing.pSourceVoice->SubmitSourceBuffer(&buf);
 		assert(SUCCEEDED(hr));
 
