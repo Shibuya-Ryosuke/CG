@@ -7,7 +7,6 @@
 #include "GPUParticleEmitter.h"
 
 namespace RyoEngine {
-    class Camera;
 
     // 1つのEmitterぶんの設定値。ImGuiでの編集対象であり、Save/Loadの対象でもある。
     struct GPUParticleEmitterConfig {
@@ -103,8 +102,9 @@ namespace RyoEngine {
 
         /// <summary>
         /// 全Emitterぶんまとめて描画を予約する。
+        /// カメラはCameraManager::UpdateAll()で確定済みの描画カメラ(CameraManager::GetActive())を使う。
         /// </summary>
-        void Draw(const Camera& camera);
+        void Draw();
 
         /// <summary>
         /// 新規作成フォーム・各Emitterの設定・保存/読込ボタンのImGuiパネルを描画する。

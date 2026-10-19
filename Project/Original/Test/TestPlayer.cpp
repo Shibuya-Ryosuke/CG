@@ -75,12 +75,12 @@ namespace Test {
 		LightManager::SetLightPosition("bunnyLight", bunny_->GetTranslate());
 		// ライト点灯フラグ
 		LightManager::SetLightEnabled("bunnyLight", isIllumination_);
+
+		// 行列の確定 (カメラ不要。カリングはDraw()で行われる)
+		bunny_->TransferMatrix();
 	}
 
-	void TestPlayer::Draw(RyoEngine::Camera& camera) {
-		// 行列の確定
-		bunny_->TransferMatrix(camera);
-
+	void TestPlayer::Draw() {
 		// 描画
 		bunny_->Draw();
 	}

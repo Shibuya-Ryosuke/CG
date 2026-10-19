@@ -32,6 +32,7 @@
 
 #include "Audio/Audio.h"
 #include "Camera/Camera.h"
+#include "Camera/CameraManager.h"
 #include "Camera/DebugCamera.h"
 #include "ImGui/ImGuiManager.h"
 #include "Editor/AnimEditor.h"
@@ -148,18 +149,4 @@ namespace RyoEngine {
 
     void Change2DBlendMode(BlendMode blendMode);
     void Change3DBlendMode(BlendMode blendMode);
-
-    /// <summary>
-    /// 現在有効なカメラを取得する（カメラの更新は各自で）
-    /// </summary>
-    /// <param name="mainCamera">通ゲーム内で使用するカメラ</param>
-    /// <param name="debugCamera">デバッグカメラ</param>
-    /// <returns>有効なカメラの参照</returns>
-    Camera& GetActiveCamera(Camera& mainCamera);
-
-    /// <summary>
-    /// デバッグカメラの取得（デバッグカメラは全体でひとつあれば良いのでエンジンが保持）
-    /// </summary>
-    /// <returns></returns>
-    DebugCamera& GetDebugCamera();
 }

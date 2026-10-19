@@ -16,6 +16,9 @@ namespace Test {
 	}
 
 	void TestBullet::Update() {
+		if (isDead_ || !model_) {
+			return;
+		}
 		if (timer_ > 0.0f) {
 			timer_ -= GetDeltaTime();
 			if (timer_ <= 0.0f) {
@@ -24,13 +27,15 @@ namespace Test {
 			}
 		}
 		// 動かす場合は model_->GetTransform().translate += velocity_ * GetDeltaTime(); など
+
+		// 行列の確定 (カメラ不要。カリングはDraw()で行われる)
+		model_->TransferMatrix();
 	}
 
-	void TestBullet::Draw(const RyoEngine::Camera& camera) {
+	void TestBullet::Draw() {
 		if (isDead_ || !model_) {
 			return;
 		}
-		model_->TransferMatrix(camera);
 		model_->Draw();
 	}
 

@@ -23,6 +23,7 @@
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
     </ClCompile>
+    <ClCompile Include="Original\Camera\CameraManager.cpp" />
     <ClCompile Include="Original\Core\Base\SrvManager.cpp" />
     <ClCompile Include="Original\Editor\Gizmo.cpp" />
     <ClCompile Include="Original\Editor\ModelLayout.cpp" />
@@ -72,6 +73,7 @@
     <ClInclude Include="Application\GameName\Scene\Game.h" />
     <ClInclude Include="Application\GameName\Scene\SceneManager.h" />
     <ClInclude Include="Application\GameName\Scene\Title.h" />
+    <ClInclude Include="Original\Camera\CameraManager.h" />
     <ClInclude Include="Original\Core\Base\SrvManager.h" />
     <ClInclude Include="Original\Editor\Gizmo.h" />
     <ClInclude Include="Original\Editor\ModelLayout.h" />

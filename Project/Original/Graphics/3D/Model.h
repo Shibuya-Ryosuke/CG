@@ -21,8 +21,9 @@ namespace RyoEngine {
     ///   uint32_t idx = RyoEngine::LoadObj("Models/enemy/enemy.obj");   // 1回だけ
     ///   auto m = Model::Create(idx);                                    // 何体でも
     ///   m->SetTranslate({0,0,0}); m->SetRotate({0, 90, 0});            // 角度は度数法
-    ///   m->TransferMatrix(camera);   // 毎フレーム (行列確定+カリング)
-    ///   m->Draw();                   // 毎フレーム (ModelManagerへ提出。実描画はEndFrame)
+    ///   m->TransferMatrix();         // 毎フレーム Update内で (行列確定。カメラ不要)
+    ///   CameraManager::UpdateAll();  // 毎フレーム (描画カメラ確定)
+    ///   m->Draw();                   // 毎フレーム (カリング+ModelManagerへ提出。実描画はEndFrame)
     ///
     /// 個別に変えられるもの: transform / テクスチャ / 色 / 発光 / UV(SRT) / ライティング / シェーディング
     /// 同じ (obj, メッシュ, テクスチャ) のモデルは自動で1回のDrawInstancedにまとまる。
@@ -55,14 +56,15 @@ namespace RyoEngine {
         void SetModel(const std::string& filePath, uint32_t textureIndex = 0);
 
         /// <summary>
-        /// ワールド行列の確定とフラスタムカリング。毎フレーム、Draw()の前に呼ぶ。
-        /// 引数のカメラのView-Projectionが、そのフレームの3D描画全体に使われる。
+        /// ワールド行列とバウンディング球(カリング・クリック選択用)の確定。毎フレーム、Draw()の前に呼ぶ。
+        /// カメラには依存しないので、Updateの中のどこで呼んでもよい。
         /// </summary>
         /// <param name="frustumCulling">false にすると視錐台判定をせず常に描画する (既定 true)</param>
-        void TransferMatrix(const Camera& camera, bool frustumCulling = true);
+        void TransferMatrix(bool frustumCulling = true);
 
         /// <summary>
-        /// 描画の提出。視錐台の外ならスキップ(影も落とさない)。
+        /// 描画の提出。CameraManager::UpdateAll()で確定した描画カメラで視錐台判定を行い、
+        /// 視錐台の外ならスキップ(影も落とさない)。
         /// 実際のGPU描画は RyoEngine::EndFrame 内で、まとめて行われる。
         /// </summary>
         void Draw();
@@ -92,6 +94,7 @@ namespace RyoEngine {
         // ---------------- Getter ----------------
         uint32_t GetModelIndex() const { return modelIndex_; }
         size_t GetMeshCount() const { return meshes_.size(); }
+        /// <summary>視錐台の中にいるか (Draw()で判定されるので、Draw()より後に参照すること)</summary>
         bool IsVisible() const { return isVisible_; }
 
         Transform& GetTransform() { return transform_; }
@@ -191,8 +194,9 @@ namespace RyoEngine {
 
         Matrix4x4 worldMatrix_ = MakeIdentity4x4();
         bool isVisible_ = true;
+        bool frustumCulling_ = true; // TransferMatrixで指定された値。判定自体はDraw()で行う
 
-        // クリック選択用 (TransferMatrixで更新)
+        // クリック選択用 (TransferMatrixで更新。視錐台判定のバウンディング球も兼ねる)
         bool pickable_ = true;
         Vector3 pickCenter_{ 0.0f, 0.0f, 0.0f };
         float pickRadius_ = 0.0f;

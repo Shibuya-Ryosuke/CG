@@ -47,6 +47,12 @@ namespace Test {
 		uint32_t bulletModelIndex_ = 0;
 		std::vector<std::unique_ptr<TestBullet>> bullets_;
 
+		// --- カメラ (CameraManagerのインデックス) ---
+		uint32_t mainCam_ = RyoEngine::CameraManager::kInvalidIndex; // プレイヤー追従
+		uint32_t subCam_ = RyoEngine::CameraManager::kInvalidIndex;  // 固定の俯瞰
+		// 追従カメラのプレイヤーからのオフセット
+		RyoEngine::Vector3 followOffset_ = { 0.0f, 5.0f, -20.0f };
+
 		// お試しフラグ
 		bool particleEmit_ = false;
 	};

@@ -13,9 +13,10 @@ namespace Test {
 
         // modelIndex: LoadObj で読み込んだ弾モデル (全弾で共有。GPU側は自動で1回のDrawInstancedにまとまる)
         void Initialize(uint32_t modelIndex, const RyoEngine::Vector3& position);
+        // 移動・寿命の処理と行列の確定
         void Update();
-        // 行列確定+描画の提出 (弾は大量なのでフラスタムカリングはModel側で行う)
-        void Draw(const RyoEngine::Camera& camera);
+        // 描画の提出 (弾は大量なのでフラスタムカリングはModel側で行う)
+        void Draw();
         void ResolveDead();
 
         // 削除判定用

@@ -2,6 +2,7 @@
 #include "../2D/TextureManager.h"
 #include "../../Core/Math/Collision.h"
 #include "../../Editor/ModelPicker.h"
+#include "../../Camera/CameraManager.h"
 #include <cassert>
 
 namespace RyoEngine {
@@ -98,7 +99,7 @@ namespace RyoEngine {
     // ------------------------------------------------------------------
     // 毎フレーム
     // ------------------------------------------------------------------
-    void Model::TransferMatrix(const Camera& camera, bool frustumCulling) {
+    void Model::TransferMatrix(bool frustumCulling) {
         // 保存された Transform があれば、最初の1回だけ適用する (コードで入れた初期値より保存値が勝つ)
         if (!layoutApplied_ && layoutRegistered_) {
             layoutApplied_ = true;
@@ -110,9 +111,8 @@ namespace RyoEngine {
 
         worldMatrix_ = MakeAffineMatrix(transform_.scale, DegToRad(transform_.rotate), transform_.translate);
 
-        // 3D描画全体で使うVPを渡す (最後に呼ばれたカメラが有効)
-        ModelManager::GetInstance()->SetViewProjection(camera.GetViewProjectionMatrix());
-        ModelPicker::SetCamera(camera);
+        // 視錐台判定はカメラ確定後のDraw()で行うので、ここでは指定だけ覚えておく
+        frustumCulling_ = frustumCulling;
 
         const ModelManager::ModelAsset* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
         if (!asset) {
@@ -120,28 +120,36 @@ namespace RyoEngine {
             return;
         }
 
-        // フラスタムカリング。非一様スケールでも安全なよう一番大きい成分で球を拡大する
+        // フラスタムカリング用の球。非一様スケールでも安全なよう一番大きい成分で球を拡大する
         float maxScale = transform_.scale.x;
         if (transform_.scale.y > maxScale) maxScale = transform_.scale.y;
         if (transform_.scale.z > maxScale) maxScale = transform_.scale.z;
 
-        Sphere boundingSphere{};
-        boundingSphere.center = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
-        boundingSphere.radius = asset->boundingRadius * maxScale;
-        // frustumCulling=false の場合は常に描画する (球の計算はクリック選択のため常に行う)
-        isVisible_ = frustumCulling ? IsCollision(boundingSphere, camera.GetFrustumPlanes()) : true;
-
-        pickCenter_ = boundingSphere.center;
-        pickRadius_ = boundingSphere.radius;
+        // 球の計算はクリック選択のため常に行う
+        pickCenter_ = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
+        pickRadius_ = asset->boundingRadius * maxScale;
     }
 
     void Model::Draw() {
-        if (!isVisible_) {
-            return;
-        }
         auto manager = ModelManager::GetInstance();
         const ModelManager::ModelAsset* asset = manager->GetAsset(modelIndex_);
         if (!asset) {
+            isVisible_ = false;
+            return;
+        }
+
+        // フラスタムカリング。CameraManager::UpdateAll()で確定済みの描画カメラで判定する
+        // frustumCulling=false の場合は常に描画する
+        if (frustumCulling_) {
+            Sphere boundingSphere{};
+            boundingSphere.center = pickCenter_;
+            boundingSphere.radius = pickRadius_;
+            isVisible_ = IsCollision(boundingSphere, CameraManager::GetActive().GetFrustumPlanes());
+        } else {
+            isVisible_ = true;
+        }
+
+        if (!isVisible_) {
             return;
         }
 

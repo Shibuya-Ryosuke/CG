@@ -29,13 +29,27 @@ namespace RyoEngine {
         void SetAspectRatio(float aspectRatio) { aspectRatio_ = aspectRatio; }
         void SetNearZ(float nearZ) { nearZ_ = nearZ; }
         void SetFarZ(float farZ) { farZ_ = farZ; }
+
+        /// <summary>
+        /// ビュー行列・プロジェクション行列を直接指定し、「カスタム行列モード」にする。
+        /// モード中はUpdate()による rotate_/translate_ からの自動計算を行わず、
+        /// GetForward()/GetRight()/GetUp()/GetWorldPosition()もこの行列から求めた値を返す。
+        /// ReleaseCustomMatrices()を呼ぶまでモードは解除されない(呼ばなくなっても最後の行列のまま固定)。
+        /// </summary>
         void SetCustomMatrices(const Matrix4x4& view, const Matrix4x4& proj) {
             viewMatrix_ = view;
             projectionMatrix_ = proj;
             viewProjectionMatrix_ = viewMatrix_ * projectionMatrix_;
             UpdateFrustumPlanes(); // フラスタムカリング用の6平面もここで更新しておく
-            isOverride_ = true; // 自動計算をスキップさせる
+            customWorldMatrix_ = Inverse(viewMatrix_); // 向き・位置の取得用に、カメラのワールド行列をキャッシュしておく
+            useCustomMatrices_ = true;
         }
+
+        /// <summary>
+        /// カスタム行列モードを解除する。次のUpdate()から rotate_/translate_ による自動計算に戻る。
+        /// </summary>
+        void ReleaseCustomMatrices() { useCustomMatrices_ = false; }
+
         void SetActive(bool isActive) { isActive_ = isActive; }
 
         // Getter
@@ -50,6 +64,11 @@ namespace RyoEngine {
         bool IsActive() const { return isActive_; }
 
         /// <summary>
+        /// カスタム行列モード中かどうか(SetCustomMatrices()後、ReleaseCustomMatrices()するまでtrue)
+        /// </summary>
+        bool IsUsingCustomMatrices() const { return useCustomMatrices_; }
+
+        /// <summary>
         /// フラスタムカリング用の6平面(Left/Right/Bottom/Top/Near/Farの順)を取得する。
         /// Update()(またはSetCustomMatrices())のタイミングで自動的に更新されている。
         /// </summary>
@@ -57,6 +76,7 @@ namespace RyoEngine {
 
         /// <summary>
         /// カメラのローカル+Z軸(正面)をワールド空間へ変換したベクトル
+        /// (通常時はrotate_から、カスタム行列モード中は行列から求めるため、常に実際の向きと一致する)
         /// </summary>
         Vector3 GetForward() const;
         /// <summary>
@@ -67,6 +87,12 @@ namespace RyoEngine {
         /// カメラのローカル+Y軸(上)をワールド空間へ変換したベクトル
         /// </summary>
         Vector3 GetUp() const;
+        /// <summary>
+        /// カメラのワールド座標。
+        /// 通常時はtranslate_、カスタム行列モード中は行列から求める。
+        /// (DebugCameraのようにワールド行列の組み方が違うクラスはoverrideすること)
+        /// </summary>
+        virtual Vector3 GetWorldPosition() const;
 
     protected:
         Vector3 rotate_{};
@@ -80,10 +106,11 @@ namespace RyoEngine {
         Matrix4x4 projectionMatrix_{};
         Matrix4x4 viewProjectionMatrix_{};
 
-        // NOTE: 元々private宣言だったが、RailCameraControllerなど派生クラスが
-        //       SetCustomMatrices()によるオーバーライドを尊重して自動計算をスキップできるよう
-        //       protectedへ変更した。
-        bool isOverride_ = false;
+        // カスタム行列モード中かどうか。SetCustomMatrices()でtrue、ReleaseCustomMatrices()でfalse。
+        // 派生クラスがUpdate()を独自実装する場合も、これがtrueの間は自動計算をしないこと。
+        bool useCustomMatrices_ = false;
+        // カスタム行列モード中の、ビュー行列の逆行列(=カメラのワールド行列)のキャッシュ
+        Matrix4x4 customWorldMatrix_{};
 
         // フラスタムカリング用の6平面 (Left/Right/Bottom/Top/Near/Farの順)
         std::array<Plane, 6> frustumPlanes_{};

@@ -1,5 +1,6 @@
 #include "GPUParticleManager.h"
 #include "../../Core/Base/Logger.h"
+#include "../../Camera/CameraManager.h"
 
 #ifdef _DEBUG
 #include <imgui.h>
@@ -256,7 +257,9 @@ namespace RyoEngine {
         }
     }
 
-    void GPUParticleManager::Draw(const Camera& camera) {
+    void GPUParticleManager::Draw() {
+        // CameraManager::UpdateAll()で確定済みの描画カメラを使う(Modelのカリングと同じカメラになる)
+        const Camera& camera = CameraManager::GetActive();
         for (auto& [name, managed] : emitters_) {
             managed->emitter.Draw(camera);
         }

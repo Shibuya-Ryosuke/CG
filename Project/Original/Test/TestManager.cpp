@@ -18,6 +18,13 @@ namespace Test {
 		// プレイヤー初期化（自分自身のポインタを渡して、弾を発射できるようにする）
 		player_.Initialize(this);
 
+		// カメラ初期化 (最初に作ったカメラが自動でアクティブになる)
+		mainCam_ = CameraManager::CreateCamera("Main");
+		CameraManager::GetCamera(mainCam_)->SetRotate({ 0.2f, 0.0f, 0.0f }); // 少し見下ろす
+		subCam_ = CameraManager::CreateCamera("Sub");
+		CameraManager::GetCamera(subCam_)->SetTranslate({ 0.0f, 40.0f, -40.0f });
+		CameraManager::GetCamera(subCam_)->SetRotate({ 0.8f, 0.0f, 0.0f });  // 俯瞰
+
 		ParamEditor::BeginGroup("sprite");
 		ParamEditor::RegisterValue("transform", &transform_);
 		ParamEditor::RegisterValue("uvTransform", &uvTransform_);
@@ -95,31 +102,42 @@ namespace Test {
 			bullets_.end()
 		);
 
+		// 地面と空の行列の確定 (カメラ不要。カリングはDraw()で行われる)
+		ground_->TransferMatrix();
+		sky_->TransferMatrix();
+
+		// --- カメラ ---
+		// 追従カメラはプレイヤーが動いた後に位置を合わせる(遅れないように)
+		CameraManager::GetCamera(mainCam_)->SetTranslate(player_.GetTranslate() + followOffset_);
+		// F1:俯瞰カメラへ一時的に切り替え / F2:元に戻す
+		if (Input::TriggerKey(DIK_F1)) {
+			CameraManager::PushActive(subCam_);
+		}
+		if (Input::TriggerKey(DIK_F2)) {
+			CameraManager::PopActive();
+		}
+		// NOTE: カメラの行列計算・描画カメラの確定は、game->Update()の後にエンジン側(EndUpdate)で行われる
+
 		// gpuパーティクル
 		GPUParticleManager::GetInstance()->Update(GetScaleTime());
 	}
 
 	void TestManager::Draw() {
-		// テスト要のやつなので、使用するカメラはデバッグカメラのみ
-		// 行列の確定
-		ground_->TransferMatrix(GetDebugCamera());
-		sky_->TransferMatrix(GetDebugCamera());
-
-		// 描画
+		// 描画 (カメラはEndUpdateで確定済みの描画カメラが自動で使われる)
 		ground_->Draw();
 		sky_->Draw();
-		player_.Draw(GetDebugCamera());
+		player_.Draw();
 
 		flower.Draw();
 		// 弾の描画提出 (同じモデル・テクスチャは自動でまとめて描画される)
 		for (auto& bullet : bullets_) {
-			bullet->Draw(GetDebugCamera());
+			bullet->Draw();
 		}
 
 		//fireEmitter_.Draw(GetDebugCamera());
 
 		// gpuパーティクル
-		GPUParticleManager::GetInstance()->Draw(GetDebugCamera());
+		GPUParticleManager::GetInstance()->Draw();
 	}
 
 	void TestManager::SpawnBullet(const Vector3& position) {

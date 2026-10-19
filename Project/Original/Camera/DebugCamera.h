@@ -37,6 +37,11 @@ namespace RyoEngine {
 		}
 
 		/// <summary>
+		/// ワールド行列が T * R (原点まわりの回転)の組み方なので、translate_ではなくビュー行列から求める
+		/// </summary>
+		Vector3 GetWorldPosition() const override { return GetWorldTranslate(); }
+
+		/// <summary>
 		/// 呼ぶだけで操作の可否を変えられる（デバッグ用途）
 		/// </summary>
 		void ToggleIsAvailable() { isAvailable_ = !isAvailable_; };

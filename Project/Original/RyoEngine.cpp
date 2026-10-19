@@ -3,6 +3,7 @@
 #include "Graphics/3D/ModelManager.h"
 #include "Editor/Gizmo.h"
 #include "Editor/ModelPicker.h"
+#include "Camera/CameraManager.h"
 #include <random>
 #include <chrono>
 #include <dxgidebug.h>
@@ -37,8 +38,6 @@ namespace RyoEngine {
         //ReflectCommon* reflectCommon_ = nullptr;
         Font* fontOutputer_ = nullptr;
         Audio* audio_ = nullptr;
-
-        DebugCamera debugCamera_{};
     }
 
     void Initialize(const wchar_t* title) {
@@ -110,20 +109,16 @@ namespace RyoEngine {
 
         TimeManager::Initialize();
 
-        // デバッグカメラ初期化
-        debugCamera_.Initialize();
-        // デバッグ時操作有効、それ以外では無効
-#ifdef _DEBUG
-        debugCamera_.SetAvailable(true);
-#else
-        debugCamera_.SetAvailable(false);
-#endif
+        // カメラマネージャー(デバッグカメラの初期化・操作可否の設定もこの中で行う)
+        CameraManager::Initialize();
 
         Logger::Log("\n\n\n* Game Start * \n\n");
     }
 
     void Finalize() {
         Logger::Log("\n\n\n* Game Finish *\n\n");
+
+        CameraManager::Finalize();
         
         fontOutputer_->Finalize();
         delete fontOutputer_;
@@ -197,7 +192,7 @@ namespace RyoEngine {
 
         ImGuiManager::NewFrame();
         Gizmo::BeginFrame();
-        debugCamera_.Update();
+        CameraManager::UpdateDebugCamera();
 
         // ゲーム画面
         ImGui::Begin("Game View");
@@ -225,6 +220,8 @@ namespace RyoEngine {
         PostProcess::GetInstance()->DrawImGui();
         // GPUパーティクル
         GPUParticleManager::GetInstance()->DrawImGui();
+        // カメラ(一覧・切り替え)
+        CameraManager::DrawImGui();
 
         // fps
         ImGui::Begin("Performance");
@@ -366,20 +363,6 @@ namespace RyoEngine {
     void Change3DBlendMode(BlendMode blendMode) {
         modelCommon_->SetBlendMode(blendMode);
         ModelManager::GetInstance()->SetBlendMode(blendMode);
-    }
-
-    Camera& GetActiveCamera(Camera& mainCamera) {
-#ifdef _DEBUG
-        // デバッグカメラが有効のとき
-        if (debugCamera_.GetIsAvailable()) {
-            return debugCamera_;
-        }
-#endif
-        return mainCamera;
-    }
-
-    DebugCamera& GetDebugCamera() {
-        return debugCamera_;
     }
 
     // --- ゲッターの実装 ---

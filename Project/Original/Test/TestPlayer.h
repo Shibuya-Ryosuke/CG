@@ -16,7 +16,7 @@ namespace Test {
 		// TestManager のポインタを受け取るように変更
 		void Initialize(TestManager* manager);
 		void Update();
-		void Draw(RyoEngine::Camera& camera);
+		void Draw();
 
 		const RyoEngine::Vector3& GetTranslate()const { return bunny_->GetTranslate(); }
 

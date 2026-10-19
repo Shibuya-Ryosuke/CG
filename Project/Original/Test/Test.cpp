@@ -21,5 +21,7 @@ namespace Test {
 		testManager_->Draw();
 	}
 	void Test::Finalize() {
+		// このゲームで作ったカメラを破棄する(CameraManagerは静的クラスなので、残さないように)
+		CameraManager::Clear();
 	}
 }

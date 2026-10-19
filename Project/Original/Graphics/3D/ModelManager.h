@@ -86,8 +86,7 @@ namespace RyoEngine {
         void NewFrame();
 
         /// <summary>
-        /// このフレームのカメラのView-Projection。Model::TransferMatrix(camera) から設定される
-        /// (複数回呼ばれた場合は最後のものが使われる)
+        /// このフレームのカメラのView-Projection。CameraManager::UpdateAll() で描画カメラが確定したときに設定される
         /// </summary>
         void SetViewProjection(const Matrix4x4& viewProjection) { viewProjection_ = viewProjection; }
 

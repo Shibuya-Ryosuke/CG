@@ -11,12 +11,15 @@ namespace RyoEngine {
         nearZ_ = 0.1f;
         farZ_ = 1000.0f;
 
+        // 初期化時は通常モード(rotate_/translate_から計算)から始める
+        useCustomMatrices_ = false;
+
         Update();
     }
 
     void Camera::Update() {
-        if (isOverride_) {
-            isOverride_ = false;
+        // カスタム行列モード中は自動計算をしない(ReleaseCustomMatrices()で解除するまで)
+        if (useCustomMatrices_) {
             return;
         }
 
@@ -35,15 +38,36 @@ namespace RyoEngine {
     }
 
     Vector3 Camera::GetForward() const {
+        if (useCustomMatrices_) {
+            // 行ベクトル規約なので、ワールド行列の2行目がZ軸(正面)
+            return Normalize(Vector3{ customWorldMatrix_.m[2][0], customWorldMatrix_.m[2][1], customWorldMatrix_.m[2][2] });
+        }
         return Normalize(TransformVector3({ 0.0f, 0.0f, 1.0f }, MakeRotateMatrix(rotate_)));
     }
 
     Vector3 Camera::GetRight() const {
+        if (useCustomMatrices_) {
+            // 行ベクトル規約なので、ワールド行列の0行目がX軸(右)
+            return Normalize(Vector3{ customWorldMatrix_.m[0][0], customWorldMatrix_.m[0][1], customWorldMatrix_.m[0][2] });
+        }
         return Normalize(TransformVector3({ 1.0f, 0.0f, 0.0f }, MakeRotateMatrix(rotate_)));
     }
 
     Vector3 Camera::GetUp() const {
+        if (useCustomMatrices_) {
+            // 行ベクトル規約なので、ワールド行列の1行目がY軸(上)
+            return Normalize(Vector3{ customWorldMatrix_.m[1][0], customWorldMatrix_.m[1][1], customWorldMatrix_.m[1][2] });
+        }
         return Normalize(TransformVector3({ 0.0f, 1.0f, 0.0f }, MakeRotateMatrix(rotate_)));
+    }
+
+    Vector3 Camera::GetWorldPosition() const {
+        if (useCustomMatrices_) {
+            // ワールド行列の3行目が平行移動成分
+            return Vector3{ customWorldMatrix_.m[3][0], customWorldMatrix_.m[3][1], customWorldMatrix_.m[3][2] };
+        }
+        // 通常時はMakeAffineMatrix(S,R,T)なので、translate_がそのままワールド座標
+        return translate_;
     }
 
     void Camera::UpdateFrustumPlanes() {
