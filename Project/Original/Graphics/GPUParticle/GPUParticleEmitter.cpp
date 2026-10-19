@@ -46,8 +46,6 @@ namespace RyoEngine {
         auto device = DirectXCommon::GetInstance()->GetDevice();
 
         // パーティクル本体 (DEFAULT heap、UAV)
-        // NOTE: D3D12のCommitted Resourceは生成時に0クリアされることが仕様で保証されているため、
-        //       全スロットremainingLife=0(=死んでいる)の状態から始まる。明示的な初期化パスは設けていない。
         particleResource_ = CreateUAVBufferResource(device, sizeof(GPUParticleData) * maxParticleCount_);
         particleState_ = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 
@@ -140,8 +138,11 @@ namespace RyoEngine {
         // カメラの情報は今すぐ確定させ、マップ済みバッファに書き込んでおく
         // (実際の描画コマンド発行は後回しになるため、camera参照そのものをラムダに持ち越さない)
         cameraData_->viewProjection = camera.GetViewProjectionMatrix();
-        cameraData_->cameraRight = camera.GetRight();
-        cameraData_->cameraUp = camera.GetUp();
+
+        // ビュー行列の逆行列(=カメラのワールド行列)から右・上方向を取り出す。
+        Matrix4x4 cameraWorldMatrix = Inverse(camera.GetViewMatrix());
+        cameraData_->cameraRight = Normalize(Vector3{ cameraWorldMatrix.m[0][0], cameraWorldMatrix.m[0][1], cameraWorldMatrix.m[0][2] });
+        cameraData_->cameraUp = Normalize(Vector3{ cameraWorldMatrix.m[1][0], cameraWorldMatrix.m[1][1], cameraWorldMatrix.m[1][2] });
 
         GPUParticleCommon::GetInstance()->SetDrawCommands([this]() {
             InternalDraw();
@@ -201,7 +202,7 @@ namespace RyoEngine {
         commandList->SetGraphicsRootSignature(common->GetRenderRootSignature());
         commandList->SetPipelineState(common->GetRenderPipelineState(billboard_, blendMode_));
 
-       
+
         SrvManager::GetInstance()->PreDraw(commandList);
 
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
