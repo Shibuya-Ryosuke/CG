@@ -11,6 +11,7 @@
   <Project Path="CG2.vcxproj" Id="abf1860e-e9d4-41ff-8782-8801700ca81c" />
   <Project Path="externals/imgui/imgui.vcxproj" Id="c36be18a-a14a-49da-b53f-c380ae71b282">
     <BuildType Solution="Development|*" Project="Release" />
+    <Build Solution="Release|*" Project="false" />
   </Project>
   <Project Path="Original/Externals/DirectXTex/DirectXTex_Desktop_2022_Win10.vcxproj" Id="371b9fa9-4c90-4ac6-a123-aced756d6c77" />
 </Solution>
