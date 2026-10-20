@@ -24,11 +24,11 @@
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
     </ClCompile>
     <ClCompile Include="Original\Camera\CameraManager.cpp" />
-    <ClCompile Include="Original\Core\Base\Framework.cpp" />
     <ClCompile Include="Original\Core\Base\SrvManager.cpp" />
     <ClCompile Include="Original\Editor\Gizmo.cpp" />
     <ClCompile Include="Original\Editor\ModelLayout.cpp" />
     <ClCompile Include="Original\Editor\ModelPicker.cpp" />
+    <ClCompile Include="Original\Framework\Framework.cpp" />
     <ClCompile Include="Original\Graphics\2D\Sprite.cpp" />
     <ClCompile Include="Original\Graphics\2D\SpriteCommon.cpp" />
     <ClCompile Include="Original\Graphics\3D\InstancedModelCommon.cpp" />
@@ -75,11 +75,11 @@
     <ClInclude Include="Application\GameName\Scene\SceneManager.h" />
     <ClInclude Include="Application\GameName\Scene\Title.h" />
     <ClInclude Include="Original\Camera\CameraManager.h" />
-    <ClInclude Include="Original\Core\Base\Framework.h" />
     <ClInclude Include="Original\Core\Base\SrvManager.h" />
     <ClInclude Include="Original\Editor\Gizmo.h" />
     <ClInclude Include="Original\Editor\ModelLayout.h" />
     <ClInclude Include="Original\Editor\ModelPicker.h" />
+    <ClInclude Include="Original\Framework\Framework.h" />
     <ClInclude Include="Original\Graphics\2D\Sprite.h" />
     <ClInclude Include="Original\Graphics\2D\SpriteCommon.h" />
     <ClInclude Include="Original\Graphics\3D\InstancedModelCommon.h" />

@@ -97,6 +97,9 @@
     <Filter Include="HLSL\GPUParticle">
       <UniqueIdentifier>{a7beeaab-0e3f-4d54-bf60-96ff32d1b795}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Framework">
+      <UniqueIdentifier>{1ad35560-4e0e-4956-9dfd-a4e6599197a2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -238,8 +241,8 @@
     <ClCompile Include="Original\Camera\CameraManager.cpp">
       <Filter>Engine\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Core\Base\Framework.cpp">
-      <Filter>Engine\Core\Base</Filter>
+    <ClCompile Include="Original\Framework\Framework.cpp">
+      <Filter>Engine\Framework</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -414,8 +417,8 @@
     <ClInclude Include="Original\Camera\CameraManager.h">
       <Filter>Engine\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Core\Base\Framework.h">
-      <Filter>Engine\Core\Base</Filter>
+    <ClInclude Include="Original\Framework\Framework.h">
+      <Filter>Engine\Framework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
