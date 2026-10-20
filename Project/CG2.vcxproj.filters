@@ -238,6 +238,9 @@
     <ClCompile Include="Original\Camera\CameraManager.cpp">
       <Filter>Engine\Camera</Filter>
     </ClCompile>
+    <ClCompile Include="Original\Core\Base\Framework.cpp">
+      <Filter>Engine\Core\Base</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Test\TestManager.h">
@@ -410,6 +413,9 @@
     </ClInclude>
     <ClInclude Include="Original\Camera\CameraManager.h">
       <Filter>Engine\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Core\Base\Framework.h">
+      <Filter>Engine\Core\Base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

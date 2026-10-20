@@ -8,6 +8,7 @@
 #include "Core/Base/TimeManager.h"
 #include "Graphics/2D/TextureManager.h"
 #include "Core/Loader/ModelLoader.h"
+#include "Core/Base/Framework.h"
 #include "Core/Base/ShaderCompiler.h"
 #include "Core/Base/IGame.h"
 #include "Core/Easing/Easing.h"
