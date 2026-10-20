@@ -15,10 +15,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Application\GameName\GameName.cpp" />
-    <ClCompile Include="Application\GameName\Scene\Game.cpp" />
-    <ClCompile Include="Application\GameName\Scene\SceneManager.cpp" />
-    <ClCompile Include="Application\GameName\Scene\Title.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
@@ -62,18 +58,14 @@
     <ClCompile Include="Original\Graphics\PrimitiveRenderer\PrimitiveRenderer.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />
     <ClCompile Include="Original\Graphics\Shadow\ShadowMap.cpp" />
+    <ClCompile Include="Original\Scene\SceneManager.cpp" />
     <ClCompile Include="Original\Test\Test.cpp" />
     <ClCompile Include="Original\Test\TestBullet.cpp" />
     <ClCompile Include="Original\Test\TestPlayer.cpp" />
-    <ClCompile Include="Original\Test\TestManager.cpp" />
+    <ClCompile Include="Original\Test\TestScene.cpp" />
+    <ClCompile Include="Original\Test\TestSceneFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Application\GameName\GameName.h" />
-    <ClInclude Include="Application\GameName\GameResources\GameSound.h" />
-    <ClInclude Include="Application\GameName\GameResources\GameTex.h" />
-    <ClInclude Include="Application\GameName\Scene\Game.h" />
-    <ClInclude Include="Application\GameName\Scene\SceneManager.h" />
-    <ClInclude Include="Application\GameName\Scene\Title.h" />
     <ClInclude Include="Original\Camera\CameraManager.h" />
     <ClInclude Include="Original\Core\Base\SrvManager.h" />
     <ClInclude Include="Original\Editor\Gizmo.h" />
@@ -122,10 +114,14 @@
     <ClInclude Include="Original\Graphics\PrimitiveRenderer\PrimitiveRenderer.h" />
     <ClInclude Include="Original\RyoEngine.h" />
     <ClInclude Include="Original\Graphics\Shadow\ShadowMap.h" />
+    <ClInclude Include="Original\Scene\AbstractSceneFactory.h" />
+    <ClInclude Include="Original\Scene\BaseScene.h" />
+    <ClInclude Include="Original\Scene\SceneManager.h" />
     <ClInclude Include="Original\Test\Test.h" />
     <ClInclude Include="Original\Test\TestBullet.h" />
     <ClInclude Include="Original\Test\TestPlayer.h" />
-    <ClInclude Include="Original\Test\TestManager.h" />
+    <ClInclude Include="Original\Test\TestScene.h" />
+    <ClInclude Include="Original\Test\TestSceneFactory.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\EngineResources\HLSL\Model\Dither.hlsli">

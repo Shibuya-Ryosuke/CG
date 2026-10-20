@@ -25,9 +25,10 @@ namespace RyoEngine {
     protected:
         // --- 派生クラスで実装するゲーム処理 ---
         virtual void Initialize() = 0;
-        virtual void Update() = 0;
-        virtual void Draw() = 0;
-        virtual void Finalize() = 0;
+        // シーンの更新・描画はSceneManagerが行うので、ここはゲーム全体で共通の処理だけ(不要なら空のまま)
+        virtual void Update() {}
+        virtual void Draw() {}
+        virtual void Finalize() {}
 
     private:
         std::wstring windowTitle_;

@@ -174,6 +174,11 @@ namespace RyoEngine {
         flags_.erase(key);
     }
 
+    void GPUParticleManager::ClearRegistrations() {
+        positions_.clear();
+        flags_.clear();
+    }
+
     const Vector3* GPUParticleManager::FindPosition(const std::string& key) const {
         if (key.empty()) {
             return nullptr;

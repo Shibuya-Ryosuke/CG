@@ -60,6 +60,11 @@ namespace RyoEngine {
         static void Save();
         static void Load();
 
+        // --- 登録解除 ---
+        // 登録中の値をキャッシュへ退避してから、すべての項目を解除する(シーン切り替え時にSceneManagerから呼ばれる)
+        // 同じ名前で再登録すると、キャッシュの値が戻る
+        static void ClearEntries();
+
     private:
         ParamEditor() = default;
         ~ParamEditor() = default;
@@ -89,7 +94,15 @@ namespace RyoEngine {
 
         void BeginGroupInternal(const std::string& name, bool open);
         void EndGroupInternal();
-        void AddEntry(ParamEntry entry);
+        // 同じ階層に同名の項目があれば重複させずに上書きし、追加(上書き)した項目を返す
+        ParamEntry& AddEntry(ParamEntry entry);
+
+        void ClearEntriesInternal();
+
+        // キャッシュ(loadedJson_)に同じパスの値があれば、その項目に反映する
+        void ApplyCachedValue(ParamEntry& entry);
+        // jsonの値を1項目に反映する
+        void ApplyJsonValue(const nlohmann::json& val, ParamEntry& e);
 
         void DrawImGuiInternal(const char* windowName);
         void DrawEntries(std::list<ParamEntry>& entries);
@@ -104,7 +117,10 @@ namespace RyoEngine {
 
         std::list<ParamEntry> rootEntries_;
         std::vector<ParamEntry*> groupStack_;
+        // 現在のグループ階層の名前(キャッシュから値を探すときのパス)
+        std::vector<std::string> groupPath_;
 
+        // 読み込んだ値・解除した項目の値のキャッシュ(Saveではこれ全体を保存する)
         nlohmann::json loadedJson_;
         bool isLoaded_ = false;
 

@@ -6,17 +6,17 @@
 #include <memory>
 
 namespace Test {
-	class TestManager {
+	class TestScene : public RyoEngine::BaseScene {
 	public:
-		TestManager() = default;
-		~TestManager() = default;
+		TestScene() = default;
+		~TestScene() override = default;
 
-		TestManager(const TestManager&) = delete;
-		TestManager& operator=(const TestManager&) = delete;
+		TestScene(const TestScene&) = delete;
+		TestScene& operator=(const TestScene&) = delete;
 
-		void Initialize();
-		void Update();
-		void Draw();
+		void Initialize() override;
+		void Update() override;
+		void Draw() override;
 
 		// プレイヤーから呼ばれる弾の発射口
 		void SpawnBullet(const RyoEngine::Vector3& position);

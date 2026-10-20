@@ -1,10 +1,10 @@
-#include "TestManager.h"
+#include "TestScene.h"
 #include <algorithm>
 
 using namespace RyoEngine;
 
 namespace Test {
-	void TestManager::Initialize() {
+	void TestScene::Initialize() {
 
 		// モデル初期化
 		ground_ = Model::Create("Resources/EngineResources/Test/ground.obj");
@@ -42,7 +42,7 @@ namespace Test {
 		// Resources/EngineResources/Test/Particle/quad.obj
 	}
 
-	void TestManager::Update() {
+	void TestScene::Update() {
 		// （Normalはアルファブレンド）
 		// 3Dオブジェクトたちのブレンドモード
 		if (Input::TriggerKey(DIK_0)) {
@@ -122,7 +122,7 @@ namespace Test {
 		GPUParticleManager::GetInstance()->Update(GetScaleTime());
 	}
 
-	void TestManager::Draw() {
+	void TestScene::Draw() {
 		// 描画 (カメラはEndUpdateで確定済みの描画カメラが自動で使われる)
 		ground_->Draw();
 		sky_->Draw();
@@ -140,7 +140,7 @@ namespace Test {
 		GPUParticleManager::GetInstance()->Draw();
 	}
 
-	void TestManager::SpawnBullet(const Vector3& position) {
+	void TestScene::SpawnBullet(const Vector3& position) {
 		auto bullet = std::make_unique<TestBullet>();
 		bullet->Initialize(bulletModelIndex_, position);
 		bullets_.push_back(std::move(bullet));

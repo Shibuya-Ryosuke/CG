@@ -4,8 +4,6 @@
 #include <ImGui/ImGuiAllInclude.h>
 #endif
 
-#include "Application/GameName/GameName.h"
-
 using namespace RyoEngine;
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {

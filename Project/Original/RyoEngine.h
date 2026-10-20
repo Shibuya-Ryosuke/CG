@@ -9,6 +9,7 @@
 #include "Graphics/2D/TextureManager.h"
 #include "Core/Loader/ModelLoader.h"
 #include "Framework/Framework.h"
+#include "Scene/SceneManager.h"
 #include "Core/Base/ShaderCompiler.h"
 #include "Core/Base/IGame.h"
 #include "Core/Easing/Easing.h"

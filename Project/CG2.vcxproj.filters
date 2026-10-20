@@ -4,20 +4,8 @@
     <Filter Include="Engine">
       <UniqueIdentifier>{410416bb-c79b-4e16-94ed-8ae276e5fd76}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application">
-      <UniqueIdentifier>{ddccd698-3b21-49f0-b6aa-f5b97efa3e95}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\Test">
       <UniqueIdentifier>{20db6151-7cb6-4ae1-acd6-5d2c8b7b7634}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\GameName">
-      <UniqueIdentifier>{b5a71e37-4b83-42ed-8b4e-13e5dfc33ea7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\GameName\GameResources">
-      <UniqueIdentifier>{98731039-f783-4098-92b3-7ea8324b4530}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\GameName\Scene">
-      <UniqueIdentifier>{d72d0e82-e098-4a50-9cae-8a26e2cda17a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\Core">
       <UniqueIdentifier>{11fbdd79-b011-4242-815f-89dc97da7b0c}</UniqueIdentifier>
@@ -100,29 +88,17 @@
     <Filter Include="Engine\Framework">
       <UniqueIdentifier>{1ad35560-4e0e-4956-9dfd-a4e6599197a2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Scene">
+      <UniqueIdentifier>{b2750279-a958-4662-97d7-9afa08f7d6f5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Original\Test\TestPlayer.cpp">
       <Filter>Engine\Test</Filter>
     </ClCompile>
-    <ClCompile Include="Original\Test\TestManager.cpp">
-      <Filter>Engine\Test</Filter>
-    </ClCompile>
     <ClCompile Include="Original\Test\TestBullet.cpp">
       <Filter>Engine\Test</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\GameName\GameName.cpp">
-      <Filter>Application\GameName</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\GameName\Scene\Game.cpp">
-      <Filter>Application\GameName\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\GameName\Scene\SceneManager.cpp">
-      <Filter>Application\GameName\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\GameName\Scene\Title.cpp">
-      <Filter>Application\GameName\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Original\Test\Test.cpp">
       <Filter>Engine\Test</Filter>
@@ -244,34 +220,22 @@
     <ClCompile Include="Original\Framework\Framework.cpp">
       <Filter>Engine\Framework</Filter>
     </ClCompile>
+    <ClCompile Include="Original\Scene\SceneManager.cpp">
+      <Filter>Engine\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Test\TestScene.cpp">
+      <Filter>Engine\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Test\TestSceneFactory.cpp">
+      <Filter>Engine\Test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Original\Test\TestManager.h">
-      <Filter>Engine\Test</Filter>
-    </ClInclude>
     <ClInclude Include="Original\Test\TestPlayer.h">
       <Filter>Engine\Test</Filter>
     </ClInclude>
     <ClInclude Include="Original\Test\TestBullet.h">
       <Filter>Engine\Test</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\GameName.h">
-      <Filter>Application\GameName</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\Scene\Game.h">
-      <Filter>Application\GameName\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\Scene\SceneManager.h">
-      <Filter>Application\GameName\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\Scene\Title.h">
-      <Filter>Application\GameName\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\GameResources\GameSound.h">
-      <Filter>Application\GameName\GameResources</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\GameName\GameResources\GameTex.h">
-      <Filter>Application\GameName\GameResources</Filter>
     </ClInclude>
     <ClInclude Include="Original\Test\Test.h">
       <Filter>Engine\Test</Filter>
@@ -419,6 +383,21 @@
     </ClInclude>
     <ClInclude Include="Original\Framework\Framework.h">
       <Filter>Engine\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Scene\AbstractSceneFactory.h">
+      <Filter>Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Scene\BaseScene.h">
+      <Filter>Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Scene\SceneManager.h">
+      <Filter>Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Test\TestScene.h">
+      <Filter>Engine\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Test\TestSceneFactory.h">
+      <Filter>Engine\Test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

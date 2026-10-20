@@ -84,6 +84,12 @@ namespace RyoEngine {
         void UnregisterFlag(const std::string& key);
 
         /// <summary>
+        /// 登録済みの座標・フラグをすべて解除する(Emitterは残す)。
+        /// シーン切り替え時にSceneManagerから呼ばれる。
+        /// </summary>
+        void ClearRegistrations();
+
+        /// <summary>
         /// コード側から、Emitterが使う座標/フラグのキーを切り替える(空文字で解除)。
         /// ImGuiで選ぶのが基本だが、コードから固定したい場合に使う。
         /// </summary>

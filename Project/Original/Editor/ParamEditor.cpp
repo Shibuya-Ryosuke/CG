@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <json.hpp>
 #include <imgui.h>
 
@@ -44,27 +45,80 @@ namespace RyoEngine {
         groupEntry.type = EntryType::Group;
         groupEntry.defaultOpen = open;
 
-        AddEntry(groupEntry);
+        // 同名のグループが既にあれば、それを使い回す
+        ParamEntry& group = AddEntry(groupEntry);
 
-        if (groupStack_.empty()) {
-            groupStack_.push_back(&rootEntries_.back());
-        } else {
-            groupStack_.push_back(&(groupStack_.back()->children.back()));
-        }
+        groupStack_.push_back(&group);
+        groupPath_.push_back(name);
     }
 
     void ParamEditor::EndGroupInternal() {
         if (!groupStack_.empty()) {
             groupStack_.pop_back();
         }
+        if (!groupPath_.empty()) {
+            groupPath_.pop_back();
+        }
     }
 
-    void ParamEditor::AddEntry(ParamEntry entry) {
-        if (groupStack_.empty()) {
-            rootEntries_.push_back(entry);
+    ParamEditor::ParamEntry& ParamEditor::AddEntry(ParamEntry entry) {
+        std::list<ParamEntry>& entries = groupStack_.empty() ? rootEntries_ : groupStack_.back()->children;
+
+        // 同じ階層に同名の項目があれば、重複させずに上書きする
+        auto it = std::find_if(entries.begin(), entries.end(),
+            [&entry](const ParamEntry& e) { return e.name == entry.name; });
+
+        if (it != entries.end()) {
+            if (it->type == EntryType::Group && entry.type == EntryType::Group) {
+                // グループは中身(子)を残したまま、設定だけ更新する
+                it->defaultOpen = entry.defaultOpen;
+            } else {
+                *it = std::move(entry);
+            }
         } else {
-            groupStack_.back()->children.push_back(entry);
+            entries.push_back(std::move(entry));
+            it = std::prev(entries.end());
         }
+
+        // キャッシュに値があれば反映する(登録とLoadの順番に依存しないように)
+        ApplyCachedValue(*it);
+
+        return *it;
+    }
+
+    void ParamEditor::ApplyCachedValue(ParamEntry& entry) {
+        if (entry.type == EntryType::Group || !entry.ptr) {
+            return;
+        }
+
+        // 現在のグループ階層をたどって、キャッシュ内の同じ場所を探す
+        const nlohmann::json* node = &loadedJson_;
+        for (const auto& groupName : groupPath_) {
+            if (!node->is_object() || !node->contains(groupName)) {
+                return;
+            }
+            node = &(*node)[groupName];
+        }
+
+        if (!node->is_object() || !node->contains(entry.name)) {
+            return;
+        }
+        ApplyJsonValue((*node)[entry.name], entry);
+    }
+
+    // --- 登録解除 ---
+
+    void ParamEditor::ClearEntries() {
+        GetInstance().ClearEntriesInternal();
+    }
+
+    void ParamEditor::ClearEntriesInternal() {
+        // 解除する前に、今の値をキャッシュへ退避する(作り直したシーンで再登録したときに戻せるように)
+        SaveEntriesToJson(loadedJson_, rootEntries_);
+
+        rootEntries_.clear();
+        groupStack_.clear();
+        groupPath_.clear();
     }
 
     // --- 各種パラメータ登録 ---
@@ -393,12 +447,12 @@ namespace RyoEngine {
             }
         }
 
-        nlohmann::json j;
-        SaveEntriesToJson(j, rootEntries_);
+        // 今の値をキャッシュへマージしてから、キャッシュ全体を保存する(今登録されていない項目の値を消さないため)
+        SaveEntriesToJson(loadedJson_, rootEntries_);
 
         std::ofstream file(filepath);
         if (file.is_open()) {
-            file << j.dump(4);
+            file << loadedJson_.dump(4);
             Logger::LogSuccess("[ParamEditor] Save Successed.");
         } else {
             Logger::LogWarning("[ParamEditor] Save failed: Could not open file " + filepath);
@@ -408,9 +462,11 @@ namespace RyoEngine {
     void ParamEditor::SaveEntriesToJson(nlohmann::json& j, const std::list<ParamEntry>& entries) {
         for (const auto& e : entries) {
             if (e.type == EntryType::Group) {
-                nlohmann::json childJson;
-                SaveEntriesToJson(childJson, e.children);
-                j[e.name] = childJson;
+                // 既にある値(今登録されていない項目)を残すため、子は直接マージする
+                if (!j.contains(e.name) || !j[e.name].is_object()) {
+                    j[e.name] = nlohmann::json::object();
+                }
+                SaveEntriesToJson(j[e.name], e.children);
             } else if (e.ptr) {
                 switch (e.type) {
                 case EntryType::Flag:
@@ -494,67 +550,73 @@ namespace RyoEngine {
                     LoadEntriesFromJson(j[e.name], e.children);
                 }
             } else if (e.ptr) {
-                const auto& val = j[e.name];
-                switch (e.type) {
-                case EntryType::Flag:
-                    if (val.is_boolean()) *static_cast<bool*>(e.ptr) = val.get<bool>();
-                    break;
-                case EntryType::Int32:
-                    if (val.is_number_integer()) *static_cast<int32_t*>(e.ptr) = val.get<int32_t>();
-                    break;
-                case EntryType::UInt32:
-                    if (val.is_number_unsigned()) *static_cast<uint32_t*>(e.ptr) = val.get<uint32_t>();
-                    break;
-                case EntryType::Float:
-                    if (val.is_number()) *static_cast<float*>(e.ptr) = val.get<float>();
-                    break;
-                case EntryType::Vector2:
-                    if (val.is_array() && val.size() == 2) {
-                        auto* v = static_cast<Vector2*>(e.ptr);
-                        v->x = val[0].get<float>();
-                        v->y = val[1].get<float>();
-                    }
-                    break;
-                case EntryType::Vector3:
-                case EntryType::Color3:
-                    if (val.is_array() && val.size() == 3) {
-                        auto* v = static_cast<Vector3*>(e.ptr);
-                        v->x = val[0].get<float>();
-                        v->y = val[1].get<float>();
-                        v->z = val[2].get<float>();
-                    }
-                    break;
-                case EntryType::Vector4:
-                case EntryType::Color4:
-                    if (val.is_array() && val.size() == 4) {
-                        auto* v = static_cast<Vector4*>(e.ptr);
-                        v->x = val[0].get<float>();
-                        v->y = val[1].get<float>();
-                        v->z = val[2].get<float>();
-                        v->w = val[3].get<float>();
-                    }
-                    break;
-                case EntryType::Anchor:
-                    if (val.is_string()) {
-                        std::string str = val.get<std::string>();
-                        Anchor anchor = Anchor::Center;
-                        if (str == "Center")           anchor = Anchor::Center;
-                        else if (str == "Top")         anchor = Anchor::Top;
-                        else if (str == "Bottom")      anchor = Anchor::Bottom;
-                        else if (str == "Left")        anchor = Anchor::Left;
-                        else if (str == "LeftTop")     anchor = Anchor::LeftTop;
-                        else if (str == "LeftBottom")  anchor = Anchor::LeftBottom;
-                        else if (str == "Right")       anchor = Anchor::Right;
-                        else if (str == "RightTop")    anchor = Anchor::RightTop;
-                        else if (str == "RightBottom") anchor = Anchor::RightBottom;
-
-                        *static_cast<Anchor*>(e.ptr) = anchor;
-                    }
-                    break;
-                default:
-                    break;
-                }
+                ApplyJsonValue(j[e.name], e);
             }
+        }
+    }
+
+    void ParamEditor::ApplyJsonValue(const nlohmann::json& val, ParamEntry& e) {
+        if (!e.ptr) {
+            return;
+        }
+        switch (e.type) {
+        case EntryType::Flag:
+            if (val.is_boolean()) *static_cast<bool*>(e.ptr) = val.get<bool>();
+            break;
+        case EntryType::Int32:
+            if (val.is_number_integer()) *static_cast<int32_t*>(e.ptr) = val.get<int32_t>();
+            break;
+        case EntryType::UInt32:
+            if (val.is_number_unsigned()) *static_cast<uint32_t*>(e.ptr) = val.get<uint32_t>();
+            break;
+        case EntryType::Float:
+            if (val.is_number()) *static_cast<float*>(e.ptr) = val.get<float>();
+            break;
+        case EntryType::Vector2:
+            if (val.is_array() && val.size() == 2) {
+                auto* v = static_cast<Vector2*>(e.ptr);
+                v->x = val[0].get<float>();
+                v->y = val[1].get<float>();
+            }
+            break;
+        case EntryType::Vector3:
+        case EntryType::Color3:
+            if (val.is_array() && val.size() == 3) {
+                auto* v = static_cast<Vector3*>(e.ptr);
+                v->x = val[0].get<float>();
+                v->y = val[1].get<float>();
+                v->z = val[2].get<float>();
+            }
+            break;
+        case EntryType::Vector4:
+        case EntryType::Color4:
+            if (val.is_array() && val.size() == 4) {
+                auto* v = static_cast<Vector4*>(e.ptr);
+                v->x = val[0].get<float>();
+                v->y = val[1].get<float>();
+                v->z = val[2].get<float>();
+                v->w = val[3].get<float>();
+            }
+            break;
+        case EntryType::Anchor:
+            if (val.is_string()) {
+                std::string str = val.get<std::string>();
+                Anchor anchor = Anchor::Center;
+                if (str == "Center")           anchor = Anchor::Center;
+                else if (str == "Top")         anchor = Anchor::Top;
+                else if (str == "Bottom")      anchor = Anchor::Bottom;
+                else if (str == "Left")        anchor = Anchor::Left;
+                else if (str == "LeftTop")     anchor = Anchor::LeftTop;
+                else if (str == "LeftBottom")  anchor = Anchor::LeftBottom;
+                else if (str == "Right")       anchor = Anchor::Right;
+                else if (str == "RightTop")    anchor = Anchor::RightTop;
+                else if (str == "RightBottom") anchor = Anchor::RightBottom;
+
+                *static_cast<Anchor*>(e.ptr) = anchor;
+            }
+            break;
+        default:
+            break;
         }
     }
 }

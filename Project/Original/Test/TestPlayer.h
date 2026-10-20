@@ -3,7 +3,7 @@
 
 namespace Test {
 	// 前方宣言
-	class TestManager;
+	class TestScene;
 
 	class TestPlayer {
 	public:
@@ -13,16 +13,16 @@ namespace Test {
 		TestPlayer(const TestPlayer&) = delete;
 		TestPlayer& operator=(const TestPlayer&) = delete;
 
-		// TestManager のポインタを受け取るように変更
-		void Initialize(TestManager* manager);
+		// TestScene のポインタを受け取る
+		void Initialize(TestScene* scene);
 		void Update();
 		void Draw();
 
 		const RyoEngine::Vector3& GetTranslate()const { return bunny_->GetTranslate(); }
 
 	private:
-		// マネージャーへの参照（弾を発射してもらうため）
-		TestManager* manager_ = nullptr;
+		// シーンへの参照（弾を発射してもらうため）
+		TestScene* scene_ = nullptr;
 
 		// 自身
 		std::unique_ptr<RyoEngine::Model> bunny_{};

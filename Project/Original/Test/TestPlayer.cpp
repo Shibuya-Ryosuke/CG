@@ -1,12 +1,12 @@
 #include "TestPlayer.h"
-#include "TestManager.h"
+#include "TestScene.h"
 #include <imgui.h>
 
 using namespace RyoEngine;
 
 namespace Test {
-	void TestPlayer::Initialize(TestManager* manager) {
-		manager_ = manager;
+	void TestPlayer::Initialize(TestScene* scene) {
+		scene_ = scene;
 
 		// モデル初期化
 		bunny_ = Model::Create("Resources/EngineResources/Test/bunny.obj");
@@ -50,14 +50,14 @@ namespace Test {
 		}
 
 		if (Input::PushKey(DIK_SPACE)) {
-			if (manager_) {
+			if (scene_) {
 				for (int32_t i = 0;i < 20;i++) {
 					Vector3 randomPos{};
 					randomPos.x = RandomFloat(-50.0f, 50.0f);
 					randomPos.y = RandomFloat(1.0f, 10.0f);
 					randomPos.z = RandomFloat(-50.0f, 50.0f);
 
-					manager_->SpawnBullet(randomPos);
+					scene_->SpawnBullet(randomPos);
 				}
 			}
 		}

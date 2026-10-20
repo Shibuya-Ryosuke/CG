@@ -1,22 +1,27 @@
 #pragma once
-#include "../Core/Base/IGame.h"
-
-#include "TestManager.h"
+#include <RyoEngine.h>
 
 namespace Test {
-	class Test : public RyoEngine::IGame {
+
+	/// <summary>
+	/// Testゲームの統括クラス
+	/// 起動時の準備(保存先の設定・読み込み・シーン工場の設定)と終了処理だけを行う
+	/// シーンの更新・描画はSceneManagerが行う
+	/// </summary>
+	class Test : public RyoEngine::Framework {
 	public:
 		Test() = default;
-		// コピーコンストラクタ、代入演算子の明示的削除
+		~Test() override = default;
+
+		// コピー・ムーブ禁止
 		Test(const Test&) = delete;
 		Test& operator=(const Test&) = delete;
+		Test(Test&&) = delete;
+		Test& operator=(Test&&) = delete;
 
+	protected:
 		void Initialize() override;
-		void Update() override;
-		void Draw() override;
 		void Finalize() override;
-
-	private:
-		std::unique_ptr<TestManager> testManager_ = nullptr;
 	};
+
 }

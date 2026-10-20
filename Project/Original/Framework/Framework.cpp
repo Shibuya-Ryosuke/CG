@@ -4,7 +4,8 @@
 namespace RyoEngine {
 
     Framework::Framework(std::wstring windowTitle)
-        : windowTitle_(std::move(windowTitle)) {}
+        : windowTitle_(std::move(windowTitle)) {
+    }
 
     void Framework::Run() {
         // エンジン初期化
@@ -24,6 +25,9 @@ namespace RyoEngine {
             // ゲーム
             Update();
 
+            // シーン(切り替え予約の処理 → 現在のシーンの更新)
+            SceneManager::Update();
+
             // カメラ確定
             CameraManager::UpdateAll();
 
@@ -36,7 +40,10 @@ namespace RyoEngine {
             // --- 描画処理 (Draw) ---
             // ----------------------
 
-            // ゲーム
+            // シーン
+            SceneManager::Draw();
+
+            // ゲーム(全シーンの上に重ねるもの)
             Draw();
 
             // ----------------------
@@ -46,6 +53,9 @@ namespace RyoEngine {
             // フレーム終了
             EndFrame();
         }
+
+        // シーン終了
+        SceneManager::Finalize();
 
         // ゲーム終了
         Finalize();
