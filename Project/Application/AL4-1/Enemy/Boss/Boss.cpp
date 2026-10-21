@@ -67,7 +67,17 @@ namespace AL4_1 {
 		obb_.center = transform_.translate;
 		UpdateMeleeOBB();
 		UpdateColor();
-		model_->SetTransform(transform_);
+
+		// 見た目用のトランスフォーム（奥へのずらし＋被弾シェイク）
+		Transform drawTransform = transform_;
+		drawTransform.translate.z += modelOffsetZ_;
+		if (hitShakeTimer_ > 0.0f) {
+			hitShakeTimer_ -= dt;
+			float shake = hitShake_ * std::clamp(hitShakeTimer_ / hitShakeTime_, 0.0f, 1.0f);
+			drawTransform.translate.x += RandomFloat(-shake, shake);
+			drawTransform.translate.y += RandomFloat(-shake, shake);
+		}
+		model_->SetTransform(drawTransform);
 	}
 
 	void Boss::Draw(RyoEngine::Camera& camera) {
@@ -89,7 +99,9 @@ namespace AL4_1 {
 		if (!IsCollidable()) { return; }
 
 		hp_ -= damage;
+		// 被弾したら赤くして少し揺らす
 		hitFlashTimer_ = hitFlashTime_;
+		hitShakeTimer_ = hitShakeTime_;
 		if (hp_ <= 0.0f) {
 			hp_ = 0.0f;
 			ChangeState(State::Destroy);
@@ -118,7 +130,6 @@ namespace AL4_1 {
 	void Boss::RegisterInParamEditor() {
 		ParamEditor::BeginGroup("Boss");
 		ParamEditor::RegisterValue("maxHp", &maxHp_, 1.0f, 1.0f, 2000.0f);
-		ParamEditor::RegisterValue("damage", &damage_, 1.0f, 0.0f, 100.0f);
 		ParamEditor::RegisterValue("obbHalfSize", &obb_.size, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("baseScale", &baseScale_, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("homeOffset", &homeOffset_, 0.1f, -50.0f, 50.0f);
@@ -130,8 +141,20 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("idleTime", &idleTime_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("moveTime", &moveTime_, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("destroyTime", &destroyTime_, 0.01f, 0.1f, 10.0f);
-		ParamEditor::RegisterValue("hitFlashTime", &hitFlashTime_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("destroyShake", &destroyShake_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::EndGroup();
+
+		ParamEditor::BeginGroup("BossLook");
+		ParamEditor::RegisterValue("modelOffsetZ", &modelOffsetZ_, 0.1f, -20.0f, 20.0f);
+		ParamEditor::RegisterValue("hitFlashTime", &hitFlashTime_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("hitShakeTime", &hitShakeTime_, 0.01f, 0.01f, 2.0f);
+		ParamEditor::RegisterValue("hitShake", &hitShake_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::RegisterValue("baseColor", &baseColor_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("windupColor", &windupColor_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("glintColor", &glintColor_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("meleeActiveColor", &meleeActiveColor_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("stunColor", &stunColor_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("hitFlashColor", &hitFlashColor_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 
 		ParamEditor::BeginGroup("BossShot");

@@ -45,7 +45,8 @@ namespace AL4_1 {
 
 		// ボスの弾（プールで使い回す）
 		BulletManager bulletManager_{};
-		uint32_t maxBulletCount_ = 128;
+		// 弾の最大数（ParamEditorで変えたら再起動で反映）
+		int32_t maxBulletCount_ = 128;
 
 		// リトライ用にプレイヤーのスポーン位置を覚えておく
 		RyoEngine::Vector3 playerSpawnPosition_{};

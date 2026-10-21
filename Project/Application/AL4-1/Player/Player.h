@@ -37,9 +37,15 @@ namespace AL4_1 {
 		float GetHP() const { return hp_; }
 		bool IsDead() const { return isDead_; }
 
-		// パリィ受付中か（この間に弾・近接攻撃が parryObb_ に触れたらパリィ成功）
-		bool IsParryActive() const { return isParryActive_; }
-		const RyoEngine::OBB& GetParryOBB() const { return parryObb_; }
+		// --- 攻撃（パリィを兼ねる） ---
+		// 攻撃判定が出ているか（この間はパリィも受け付ける）
+		bool IsAttackActive() const { return isAttacking_; }
+		// 攻撃判定（パリィ判定も兼ねる）
+		const RyoEngine::OBB& GetAttackOBB() const { return attackObb_; }
+		float GetAttackDamage() const { return attackDamage_; }
+		// 1回の攻撃で何度もダメージを与えないためのフラグ
+		bool IsAttackHitDone() const { return isAttackHitDone_; }
+		void SetAttackHitDone() { isAttackHitDone_ = true; }
 		/// <summary>パリィ成功時に Game から呼ぶ。isCounter はボスの近接攻撃へのカウンター</summary>
 		void OnParrySuccess(bool isCounter);
 
@@ -47,13 +53,13 @@ namespace AL4_1 {
 	private:
 		void RegisterInParamEditor();
 		void Jump();
-		void Attack() {};
+		void Attack();
 
 		void HpEffectUpdate();
 		void DamageTakenUpdate();
 		void InvincibleUpdate();
-		void ParryUpdate();
-		void HitStopUpdate();
+		void AttackUpdate();
+		void ParryEffectUpdate();
 
 	private:
 		// 自身
@@ -78,6 +84,8 @@ namespace AL4_1 {
 		// 速度（単位：ワールド座標/秒。1マス=2.0）
 		RyoEngine::Vector3 velocity_ = { 0.0f,0.0f,0.0f };
 		float moveSpeed_ = 12.0f;
+		// 向いている方向（+1:右 -1:左）。最後に入力した方向
+		float facing_ = 1.0f;
 
 		// hp
 		float maxHp_ = 100.0f;
@@ -116,31 +124,46 @@ namespace AL4_1 {
 		float maxNoiseIntensity_ = 0.3f;
 		float hpEffectStartRaito_ = 0.5f;  // hp残量エフェクトの開始はhpが5割を切ってから
 
-		// --- パリィ ---
-		// 判定（体の判定を parryRange_ だけ広げたもの）
-		RyoEngine::OBB parryObb_{
+		// --- 攻撃（パリィを兼ねる） ---
+		RyoEngine::OBB attackObb_{
 			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
 			.size = {1.0f,1.0f,1.0f}
 		};
-		bool isParryActive_ = false;		// 受付中
-		bool isParrySucceeded_ = false;		// 今回の受付中に1回でも成功したか（成功したら硬直なし）
-		float parryTimer_ = 0.0f;			// 受付の残り時間
-		float parryCooldownTimer_ = 0.0f;	// 硬直の残り時間（連打対策）
-		float parryWindow_ = 0.15f;			// 受付時間（秒）
-		float parryCooldown_ = 0.35f;		// 失敗したときの硬直（秒）
-		RyoEngine::Vector3 parryRange_ = { 0.6f,0.4f,0.6f };	// 体の判定より広げる量
-		RyoEngine::Vector4 parryColor_ = { 0.4f,0.9f,1.0f,1.0f };	// 受付中の色
-		RyoEngine::Vector4 cooldownColor_ = { 0.6f,0.6f,0.6f,1.0f };	// 硬直中の色
+		bool isAttacking_ = false;			// 攻撃判定が出ている（＝回転中。その場で停止する）
+		bool isAttackHitDone_ = false;		// 今回の攻撃がもうボスに当たったか
+		float attackTimer_ = 0.0f;			// 攻撃判定の残り時間
+		float attackCooldownTimer_ = 0.0f;	// クールタイムの残り時間
+		float attackActiveTime_ = 0.35f;	// 攻撃判定（＝パリィ受付）が出ている時間（秒）。1回転にかかる時間も同じ
+		float attackCooldown_ = 0.35f;		// 攻撃が終わってから次に攻撃できるまで（秒）。成功・失敗に関係なく毎回
+		float attackDamage_ = 3.0f;			// 通常攻撃でボスに与えるダメージ
+		float attackReach_ = 0.3f;			// 体の中心から攻撃判定の中心までの横の距離（0で体の中心）
+		float attackOffsetY_ = 0.0f;		// 攻撃判定の高さのずれ
+		RyoEngine::Vector3 attackHalfSize_ = { 1.6f,1.6f,1.0f };	// 回転するので体のまわりを囲む大きさ
 
-		// --- パリィ成功時のヒットストップ ---
-		bool isHitStop_ = false;
-		float hitStopTimer_ = 0.0f;
-		float hitStopDuration_ = 0.0f;		// 今回のヒットストップの長さ
-		float parryHitStopDuration_ = 0.06f;	// 弾をパリィしたとき（実時間）
-		float counterHitStopDuration_ = 0.18f;	// カウンターしたとき（実時間）
-		float hitStopTimeScale_ = 0.05f;
-		float hitStopChromaticStrength_ = 0.0f;	// 今回の色収差の強さ
-		float parryChromaticStrength_ = 0.2f;
-		float counterChromaticStrength_ = 0.6f;
+		// --- サマーソルト（攻撃中の1回転。見た目だけで判定は回さない） ---
+		float spinEasePower_ = 2.0f;		// 回り方（1:等速 大きいほど出だしが速く最後がゆっくり）
+		float spinDirection_ = 1.0f;		// 回る向き（後ろ宙返りにならなければ -1 にする）
+		RyoEngine::Vector4 attackColor_ = { 0.4f,0.9f,1.0f,1.0f };	// 攻撃中の色
+		RyoEngine::Vector4 cooldownColor_ = { 0.6f,0.6f,0.6f,1.0f };	// クールタイム中の色
+
+		// --- パリィ成功時の演出（ブラー＋スロー） ---
+		// 0 → peakTime で最大まで強くなり、peakTime → duration で元に戻る（実時間）
+		bool isParryEffect_ = false;
+		float parryEffectTimer_ = 0.0f;		// 演出開始からの経過時間
+		// 今回の演出の値（弾パリィかカウンターかで切り替わる）
+		float effectDuration_ = 0.5f;
+		float effectPeakTime_ = 0.25f;
+		float effectMaxBlur_ = 0.0f;
+		float effectSlowScale_ = 1.0f;
+		// 弾をパリィしたとき
+		float parryEffectDuration_ = 0.5f;
+		float parryEffectPeakTime_ = 0.25f;
+		float parryMaxBlur_ = 0.006f;		// ブラーの最大の強さ（PostProcessのblurStrength。UVのずれ量）
+		float parrySlowScale_ = 0.3f;		// 一番遅くなったときのタイムスケール
+		// 近接攻撃にカウンターしたとき
+		float counterEffectDuration_ = 0.5f;
+		float counterEffectPeakTime_ = 0.25f;
+		float counterMaxBlur_ = 0.012f;
+		float counterSlowScale_ = 0.1f;
 	};
 }

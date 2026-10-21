@@ -75,14 +75,11 @@ namespace AL4_1 {
 		bool IsDead() const { return state_ == State::Dead; }
 		// 当たり判定を取ってよい状態か
 		bool IsCollidable() const { return state_ != State::Appear && state_ != State::Destroy && state_ != State::Dead; }
-		// 体当たりでダメージを与える状態か（怯み中は与えない）
-		bool CanContactDamage() const { return IsCollidable() && state_ != State::Stun; }
 		const RyoEngine::OBB& GetOBB() const { return obb_; }
 		// 体の中心（反射弾の追尾先）。アドレスは変わらない
 		const RyoEngine::Vector3* GetCenter() const { return &obb_.center; }
 		float GetHP() const { return hp_; }
 		float GetMaxHP() const { return maxHp_; }
-		float GetDamage() const { return damage_; }
 
 		// --- 近接攻撃 ---
 		bool IsMeleeActive() const {
@@ -248,7 +245,5 @@ namespace AL4_1 {
 		const RyoEngine::Vector3* target_ = nullptr;
 
 		std::mt19937 randomEngine_{ std::random_device{}() };
-
-		float damage_ = 10.0f;
 	};
 }

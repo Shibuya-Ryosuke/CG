@@ -119,7 +119,8 @@ namespace AL4_1 {
 		const RyoEngine::OBB& playerOBB = player_.GetOBB();
 		// 攻撃中はパリィも受け付ける
 		const bool canParry = player_.IsAttackActive();
-		const RyoEngine::OBB& parryOBB = player_.GetParryOBB();
+		// 攻撃判定がそのままパリィ判定になる
+		const RyoEngine::OBB& parryOBB = player_.GetAttackOBB();
 
 		// プレイヤー × ボスの弾 ／ 反射弾 × ボス
 		for (auto& bullet : bulletManager_.GetBullets()) {
@@ -168,9 +169,6 @@ namespace AL4_1 {
 			player_.SetAttackHitDone();
 		}
 
-		// プレイヤー × ボス
-		if (boss_.CanContactDamage() && IsCollision(playerOBB, boss_.GetOBB())) {
-			player_.OnDamage(boss_.GetDamage());
-		}
+		// プレイヤー × ボスの体：触れてもダメージなし（ダメージは弾と近接攻撃だけ）
 	}
 }

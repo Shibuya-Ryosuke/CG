@@ -1,5 +1,7 @@
 #include "Player.h"
 #include <algorithm>
+#include <cmath>
+#include <numbers>
 
 using namespace RyoEngine;
 using namespace std;
@@ -24,12 +26,14 @@ namespace AL4_1 {
 		if (Input::PushKey(DIK_A)) {
 			moveX -= 1.0f;
 		}
-		// 向きは最後に入力した方向
-		if (moveX != 0.0f) {
+		// 向きは最後に入力した方向（攻撃中は向きを変えない）
+		if (moveX != 0.0f && !isAttacking_) {
 			facing_ = moveX;
 		}
-		// ジャンプ
-		Jump();
+		// ジャンプ（攻撃中はできない）
+		if (!isAttacking_) {
+			Jump();
+		}
 		// hp残量に応じた演出のアップデート
 		HpEffectUpdate();
 		// 無敵時間のアップデート
@@ -47,6 +51,12 @@ namespace AL4_1 {
 		velocity_.y = max(velocity_.y, -maxFallSpeed_);
 
 		Vector3 delta = { velocity_.x * dt, velocity_.y * dt, 0.0f };
+
+		// 攻撃（回転）中はその場で停止する（移動も落下もしない）
+		if (isAttacking_) {
+			velocity_ = { 0.0f,0.0f,0.0f };
+			delta = { 0.0f,0.0f,0.0f };
+		}
 
 		// --- マップとの判定付き移動 ---
 		if (map_) {
@@ -70,13 +80,27 @@ namespace AL4_1 {
 		}
 		Vector3 translate = transform_.translate;
 		obb_.center = { translate.x,translate.y + halfSize_.y,translate.z };
-		// 攻撃判定は向いている方向の前、パリィ判定は体の中心に合わせて体より少し大きく
+		// 攻撃判定（パリィ判定も兼ねる）。体の中心から向いている方向へ attackReach_ ずらす
 		attackObb_.center = { obb_.center.x + facing_ * attackReach_, obb_.center.y + attackOffsetY_, obb_.center.z };
 		attackObb_.size = attackHalfSize_;
-		parryObb_.center = obb_.center;
-		parryObb_.size = { halfSize_.x + parryRange_.x, halfSize_.y + parryRange_.y, halfSize_.z + parryRange_.z };
+
+		// 見た目用のトランスフォーム（攻撃中はサマーソルトで1回転）
+		Transform drawTransform = transform_;
+		if (isAttacking_) {
+			// 0 → 1 の進み具合
+			float t = 1.0f - std::clamp(attackTimer_ / attackActiveTime_, 0.0f, 1.0f);
+			t = 1.0f - std::pow(1.0f - t, spinEasePower_);
+			// 右向きなら頭が左（後ろ）へ回る後ろ宙返り
+			float angle = facing_ * spinDirection_ * t * 2.0f * std::numbers::pi_v<float>;
+			drawTransform.rotate.z += angle;
+
+			// モデルの原点は足元なので、体の中心を軸に回って見えるよう位置を補正する
+			const float pivot = halfSize_.y;
+			drawTransform.translate.x += pivot * std::sin(angle);
+			drawTransform.translate.y += pivot - pivot * std::cos(angle);
+		}
 		// modelにセット
-		model_->SetTransform(transform_);
+		model_->SetTransform(drawTransform);
 	}
 
 	void Player::Draw(RyoEngine::Camera& camera) {
@@ -86,10 +110,9 @@ namespace AL4_1 {
 		// 描画
 		model_->Draw();
 		PrimitiveRenderer::DrawOBB(obb_, { 0.0f,1.0f,0.0f,1.0f },PrimitiveDrawMode::Wireframe);
-		// デバッグ：攻撃中は攻撃判定を赤、パリィ判定を黄色で表示
+		// デバッグ：攻撃中は攻撃（パリィ）判定を赤で表示
 		if (isAttacking_) {
 			PrimitiveRenderer::DrawOBB(attackObb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
-			PrimitiveRenderer::DrawOBB(parryObb_, { 1.0f,1.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 		}
 	}
 
@@ -185,7 +208,8 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("reach", &attackReach_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("offsetY", &attackOffsetY_, 0.01f, -5.0f, 5.0f);
 		ParamEditor::RegisterValue("halfSize", &attackHalfSize_, 0.01f, 0.05f, 10.0f);
-		ParamEditor::RegisterValue("parryRange", &parryRange_, 0.01f, 0.0f, 5.0f);
+		ParamEditor::RegisterValue("spinEasePower", &spinEasePower_, 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("spinDirection", &spinDirection_, 2.0f, -1.0f, 1.0f);
 		ParamEditor::RegisterValue("attackColor", &attackColor_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("cooldownColor", &cooldownColor_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();

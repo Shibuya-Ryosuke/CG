@@ -130,7 +130,6 @@ namespace AL4_1 {
 	void Boss::RegisterInParamEditor() {
 		ParamEditor::BeginGroup("Boss");
 		ParamEditor::RegisterValue("maxHp", &maxHp_, 1.0f, 1.0f, 2000.0f);
-		ParamEditor::RegisterValue("damage", &damage_, 1.0f, 0.0f, 100.0f);
 		ParamEditor::RegisterValue("obbHalfSize", &obb_.size, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("baseScale", &baseScale_, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("homeOffset", &homeOffset_, 0.1f, -50.0f, 50.0f);

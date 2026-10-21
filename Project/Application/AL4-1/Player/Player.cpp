@@ -1,5 +1,7 @@
 #include "Player.h"
 #include <algorithm>
+#include <cmath>
+#include <numbers>
 
 using namespace RyoEngine;
 using namespace std;
@@ -24,18 +26,24 @@ namespace AL4_1 {
 		if (Input::PushKey(DIK_A)) {
 			moveX -= 1.0f;
 		}
-		// ジャンプ
-		Jump();
+		// 向きは最後に入力した方向（攻撃中は向きを変えない）
+		if (moveX != 0.0f && !isAttacking_) {
+			facing_ = moveX;
+		}
+		// ジャンプ（攻撃中はできない）
+		if (!isAttacking_) {
+			Jump();
+		}
 		// hp残量に応じた演出のアップデート
 		HpEffectUpdate();
 		// 無敵時間のアップデート
 		InvincibleUpdate();
 		// 被ダメージ時のアップデート
 		DamageTakenUpdate();
-		// パリィ（受付・硬直・色）のアップデート
-		ParryUpdate();
-		// パリィ成功時のヒットストップのアップデート
-		HitStopUpdate();
+		// 攻撃（パリィ兼用）のアップデート
+		AttackUpdate();
+		// パリィ成功時の演出（ブラー＋スロー）のアップデート
+		ParryEffectUpdate();
 
 		// 速度の更新
 		velocity_.x = moveX * moveSpeed_;
@@ -43,6 +51,12 @@ namespace AL4_1 {
 		velocity_.y = max(velocity_.y, -maxFallSpeed_);
 
 		Vector3 delta = { velocity_.x * dt, velocity_.y * dt, 0.0f };
+
+		// 攻撃（回転）中はその場で停止する（移動も落下もしない）
+		if (isAttacking_) {
+			velocity_ = { 0.0f,0.0f,0.0f };
+			delta = { 0.0f,0.0f,0.0f };
+		}
 
 		// --- マップとの判定付き移動 ---
 		if (map_) {
@@ -66,11 +80,27 @@ namespace AL4_1 {
 		}
 		Vector3 translate = transform_.translate;
 		obb_.center = { translate.x,translate.y + halfSize_.y,translate.z };
-		// パリィ判定は体の中心に合わせ、体の判定より少し大きくする
-		parryObb_.center = obb_.center;
-		parryObb_.size = { halfSize_.x + parryRange_.x, halfSize_.y + parryRange_.y, halfSize_.z + parryRange_.z };
+		// 攻撃判定（パリィ判定も兼ねる）。体の中心から向いている方向へ attackReach_ ずらす
+		attackObb_.center = { obb_.center.x + facing_ * attackReach_, obb_.center.y + attackOffsetY_, obb_.center.z };
+		attackObb_.size = attackHalfSize_;
+
+		// 見た目用のトランスフォーム（攻撃中はサマーソルトで1回転）
+		Transform drawTransform = transform_;
+		if (isAttacking_) {
+			// 0 → 1 の進み具合
+			float t = 1.0f - std::clamp(attackTimer_ / attackActiveTime_, 0.0f, 1.0f);
+			t = 1.0f - std::pow(1.0f - t, spinEasePower_);
+			// 右向きなら頭が左（後ろ）へ回る後ろ宙返り
+			float angle = facing_ * spinDirection_ * t * 2.0f * std::numbers::pi_v<float>;
+			drawTransform.rotate.z += angle;
+
+			// モデルの原点は足元なので、体の中心を軸に回って見えるよう位置を補正する
+			const float pivot = halfSize_.y;
+			drawTransform.translate.x += pivot * std::sin(angle);
+			drawTransform.translate.y += pivot - pivot * std::cos(angle);
+		}
 		// modelにセット
-		model_->SetTransform(transform_);
+		model_->SetTransform(drawTransform);
 	}
 
 	void Player::Draw(RyoEngine::Camera& camera) {
@@ -80,9 +110,9 @@ namespace AL4_1 {
 		// 描画
 		model_->Draw();
 		PrimitiveRenderer::DrawOBB(obb_, { 0.0f,1.0f,0.0f,1.0f },PrimitiveDrawMode::Wireframe);
-		// デバッグ：パリィ受付中は判定を黄色で表示
-		if (isParryActive_) {
-			PrimitiveRenderer::DrawOBB(parryObb_, { 1.0f,1.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+		// デバッグ：攻撃中は攻撃（パリィ）判定を赤で表示
+		if (isAttacking_) {
+			PrimitiveRenderer::DrawOBB(attackObb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 		}
 	}
 
@@ -109,34 +139,28 @@ namespace AL4_1 {
 	}
 
 	void Player::OnParrySuccess(bool isCounter) {
-		// 成功したので、受付が終わっても硬直しない
-		isParrySucceeded_ = true;
+		// 演出を最初から（カウンターの方が強く・遅く）
+		isParryEffect_ = true;
+		parryEffectTimer_ = 0.0f;
+		effectDuration_ = isCounter ? counterEffectDuration_ : parryEffectDuration_;
+		effectPeakTime_ = isCounter ? counterEffectPeakTime_ : parryEffectPeakTime_;
+		effectMaxBlur_ = isCounter ? counterMaxBlur_ : parryMaxBlur_;
+		effectSlowScale_ = isCounter ? counterSlowScale_ : parrySlowScale_;
 
-		// ヒットストップ（カウンターの方が長く・強く）
-		isHitStop_ = true;
-		hitStopDuration_ = isCounter ? counterHitStopDuration_ : parryHitStopDuration_;
-		hitStopTimer_ = hitStopDuration_;
-		hitStopChromaticStrength_ = isCounter ? counterChromaticStrength_ : parryChromaticStrength_;
-		SetTimeScale(hitStopTimeScale_);
-
-		// 被ダメージ演出中はそちらの色収差を優先する
-		if (!isDamageTaken_) {
-			auto ppInstance = PostProcess::GetInstance();
-			ppInstance->SetChromaticAberrationEnabled(true);
-			ppInstance->SetChromaticAberrationStrength(hitStopChromaticStrength_);
-		}
+		PostProcess::GetInstance()->SetBlurEnabled(true);
 	}
 
 	void Player::ResetStatus() {
 		hp_ = maxHp_; isDead_ = false;
 
 		velocity_ = { 0.0f,0.0f,0.0f };
-		isParryActive_ = false;
-		isParrySucceeded_ = false;
-		parryTimer_ = 0.0f;
-		parryCooldownTimer_ = 0.0f;
-		isHitStop_ = false;
-		hitStopTimer_ = 0.0f;
+		facing_ = 1.0f;
+		isAttacking_ = false;
+		isAttackHitDone_ = false;
+		attackTimer_ = 0.0f;
+		attackCooldownTimer_ = 0.0f;
+		isParryEffect_ = false;
+		parryEffectTimer_ = 0.0f;
 		isDamageTaken_ = false;
 		damageTakenDuration_ = 0.0f;
 		isInvincible_ = false;
@@ -146,6 +170,8 @@ namespace AL4_1 {
 		auto ppInstance = PostProcess::GetInstance();
 		ppInstance->SetChromaticAberrationEnabled(false);
 		ppInstance->SetChromaticAberrationStrength(0.0f);
+		ppInstance->SetBlurEnabled(false);
+		ppInstance->SetBlurStrength(0.0f);
 		SetTimeScale(1.0f);
 	}
 
@@ -175,15 +201,28 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("startRatio", &hpEffectStartRaito_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("PlayerParry");
-		ParamEditor::RegisterValue("window", &parryWindow_, 0.01f, 0.01f, 1.0f);
-		ParamEditor::RegisterValue("cooldown", &parryCooldown_, 0.01f, 0.0f, 2.0f);
-		ParamEditor::RegisterValue("range", &parryRange_, 0.01f, 0.0f, 5.0f);
-		ParamEditor::RegisterValue("parryHitStop", &parryHitStopDuration_, 0.01f, 0.0f, 1.0f);
-		ParamEditor::RegisterValue("counterHitStop", &counterHitStopDuration_, 0.01f, 0.0f, 1.0f);
-		ParamEditor::RegisterValue("hitStopTimeScale", &hitStopTimeScale_, 0.01f, 0.0f, 1.0f);
-		ParamEditor::RegisterValue("parryChromatic", &parryChromaticStrength_, 0.01f, 0.0f, 2.0f);
-		ParamEditor::RegisterValue("counterChromatic", &counterChromaticStrength_, 0.01f, 0.0f, 2.0f);
+		ParamEditor::BeginGroup("PlayerAttack");
+		ParamEditor::RegisterValue("activeTime", &attackActiveTime_, 0.01f, 0.01f, 1.0f);
+		ParamEditor::RegisterValue("cooldown", &attackCooldown_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::RegisterValue("damage", &attackDamage_, 0.1f, 0.0f, 100.0f);
+		ParamEditor::RegisterValue("reach", &attackReach_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("offsetY", &attackOffsetY_, 0.01f, -5.0f, 5.0f);
+		ParamEditor::RegisterValue("halfSize", &attackHalfSize_, 0.01f, 0.05f, 10.0f);
+		ParamEditor::RegisterValue("spinEasePower", &spinEasePower_, 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("spinDirection", &spinDirection_, 2.0f, -1.0f, 1.0f);
+		ParamEditor::RegisterValue("attackColor", &attackColor_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("cooldownColor", &cooldownColor_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::EndGroup();
+
+		ParamEditor::BeginGroup("PlayerParryEffect");
+		ParamEditor::RegisterValue("parryDuration", &parryEffectDuration_, 0.01f, 0.01f, 3.0f);
+		ParamEditor::RegisterValue("parryPeakTime", &parryEffectPeakTime_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::RegisterValue("parryMaxBlur", &parryMaxBlur_, 0.0005f, 0.0f, 0.1f);
+		ParamEditor::RegisterValue("parrySlowScale", &parrySlowScale_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("counterDuration", &counterEffectDuration_, 0.01f, 0.01f, 3.0f);
+		ParamEditor::RegisterValue("counterPeakTime", &counterEffectPeakTime_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::RegisterValue("counterMaxBlur", &counterMaxBlur_, 0.0005f, 0.0f, 0.1f);
+		ParamEditor::RegisterValue("counterSlowScale", &counterSlowScale_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 	}
 
@@ -193,6 +232,12 @@ namespace AL4_1 {
 			velocity_.y = jumpPower_;
 			onGround_ = false;
 		}
+	}
+
+	void Player::Attack() {
+		isAttacking_ = true;
+		isAttackHitDone_ = false;
+		attackTimer_ = attackActiveTime_;
 	}
 
 	void Player::HpEffectUpdate() {
@@ -255,58 +300,66 @@ namespace AL4_1 {
 		}
 	}
 
-	void Player::ParryUpdate() {
+	void Player::AttackUpdate() {
 		const float dt = GetScaleTime();
 
-		if (isParryActive_) {
-			// 受付中
-			parryTimer_ -= dt;
-			if (parryTimer_ <= 0.0f) {
-				isParryActive_ = false;
-				// 空振りしたときだけ硬直（連打で全部はじけないようにする）
-				parryCooldownTimer_ = isParrySucceeded_ ? 0.0f : parryCooldown_;
+		if (isAttacking_) {
+			// 攻撃判定が出ている間
+			attackTimer_ -= dt;
+			if (attackTimer_ <= 0.0f) {
+				isAttacking_ = false;
+				// 1回攻撃するごとにクールタイム
+				attackCooldownTimer_ = attackCooldown_;
 			}
-		} else if (parryCooldownTimer_ > 0.0f) {
-			// 硬直中
-			parryCooldownTimer_ -= dt;
-		} else if (Input::TriggerKey(DIK_J)) {
-			// 受付開始
-			isParryActive_ = true;
-			isParrySucceeded_ = false;
-			parryTimer_ = parryWindow_;
+		} else if (attackCooldownTimer_ > 0.0f) {
+			// クールタイム中
+			attackCooldownTimer_ -= dt;
+		} else if (Input::TriggerKey(DIK_SPACE)) {
+			Attack();
 		}
 
 		// 色（無敵中は点滅を優先）
 		if (isInvincible_) return;
-		if (isParryActive_) {
-			model_->SetColor(parryColor_);
-		} else if (parryCooldownTimer_ > 0.0f) {
+		if (isAttacking_) {
+			model_->SetColor(attackColor_);
+		} else if (attackCooldownTimer_ > 0.0f) {
 			model_->SetColor(cooldownColor_);
 		} else {
 			model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
 		}
 	}
 
-	void Player::HitStopUpdate() {
-		if (!isHitStop_) return;
-		// 止まっている間も進むように deltaタイムを引く
-		hitStopTimer_ -= GetDeltaTime();
-		float t = 1.0f - std::clamp(hitStopTimer_ / hitStopDuration_, 0.0f, 1.0f);
+	void Player::ParryEffectUpdate() {
+		if (!isParryEffect_) return;
+		// スローで演出が伸びないように deltaタイムを足す
+		parryEffectTimer_ += GetDeltaTime();
+
+		// 0 → 1（peakTime） → 0（duration）の山なりの強さ
+		const float peak = std::clamp(effectPeakTime_, 0.0f, effectDuration_);
+		float w = 0.0f;
+		if (parryEffectTimer_ < peak) {
+			w = parryEffectTimer_ / peak;
+		} else if (effectDuration_ > peak) {
+			w = 1.0f - (parryEffectTimer_ - peak) / (effectDuration_ - peak);
+		}
+		w = std::clamp(w, 0.0f, 1.0f);
 
 		auto ppInstance = PostProcess::GetInstance();
+		// ブラー
+		ppInstance->SetBlurStrength(effectMaxBlur_ * w);
+		// スロー（被ダメージのスロー中はそちらを優先）
 		if (!isDamageTaken_) {
-			ppInstance->SetChromaticAberrationStrength(EaseOutCubic(t, hitStopChromaticStrength_, 0.0f));
+			SetTimeScale(1.0f + (effectSlowScale_ - 1.0f) * w);
 		}
-		SetTimeScale(hitStopTimeScale_);
 
-		// ヒットストップ終了
-		if (hitStopTimer_ <= 0.0f) {
-			hitStopTimer_ = 0.0f;
-			isHitStop_ = false;
-			SetTimeScale(1.0f);
+		// 演出終了
+		if (parryEffectTimer_ >= effectDuration_) {
+			isParryEffect_ = false;
+			parryEffectTimer_ = 0.0f;
+			ppInstance->SetBlurEnabled(false);
+			ppInstance->SetBlurStrength(0.0f);
 			if (!isDamageTaken_) {
-				ppInstance->SetChromaticAberrationEnabled(false);
-				ppInstance->SetChromaticAberrationStrength(0.0f);
+				SetTimeScale(1.0f);
 			}
 		}
 	}

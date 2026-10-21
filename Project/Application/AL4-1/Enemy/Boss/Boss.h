@@ -75,14 +75,11 @@ namespace AL4_1 {
 		bool IsDead() const { return state_ == State::Dead; }
 		// 当たり判定を取ってよい状態か
 		bool IsCollidable() const { return state_ != State::Appear && state_ != State::Destroy && state_ != State::Dead; }
-		// 体当たりでダメージを与える状態か（怯み中は与えない）
-		bool CanContactDamage() const { return IsCollidable() && state_ != State::Stun; }
 		const RyoEngine::OBB& GetOBB() const { return obb_; }
 		// 体の中心（反射弾の追尾先）。アドレスは変わらない
 		const RyoEngine::Vector3* GetCenter() const { return &obb_.center; }
 		float GetHP() const { return hp_; }
 		float GetMaxHP() const { return maxHp_; }
-		float GetDamage() const { return damage_; }
 
 		// --- 近接攻撃 ---
 		bool IsMeleeActive() const {
@@ -222,15 +219,23 @@ namespace AL4_1 {
 		RyoEngine::Vector3 stunStart_{};
 		RyoEngine::Vector3 stunEnd_{};
 
+		// ---- 見た目 ----
+		// モデルだけ奥にずらす（プレイヤーが埋もれないように）。当たり判定と弾の発射位置は z=0 のまま
+		float modelOffsetZ_ = 2.0f;
+		// 被弾時のシェイク（見た目だけ。判定は揺らさない）
+		float hitShakeTimer_ = 0.0f;
+		float hitShakeTime_ = 0.2f;
+		float hitShake_ = 0.25f;		// 揺れ幅（時間とともに小さくなる）
+
 		// ---- 色 ----
 		float hitFlashTimer_ = 0.0f;
-		float hitFlashTime_ = 0.1f;
+		float hitFlashTime_ = 0.15f;
 		RyoEngine::Vector4 baseColor_{ 1.0f, 1.0f, 1.0f, 1.0f };
 		RyoEngine::Vector4 windupColor_{ 1.0f, 0.5f, 0.2f, 1.0f };	// 予備動作で徐々にこの色へ
 		RyoEngine::Vector4 glintColor_{ 1.0f, 1.0f, 0.3f, 1.0f };	// パリィの合図
 		RyoEngine::Vector4 meleeActiveColor_{ 1.0f, 0.1f, 0.1f, 1.0f };
 		RyoEngine::Vector4 stunColor_{ 0.5f, 0.5f, 1.0f, 1.0f };
-		RyoEngine::Vector4 hitFlashColor_{ 1.0f, 0.3f, 0.3f, 1.0f };
+		RyoEngine::Vector4 hitFlashColor_{ 1.0f, 0.1f, 0.1f, 1.0f };
 
 		// ---- 撃破演出 ----
 		RyoEngine::Vector3 destroyBasePosition_{};
@@ -240,7 +245,5 @@ namespace AL4_1 {
 		const RyoEngine::Vector3* target_ = nullptr;
 
 		std::mt19937 randomEngine_{ std::random_device{}() };
-
-		float damage_ = 10.0f;
 	};
 }

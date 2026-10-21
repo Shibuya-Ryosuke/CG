@@ -17,10 +17,13 @@ namespace AL4_1 {
 	void Game::Initialize() {
 		// 弾の共有パラメータを登録（インスタンスが増減するので1回だけ）
 		Bullet::RegisterInParamEditor();
+		ParamEditor::BeginGroup("Game");
+		ParamEditor::RegisterValue("maxBulletCount", &maxBulletCount_, 1.0f, 1, 1000);
+		ParamEditor::EndGroup();
 
 		// マップ読み込み（ブロックのモデルは 1x1x1・原点が中心のobjを用意する）
 		mapChipField_.Load(
-			"Resources/ApplicationResources/AL4-1/Csv/stage2.csv",
+			"Resources/ApplicationResources/AL4-1/Csv/stage1.csv",
 			"Resources/ApplicationResources/AL4-1/Stage/Block/block.obj");
 
 		// プレイヤーとボス初期化
@@ -30,13 +33,13 @@ namespace AL4_1 {
 		boss_.SetTarget(&player_.GetPosition());
 		boss_.SetBulletManager(&bulletManager_);
 
-		// ボスの弾のプール
-		bulletManager_.Initialize("Resources/ApplicationResources/AL4-1/Bullet/bullet.obj", maxBulletCount_);
-		bulletManager_.SetMap(&mapChipField_);
-
 		// 登録が済んだのでスポーン前にロード。プレイヤーhp、死亡フラグをリセット
 		ParamEditor::Load();
 		player_.ResetStatus();
+
+		// ボスの弾のプール（最大数をロードした後に作る）
+		bulletManager_.Initialize("Resources/ApplicationResources/AL4-1/Bullet/bullet.obj", static_cast<uint32_t>(maxBulletCount_));
+		bulletManager_.SetMap(&mapChipField_);
 
 		// プレイヤーとボスのスポーン
 		SpawnFromMap();
@@ -114,8 +117,10 @@ namespace AL4_1 {
 		if (player_.IsDead()) return;
 
 		const RyoEngine::OBB& playerOBB = player_.GetOBB();
-		const bool canParry = player_.IsParryActive();
-		const RyoEngine::OBB& parryOBB = player_.GetParryOBB();
+		// 攻撃中はパリィも受け付ける
+		const bool canParry = player_.IsAttackActive();
+		// 攻撃判定がそのままパリィ判定になる
+		const RyoEngine::OBB& parryOBB = player_.GetAttackOBB();
 
 		// プレイヤー × ボスの弾 ／ 反射弾 × ボス
 		for (auto& bullet : bulletManager_.GetBullets()) {
@@ -147,18 +152,23 @@ namespace AL4_1 {
 		if (boss_.IsMeleeActive()) {
 			const RyoEngine::OBB& meleeOBB = boss_.GetMeleeOBB();
 			if (canParry && IsCollision(parryOBB, meleeOBB)) {
-				// カウンター成功
+				// カウンター成功（同じ攻撃で通常攻撃のダメージは入れない）
 				boss_.OnCountered();
 				player_.OnParrySuccess(true);
+				player_.SetAttackHitDone();
 			} else if (!boss_.IsMeleeHitDone() && IsCollision(playerOBB, meleeOBB)) {
 				player_.OnDamage(boss_.GetMeleeDamage());
 				boss_.SetMeleeHitDone();
 			}
 		}
 
-		// プレイヤー × ボス
-		if (boss_.CanContactDamage() && IsCollision(playerOBB, boss_.GetOBB())) {
-			player_.OnDamage(boss_.GetDamage());
+		// プレイヤーの通常攻撃 × ボス
+		if (player_.IsAttackActive() && !player_.IsAttackHitDone() && boss_.IsCollidable() &&
+			IsCollision(player_.GetAttackOBB(), boss_.GetOBB())) {
+			boss_.OnDamage(player_.GetAttackDamage());
+			player_.SetAttackHitDone();
 		}
+
+		// プレイヤー × ボスの体：触れてもダメージなし（ダメージは弾と近接攻撃だけ）
 	}
 }

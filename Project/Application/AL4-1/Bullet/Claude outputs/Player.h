@@ -40,10 +40,8 @@ namespace AL4_1 {
 		// --- 攻撃（パリィを兼ねる） ---
 		// 攻撃判定が出ているか（この間はパリィも受け付ける）
 		bool IsAttackActive() const { return isAttacking_; }
-		// ボスに当てる攻撃判定（向いている方向の前）
+		// 攻撃判定（パリィ判定も兼ねる）
 		const RyoEngine::OBB& GetAttackOBB() const { return attackObb_; }
-		// パリィ判定（体の判定を parryRange_ だけ広げたもの。後ろや上からの弾もはじける）
-		const RyoEngine::OBB& GetParryOBB() const { return parryObb_; }
 		float GetAttackDamage() const { return attackDamage_; }
 		// 1回の攻撃で何度もダメージを与えないためのフラグ
 		bool IsAttackHitDone() const { return isAttackHitDone_; }
@@ -131,21 +129,20 @@ namespace AL4_1 {
 			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
 			.size = {1.0f,1.0f,1.0f}
 		};
-		RyoEngine::OBB parryObb_{
-			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
-			.size = {1.0f,1.0f,1.0f}
-		};
-		bool isAttacking_ = false;			// 攻撃判定が出ている
+		bool isAttacking_ = false;			// 攻撃判定が出ている（＝回転中。その場で停止する）
 		bool isAttackHitDone_ = false;		// 今回の攻撃がもうボスに当たったか
 		float attackTimer_ = 0.0f;			// 攻撃判定の残り時間
 		float attackCooldownTimer_ = 0.0f;	// クールタイムの残り時間
-		float attackActiveTime_ = 0.15f;	// 攻撃判定（＝パリィ受付）が出ている時間（秒）
+		float attackActiveTime_ = 0.35f;	// 攻撃判定（＝パリィ受付）が出ている時間（秒）。1回転にかかる時間も同じ
 		float attackCooldown_ = 0.35f;		// 攻撃が終わってから次に攻撃できるまで（秒）。成功・失敗に関係なく毎回
 		float attackDamage_ = 3.0f;			// 通常攻撃でボスに与えるダメージ
-		float attackReach_ = 1.4f;			// 体の中心から攻撃判定の中心までの横の距離
+		float attackReach_ = 0.3f;			// 体の中心から攻撃判定の中心までの横の距離（0で体の中心）
 		float attackOffsetY_ = 0.0f;		// 攻撃判定の高さのずれ
-		RyoEngine::Vector3 attackHalfSize_ = { 1.0f,0.9f,1.0f };
-		RyoEngine::Vector3 parryRange_ = { 0.6f,0.4f,0.6f };	// パリィ判定を体の判定より広げる量
+		RyoEngine::Vector3 attackHalfSize_ = { 1.6f,1.6f,1.0f };	// 回転するので体のまわりを囲む大きさ
+
+		// --- サマーソルト（攻撃中の1回転。見た目だけで判定は回さない） ---
+		float spinEasePower_ = 2.0f;		// 回り方（1:等速 大きいほど出だしが速く最後がゆっくり）
+		float spinDirection_ = 1.0f;		// 回る向き（後ろ宙返りにならなければ -1 にする）
 		RyoEngine::Vector4 attackColor_ = { 0.4f,0.9f,1.0f,1.0f };	// 攻撃中の色
 		RyoEngine::Vector4 cooldownColor_ = { 0.6f,0.6f,0.6f,1.0f };	// クールタイム中の色
 
