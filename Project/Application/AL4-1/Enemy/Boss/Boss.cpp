@@ -27,6 +27,7 @@ namespace AL4_1 {
 		prevAttackType_ = AttackType::None;
 		meleePhase_ = MeleePhase::None;
 		hitFlashTimer_ = 0.0f;
+		meleeBurstTimer_ = 0.0f;
 		transform_.scale = baseScale_;
 		isIllumination_ = false;
 		ChangeState(State::Appear);
@@ -63,6 +64,14 @@ namespace AL4_1 {
 
 		if (hitFlashTimer_ > 0.0f) {
 			hitFlashTimer_ -= dt;
+		}
+
+		// 爆発で大きくなったスケールを元に戻す（判定は transform_.scale から作るので一緒に戻る）
+		if (meleeBurstTimer_ > 0.0f && state_ != State::Appear && state_ != State::Destroy && state_ != State::Dead) {
+			meleeBurstTimer_ -= dt;
+			float t = 1.0f - std::clamp(meleeBurstTimer_ / meleeBurstReturnTime_, 0.0f, 1.0f);
+			float s = EaseOutCubic(t, meleeBurstScale_, 1.0f);
+			transform_.scale = { baseScale_.x * s, baseScale_.y * s, baseScale_.z * s };
 		}
 
 		obb_.center = transform_.translate;
@@ -196,12 +205,9 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("activeTime", &meleeActiveTime_, 0.01f, 0.01f, 2.0f);
 		ParamEditor::RegisterValue("recoveryTime", &meleeRecoveryTime_, 0.01f, 0.0f, 5.0f);
 		ParamEditor::RegisterValue("glintTime", &meleeGlintTime_, 0.01f, 0.0f, 2.0f);
-		ParamEditor::RegisterValue("distance", &meleeDistance_, 0.1f, 0.0f, 20.0f);
 		ParamEditor::RegisterValue("heightOffset", &meleeHeightOffset_, 0.1f, -10.0f, 10.0f);
-		ParamEditor::RegisterValue("backStep", &meleeBackStep_, 0.1f, 0.0f, 10.0f);
-		ParamEditor::RegisterValue("lunge", &meleeLunge_, 0.1f, 0.0f, 20.0f);
-		ParamEditor::RegisterValue("reach", &meleeReach_, 0.1f, 0.0f, 10.0f);
-		ParamEditor::RegisterValue("halfSize", &meleeHalfSize_, 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("burstScale", &meleeBurstScale_, 0.01f, 1.0f, 5.0f);
+		ParamEditor::RegisterValue("burstReturnTime", &meleeBurstReturnTime_, 0.01f, 0.01f, 3.0f);
 		ParamEditor::RegisterValue("damage", &meleeDamage_, 1.0f, 0.0f, 100.0f);
 		ParamEditor::RegisterValue("counterDamage", &counterDamage_, 1.0f, 0.0f, 500.0f);
 		ParamEditor::RegisterValue("stunTime", &stunTime_, 0.01f, 0.0f, 10.0f);
@@ -240,6 +246,8 @@ namespace AL4_1 {
 		case State::Stun:
 		{
 			// 攻撃していた向きと逆へ吹き飛ぶ
+			// （プレイヤーの真上で爆発するので、カウンターされた瞬間のプレイヤーの位置で向きを決め直す）
+			meleeDir_ = GetAimPosition().x >= transform_.translate.x ? 1.0f : -1.0f;
 			stunStart_ = transform_.translate;
 			stunEnd_ = stunStart_;
 			stunEnd_.x = std::clamp(stunStart_.x - meleeDir_ * stunKnockback_, moveRangeMin_.x, moveRangeMax_.x);
@@ -355,7 +363,6 @@ namespace AL4_1 {
 			// プレイヤーのいる方を向いて構える
 			Vector3 aim = GetAimPosition();
 			meleeDir_ = aim.x >= transform_.translate.x ? 1.0f : -1.0f;
-			meleeStart_ = transform_.translate;
 			meleePhase_ = MeleePhase::Windup;
 			meleeHitDone_ = false;
 		}
@@ -400,19 +407,17 @@ namespace AL4_1 {
 	void Boss::Melee() {
 		const float activeStart = meleeWindupTime_;
 		const float activeEnd = activeStart + meleeActiveTime_;
-		const Vector3 back = { meleeStart_.x - meleeDir_ * meleeBackStep_, meleeStart_.y, meleeStart_.z };
-		const Vector3 front = { meleeStart_.x + meleeDir_ * meleeLunge_, meleeStart_.y, meleeStart_.z };
 
 		if (stateTimer_ < activeStart) {
-			// 予備動作：少し後ろに下がって溜める
+			// 予備動作：その場で溜める
 			meleePhase_ = MeleePhase::Windup;
-			float t = std::clamp(stateTimer_ / meleeWindupTime_, 0.0f, 1.0f);
-			transform_.translate = Lerp(meleeStart_, back, EaseOutCubic(t, 0.0f, 1.0f));
 		} else if (stateTimer_ < activeEnd) {
-			// 攻撃：前へ踏み込む
+			// 攻撃：その場で爆発（入った瞬間に一気に大きくなり、Update で元の大きさへ戻っていく）
+			if (meleePhase_ != MeleePhase::Active) {
+				meleeBurstTimer_ = meleeBurstReturnTime_;
+				transform_.scale = { baseScale_.x * meleeBurstScale_, baseScale_.y * meleeBurstScale_, baseScale_.z * meleeBurstScale_ };
+			}
 			meleePhase_ = MeleePhase::Active;
-			float t = std::clamp((stateTimer_ - activeStart) / meleeActiveTime_, 0.0f, 1.0f);
-			transform_.translate = Lerp(back, front, EaseOutCubic(t, 0.0f, 1.0f));
 		} else {
 			// 後隙
 			meleePhase_ = MeleePhase::Recovery;
@@ -481,13 +486,8 @@ namespace AL4_1 {
 	Vector3 Boss::DecideMeleePosition() {
 		Vector3 aim = GetAimPosition();
 
-		// 今いる側からプレイヤーに寄る。移動範囲の外になるなら反対側から寄る
-		float side = transform_.translate.x >= aim.x ? 1.0f : -1.0f;
-		float x = aim.x + side * meleeDistance_;
-		if (x < moveRangeMin_.x || x > moveRangeMax_.x) {
-			x = aim.x - side * meleeDistance_;
-		}
-		x = std::clamp(x, moveRangeMin_.x, moveRangeMax_.x);
+		// プレイヤーと同じx座標へ寄る（移動範囲の外には出ない）
+		float x = std::clamp(aim.x, moveRangeMin_.x, moveRangeMax_.x);
 
 		return { x, aim.y + meleeHeightOffset_, transform_.translate.z };
 	}
@@ -497,8 +497,8 @@ namespace AL4_1 {
 	//==================================================
 
 	void Boss::UpdateMeleeOBB() {
-		meleeObb_.center = { obb_.center.x + meleeDir_ * meleeReach_, obb_.center.y, obb_.center.z };
-		meleeObb_.size = meleeHalfSize_;
+		// 爆発なので体の判定をそのまま使う（爆発で大きくなると一緒に大きくなる）
+		meleeObb_ = obb_;
 	}
 
 	void Boss::UpdateColor() {

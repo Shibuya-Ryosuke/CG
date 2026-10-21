@@ -203,16 +203,13 @@ namespace AL4_1 {
 		float meleeActiveTime_ = 0.2f;		// 攻撃判定が出ている時間
 		float meleeRecoveryTime_ = 0.6f;	// 後隙
 		float meleeGlintTime_ = 0.15f;		// 予備動作の最後に光る時間（パリィの合図）
-		float meleeDistance_ = 3.5f;		// プレイヤーからどれだけ離れた位置に寄るか
 		float meleeHeightOffset_ = 0.0f;	// 寄るときの高さのずれ
-		float meleeBackStep_ = 0.8f;		// 予備動作で後ろに下がる距離
-		float meleeLunge_ = 2.0f;			// 攻撃で前に踏み込む距離
-		float meleeReach_ = 1.8f;			// 体の中心から攻撃判定の中心までの距離
-		RyoEngine::Vector3 meleeHalfSize_{ 1.4f, 1.2f, 1.0f };
+		float meleeBurstScale_ = 1.3f;		// 爆発の瞬間のスケールの倍率（判定も一緒に大きくなる）
+		float meleeBurstReturnTime_ = 0.33f;	// 爆発で大きくなってから元の大きさに戻るまでの時間（60fpsで約20フレーム）
+		float meleeBurstTimer_ = 0.0f;		// 元の大きさに戻るまでの残り時間
 		float meleeDamage_ = 20.0f;
 		float meleeDir_ = -1.0f;			// 攻撃する向き（+1:右 -1:左）
 		bool meleeHitDone_ = false;
-		RyoEngine::Vector3 meleeStart_{};
 		RyoEngine::OBB meleeObb_{
 			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
 			.size = {1.0f,1.0f,1.0f}
