@@ -86,6 +86,11 @@ namespace AL4_1 {
 		float moveSpeed_ = 12.0f;
 		// 向いている方向（+1:右 -1:左）。最後に入力した方向
 		float facing_ = 1.0f;
+		// --- モデルの向き（facing_ に向かって補間しながら回る） ---
+		float facingRightYaw_ = 90.0f;	// 右向きのときのY回転（度）
+		float facingLeftYaw_ = -90.0f;	// 左向きのときのY回転（度）。右→左の間を補間するので、0°側（カメラ側）を通って振り向く
+		float turnDelay_ = 0.1f;		// 振り向きの遅れ（秒）。0で即座に向く
+		float currentYaw_ = 90.0f;		// 今のモデルのY回転（度）
 
 		// hp
 		float maxHp_ = 100.0f;
@@ -105,11 +110,11 @@ namespace AL4_1 {
 		float maxFallSpeed_ = 60.0f;
 
 
-		// 被ダメージ時色収差、スロー
+		// 被ダメージ時ブラー、スロー
 		bool isDamageTaken_ = false;
 		float maxDamageTakenDuration_ = 0.5f;
 		float damageTakenDuration_ = maxDamageTakenDuration_;
-		float maxDamageTakenChromaticAberrationStrength_ = 0.5f;
+		float maxDamageTakenBlurStrength_ = 0.012f;
 		float damageTakenTimeScale_ = 0.08f;
 
 		// 無敵
@@ -146,24 +151,25 @@ namespace AL4_1 {
 		RyoEngine::Vector4 attackColor_ = { 0.4f,0.9f,1.0f,1.0f };	// 攻撃中の色
 		RyoEngine::Vector4 cooldownColor_ = { 0.6f,0.6f,0.6f,1.0f };	// クールタイム中の色
 
-		// --- パリィ成功時の演出（ブラー＋スロー） ---
-		// 0 → peakTime で最大まで強くなり、peakTime → duration で元に戻る（実時間）
+		// --- パリィ成功時の演出（色収差＋スロー） ---
+		// 色収差：始めが一番強く、duration にかけて EaseInOutCubic で弱まる
+		// スロー：0 → peakTime で一番遅くなり、peakTime → duration で元に戻る（どちらも実時間）
 		bool isParryEffect_ = false;
 		float parryEffectTimer_ = 0.0f;		// 演出開始からの経過時間
 		// 今回の演出の値（弾パリィかカウンターかで切り替わる）
 		float effectDuration_ = 0.5f;
 		float effectPeakTime_ = 0.25f;
-		float effectMaxBlur_ = 0.0f;
+		float effectMaxChromatic_ = 0.0f;
 		float effectSlowScale_ = 1.0f;
 		// 弾をパリィしたとき
 		float parryEffectDuration_ = 0.5f;
 		float parryEffectPeakTime_ = 0.25f;
-		float parryMaxBlur_ = 0.006f;		// ブラーの最大の強さ（PostProcessのblurStrength。UVのずれ量）
+		float parryMaxChromatic_ = 0.2f;	// 色収差の最大の強さ
 		float parrySlowScale_ = 0.3f;		// 一番遅くなったときのタイムスケール
 		// 近接攻撃にカウンターしたとき
 		float counterEffectDuration_ = 0.5f;
 		float counterEffectPeakTime_ = 0.25f;
-		float counterMaxBlur_ = 0.012f;
+		float counterMaxChromatic_ = 0.4f;
 		float counterSlowScale_ = 0.1f;
 	};
 }

@@ -23,7 +23,7 @@ namespace AL4_1 {
 
 		// マップ読み込み（ブロックのモデルは 1x1x1・原点が中心のobjを用意する）
 		mapChipField_.Load(
-			"Resources/ApplicationResources/AL4-1/Csv/stage1.csv",
+			"Resources/ApplicationResources/AL4-1/Csv/stage2.csv",
 			"Resources/ApplicationResources/AL4-1/Stage/Block/block.obj");
 
 		// プレイヤーとボス初期化

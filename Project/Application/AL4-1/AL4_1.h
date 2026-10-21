@@ -22,5 +22,7 @@ namespace AL4_1 {
 
 	private:
 		std::unique_ptr<SceneManager> sceneManager_ = nullptr;
+
+		bool stop = false;
 	};
 }

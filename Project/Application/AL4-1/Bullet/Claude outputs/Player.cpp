@@ -84,8 +84,14 @@ namespace AL4_1 {
 		attackObb_.center = { obb_.center.x + facing_ * attackReach_, obb_.center.y + attackOffsetY_, obb_.center.z };
 		attackObb_.size = attackHalfSize_;
 
+		// モデルの向きを facing_ の方へ補間（フレームレートに依存しない指数平滑）
+		const float targetYaw = facing_ > 0.0f ? facingRightYaw_ : facingLeftYaw_;
+		const float turnAlpha = turnDelay_ <= 0.0f ? 1.0f : 1.0f - std::exp(-dt / turnDelay_);
+		currentYaw_ += (targetYaw - currentYaw_) * turnAlpha;
+
 		// 見た目用のトランスフォーム（攻撃中はサマーソルトで1回転）
 		Transform drawTransform = transform_;
+		drawTransform.rotate.y += currentYaw_ * std::numbers::pi_v<float> / 180.0f;
 		if (isAttacking_) {
 			// 0 → 1 の進み具合
 			float t = 1.0f - std::clamp(attackTimer_ / attackActiveTime_, 0.0f, 1.0f);
@@ -135,7 +141,7 @@ namespace AL4_1 {
 		isDamageTaken_ = true;
 		damageTakenDuration_ = maxDamageTakenDuration_;
 		// ポストエフェクトオン
-		PostProcess::GetInstance()->SetChromaticAberrationEnabled(true);
+		PostProcess::GetInstance()->SetBlurEnabled(true);
 	}
 
 	void Player::OnParrySuccess(bool isCounter) {
@@ -144,10 +150,10 @@ namespace AL4_1 {
 		parryEffectTimer_ = 0.0f;
 		effectDuration_ = isCounter ? counterEffectDuration_ : parryEffectDuration_;
 		effectPeakTime_ = isCounter ? counterEffectPeakTime_ : parryEffectPeakTime_;
-		effectMaxBlur_ = isCounter ? counterMaxBlur_ : parryMaxBlur_;
+		effectMaxChromatic_ = isCounter ? counterMaxChromatic_ : parryMaxChromatic_;
 		effectSlowScale_ = isCounter ? counterSlowScale_ : parrySlowScale_;
 
-		PostProcess::GetInstance()->SetBlurEnabled(true);
+		PostProcess::GetInstance()->SetChromaticAberrationEnabled(true);
 	}
 
 	void Player::ResetStatus() {
@@ -155,6 +161,7 @@ namespace AL4_1 {
 
 		velocity_ = { 0.0f,0.0f,0.0f };
 		facing_ = 1.0f;
+		currentYaw_ = facingRightYaw_;
 		isAttacking_ = false;
 		isAttackHitDone_ = false;
 		attackTimer_ = 0.0f;
@@ -184,11 +191,14 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("maxFallSpeed", &maxFallSpeed_, 0.1f, 0.0f, 120.0f);
 		ParamEditor::RegisterValue("maxHp", &maxHp_, 1.0f, 1.0f, 500.0f);
 		ParamEditor::RegisterValue("halfSize", &halfSize_, 0.01f, 0.1f, 5.0f);
+		ParamEditor::RegisterValue("facingRightYaw", &facingRightYaw_, 1.0f, -360.0f, 360.0f);
+		ParamEditor::RegisterValue("facingLeftYaw", &facingLeftYaw_, 1.0f, -360.0f, 360.0f);
+		ParamEditor::RegisterValue("turnDelay", &turnDelay_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 
 		ParamEditor::BeginGroup("PlayerDamage");
 		ParamEditor::RegisterValue("effectDuration", &maxDamageTakenDuration_, 0.01f, 0.0f, 3.0f);
-		ParamEditor::RegisterValue("chromaticStrength", &maxDamageTakenChromaticAberrationStrength_, 0.01f, 0.0f, 2.0f);
+		ParamEditor::RegisterValue("blurStrength", &maxDamageTakenBlurStrength_, 0.0005f, 0.0f, 0.1f);
 		ParamEditor::RegisterValue("timeScale", &damageTakenTimeScale_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("invincibleDuration", &maxInvincibleDuration_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("blinkCount", &blinkCount_, 1.0f, 1, 20);
@@ -217,11 +227,11 @@ namespace AL4_1 {
 		ParamEditor::BeginGroup("PlayerParryEffect");
 		ParamEditor::RegisterValue("parryDuration", &parryEffectDuration_, 0.01f, 0.01f, 3.0f);
 		ParamEditor::RegisterValue("parryPeakTime", &parryEffectPeakTime_, 0.01f, 0.0f, 3.0f);
-		ParamEditor::RegisterValue("parryMaxBlur", &parryMaxBlur_, 0.0005f, 0.0f, 0.1f);
+		ParamEditor::RegisterValue("parryMaxChromatic", &parryMaxChromatic_, 0.01f, 0.0f, 2.0f);
 		ParamEditor::RegisterValue("parrySlowScale", &parrySlowScale_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("counterDuration", &counterEffectDuration_, 0.01f, 0.01f, 3.0f);
 		ParamEditor::RegisterValue("counterPeakTime", &counterEffectPeakTime_, 0.01f, 0.0f, 3.0f);
-		ParamEditor::RegisterValue("counterMaxBlur", &counterMaxBlur_, 0.0005f, 0.0f, 0.1f);
+		ParamEditor::RegisterValue("counterMaxChromatic", &counterMaxChromatic_, 0.01f, 0.0f, 2.0f);
 		ParamEditor::RegisterValue("counterSlowScale", &counterSlowScale_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 	}
@@ -263,17 +273,17 @@ namespace AL4_1 {
 
 		// ポストプロセスインスタンス取得
 		auto ppInstance = PostProcess::GetInstance();
-		// 色収差
-		float strength = EaseOutCubic(t, maxDamageTakenChromaticAberrationStrength_, 0.0f);
-		ppInstance->SetChromaticAberrationStrength(strength);
+		// ブラー
+		float strength = EaseOutCubic(t, maxDamageTakenBlurStrength_, 0.0f);
+		ppInstance->SetBlurStrength(strength);
 		// スロー
 		SetTimeScale(damageTakenTimeScale_);
 
 		// 被ダメージ時間の終了
 		if (damageTakenDuration_ <= 0.0f) {
 			damageTakenDuration_ = 0.0f;
-			ppInstance->SetChromaticAberrationEnabled(false);
-			ppInstance->SetChromaticAberrationStrength(0.0f);
+			ppInstance->SetBlurEnabled(false);
+			ppInstance->SetBlurStrength(0.0f);
 			SetTimeScale(1.0f);
 
 			isDamageTaken_ = false;
@@ -334,7 +344,7 @@ namespace AL4_1 {
 		// スローで演出が伸びないように deltaタイムを足す
 		parryEffectTimer_ += GetDeltaTime();
 
-		// 0 → 1（peakTime） → 0（duration）の山なりの強さ
+		// 0 → 1（peakTime） → 0（duration）の山なりの強さ（スローに使う）
 		const float peak = std::clamp(effectPeakTime_, 0.0f, effectDuration_);
 		float w = 0.0f;
 		if (parryEffectTimer_ < peak) {
@@ -345,8 +355,9 @@ namespace AL4_1 {
 		w = std::clamp(w, 0.0f, 1.0f);
 
 		auto ppInstance = PostProcess::GetInstance();
-		// ブラー
-		ppInstance->SetBlurStrength(effectMaxBlur_ * w);
+		// 色収差（始めが一番強く、終わりに向かって弱まる）
+		const float chromaticT = effectDuration_ > 0.0f ? parryEffectTimer_ / effectDuration_ : 1.0f;
+		ppInstance->SetChromaticAberrationStrength(EaseInOutCubic(chromaticT, effectMaxChromatic_, 0.0f));
 		// スロー（被ダメージのスロー中はそちらを優先）
 		if (!isDamageTaken_) {
 			SetTimeScale(1.0f + (effectSlowScale_ - 1.0f) * w);
@@ -356,8 +367,8 @@ namespace AL4_1 {
 		if (parryEffectTimer_ >= effectDuration_) {
 			isParryEffect_ = false;
 			parryEffectTimer_ = 0.0f;
-			ppInstance->SetBlurEnabled(false);
-			ppInstance->SetBlurStrength(0.0f);
+			ppInstance->SetChromaticAberrationEnabled(false);
+			ppInstance->SetChromaticAberrationStrength(0.0f);
 			if (!isDamageTaken_) {
 				SetTimeScale(1.0f);
 			}

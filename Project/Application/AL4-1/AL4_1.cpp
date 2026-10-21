@@ -24,8 +24,15 @@ namespace AL4_1 {
 		GetDebugCamera().SetAvailable(false);
 	}
 	void AL4_1::Update() {
+		if (Input::TriggerKey(DIK_Q)) {
+			stop = !stop;
+			if (!stop) {
+				SetTimeScale(1.0f);
+			}
+		}
+		if (stop) { SetTimeScale(0.0f); }
 		sceneManager_->Update();
-
+		if (stop) { SetTimeScale(0.0f); }
 		
 		PrimitiveRenderer::SetCamera(GetActiveCamera(sceneManager_->GetCamera()));
 	}

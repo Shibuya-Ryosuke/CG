@@ -1,15 +1,162 @@
 {
+    "Boss": {
+        "appearOffset": [
+            0.0,
+            15.0,
+            0.0
+        ],
+        "appearTime": 2.0,
+        "baseScale": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "destroyShake": 0.30000001192092896,
+        "destroyTime": 2.0,
+        "homeOffset": [
+            0.0,
+            8.0,
+            0.0
+        ],
+        "idleTime": 1.0,
+        "maxHp": 100.0,
+        "moveRangeMax": [
+            58.0,
+            20.0,
+            0.0
+        ],
+        "moveRangeMin": [
+            4.0,
+            10.0,
+            0.0
+        ],
+        "moveTime": 0.800000011920929,
+        "obbHalfSize": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "targetAimOffsetY": 1.0
+    },
+    "BossLook": {
+        "baseColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "glintColor": [
+            1.0,
+            1.0,
+            0.30000001192092896,
+            1.0
+        ],
+        "hitFlashColor": [
+            1.0,
+            0.10000000149011612,
+            0.10000000149011612,
+            1.0
+        ],
+        "hitFlashTime": 0.15000000596046448,
+        "hitShake": 0.25,
+        "hitShakeTime": 0.20000000298023224,
+        "meleeActiveColor": [
+            1.0,
+            0.10000000149011612,
+            0.10000000149011612,
+            1.0
+        ],
+        "modelOffsetZ": 2.0,
+        "stunColor": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+        ],
+        "windupColor": [
+            1.0,
+            0.5,
+            0.20000000298023224,
+            1.0
+        ]
+    },
+    "BossMelee": {
+        "activeTime": 0.20000000298023224,
+        "backStep": 0.800000011920929,
+        "counterDamage": 15.0,
+        "damage": 20.0,
+        "distance": 3.5,
+        "glintTime": 0.15000000596046448,
+        "halfSize": [
+            1.399999976158142,
+            1.2000000476837158,
+            1.0
+        ],
+        "heightOffset": 0.0,
+        "lunge": 2.0,
+        "reach": 1.7999999523162842,
+        "recoveryTime": 0.6000000238418579,
+        "stunKnockback": 3.0,
+        "stunKnockbackTime": 0.30000001192092896,
+        "stunTime": 1.5,
+        "windupTime": 0.699999988079071
+    },
+    "BossShot": {
+        "attackTime_Homing": 3.0,
+        "attackTime_Shot": 2.0,
+        "attackTime_Spread": 2.4000000953674316,
+        "homingDuration": 1.2000000476837158,
+        "homingSpeed": 10.0,
+        "homingTurnRate": 90.0,
+        "shotInterval": 0.4000000059604645,
+        "shotSpeed": 16.0,
+        "spreadAngle": 15.0,
+        "spreadCount": 5,
+        "spreadInterval": 0.800000011920929,
+        "spreadSpeed": 12.0
+    },
+    "Bullet": {
+        "damage": 10.0,
+        "halfSize": [
+            0.30000001192092896,
+            0.30000001192092896,
+            0.30000001192092896
+        ],
+        "lifeTime": 3.0
+    },
+    "BulletReflect": {
+        "accel": 60.0,
+        "damage": 5.0,
+        "lifeTime": 5.0,
+        "maxSpeed": 40.0,
+        "scale": 1.5,
+        "startSpeed": 8.0,
+        "turnAccel": 720.0,
+        "turnRate": 180.0
+    },
     "FollowCamera": {
-        "distance": 44.599998474121094,
+        "distance": 55.900001525878906,
         "followDelay": 0.20000000298023224,
         "lookOffsetX": 6.0,
         "lookOffsetY": 1.2000000476837158,
-        "pitch": 9.0,
+        "pitch": 6.0,
         "yaw": 0.0
     },
+    "Game": {
+        "maxBulletCount": 128
+    },
     "Player": {
-        "gravity_": 80.0,
+        "facingLeftYaw": -90.0,
+        "facingRightYaw": 90.0,
+        "gravity": 80.0,
+        "halfSize": [
+            0.800000011920929,
+            1.0,
+            0.800000011920929
+        ],
         "jumpPower": 28.0,
+        "maxFallSpeed": 60.0,
+        "maxHp": 100.0,
         "moveSpeed": 12.0,
         "transform": {
             "rotate": [
@@ -23,10 +170,60 @@
                 1.0
             ],
             "translate": [
-                35.288204193115234,
-                11.0,
+                21.828439712524414,
+                5.526198863983154,
                 0.0
             ]
-        }
+        },
+        "turnDelay": 0.10000000149011612
+    },
+    "PlayerAttack": {
+        "activeTime": 0.3499999940395355,
+        "attackColor": [
+            0.4000000059604645,
+            0.8999999761581421,
+            1.0,
+            1.0
+        ],
+        "cooldown": 0.3499999940395355,
+        "cooldownColor": [
+            0.6000000238418579,
+            0.6000000238418579,
+            0.6000000238418579,
+            1.0
+        ],
+        "damage": 3.0,
+        "halfSize": [
+            1.600000023841858,
+            1.600000023841858,
+            1.0
+        ],
+        "offsetY": 0.0,
+        "reach": 0.30000001192092896,
+        "spinDirection": 1.0,
+        "spinEasePower": 2.0
+    },
+    "PlayerDamage": {
+        "blinkCount": 5,
+        "blurStrength": 0.012000000104308128,
+        "effectDuration": 0.5,
+        "invincibleDuration": 2.0,
+        "minAlpha": 0.5,
+        "timeScale": 0.07999999821186066
+    },
+    "PlayerHpEffect": {
+        "maxGrayScale": 0.699999988079071,
+        "maxNoise": 0.30000001192092896,
+        "startRatio": 0.5
+    },
+    "PlayerParryEffect": {
+        "counterDuration": 0.5,
+        "counterMaxChromatic": 0.4000000059604645,
+        "counterPeakTime": 0.25,
+        "counterSlowScale": 0.10000000149011612,
+        "parryDuration": 0.5,
+        "parryMaxChromatic": 0.20000000298023224,
+        "parryPeakTime": 0.25,
+        "parrySlowScale": 0.30000001192092896
     }
 }
