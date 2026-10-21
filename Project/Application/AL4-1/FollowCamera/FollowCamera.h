@@ -27,6 +27,18 @@ namespace AL4_1 {
 		/// <summary>マップが視界より小さいとき、距離を自動で縮めるか（デフォルトtrue）</summary>
 		void SetLimitDistanceToMap(bool enable) { limitDistanceToMap_ = enable; }
 
+		/// <summary>
+		/// プレイヤーの代わりに target をアップで映す（ボスの登場・撃破演出など）。
+		/// target のアドレスは演出中ずっと有効であること
+		/// </summary>
+		void SetFocus(const RyoEngine::Vector3* target) { focusTarget_ = target; }
+		/// <summary>アップをやめてプレイヤーへ戻る（focusDelay_ でゆっくり戻る）</summary>
+		void ClearFocus() {
+			if (focusTarget_) { returnTimer_ = focusReturnTime_; }
+			focusTarget_ = nullptr;
+		}
+		bool IsFocusing() const { return focusTarget_ != nullptr; }
+
 	private:
 		void RegisterInParamEditor();
 
@@ -49,11 +61,22 @@ namespace AL4_1 {
 		float lookOffsetX_ = 0.0f;
 		float lookOffsetY_ = 1.0f;
 
+		// --- 注目演出（ボスのアップなど） ---
+		float focusDistance_ = 14.0f;	// アップのときの距離
+		float focusOffsetY_ = 0.0f;		// アップのときの注視点の高さのずれ
+		float focusDelay_ = 0.35f;		// アップへ寄る・プレイヤーへ戻るときの遅延（followDelay_ より遅くする）
+		float focusReturnTime_ = 1.0f;	// アップをやめてから focusDelay_ を使い続ける時間
+
 		bool limitDistanceToMap_ = true;
 
 		// 遅延をかけた後の注視点（z=0固定）
 		float targetX_ = 0.0f;
 		float targetY_ = 0.0f;
 		bool needSnap_ = true;
+
+		// 注目演出の状態
+		const RyoEngine::Vector3* focusTarget_ = nullptr;
+		float returnTimer_ = 0.0f;		// プレイヤーへ戻っている途中の残り時間
+		float currentDistance_ = 35.0f;	// 遅延をかけた後の距離
 	};
 }

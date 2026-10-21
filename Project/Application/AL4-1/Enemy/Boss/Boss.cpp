@@ -138,6 +138,7 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("moveRangeMax", &moveRangeMax_, 0.1f, -100.0f, 200.0f);
 		ParamEditor::RegisterValue("targetAimOffsetY", &targetAimOffsetY_, 0.01f, -5.0f, 5.0f);
 		ParamEditor::RegisterValue("appearTime", &appearTime_, 0.01f, 0.1f, 10.0f);
+		ParamEditor::RegisterValue("appearSpinTurns", &appearSpinTurns_, 0.1f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("idleTime", &idleTime_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("moveTime", &moveTime_, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("destroyTime", &destroyTime_, 0.01f, 0.1f, 10.0f);
@@ -201,6 +202,7 @@ namespace AL4_1 {
 			hp_ = maxHp_;
 			homePosition_ = homeFeet_ + homeOffset_;
 			transform_.translate = homePosition_ + appearOffset_;
+			transform_.rotate = { 0.0f, 0.0f, 0.0f };
 			transform_.scale = baseScale_;
 			break;
 
@@ -239,13 +241,18 @@ namespace AL4_1 {
 		// 上から降りてくる
 		float t = std::clamp(stateTimer_ / appearTime_, 0.0f, 1.0f);
 		transform_.translate = Lerp(homePosition_ + appearOffset_, homePosition_, EaseOutCubic(t,0.0f,1.0f));
+		// ゆっくり回りながら（だんだん遅くなって正面で止まる）
+		transform_.rotate.y = EaseOutCubic(t, 0.0f, appearSpinTurns_ * 2.0f * std::numbers::pi_v<float>);
 
 		if (t >= 1.0f) {
+			transform_.rotate.y = 0.0f;
 			ChangeState(State::Idle);
 		}
 	}
 
 	void Boss::UpdateIdle() {
+		// 演出中は待機したまま
+		if (!canAct_) { return; }
 		if (stateTimer_ >= idleTime_) {
 			ChangeState(State::Move);
 		}

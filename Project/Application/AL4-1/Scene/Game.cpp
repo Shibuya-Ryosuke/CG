@@ -17,9 +17,7 @@ namespace AL4_1 {
 	void Game::Initialize() {
 		// 弾の共有パラメータを登録（インスタンスが増減するので1回だけ）
 		Bullet::RegisterInParamEditor();
-		ParamEditor::BeginGroup("Game");
-		ParamEditor::RegisterValue("maxBulletCount", &maxBulletCount_, 1.0f, 1, 1000);
-		ParamEditor::EndGroup();
+		RegisterInParamEditor();
 
 		// マップ読み込み（ブロックのモデルは 1x1x1・原点が中心のobjを用意する）
 		mapChipField_.Load(
@@ -48,6 +46,9 @@ namespace AL4_1 {
 
 		// 追従カメラ（スポーン位置が決まった後に初期化する）
 		followCamera_.Initialize(&mapChipField_);
+
+		// ボス登場演出から始める
+		ChangePhase(Phase::Intro);
 	}
 
 	void Game::Update() {
@@ -62,12 +63,27 @@ namespace AL4_1 {
 		boss_.Update();
 		bulletManager_.Update();
 
-		// 当たり判定走査
-		CheckAllCollisions();
+		// 当たり判定走査（戦闘中だけ）
+		if (phase_ == Phase::Battle) {
+			CheckAllCollisions();
+		}
 
-		// 決着がついたら Rキーでリトライ
-		if ((player_.IsDead() || boss_.IsDead()) && Input::TriggerKey(DIK_R)) {
-			Restart();
+		// 進行
+		switch (phase_) {
+		case Phase::Intro:
+			UpdateIntro();
+			break;
+		case Phase::Battle:
+			UpdateBattle();
+			break;
+		case Phase::BossDefeat:
+			UpdateBossDefeat();
+			break;
+		case Phase::GameOver:
+			UpdateGameOver();
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -105,12 +121,152 @@ namespace AL4_1 {
 
 	void Game::Restart() {
 		bulletManager_.Clear();
+		ResetPostEffects();
 
 		player_.ResetStatus();
 		player_.SetPosition(playerSpawnPosition_);
 		boss_.Reset();
 
+		isRequestTitle_ = false;
+		ChangePhase(Phase::Intro);
+		// 登場演出はボスのアップから始まるので、ボスの位置へ瞬間移動
 		followCamera_.Snap();
+	}
+
+	void Game::RegisterInParamEditor() {
+		ParamEditor::BeginGroup("Game");
+		ParamEditor::RegisterValue("maxBulletCount", &maxBulletCount_, 1.0f, 1, 1000);
+		ParamEditor::EndGroup();
+
+		ParamEditor::BeginGroup("GameFlow");
+		ParamEditor::RegisterValue("introHoldTime", &introHoldTime_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("introReturnTime", &introReturnTime_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("defeatHoldTime", &defeatHoldTime_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("defeatReturnTime", &defeatReturnTime_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("gameOverTime", &gameOverTime_, 0.01f, 0.01f, 10.0f);
+		ParamEditor::RegisterValue("gameOverMaxNoise", &gameOverMaxNoise_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("gameOverMaxBlur", &gameOverMaxBlur_, 0.0005f, 0.0f, 0.1f);
+		ParamEditor::EndGroup();
+	}
+
+	//==================================================
+	// 進行
+	//==================================================
+
+	void Game::ChangePhase(Phase next) {
+		phase_ = next;
+		phaseTimer_ = 0.0f;
+
+		// フェーズに入った瞬間の処理
+		switch (phase_) {
+		case Phase::Intro:
+			player_.SetControllable(false);
+			boss_.SetCanAct(false);
+			followCamera_.SetFocus(boss_.GetCenter());
+			break;
+
+		case Phase::Battle:
+			player_.SetControllable(true);
+			boss_.SetCanAct(true);
+			break;
+
+		case Phase::BossDefeat:
+			player_.SetControllable(false);
+			bulletManager_.Clear();
+			followCamera_.SetFocus(boss_.GetCenter());
+			break;
+
+		case Phase::GameOver:
+		{
+			boss_.SetCanAct(false);
+			// 被弾・パリィの演出が途中で止まったままにならないように戻す
+			SetTimeScale(1.0f);
+			auto ppInstance = PostProcess::GetInstance();
+			ppInstance->SetChromaticAberrationEnabled(false);
+			ppInstance->SetChromaticAberrationStrength(0.0f);
+			ppInstance->SetNoiseEnabled(true);
+			ppInstance->SetBlurEnabled(true);
+			break;
+		}
+
+		default:
+			break;
+		}
+	}
+
+	void Game::UpdateIntro() {
+		// ボスが降りきるまではアップのまま
+		if (boss_.GetState() == Boss::State::Appear) { return; }
+
+		phaseTimer_ += GetDeltaTime();
+		// 少しアップを続けてから、プレイヤーへ戻る
+		if (followCamera_.IsFocusing() && phaseTimer_ >= introHoldTime_) {
+			followCamera_.ClearFocus();
+		}
+		// 戻りきったら戦闘開始
+		if (phaseTimer_ >= introHoldTime_ + introReturnTime_) {
+			ChangePhase(Phase::Battle);
+		}
+	}
+
+	void Game::UpdateBattle() {
+		if (player_.IsDead()) {
+			ChangePhase(Phase::GameOver);
+			return;
+		}
+		// 撃破アニメーションが始まったら撃破演出へ
+		if (boss_.GetState() == Boss::State::Destroy) {
+			ChangePhase(Phase::BossDefeat);
+		}
+	}
+
+	void Game::UpdateBossDefeat() {
+		// 撃破アニメーションが終わるまではアップのまま
+		if (!boss_.IsDead()) { return; }
+
+		phaseTimer_ += GetDeltaTime();
+		if (followCamera_.IsFocusing() && phaseTimer_ >= defeatHoldTime_) {
+			followCamera_.ClearFocus();
+		}
+		// 戻りきったらクリア（SceneManager がリザルトへ）
+		if (phaseTimer_ >= defeatHoldTime_ + defeatReturnTime_) {
+			ResetPostEffects();
+			ChangePhase(Phase::Clear);
+		}
+	}
+
+	void Game::UpdateGameOver() {
+		phaseTimer_ += GetDeltaTime();
+
+		// ノイズとブラーをだんだん強くする
+		float t = std::clamp(phaseTimer_ / gameOverTime_, 0.0f, 1.0f);
+		auto ppInstance = PostProcess::GetInstance();
+		ppInstance->SetNoiseIntensity(EaseInCubic(t, 0.0f, gameOverMaxNoise_));
+		ppInstance->SetBlurStrength(EaseInCubic(t, 0.0f, gameOverMaxBlur_));
+
+		// TODO: ここで GAME OVER のUIをかぶせる
+
+		// 演出が終わったら R:リトライ T:タイトル
+		if (t < 1.0f) { return; }
+		if (Input::TriggerKey(DIK_R)) {
+			Restart();
+		} else if (Input::TriggerKey(DIK_T)) {
+			ResetPostEffects();
+			isRequestTitle_ = true;
+		}
+	}
+
+	void Game::ResetPostEffects() {
+		auto ppInstance = PostProcess::GetInstance();
+		ppInstance->SetGrayscaleEnabled(false);
+		ppInstance->SetGrayscaleIntensity(0.0f);
+		ppInstance->SetNoiseEnabled(false);
+		ppInstance->SetNoiseIntensity(0.0f);
+		ppInstance->SetBlurEnabled(false);
+		ppInstance->SetBlurStrength(0.0f);
+		ppInstance->SetChromaticAberrationEnabled(false);
+		ppInstance->SetChromaticAberrationStrength(0.0f);
+		SetTimeScale(1.0f);
 	}
 
 	void Game::CheckAllCollisions() {

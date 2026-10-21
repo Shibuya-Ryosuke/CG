@@ -316,6 +316,9 @@
     <ClCompile Include="Application\AL4-1\Bullet\BulletManager.cpp">
       <Filter>Application\AL4-1\Bullet</Filter>
     </ClCompile>
+    <ClCompile Include="Application\AL4-1\Scene\Result.cpp">
+      <Filter>Application\AL4-1\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Externals\imgui\imconfig.h">
@@ -548,6 +551,9 @@
     </ClInclude>
     <ClInclude Include="Application\AL4-1\Bullet\BulletManager.h">
       <Filter>Application\AL4-1\Bullet</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\Scene\Result.h">
+      <Filter>Application\AL4-1\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

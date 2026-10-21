@@ -62,6 +62,8 @@ namespace AL4_1 {
 		void SetTarget(const RyoEngine::Vector3* target) { target_ = target; }
 		// 弾を撃つときに使う
 		void SetBulletManager(BulletManager* bulletManager) { bulletManager_ = bulletManager; }
+		// 行動してよいか（false の間は Idle で止まり、攻撃しない。演出中に使う）
+		void SetCanAct(bool canAct) { canAct_ = canAct; }
 		// CSVのスポーン位置（足元）。登場後の定位置は homeFeet_ + homeOffset_
 		void SetHomeFeet(const RyoEngine::Vector3& feet) { homeFeet_ = feet; }
 
@@ -145,8 +147,12 @@ namespace AL4_1 {
 		AttackType attackType_ = AttackType::None;
 		AttackType prevAttackType_ = AttackType::None;
 
+		// 行動してよいか
+		bool canAct_ = true;
+
 		// ---- 時間パラメータ ----
-		float appearTime_ = 2.0f;	// 登場アニメーション時間
+		float appearTime_ = 3.0f;	// 登場アニメーション時間
+		float appearSpinTurns_ = 2.0f;	// 登場中に回る回数（Y軸。だんだんゆっくりになって止まる）
 		float idleTime_ = 1.0f;		// 待機時間
 		float moveTime_ = 0.8f;		// 移動にかける時間
 		float destroyTime_ = 2.0f;	// 撃破アニメーション時間
@@ -164,7 +170,7 @@ namespace AL4_1 {
 
 		// ---- 移動 ----
 		RyoEngine::Vector3 homeFeet_{ 0.0f, 0.0f, 0.0f };		// CSVのスポーン位置（足元）
-		RyoEngine::Vector3 homeOffset_{ 0.0f, 8.0f, 0.0f };	// スポーン位置から定位置までのずれ（空中に浮く）
+		RyoEngine::Vector3 homeOffset_{ 0.0f, 4.0f, 0.0f };	// スポーン位置から定位置までのずれ（空中に浮く）
 		RyoEngine::Vector3 homePosition_{ 0.0f, 4.0f, 0.0f };	// 登場後の定位置
 		RyoEngine::Vector3 appearOffset_{ 0.0f, 15.0f, 0.0f };	// 登場開始位置のオフセット（上から降りてくる）
 		RyoEngine::Vector3 moveRangeMin_{ 4.0f, 10.0f, 0.0f };

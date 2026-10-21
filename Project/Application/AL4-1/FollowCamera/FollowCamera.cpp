@@ -30,6 +30,10 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("followDelay", &followDelay_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::RegisterValue("lookOffsetX", &lookOffsetX_, 0.1f, -20.0f, 20.0f);
 		ParamEditor::RegisterValue("lookOffsetY", &lookOffsetY_, 0.1f, -20.0f, 20.0f);
+		ParamEditor::RegisterValue("focusDistance", &focusDistance_, 0.1f, 1.0f, 200.0f);
+		ParamEditor::RegisterValue("focusOffsetY", &focusOffsetY_, 0.1f, -20.0f, 20.0f);
+		ParamEditor::RegisterValue("focusDelay", &focusDelay_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::RegisterValue("focusReturnTime", &focusReturnTime_, 0.01f, 0.0f, 5.0f);
 		ParamEditor::EndGroup();
 	}
 
@@ -91,12 +95,31 @@ namespace AL4_1 {
 	}
 
 	void FollowCamera::Update(const Vector3& playerFeet) {
+		const float dt = GetScaleTime();
+
 		// --- 追いかけたい注視点 ---
 		float desiredX = playerFeet.x + lookOffsetX_;
 		float desiredY = playerFeet.y + lookOffsetY_;
+		float desiredDist = distance_;
+		// 注目対象がいればそちらをアップで映す
+		if (focusTarget_) {
+			desiredX = focusTarget_->x;
+			desiredY = focusTarget_->y + focusOffsetY_;
+			desiredDist = focusDistance_;
+		}
+
+		// アップへ寄る・戻る途中は、いつもよりゆっくり追いかける
+		if (returnTimer_ > 0.0f) {
+			returnTimer_ -= dt;
+		}
+		const float delay = (focusTarget_ || returnTimer_ > 0.0f) ? focusDelay_ : followDelay_;
+		const float alpha = needSnap_ ? 1.0f : (delay <= 0.0f ? 1.0f : 1.0f - std::exp(-dt / delay));
+
+		// 距離も遅延をかけて変える
+		currentDistance_ += (desiredDist - currentDistance_) * alpha;
 
 		// --- 画面端の対策：視界がマップ外に出ない範囲へ収める ---
-		float dist = distance_;
+		float dist = currentDistance_;
 		float rx0 = 0.0f, rx1 = 0.0f, ry0 = 0.0f, ry1 = 0.0f;
 		const bool canLimit = map_ && CalcUnitFootprint(rx0, rx1, ry0, ry1);
 
@@ -133,8 +156,6 @@ namespace AL4_1 {
 			targetY_ = desiredY;
 			needSnap_ = false;
 		} else {
-			const float dt = GetScaleTime();
-			const float alpha = followDelay_ <= 0.0f ? 1.0f : 1.0f - std::exp(-dt / followDelay_);
 			targetX_ += (desiredX - targetX_) * alpha;
 			targetY_ += (desiredY - targetY_) * alpha;
 		}

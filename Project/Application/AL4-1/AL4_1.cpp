@@ -16,7 +16,7 @@ namespace AL4_1 {
 
 		// ゲーム初期化
 		sceneManager_ = std::make_unique<SceneManager>();
-		sceneManager_->Initialize(Scene::Game);
+		sceneManager_->Initialize(Scene::Title);
 
 		ParamEditor::Load();
 		LightManager::Load();

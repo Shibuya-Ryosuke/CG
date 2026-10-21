@@ -10,6 +10,7 @@ namespace AL4_1 {
 	void SceneManager::Initialize(Scene scene) {
 		title_.Initialize();
 		game_.Initialize();
+		result_.Initialize();
 
 		scene_ = scene;
 
@@ -22,10 +23,25 @@ namespace AL4_1 {
 		switch (scene_) {
 		case Scene::Title:
 			title_.Update();
+			if (title_.IsFinished()) {
+				ChangeScene(Scene::Game);
+			}
 			break;
 
 		case Scene::Game:
 			game_.Update();
+			if (game_.IsClear()) {
+				ChangeScene(Scene::Result);
+			} else if (game_.IsRequestTitle()) {
+				ChangeScene(Scene::Title);
+			}
+			break;
+
+		case Scene::Result:
+			result_.Update();
+			if (result_.IsFinished()) {
+				ChangeScene(Scene::Title);
+			}
 			break;
 
 		default:
@@ -49,11 +65,33 @@ namespace AL4_1 {
 			game_.Draw(camera);
 			break;
 
+		case Scene::Result:
+			result_.Draw();
+			break;
+
 		default:
 			break;
 		}
 	}
 
 	void SceneManager::Finalize() {}
+
+	void SceneManager::ChangeScene(Scene next) {
+		scene_ = next;
+
+		switch (scene_) {
+		case Scene::Title:
+			title_.Start();
+			break;
+		case Scene::Game:
+			game_.Start();
+			break;
+		case Scene::Result:
+			result_.Start();
+			break;
+		default:
+			break;
+		}
+	}
 
 }

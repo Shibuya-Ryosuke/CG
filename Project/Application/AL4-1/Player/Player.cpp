@@ -26,12 +26,16 @@ namespace AL4_1 {
 		if (Input::PushKey(DIK_A)) {
 			moveX -= 1.0f;
 		}
+		// 演出中は操作できない
+		if (!isControllable_) {
+			moveX = 0.0f;
+		}
 		// 向きは最後に入力した方向（攻撃中は向きを変えない）
 		if (moveX != 0.0f && !isAttacking_) {
 			facing_ = moveX;
 		}
 		// ジャンプ（攻撃中はできない）
-		if (!isAttacking_) {
+		if (!isAttacking_ && isControllable_) {
 			Jump();
 		}
 		// hp残量に応じた演出のアップデート
@@ -115,7 +119,7 @@ namespace AL4_1 {
 
 		// 描画
 		model_->Draw();
-		PrimitiveRenderer::DrawOBB(obb_, { 0.0f,1.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+		PrimitiveRenderer::DrawOBB(obb_, { 0.0f,1.0f,0.0f,1.0f },PrimitiveDrawMode::Wireframe);
 		// デバッグ：攻撃中は攻撃（パリィ）判定を赤で表示
 		if (isAttacking_) {
 			PrimitiveRenderer::DrawOBB(attackObb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
@@ -254,7 +258,7 @@ namespace AL4_1 {
 		// ポストプロセスのインスタンス取得
 		auto ppInstance = PostProcess::GetInstance();
 
-		// 減った割合
+		// 減った割合 0（満タン）→ 1（瀕死）
 		float lost = std::clamp((hpEffectStartRaito_ - hp_ / maxHp_) / hpEffectStartRaito_, 0.0f, 1.0f);
 
 		// 白黒化
@@ -324,7 +328,7 @@ namespace AL4_1 {
 		} else if (attackCooldownTimer_ > 0.0f) {
 			// クールタイム中
 			attackCooldownTimer_ -= dt;
-		} else if (Input::TriggerKey(DIK_SPACE)) {
+		} else if (isControllable_ && Input::TriggerKey(DIK_SPACE)) {
 			Attack();
 		}
 
@@ -355,7 +359,7 @@ namespace AL4_1 {
 		w = std::clamp(w, 0.0f, 1.0f);
 
 		auto ppInstance = PostProcess::GetInstance();
-		// 色収差
+		// 色収差（始めが一番強く、終わりに向かって弱まる）
 		const float chromaticT = effectDuration_ > 0.0f ? parryEffectTimer_ / effectDuration_ : 1.0f;
 		ppInstance->SetChromaticAberrationStrength(EaseInOutCubic(chromaticT, effectMaxChromatic_, 0.0f));
 		// スロー（被ダメージのスロー中はそちらを優先）

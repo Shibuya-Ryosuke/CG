@@ -9,7 +9,12 @@ namespace AL4_1 {
 		void Draw();
 		void Finalize();
 
-	private:
+		// シーンに入るときに呼ぶ
+		void Start() { isFinished_ = false; }
+		// ゲームへ進みたいか
+		bool IsFinished() const { return isFinished_; }
 
+	private:
+		bool isFinished_ = false;
 	};
 }
