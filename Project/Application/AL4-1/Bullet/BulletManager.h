@@ -16,7 +16,12 @@ namespace AL4_1 {
 		// 弾が壁に当たったら消すためのマップ
 		void SetMap(const MapChipField* map) { map_ = map; }
 
-		/// <summary>空いている弾を発射する。空きがなければ nullptr</summary>
+		/// <summary>
+		/// 空いてる弾を発射
+		/// </summary>
+		/// <param name="position"></param>
+		/// <param name="velocity"></param>
+		/// <returns></returns>
 		Bullet* Fire(const RyoEngine::Vector3& position, const RyoEngine::Vector3& velocity);
 
 		void Update();

@@ -77,8 +77,7 @@ namespace AL4_1 {
 		RyoEngine::Transform transform_{
 			.scale = {1.0f,1.0f,1.0f}
 		};
-		// 体の当たり判定の半分のサイズ（足元中心から左右・上方向）。SetCollideSize で変更できる
-		// player.obj は 2x2x2（足元が原点）なので、見た目より少し細い幅1.6・高さ2.0にしている
+		// 体の当たり判定の半分のサイズ
 		RyoEngine::Vector3 halfSize_ = { 0.8f,1.0f,0.8f };
 
 		// 速度（単位：ワールド座標/秒。1マス=2.0）
@@ -86,11 +85,11 @@ namespace AL4_1 {
 		float moveSpeed_ = 12.0f;
 		// 向いている方向（+1:右 -1:左）。最後に入力した方向
 		float facing_ = 1.0f;
-		// --- モデルの向き（facing_ に向かって補間しながら回る） ---
-		float facingRightYaw_ = 90.0f;	// 右向きのときのY回転（度）
-		float facingLeftYaw_ = -90.0f;	// 左向きのときのY回転（度）。右→左の間を補間するので、0°側（カメラ側）を通って振り向く
-		float turnDelay_ = 0.1f;		// 振り向きの遅れ（秒）。0で即座に向く
-		float currentYaw_ = 90.0f;		// 今のモデルのY回転（度）
+		// --- モデルの向き ---
+		float facingRightYaw_ = 90.0f;
+		float facingLeftYaw_ = -90.0f;
+		float turnDelay_ = 0.1f;
+		float currentYaw_ = 90.0f;
 
 		// hp
 		float maxHp_ = 100.0f;
@@ -127,36 +126,34 @@ namespace AL4_1 {
 		// hp量に応じて画面白黒化、ほんの少しのノイズ
 		float maxGrayScale_ = 0.7f;
 		float maxNoiseIntensity_ = 0.3f;
-		float hpEffectStartRaito_ = 0.5f;  // hp残量エフェクトの開始はhpが5割を切ってから
+		float hpEffectStartRaito_ = 0.5f;
 
 		// --- 攻撃（パリィを兼ねる） ---
 		RyoEngine::OBB attackObb_{
 			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
 			.size = {1.0f,1.0f,1.0f}
 		};
-		bool isAttacking_ = false;			// 攻撃判定が出ている（＝回転中。その場で停止する）
-		bool isAttackHitDone_ = false;		// 今回の攻撃がもうボスに当たったか
-		float attackTimer_ = 0.0f;			// 攻撃判定の残り時間
-		float attackCooldownTimer_ = 0.0f;	// クールタイムの残り時間
-		float attackActiveTime_ = 0.35f;	// 攻撃判定（＝パリィ受付）が出ている時間（秒）。1回転にかかる時間も同じ
-		float attackCooldown_ = 0.35f;		// 攻撃が終わってから次に攻撃できるまで（秒）。成功・失敗に関係なく毎回
-		float attackDamage_ = 3.0f;			// 通常攻撃でボスに与えるダメージ
-		float attackReach_ = 0.3f;			// 体の中心から攻撃判定の中心までの横の距離（0で体の中心）
-		float attackOffsetY_ = 0.0f;		// 攻撃判定の高さのずれ
-		RyoEngine::Vector3 attackHalfSize_ = { 1.6f,1.6f,1.0f };	// 回転するので体のまわりを囲む大きさ
+		bool isAttacking_ = false;			
+		bool isAttackHitDone_ = false;		
+		float attackTimer_ = 0.0f;			
+		float attackCooldownTimer_ = 0.0f;	
+		float attackActiveTime_ = 0.35f;	
+		float attackCooldown_ = 0.35f;		
+		float attackDamage_ = 3.0f;			
+		float attackReach_ = 0.3f;			
+		float attackOffsetY_ = 0.0f;		
+		RyoEngine::Vector3 attackHalfSize_ = { 1.6f,1.6f,1.0f };
 
 		// --- サマーソルト（攻撃中の1回転。見た目だけで判定は回さない） ---
-		float spinEasePower_ = 2.0f;		// 回り方（1:等速 大きいほど出だしが速く最後がゆっくり）
-		float spinDirection_ = 1.0f;		// 回る向き（後ろ宙返りにならなければ -1 にする）
-		RyoEngine::Vector4 attackColor_ = { 0.4f,0.9f,1.0f,1.0f };	// 攻撃中の色
-		RyoEngine::Vector4 cooldownColor_ = { 0.6f,0.6f,0.6f,1.0f };	// クールタイム中の色
+		float spinEasePower_ = 2.0f;
+		float spinDirection_ = 1.0f;
+		RyoEngine::Vector4 attackColor_ = { 0.4f,0.9f,1.0f,1.0f };
+		RyoEngine::Vector4 cooldownColor_ = { 0.6f,0.6f,0.6f,1.0f };
 
 		// --- パリィ成功時の演出（色収差＋スロー） ---
-		// 色収差：始めが一番強く、duration にかけて EaseInOutCubic で弱まる
-		// スロー：0 → peakTime で一番遅くなり、peakTime → duration で元に戻る（どちらも実時間）
 		bool isParryEffect_ = false;
 		float parryEffectTimer_ = 0.0f;		// 演出開始からの経過時間
-		// 今回の演出の値（弾パリィかカウンターかで切り替わる）
+		// 今回の演出の値
 		float effectDuration_ = 0.5f;
 		float effectPeakTime_ = 0.25f;
 		float effectMaxChromatic_ = 0.0f;
@@ -164,8 +161,8 @@ namespace AL4_1 {
 		// 弾をパリィしたとき
 		float parryEffectDuration_ = 0.5f;
 		float parryEffectPeakTime_ = 0.25f;
-		float parryMaxChromatic_ = 0.2f;	// 色収差の最大の強さ
-		float parrySlowScale_ = 0.3f;		// 一番遅くなったときのタイムスケール
+		float parryMaxChromatic_ = 0.2f;
+		float parrySlowScale_ = 0.3f;
 		// 近接攻撃にカウンターしたとき
 		float counterEffectDuration_ = 0.5f;
 		float counterEffectPeakTime_ = 0.25f;

@@ -43,14 +43,14 @@ namespace AL4_1 {
 			RyoEngine::Vector3 halfSize = { 0.3f, 0.3f, 0.3f };
 
 			// --- パリィされた後 ---
-			float reflectDamage = 5.0f;			// ボスに与えるダメージ
+			float reflectDamage = 5.0f;
 			float reflectLifeTime = 5.0f;
-			float reflectStartSpeed = 8.0f;		// はね返した直後の速さ
+			float reflectStartSpeed = 8.0f;
 			float reflectMaxSpeed = 40.0f;
-			float reflectAccel = 60.0f;			// 速さの増え方（/秒）
-			float reflectTurnRate = 180.0f;		// 曲がる速さ（度/秒）
-			float reflectTurnAccel = 720.0f;	// 曲がる速さの増え方（度/秒^2）。時間が経つほど曲がりやすくなり、必ず当たる
-			float reflectScale = 1.5f;			// 反射弾の見た目と判定の倍率
+			float reflectAccel = 60.0f;
+			float reflectTurnRate = 180.0f;
+			float reflectTurnAccel = 720.0f;
+			float reflectScale = 1.5f;
 		};
 		inline static Param param_{};
 

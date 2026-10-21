@@ -254,7 +254,7 @@ namespace AL4_1 {
 		// ポストプロセスのインスタンス取得
 		auto ppInstance = PostProcess::GetInstance();
 
-		// 減った割合 0（満タン）→ 1（瀕死）
+		// 減った割合
 		float lost = std::clamp((hpEffectStartRaito_ - hp_ / maxHp_) / hpEffectStartRaito_, 0.0f, 1.0f);
 
 		// 白黒化
@@ -355,7 +355,7 @@ namespace AL4_1 {
 		w = std::clamp(w, 0.0f, 1.0f);
 
 		auto ppInstance = PostProcess::GetInstance();
-		// 色収差（始めが一番強く、終わりに向かって弱まる）
+		// 色収差
 		const float chromaticT = effectDuration_ > 0.0f ? parryEffectTimer_ / effectDuration_ : 1.0f;
 		ppInstance->SetChromaticAberrationStrength(EaseInOutCubic(chromaticT, effectMaxChromatic_, 0.0f));
 		// スロー（被ダメージのスロー中はそちらを優先）
