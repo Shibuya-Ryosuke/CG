@@ -14,7 +14,7 @@ namespace AL4_1 {
 	}
 
 	void Title::Draw() {
-		// TODO: タイトルのUI（ロゴ、Press Space）
+		
 	}
 
 	void Title::Finalize() {}

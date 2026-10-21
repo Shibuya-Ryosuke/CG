@@ -18,6 +18,9 @@ namespace AL4_1 {
 		sceneManager_ = std::make_unique<SceneManager>();
 		sceneManager_->Initialize(Scene::Title);
 
+		// bloomは常時有効にする
+		PostProcess::GetInstance()->SetBloomEnabled(true);
+
 		ParamEditor::Load();
 		LightManager::Load();
 

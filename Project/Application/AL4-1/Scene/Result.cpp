@@ -14,7 +14,7 @@ namespace AL4_1 {
 	}
 
 	void Result::Draw() {
-		// TODO: クリアのUI（CLEAR、Press Space）
+		
 	}
 
 	void Result::Finalize() {}

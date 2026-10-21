@@ -2,7 +2,6 @@
 #include <RyoEngine.h>
 
 namespace AL4_1 {
-	/// <summary>クリア時のリザルト（仮）</summary>
 	class Result {
 	public:
 		void Initialize();

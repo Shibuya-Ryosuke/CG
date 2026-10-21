@@ -244,8 +244,6 @@ namespace AL4_1 {
 		ppInstance->SetNoiseIntensity(EaseInCubic(t, 0.0f, gameOverMaxNoise_));
 		ppInstance->SetBlurStrength(EaseInCubic(t, 0.0f, gameOverMaxBlur_));
 
-		// TODO: ここで GAME OVER のUIをかぶせる
-
 		// 演出が終わったら R:リトライ T:タイトル
 		if (t < 1.0f) { return; }
 		if (Input::TriggerKey(DIK_R)) {
@@ -257,7 +255,9 @@ namespace AL4_1 {
 	}
 
 	void Game::ResetPostEffects() {
+		// ポストプロセスのインスタンス取得
 		auto ppInstance = PostProcess::GetInstance();
+		// 各ポストプロセス初期化
 		ppInstance->SetGrayscaleEnabled(false);
 		ppInstance->SetGrayscaleIntensity(0.0f);
 		ppInstance->SetNoiseEnabled(false);
@@ -266,6 +266,7 @@ namespace AL4_1 {
 		ppInstance->SetBlurStrength(0.0f);
 		ppInstance->SetChromaticAberrationEnabled(false);
 		ppInstance->SetChromaticAberrationStrength(0.0f);
+		// 時間も
 		SetTimeScale(1.0f);
 	}
 
@@ -278,7 +279,7 @@ namespace AL4_1 {
 		// 攻撃判定がそのままパリィ判定になる
 		const RyoEngine::OBB& parryOBB = player_.GetAttackOBB();
 
-		// プレイヤー × ボスの弾 ／ 反射弾 × ボス
+		// プレイヤーとボスの弾、パリィで跳ね返した弾とボスの判定
 		for (auto& bullet : bulletManager_.GetBullets()) {
 			if (bullet.IsDead()) continue;
 
@@ -291,24 +292,25 @@ namespace AL4_1 {
 				continue;
 			}
 
-			// パリィ受付中に判定へ触れたらはね返す（体に当たるより先に見る）
+			// パリィ受付中に判定へ触れたらはね返す
 			if (canParry && IsCollision(parryOBB, bullet.GetOBB())) {
 				bullet.Reflect(boss_.GetCenter());
 				player_.OnParrySuccess(false);
 				continue;
 			}
 
+			// プレイヤーと弾の判定
 			if (IsCollision(playerOBB, bullet.GetOBB())) {
 				player_.OnDamage(bullet.GetDamage());
 				bullet.OnCollision();
 			}
 		}
 
-		// プレイヤー × ボスの近接攻撃
+		// プレイヤーとボスの近接攻撃判定
 		if (boss_.IsMeleeActive()) {
 			const RyoEngine::OBB& meleeOBB = boss_.GetMeleeOBB();
 			if (canParry && IsCollision(parryOBB, meleeOBB)) {
-				// カウンター成功（同じ攻撃で通常攻撃のダメージは入れない）
+				// カウンター成功
 				boss_.OnCountered();
 				player_.OnParrySuccess(true);
 				player_.SetAttackHitDone();
@@ -318,13 +320,11 @@ namespace AL4_1 {
 			}
 		}
 
-		// プレイヤーの通常攻撃 × ボス
+		// プレイヤーの通常攻撃とボスの判定
 		if (player_.IsAttackActive() && !player_.IsAttackHitDone() && boss_.IsCollidable() &&
 			IsCollision(player_.GetAttackOBB(), boss_.GetOBB())) {
 			boss_.OnDamage(player_.GetAttackDamage());
 			player_.SetAttackHitDone();
 		}
-
-		// プレイヤー × ボスの体：触れてもダメージなし（ダメージは弾と近接攻撃だけ）
 	}
 }

@@ -12,11 +12,11 @@ namespace AL4_1 {
 	public:
 		// ゲームシーン内の進行
 		enum class Phase {
-			Intro,		// ボス登場演出（カメラがボスをアップ → プレイヤーへ戻る）
+			Intro,		// ボス登場演出
 			Battle,		// 戦闘
-			BossDefeat,	// ボス撃破演出（カメラがボスをアップ → プレイヤーへ戻る）
-			GameOver,	// ゲームオーバー演出（ノイズとブラーが強まる）
-			Clear,		// クリア（SceneManager がリザルトへ切り替える）
+			BossDefeat,	// ボス撃破演出
+			GameOver,	// ゲームオーバー演出
+			Clear,		// クリア
 		};
 
 		Game();
@@ -45,7 +45,7 @@ namespace AL4_1 {
 
 	private:
 		void SpawnFromMap();
-		// 最初からやり直す（ゲームオーバー後に Rキー）
+
 		void Restart();
 
 		void CheckAllCollisions();
@@ -61,7 +61,7 @@ namespace AL4_1 {
 
 		void RegisterInParamEditor();
 	private:
-		// マップ（Player/敵はこのアドレスを持つので、Initialize後は動かさない）
+		// マップ
 		MapChipField mapChipField_{};
 
 		Player player_{};
@@ -83,13 +83,16 @@ namespace AL4_1 {
 		float phaseTimer_ = 0.0f;		// 今のフェーズに入ってからの経過時間（実時間）
 		bool isRequestTitle_ = false;
 
-		// 登場演出：ボスが降りきってからアップを続ける時間 → プレイヤーへ戻るのを待つ時間
+		// 登場演出
+		// ボスが降りきってからアップを続ける時間 → プレイヤーへ戻るのを待つ時間
 		float introHoldTime_ = 1.0f;
 		float introReturnTime_ = 1.2f;
-		// 撃破演出：ボスが消えてからアップを続ける時間 → プレイヤーへ戻るのを待つ時間
+		// 撃破演出
+		// ボスが消えてからアップを続ける時間 → プレイヤーへ戻るのを待つ時間
 		float defeatHoldTime_ = 1.0f;
 		float defeatReturnTime_ = 1.2f;
-		// ゲームオーバー演出：この時間でノイズとブラーが最大まで強まる（EaseInCubic）
+		// ゲームオーバー演出
+		// この時間でノイズとブラーが最大まで強まる
 		float gameOverTime_ = 1.5f;
 		float gameOverMaxNoise_ = 0.8f;
 		float gameOverMaxBlur_ = 0.02f;
