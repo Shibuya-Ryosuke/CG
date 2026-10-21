@@ -17,6 +17,7 @@
   <ItemGroup>
     <ClCompile Include="Application\AL4-1\AL4_1.cpp" />
     <ClCompile Include="Application\AL4-1\Bullet\Bullet.cpp" />
+    <ClCompile Include="Application\AL4-1\Bullet\BulletManager.cpp" />
     <ClCompile Include="Application\AL4-1\Enemy\Boss\Boss.cpp" />
     <ClCompile Include="Application\AL4-1\Enemy\ShotEnemy\ShotEnemy.cpp" />
     <ClCompile Include="Application\AL4-1\Enemy\WalkEnemy\WalkEnemy.cpp" />
@@ -149,6 +150,7 @@
   <ItemGroup>
     <ClInclude Include="Application\AL4-1\AL4_1.h" />
     <ClInclude Include="Application\AL4-1\Bullet\Bullet.h" />
+    <ClInclude Include="Application\AL4-1\Bullet\BulletManager.h" />
     <ClInclude Include="Application\AL4-1\Enemy\Boss\Boss.h" />
     <ClInclude Include="Application\AL4-1\Enemy\EnemyBase.h" />
     <ClInclude Include="Application\AL4-1\Enemy\ShotEnemy\ShotEnemy.h" />

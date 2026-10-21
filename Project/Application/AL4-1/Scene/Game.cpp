@@ -8,8 +8,6 @@ namespace AL4_1 {
 	// CSVに書くスポーン指定の値
 	namespace SpawnId {
 		constexpr int kPlayer = 2;
-		constexpr int kWalkEnemy = 3;
-		constexpr int kShotEnemy = 4;
 		constexpr int kBoss = 5;
 	}
 
@@ -17,91 +15,84 @@ namespace AL4_1 {
 	Game::~Game() = default;
 
 	void Game::Initialize() {
-		// 敵・弾の共有パラメータを登録（インスタンスが増減するので1回だけ）
-		WalkEnemy::RegisterInParamEditor();
-		ShotEnemy::RegisterInParamEditor();
+		// 弾の共有パラメータを登録（インスタンスが増減するので1回だけ）
 		Bullet::RegisterInParamEditor();
 
 		// マップ読み込み（ブロックのモデルは 1x1x1・原点が中心のobjを用意する）
 		mapChipField_.Load(
-			"Resources/ApplicationResources/AL4-1/Csv/stage1.csv",
+			"Resources/ApplicationResources/AL4-1/Csv/stage2.csv",
 			"Resources/ApplicationResources/AL4-1/Stage/Block/block.obj");
 
 		// プレイヤーとボス初期化
 		player_.Initialize();
 		player_.SetMap(&mapChipField_);
 		boss_.Initialize();
+		boss_.SetTarget(&player_.GetPosition());
+		boss_.SetBulletManager(&bulletManager_);
+
+		// ボスの弾のプール
+		bulletManager_.Initialize("Resources/ApplicationResources/AL4-1/Bullet/bullet.obj", maxBulletCount_);
+		bulletManager_.SetMap(&mapChipField_);
+
 		// 登録が済んだのでスポーン前にロード。プレイヤーhp、死亡フラグをリセット
 		ParamEditor::Load();
 		player_.ResetStatus();
 
-		// InstancedModel初期化
-		walkEnemyInstancedModel_.Initialize("Resources/ApplicationResources/AL4-1/Enemy/WalkEnemy/walkEnemy.obj", 50);
-		shotEnemyInstancedModel_.Initialize("Resources/ApplicationResources/AL4-1/Enemy/ShotEnemy/shotEnemy.obj", 50);
-		enemyBulletInstancedModel_.Initialize("Resources/ApplicationResources/AL4-1/Bullet/bullet.obj", 100);
-		// 敵のスポーン
+		// プレイヤーとボスのスポーン
 		SpawnFromMap();
+		// ボスはスポーン位置が決まってから登場し直す
+		boss_.Reset();
 
 		// 追従カメラ（スポーン位置が決まった後に初期化する）
 		followCamera_.Initialize(&mapChipField_);
 	}
 
 	void Game::Update() {
-		player_.Update();
+		// 死んだら操作できないようにする
+		if (!player_.IsDead()) {
+			player_.Update();
+		}
 
 		// プレイヤーの移動後にカメラを更新
 		followCamera_.Update(player_.GetPosition());
 
-		for (auto& enemy : allEnemies_) {
-			enemy->Update();
-		}
-
-		// 死んでる敵を削除
-		allEnemies_.erase(
-			std::remove_if(allEnemies_.begin(), allEnemies_.end(), [](const std::unique_ptr<EnemyBase>& b) {
-				return b->IsDead();
-				}),
-			allEnemies_.end()
-		);
-
-		walkEnemyInstancedModel_.UpdateBuffer();
+		boss_.Update();
+		bulletManager_.Update();
 
 		// 当たり判定走査
 		CheckAllCollisions();
+
+		// 決着がついたら Rキーでリトライ
+		if ((player_.IsDead() || boss_.IsDead()) && Input::TriggerKey(DIK_R)) {
+			Restart();
+		}
 	}
 
 	void Game::Draw(RyoEngine::Camera& camera) {
 		mapChipField_.Draw(camera);
 
 		player_.Draw(camera);
+		boss_.Draw(camera);
 
-		walkEnemyInstancedModel_.Draw(camera);
-		shotEnemyInstancedModel_.Draw(camera);
-		enemyBulletInstancedModel_.Draw(camera);
+		bulletManager_.Draw(camera);
 
-		for (auto& enemy : allEnemies_) {
-			PrimitiveRenderer::DrawOBB(enemy->GetOBB(), {0.0f,1.0f,0.0f,1.0f}, PrimitiveDrawMode::Wireframe);
+		if (boss_.IsCollidable()) {
+			PrimitiveRenderer::DrawOBB(boss_.GetOBB(), { 0.0f,1.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 		}
 	}
 
 	void Game::Finalize() {}
 
 	void Game::SpawnFromMap() {
-		// CSVのスポーン指定からプレイヤーと敵を配置
+		// CSVのスポーン指定からプレイヤーとボスを配置
 		for (const auto& spawn : mapChipField_.GetSpawns()) {
 			switch (spawn.id) {
 			case SpawnId::kPlayer:
 				player_.SetPosition(spawn.position);
-				break;
-			case SpawnId::kWalkEnemy:
-				SpawnWalkEnemy(spawn.position);
-				break;
-			case SpawnId::kShotEnemy:
-				SpawnShotEnemy(spawn.position);   // SpawnWalkEnemy と同じ形で作る
+				playerSpawnPosition_ = spawn.position;
 				break;
 			case SpawnId::kBoss:
-				//bossSpawnPos_ = spawn.position;   // 位置だけ覚えておく
-				//hasBoss_ = true;
+				boss_.SetHomeFeet(spawn.position);   // 位置だけ覚えておく（定位置は homeOffset 分だけ上）
 				break;
 			default:
 				break;
@@ -109,44 +100,64 @@ namespace AL4_1 {
 		}
 	}
 
-	void Game::SpawnWalkEnemy(const RyoEngine::Vector3& position) {
-		auto walkEnemy = make_unique<WalkEnemy>();
-		walkEnemy->SetMap(&mapChipField_);
-		walkEnemy->Initialize(&walkEnemyInstancedModel_, position);
+	void Game::Restart() {
+		bulletManager_.Clear();
 
-		allEnemies_.push_back(std::move(walkEnemy));
-	}
+		player_.ResetStatus();
+		player_.SetPosition(playerSpawnPosition_);
+		boss_.Reset();
 
-	void Game::SpawnShotEnemy(const RyoEngine::Vector3& position) {
-		auto shotEnemy = make_unique<ShotEnemy>();
-		shotEnemy->SetMap(&mapChipField_);
-		shotEnemy->Initialize(&shotEnemyInstancedModel_, position);
-
-		allEnemies_.push_back(std::move(shotEnemy));
+		followCamera_.Snap();
 	}
 
 	void Game::CheckAllCollisions() {
-		const RyoEngine::OBB& playerOBB = player_.GetOBB();
+		if (player_.IsDead()) return;
 
-		// プレイヤー × 敵本体
-		for (auto& enemy : allEnemies_) {
-			if (!enemy->IsCollidable()) continue;
-			if (IsCollision(playerOBB, enemy->GetOBB())) {
-				player_.OnDamage(enemy->GetDamage());
+		const RyoEngine::OBB& playerOBB = player_.GetOBB();
+		const bool canParry = player_.IsParryActive();
+		const RyoEngine::OBB& parryOBB = player_.GetParryOBB();
+
+		// プレイヤー × ボスの弾 ／ 反射弾 × ボス
+		for (auto& bullet : bulletManager_.GetBullets()) {
+			if (bullet.IsDead()) continue;
+
+			// パリィされた弾はボスにだけ当たる
+			if (bullet.IsReflected()) {
+				if (boss_.IsCollidable() && IsCollision(bullet.GetOBB(), boss_.GetOBB())) {
+					boss_.OnDamage(bullet.GetDamage());
+					bullet.OnCollision();
+				}
+				continue;
+			}
+
+			// パリィ受付中に判定へ触れたらはね返す（体に当たるより先に見る）
+			if (canParry && IsCollision(parryOBB, bullet.GetOBB())) {
+				bullet.Reflect(boss_.GetCenter());
+				player_.OnParrySuccess(false);
+				continue;
+			}
+
+			if (IsCollision(playerOBB, bullet.GetOBB())) {
+				player_.OnDamage(bullet.GetDamage());
+				bullet.OnCollision();
 			}
 		}
 
-		// プレイヤー × 敵弾
-		for (auto& bullet : allEnemyBullets_) {
-			if (bullet->IsDead()) continue;
-			if (IsCollision(playerOBB, bullet->GetOBB())) {
-				player_.OnDamage(bullet->GetDamage());
-				bullet->OnCollision();
+		// プレイヤー × ボスの近接攻撃
+		if (boss_.IsMeleeActive()) {
+			const RyoEngine::OBB& meleeOBB = boss_.GetMeleeOBB();
+			if (canParry && IsCollision(parryOBB, meleeOBB)) {
+				// カウンター成功
+				boss_.OnCountered();
+				player_.OnParrySuccess(true);
+			} else if (!boss_.IsMeleeHitDone() && IsCollision(playerOBB, meleeOBB)) {
+				player_.OnDamage(boss_.GetMeleeDamage());
+				boss_.SetMeleeHitDone();
 			}
 		}
 
 		// プレイヤー × ボス
-		if (boss_.IsCollidable() && IsCollision(playerOBB, boss_.GetOBB())) {
+		if (boss_.CanContactDamage() && IsCollision(playerOBB, boss_.GetOBB())) {
 			player_.OnDamage(boss_.GetDamage());
 		}
 	}

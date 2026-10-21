@@ -1,11 +1,9 @@
 #pragma once
 #include <RyoEngine.h>
 #include "../Player/Player.h"
-#include "../Enemy/EnemyBase.h"
-#include "../Enemy/WalkEnemy/WalkEnemy.h"
-#include "../Enemy/ShotEnemy/ShotEnemy.h"
 #include "../Enemy/Boss/Boss.h"
 #include "../Bullet/Bullet.h"
+#include "../Bullet/BulletManager.h"
 #include "../MapChipField/MapChipField.h"
 #include "../FollowCamera/FollowCamera.h"
 
@@ -31,9 +29,8 @@ namespace AL4_1 {
 
 	private:
 		void SpawnFromMap();
-		// position は足元中心
-		void SpawnWalkEnemy(const RyoEngine::Vector3& position);
-		void SpawnShotEnemy(const RyoEngine::Vector3& position);
+		// 最初からやり直す（プレイヤー死亡・ボス撃破後に Rキー）
+		void Restart();
 
 		void CheckAllCollisions();
 	private:
@@ -46,16 +43,11 @@ namespace AL4_1 {
 		// プレイヤー追従カメラ
 		FollowCamera followCamera_{};
 
-		// 全敵のリスト
-		std::vector<std::unique_ptr<EnemyBase>> allEnemies_{};
-		// 全敵弾のリスト
-		std::vector<std::unique_ptr<Bullet>> allEnemyBullets_{};
+		// ボスの弾（プールで使い回す）
+		BulletManager bulletManager_{};
+		uint32_t maxBulletCount_ = 128;
 
-		// 歩く敵のインスタンスモデル
-		RyoEngine::InstancedModel walkEnemyInstancedModel_{};
-		// 撃ってくる敵のインスタンスモデル
-		RyoEngine::InstancedModel shotEnemyInstancedModel_{};
-		// 弾のインスタンスモデル
-		RyoEngine::InstancedModel enemyBulletInstancedModel_{};
+		// リトライ用にプレイヤーのスポーン位置を覚えておく
+		RyoEngine::Vector3 playerSpawnPosition_{};
 	};
 }

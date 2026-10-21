@@ -32,6 +32,10 @@ namespace AL4_1 {
 		InvincibleUpdate();
 		// 被ダメージ時のアップデート
 		DamageTakenUpdate();
+		// パリィ（受付・硬直・色）のアップデート
+		ParryUpdate();
+		// パリィ成功時のヒットストップのアップデート
+		HitStopUpdate();
 
 		// 速度の更新
 		velocity_.x = moveX * moveSpeed_;
@@ -62,6 +66,9 @@ namespace AL4_1 {
 		}
 		Vector3 translate = transform_.translate;
 		obb_.center = { translate.x,translate.y + halfSize_.y,translate.z };
+		// パリィ判定は体の中心に合わせ、体の判定より少し大きくする
+		parryObb_.center = obb_.center;
+		parryObb_.size = { halfSize_.x + parryRange_.x, halfSize_.y + parryRange_.y, halfSize_.z + parryRange_.z };
 		// modelにセット
 		model_->SetTransform(transform_);
 	}
@@ -73,6 +80,10 @@ namespace AL4_1 {
 		// 描画
 		model_->Draw();
 		PrimitiveRenderer::DrawOBB(obb_, { 0.0f,1.0f,0.0f,1.0f },PrimitiveDrawMode::Wireframe);
+		// デバッグ：パリィ受付中は判定を黄色で表示
+		if (isParryActive_) {
+			PrimitiveRenderer::DrawOBB(parryObb_, { 1.0f,1.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
+		}
 	}
 
 	void Player::OnDamage(float damage) {
@@ -95,6 +106,47 @@ namespace AL4_1 {
 		damageTakenDuration_ = maxDamageTakenDuration_;
 		// ポストエフェクトオン
 		PostProcess::GetInstance()->SetChromaticAberrationEnabled(true);
+	}
+
+	void Player::OnParrySuccess(bool isCounter) {
+		// 成功したので、受付が終わっても硬直しない
+		isParrySucceeded_ = true;
+
+		// ヒットストップ（カウンターの方が長く・強く）
+		isHitStop_ = true;
+		hitStopDuration_ = isCounter ? counterHitStopDuration_ : parryHitStopDuration_;
+		hitStopTimer_ = hitStopDuration_;
+		hitStopChromaticStrength_ = isCounter ? counterChromaticStrength_ : parryChromaticStrength_;
+		SetTimeScale(hitStopTimeScale_);
+
+		// 被ダメージ演出中はそちらの色収差を優先する
+		if (!isDamageTaken_) {
+			auto ppInstance = PostProcess::GetInstance();
+			ppInstance->SetChromaticAberrationEnabled(true);
+			ppInstance->SetChromaticAberrationStrength(hitStopChromaticStrength_);
+		}
+	}
+
+	void Player::ResetStatus() {
+		hp_ = maxHp_; isDead_ = false;
+
+		velocity_ = { 0.0f,0.0f,0.0f };
+		isParryActive_ = false;
+		isParrySucceeded_ = false;
+		parryTimer_ = 0.0f;
+		parryCooldownTimer_ = 0.0f;
+		isHitStop_ = false;
+		hitStopTimer_ = 0.0f;
+		isDamageTaken_ = false;
+		damageTakenDuration_ = 0.0f;
+		isInvincible_ = false;
+		invincibleDuration_ = 0.0f;
+
+		if (model_) model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
+		auto ppInstance = PostProcess::GetInstance();
+		ppInstance->SetChromaticAberrationEnabled(false);
+		ppInstance->SetChromaticAberrationStrength(0.0f);
+		SetTimeScale(1.0f);
 	}
 
 	void Player::RegisterInParamEditor() {
@@ -121,6 +173,17 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("maxGrayScale", &maxGrayScale_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("maxNoise", &maxNoiseIntensity_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("startRatio", &hpEffectStartRaito_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::EndGroup();
+
+		ParamEditor::BeginGroup("PlayerParry");
+		ParamEditor::RegisterValue("window", &parryWindow_, 0.01f, 0.01f, 1.0f);
+		ParamEditor::RegisterValue("cooldown", &parryCooldown_, 0.01f, 0.0f, 2.0f);
+		ParamEditor::RegisterValue("range", &parryRange_, 0.01f, 0.0f, 5.0f);
+		ParamEditor::RegisterValue("parryHitStop", &parryHitStopDuration_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("counterHitStop", &counterHitStopDuration_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("hitStopTimeScale", &hitStopTimeScale_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("parryChromatic", &parryChromaticStrength_, 0.01f, 0.0f, 2.0f);
+		ParamEditor::RegisterValue("counterChromatic", &counterChromaticStrength_, 0.01f, 0.0f, 2.0f);
 		ParamEditor::EndGroup();
 	}
 
@@ -189,6 +252,62 @@ namespace AL4_1 {
 		if (invincibleDuration_ <= 0.0f) {
 			invincibleDuration_ = 0.0f;
 			isInvincible_ = false;
+		}
+	}
+
+	void Player::ParryUpdate() {
+		const float dt = GetScaleTime();
+
+		if (isParryActive_) {
+			// 受付中
+			parryTimer_ -= dt;
+			if (parryTimer_ <= 0.0f) {
+				isParryActive_ = false;
+				// 空振りしたときだけ硬直（連打で全部はじけないようにする）
+				parryCooldownTimer_ = isParrySucceeded_ ? 0.0f : parryCooldown_;
+			}
+		} else if (parryCooldownTimer_ > 0.0f) {
+			// 硬直中
+			parryCooldownTimer_ -= dt;
+		} else if (Input::TriggerKey(DIK_J)) {
+			// 受付開始
+			isParryActive_ = true;
+			isParrySucceeded_ = false;
+			parryTimer_ = parryWindow_;
+		}
+
+		// 色（無敵中は点滅を優先）
+		if (isInvincible_) return;
+		if (isParryActive_) {
+			model_->SetColor(parryColor_);
+		} else if (parryCooldownTimer_ > 0.0f) {
+			model_->SetColor(cooldownColor_);
+		} else {
+			model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
+		}
+	}
+
+	void Player::HitStopUpdate() {
+		if (!isHitStop_) return;
+		// 止まっている間も進むように deltaタイムを引く
+		hitStopTimer_ -= GetDeltaTime();
+		float t = 1.0f - std::clamp(hitStopTimer_ / hitStopDuration_, 0.0f, 1.0f);
+
+		auto ppInstance = PostProcess::GetInstance();
+		if (!isDamageTaken_) {
+			ppInstance->SetChromaticAberrationStrength(EaseOutCubic(t, hitStopChromaticStrength_, 0.0f));
+		}
+		SetTimeScale(hitStopTimeScale_);
+
+		// ヒットストップ終了
+		if (hitStopTimer_ <= 0.0f) {
+			hitStopTimer_ = 0.0f;
+			isHitStop_ = false;
+			SetTimeScale(1.0f);
+			if (!isDamageTaken_) {
+				ppInstance->SetChromaticAberrationEnabled(false);
+				ppInstance->SetChromaticAberrationStrength(0.0f);
+			}
 		}
 	}
 

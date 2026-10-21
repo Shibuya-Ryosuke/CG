@@ -35,16 +35,25 @@ namespace AL4_1 {
 		void OnDamage(float damage);
 		const RyoEngine::OBB GetOBB()const { return obb_; }
 		float GetHP() const { return hp_; }
+		bool IsDead() const { return isDead_; }
 
-		void ResetStatus() { hp_ = maxHp_; isDead_ = false; }
+		// パリィ受付中か（この間に弾・近接攻撃が parryObb_ に触れたらパリィ成功）
+		bool IsParryActive() const { return isParryActive_; }
+		const RyoEngine::OBB& GetParryOBB() const { return parryObb_; }
+		/// <summary>パリィ成功時に Game から呼ぶ。isCounter はボスの近接攻撃へのカウンター</summary>
+		void OnParrySuccess(bool isCounter);
+
+		void ResetStatus();
 	private:
 		void RegisterInParamEditor();
 		void Jump();
 		void Attack() {};
-		
+
 		void HpEffectUpdate();
 		void DamageTakenUpdate();
 		void InvincibleUpdate();
+		void ParryUpdate();
+		void HitStopUpdate();
 
 	private:
 		// 自身
@@ -106,5 +115,32 @@ namespace AL4_1 {
 		float maxGrayScale_ = 0.7f;
 		float maxNoiseIntensity_ = 0.3f;
 		float hpEffectStartRaito_ = 0.5f;  // hp残量エフェクトの開始はhpが5割を切ってから
+
+		// --- パリィ ---
+		// 判定（体の判定を parryRange_ だけ広げたもの）
+		RyoEngine::OBB parryObb_{
+			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
+			.size = {1.0f,1.0f,1.0f}
+		};
+		bool isParryActive_ = false;		// 受付中
+		bool isParrySucceeded_ = false;		// 今回の受付中に1回でも成功したか（成功したら硬直なし）
+		float parryTimer_ = 0.0f;			// 受付の残り時間
+		float parryCooldownTimer_ = 0.0f;	// 硬直の残り時間（連打対策）
+		float parryWindow_ = 0.15f;			// 受付時間（秒）
+		float parryCooldown_ = 0.35f;		// 失敗したときの硬直（秒）
+		RyoEngine::Vector3 parryRange_ = { 0.6f,0.4f,0.6f };	// 体の判定より広げる量
+		RyoEngine::Vector4 parryColor_ = { 0.4f,0.9f,1.0f,1.0f };	// 受付中の色
+		RyoEngine::Vector4 cooldownColor_ = { 0.6f,0.6f,0.6f,1.0f };	// 硬直中の色
+
+		// --- パリィ成功時のヒットストップ ---
+		bool isHitStop_ = false;
+		float hitStopTimer_ = 0.0f;
+		float hitStopDuration_ = 0.0f;		// 今回のヒットストップの長さ
+		float parryHitStopDuration_ = 0.06f;	// 弾をパリィしたとき（実時間）
+		float counterHitStopDuration_ = 0.18f;	// カウンターしたとき（実時間）
+		float hitStopTimeScale_ = 0.05f;
+		float hitStopChromaticStrength_ = 0.0f;	// 今回の色収差の強さ
+		float parryChromaticStrength_ = 0.2f;
+		float counterChromaticStrength_ = 0.6f;
 	};
 }
