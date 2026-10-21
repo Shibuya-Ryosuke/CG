@@ -19,6 +19,7 @@ namespace AL4_1 {
 	}
 
 	void SceneManager::Update() {
+		GPUParticleManager::GetInstance()->Update(GetDeltaTime());
 
 		switch (scene_) {
 		case Scene::Title:
@@ -52,6 +53,7 @@ namespace AL4_1 {
 	void SceneManager::Draw(RyoEngine::Camera& debugCamera) {
 		Camera& camera = GetActiveCamera(debugCamera);
 
+		GPUParticleManager::GetInstance()->Draw(camera);
 		ground_->TransferMatrix(camera);
 		sky_->TransferMatrix(camera);
 		ground_->Draw();

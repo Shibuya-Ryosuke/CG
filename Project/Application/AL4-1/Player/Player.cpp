@@ -7,8 +7,14 @@ using namespace RyoEngine;
 using namespace std;
 
 namespace AL4_1 {
-	Player::Player() = default;
-	Player::~Player() = default;
+	Player::Player() {
+		GPUParticleManager::GetInstance()->RegisterPosition("playerPos", &transform_.translate);
+		GPUParticleManager::GetInstance()->RegisterFlag("isParrying", &isParryEffect_);
+	}
+	Player::~Player() {
+		GPUParticleManager::GetInstance()->UnregisterPosition("playerPos");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isParrying");
+	}
 
 	void Player::Initialize() {
 		model_ = Model::Create("Resources/ApplicationResources/AL4-1/Player/player.obj");

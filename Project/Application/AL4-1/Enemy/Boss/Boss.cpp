@@ -6,8 +6,12 @@
 using namespace RyoEngine;
 
 namespace AL4_1 {
-	Boss::Boss() = default;
-	Boss::~Boss() = default;
+	Boss::Boss() {
+		GPUParticleManager::GetInstance()->RegisterPosition("bossPos", &transform_.translate);
+	}
+	Boss::~Boss() {
+		GPUParticleManager::GetInstance()->UnregisterPosition("bossPos");
+	}
 
 	void Boss::Initialize() {
 		model_ = Model::Create("Resources/ApplicationResources/AL4-1/Enemy/Boss/boss.obj");
