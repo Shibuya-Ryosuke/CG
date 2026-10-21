@@ -14,9 +14,10 @@ namespace AL4_1 {
 
 		attackType_ = AttackType::None;
 		prevAttackType_ = AttackType::None;
-		transform_.scale = baseScale_;
+		
 
 		RegisterInParamEditor();
+		transform_.scale = baseScale_;
 
 		ChangeState(State::Appear);
 	}
@@ -27,7 +28,7 @@ namespace AL4_1 {
 		meleePhase_ = MeleePhase::None;
 		hitFlashTimer_ = 0.0f;
 		transform_.scale = baseScale_;
-
+		isIllumination_ = false;
 		ChangeState(State::Appear);
 	}
 
@@ -65,19 +66,30 @@ namespace AL4_1 {
 		}
 
 		obb_.center = transform_.translate;
+		obb_.size = transform_.scale * 2.0f;
+
 		UpdateMeleeOBB();
 		UpdateColor();
 
 		// 見た目用のトランスフォーム（奥へのずらし＋被弾シェイク）
-		Transform drawTransform = transform_;
-		drawTransform.translate.z += modelOffsetZ_;
+		drawTransform_ = transform_;
+		drawTransform_.translate.z += modelOffsetZ_;
 		if (hitShakeTimer_ > 0.0f) {
 			hitShakeTimer_ -= dt;
 			float shake = hitShake_ * std::clamp(hitShakeTimer_ / hitShakeTime_, 0.0f, 1.0f);
-			drawTransform.translate.x += RandomFloat(-shake, shake);
-			drawTransform.translate.y += RandomFloat(-shake, shake);
+			drawTransform_.translate.x += RandomFloat(-shake, shake);
+			drawTransform_.translate.y += RandomFloat(-shake, shake);
 		}
-		model_->SetTransform(drawTransform);
+
+		// モデルにセット
+		model_->SetTransform(drawTransform_);
+
+		// ライト
+		LightManager::SetLightPosition("bossLight", model_->GetTranslate());
+		LightManager::SetLightEnabled("bossLight", isIllumination_);
+
+		// 発光
+		model_->SetEmissive(emissiveColor_, emissiveIntensity_);
 	}
 
 	void Boss::Draw(RyoEngine::Camera& camera) {
@@ -129,6 +141,7 @@ namespace AL4_1 {
 
 	void Boss::RegisterInParamEditor() {
 		ParamEditor::BeginGroup("Boss");
+		ParamEditor::RegisterValue("transform", &transform_);
 		ParamEditor::RegisterValue("maxHp", &maxHp_, 1.0f, 1.0f, 2000.0f);
 		ParamEditor::RegisterValue("obbHalfSize", &obb_.size, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("baseScale", &baseScale_, 0.01f, 0.1f, 10.0f);
@@ -143,22 +156,27 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("moveTime", &moveTime_, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("destroyTime", &destroyTime_, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("destroyShake", &destroyShake_, 0.01f, 0.0f, 3.0f);
+
+		ParamEditor::BeginGroup("Emissive");
+		ParamEditor::RegisterValue("intensity", &emissiveIntensity_, 0.01f);
+		ParamEditor::RegisterColor("color", &emissiveColor_);
+		ParamEditor::RegisterFlag("isIllumination", &isIllumination_);  // ライトだけど実質発光みたいなもんだからここ
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("BossLook");
+		ParamEditor::BeginGroup("Look");
 		ParamEditor::RegisterValue("modelOffsetZ", &modelOffsetZ_, 0.1f, -20.0f, 20.0f);
 		ParamEditor::RegisterValue("hitFlashTime", &hitFlashTime_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("hitShakeTime", &hitShakeTime_, 0.01f, 0.01f, 2.0f);
 		ParamEditor::RegisterValue("hitShake", &hitShake_, 0.01f, 0.0f, 3.0f);
-		ParamEditor::RegisterValue("baseColor", &baseColor_, 0.01f, 0.0f, 1.0f);
-		ParamEditor::RegisterValue("windupColor", &windupColor_, 0.01f, 0.0f, 1.0f);
-		ParamEditor::RegisterValue("glintColor", &glintColor_, 0.01f, 0.0f, 1.0f);
-		ParamEditor::RegisterValue("meleeActiveColor", &meleeActiveColor_, 0.01f, 0.0f, 1.0f);
-		ParamEditor::RegisterValue("stunColor", &stunColor_, 0.01f, 0.0f, 1.0f);
-		ParamEditor::RegisterValue("hitFlashColor", &hitFlashColor_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterColor("baseColor", &baseColor_);
+		ParamEditor::RegisterColor("windupColor", &windupColor_);
+		ParamEditor::RegisterColor("glintColor", &glintColor_);
+		ParamEditor::RegisterColor("meleeActiveColor", &meleeActiveColor_);
+		ParamEditor::RegisterColor("stunColor", &stunColor_);
+		ParamEditor::RegisterColor("hitFlashColor", &hitFlashColor_);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("BossShot");
+		ParamEditor::BeginGroup("Shot");
 		ParamEditor::RegisterValue("attackTime_Shot", &attackTime_[static_cast<size_t>(AttackType::Shot)], 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("attackTime_Spread", &attackTime_[static_cast<size_t>(AttackType::SpreadShot)], 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("attackTime_Homing", &attackTime_[static_cast<size_t>(AttackType::HomingShot)], 0.01f, 0.1f, 10.0f);
@@ -173,7 +191,7 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("homingDuration", &homingDuration_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("BossMelee");
+		ParamEditor::BeginGroup("Melee");
 		ParamEditor::RegisterValue("windupTime", &meleeWindupTime_, 0.01f, 0.05f, 5.0f);
 		ParamEditor::RegisterValue("activeTime", &meleeActiveTime_, 0.01f, 0.01f, 2.0f);
 		ParamEditor::RegisterValue("recoveryTime", &meleeRecoveryTime_, 0.01f, 0.0f, 5.0f);
@@ -189,6 +207,8 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("stunTime", &stunTime_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("stunKnockback", &stunKnockback_, 0.1f, 0.0f, 20.0f);
 		ParamEditor::RegisterValue("stunKnockbackTime", &stunKnockbackTime_, 0.01f, 0.01f, 3.0f);
+		ParamEditor::EndGroup();
+
 		ParamEditor::EndGroup();
 	}
 
@@ -255,6 +275,7 @@ namespace AL4_1 {
 		if (!canAct_) { return; }
 		if (stateTimer_ >= idleTime_) {
 			ChangeState(State::Move);
+			isIllumination_ = true;
 		}
 	}
 
@@ -317,6 +338,7 @@ namespace AL4_1 {
 		transform_.scale = { baseScale_.x * s, baseScale_.y * s, baseScale_.z * s };
 
 		if (t >= 1.0f) {
+			isIllumination_ = false;
 			ChangeState(State::Dead);
 		}
 	}

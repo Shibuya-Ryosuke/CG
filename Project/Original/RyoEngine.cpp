@@ -263,6 +263,9 @@ namespace RyoEngine {
     }
 
     void EndFrame() {
+        // ライトの設定値をGPUへ反映（ゲームのUpdateでSetした値を、このフレームの描画に使う）
+        LightManager::Update();
+
         ParamEditor::DrawImGuiWindow();
 
         // GPUパーティクルのシミュレーション(Dispatch)：RTV/DSVに依存しないので一番早く実行する

@@ -95,7 +95,7 @@ namespace AL4_1 {
 
 		void RegisterInParamEditor();
 	private:
-		// ---- 状態管理 ----
+		// --- 状態管理 ---
 		void ChangeState(State next);
 		void UpdateAppear();
 		void UpdateIdle();
@@ -104,7 +104,7 @@ namespace AL4_1 {
 		void UpdateStun();
 		void UpdateDestroy();
 
-		// ---- 攻撃 ----
+		// --- 攻撃 ---
 		void StartAttack();
 		void Shot();
 		void SpreadShot();
@@ -115,16 +115,16 @@ namespace AL4_1 {
 		// 攻撃ごとの継続時間（近接は 予備動作+攻撃+後隙）
 		float GetAttackDuration(AttackType type) const;
 
-		// ---- 狙い ----
+		// --- 狙い ---
 		RyoEngine::Vector3 GetAimPosition() const;	// プレイヤーの体の中心
 		RyoEngine::Vector3 GetAimDirection() const;	// 自分 → プレイヤー の向き（xy、長さ1）
 
-		// ---- 抽選 ----
+		// --- 抽選 ---
 		AttackType DecideNextAttack();
 		RyoEngine::Vector3 DecideMovePosition();
 		RyoEngine::Vector3 DecideMeleePosition();
 
-		// ---- 見た目 ----
+		// --- 見た目 ---
 		void UpdateMeleeOBB();
 		void UpdateColor();
 
@@ -132,6 +132,7 @@ namespace AL4_1 {
 		std::unique_ptr<RyoEngine::Model> model_ = nullptr;
 
 		RyoEngine::Transform transform_{};
+		RyoEngine::Transform drawTransform_{};
 
 		float maxHp_ = 100.0f;
 		float hp_ = 100.0f;
@@ -150,7 +151,7 @@ namespace AL4_1 {
 		// 行動してよいか
 		bool canAct_ = true;
 
-		// ---- 時間パラメータ ----
+		// --- 時間パラメータ ---
 		float appearTime_ = 3.0f;	// 登場アニメーション時間
 		float appearSpinTurns_ = 2.0f;	// 登場中に回る回数（Y軸。だんだんゆっくりになって止まる）
 		float idleTime_ = 1.0f;		// 待機時間
@@ -168,7 +169,7 @@ namespace AL4_1 {
 			}
 		};
 
-		// ---- 移動 ----
+		// --- 移動 ---
 		RyoEngine::Vector3 homeFeet_{ 0.0f, 0.0f, 0.0f };		// CSVのスポーン位置（足元）
 		RyoEngine::Vector3 homeOffset_{ 0.0f, 4.0f, 0.0f };	// スポーン位置から定位置までのずれ（空中に浮く）
 		RyoEngine::Vector3 homePosition_{ 0.0f, 4.0f, 0.0f };	// 登場後の定位置
@@ -178,10 +179,10 @@ namespace AL4_1 {
 		RyoEngine::Vector3 moveStart_{};
 		RyoEngine::Vector3 moveEnd_{};
 
-		// ---- 狙い ----
+		// --- 狙い ---
 		float targetAimOffsetY_ = 1.0f;	// 対象の足元から体の中心までの高さ
 
-		// ---- 射撃 ----
+		// --- 射撃 ---
 		BulletManager* bulletManager_ = nullptr;
 		float shotInterval_ = 0.4f;
 		float shotTimer_ = 0.0f;
@@ -196,7 +197,7 @@ namespace AL4_1 {
 		float homingTurnRate_ = 90.0f;	// 度/秒
 		float homingDuration_ = 1.2f;	// 曲がり続ける時間
 
-		// ---- 近接攻撃 ----
+		// --- 近接攻撃 ---
 		MeleePhase meleePhase_ = MeleePhase::None;
 		float meleeWindupTime_ = 0.7f;		// 予備動作
 		float meleeActiveTime_ = 0.2f;		// 攻撃判定が出ている時間
@@ -217,7 +218,7 @@ namespace AL4_1 {
 			.size = {1.0f,1.0f,1.0f}
 		};
 
-		// ---- カウンターされたとき ----
+		// --- カウンターされたとき ---
 		float counterDamage_ = 15.0f;
 		float stunTime_ = 1.5f;				// 怯み時間
 		float stunKnockback_ = 3.0f;		// 吹き飛ぶ距離
@@ -225,7 +226,7 @@ namespace AL4_1 {
 		RyoEngine::Vector3 stunStart_{};
 		RyoEngine::Vector3 stunEnd_{};
 
-		// ---- 見た目 ----
+		// --- 見た目 ---
 		// モデルだけ奥にずらす（プレイヤーが埋もれないように）。当たり判定と弾の発射位置は z=0 のまま
 		float modelOffsetZ_ = 2.0f;
 		// 被弾時のシェイク（見た目だけ。判定は揺らさない）
@@ -233,7 +234,7 @@ namespace AL4_1 {
 		float hitShakeTime_ = 0.2f;
 		float hitShake_ = 0.25f;		// 揺れ幅（時間とともに小さくなる）
 
-		// ---- 色 ----
+		// --- 色 ---
 		float hitFlashTimer_ = 0.0f;
 		float hitFlashTime_ = 0.15f;
 		RyoEngine::Vector4 baseColor_{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -243,9 +244,15 @@ namespace AL4_1 {
 		RyoEngine::Vector4 stunColor_{ 0.5f, 0.5f, 1.0f, 1.0f };
 		RyoEngine::Vector4 hitFlashColor_{ 1.0f, 0.1f, 0.1f, 1.0f };
 
-		// ---- 撃破演出 ----
+		// --- 発光 ---
+		float emissiveIntensity_ = 0.0f;
+		RyoEngine::Vector3 emissiveColor_{};
+		// ライトの点灯フラグ
+		bool isIllumination_ = false;
+
+		// --- 撃破演出 ---
 		RyoEngine::Vector3 destroyBasePosition_{};
-		RyoEngine::Vector3 baseScale_{ 1.0f, 1.0f, 1.0f };
+		RyoEngine::Vector3 baseScale_{ 1.5f, 1.5f, 1.5f };
 		float destroyShake_ = 0.3f;
 
 		const RyoEngine::Vector3* target_ = nullptr;

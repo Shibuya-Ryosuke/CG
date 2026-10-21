@@ -109,8 +109,15 @@ namespace AL4_1 {
 			drawTransform.translate.x += pivot * std::sin(angle);
 			drawTransform.translate.y += pivot - pivot * std::cos(angle);
 		}
+
 		// modelにセット
 		model_->SetTransform(drawTransform);
+
+		// プレイヤーに付けるライト
+		LightManager::SetLightPosition("playerLight", model_->GetTranslate());
+		LightManager::SetLightEnabled("playerLight", isIllumination_);
+		// 発光
+		model_->SetEmissive(emissiveColor_, emissiveIntensity_);
 	}
 
 	void Player::Draw(RyoEngine::Camera& camera) {
@@ -198,9 +205,14 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("facingRightYaw", &facingRightYaw_, 1.0f, -360.0f, 360.0f);
 		ParamEditor::RegisterValue("facingLeftYaw", &facingLeftYaw_, 1.0f, -360.0f, 360.0f);
 		ParamEditor::RegisterValue("turnDelay", &turnDelay_, 0.01f, 0.0f, 1.0f);
+
+		ParamEditor::BeginGroup("Emissive");
+		ParamEditor::RegisterValue("intensity", &emissiveIntensity_, 0.01f);
+		ParamEditor::RegisterColor("color", &emissiveColor_);
+		ParamEditor::RegisterFlag("isIllumination", &isIllumination_);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("PlayerDamage");
+		ParamEditor::BeginGroup("Damage");
 		ParamEditor::RegisterValue("effectDuration", &maxDamageTakenDuration_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::RegisterValue("blurStrength", &maxDamageTakenBlurStrength_, 0.0005f, 0.0f, 0.1f);
 		ParamEditor::RegisterValue("timeScale", &damageTakenTimeScale_, 0.01f, 0.0f, 1.0f);
@@ -209,13 +221,13 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("minAlpha", &minAlpha_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("PlayerHpEffect");
+		ParamEditor::BeginGroup("HpEffect");
 		ParamEditor::RegisterValue("maxGrayScale", &maxGrayScale_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("maxNoise", &maxNoiseIntensity_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("startRatio", &hpEffectStartRaito_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("PlayerAttack");
+		ParamEditor::BeginGroup("Attack");
 		ParamEditor::RegisterValue("activeTime", &attackActiveTime_, 0.01f, 0.01f, 1.0f);
 		ParamEditor::RegisterValue("cooldown", &attackCooldown_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::RegisterValue("damage", &attackDamage_, 0.1f, 0.0f, 100.0f);
@@ -224,11 +236,11 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("halfSize", &attackHalfSize_, 0.01f, 0.05f, 10.0f);
 		ParamEditor::RegisterValue("spinEasePower", &spinEasePower_, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("spinDirection", &spinDirection_, 2.0f, -1.0f, 1.0f);
-		ParamEditor::RegisterValue("attackColor", &attackColor_, 0.01f, 0.0f, 1.0f);
-		ParamEditor::RegisterValue("cooldownColor", &cooldownColor_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterColor("attackColor", &attackColor_);
+		ParamEditor::RegisterColor("cooldownColor", &cooldownColor_);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("PlayerParryEffect");
+		ParamEditor::BeginGroup("ParryEffect");
 		ParamEditor::RegisterValue("parryDuration", &parryEffectDuration_, 0.01f, 0.01f, 3.0f);
 		ParamEditor::RegisterValue("parryPeakTime", &parryEffectPeakTime_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::RegisterValue("parryMaxChromatic", &parryMaxChromatic_, 0.01f, 0.0f, 2.0f);
@@ -237,6 +249,8 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("counterPeakTime", &counterEffectPeakTime_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::RegisterValue("counterMaxChromatic", &counterMaxChromatic_, 0.01f, 0.0f, 2.0f);
 		ParamEditor::RegisterValue("counterSlowScale", &counterSlowScale_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::EndGroup();
+
 		ParamEditor::EndGroup();
 	}
 

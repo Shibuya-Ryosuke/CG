@@ -43,15 +43,19 @@ namespace AL4_1 {
 		// 攻撃判定（パリィ判定も兼ねる）
 		const RyoEngine::OBB& GetAttackOBB() const { return attackObb_; }
 		float GetAttackDamage() const { return attackDamage_; }
-		// 1回の攻撃で何度もダメージを与えないためのフラグ
+		
 		bool IsAttackHitDone() const { return isAttackHitDone_; }
 		void SetAttackHitDone() { isAttackHitDone_ = true; }
-		/// <summary>パリィ成功時に Game から呼ぶ。isCounter はボスの近接攻撃へのカウンター</summary>
+		
+		/// <summary>
+		/// パリィ成功
+		/// </summary>
+		/// <param name="isCounter">近接攻撃をパリィした時trueを入れる</param>
 		void OnParrySuccess(bool isCounter);
 
 		void ResetStatus();
 
-		// 操作を受け付けるか（演出中は false。重力・演出の更新は続く）
+		// 操作を受け付けるか
 		void SetControllable(bool controllable) { isControllable_ = controllable; }
 	private:
 		void RegisterInParamEditor();
@@ -80,8 +84,7 @@ namespace AL4_1 {
 		RyoEngine::Transform transform_{
 			.scale = {1.0f,1.0f,1.0f}
 		};
-		// 体の当たり判定の半分のサイズ（足元中心から左右・上方向）。SetCollideSize で変更できる
-		// player.obj は 2x2x2（足元が原点）なので、見た目より少し細い幅1.6・高さ2.0にしている
+		// 体の当たり判定の半分のサイズ
 		RyoEngine::Vector3 halfSize_ = { 0.8f,1.0f,0.8f };
 
 		// 速度（単位：ワールド座標/秒。1マス=2.0）
@@ -90,10 +93,10 @@ namespace AL4_1 {
 		// 向いている方向（+1:右 -1:左）。最後に入力した方向
 		float facing_ = 1.0f;
 		// --- モデルの向き（facing_ に向かって補間しながら回る） ---
-		float facingRightYaw_ = 90.0f;	// 右向きのときのY回転（度）
-		float facingLeftYaw_ = -90.0f;	// 左向きのときのY回転（度）。右→左の間を補間するので、0°側（カメラ側）を通って振り向く
-		float turnDelay_ = 0.1f;		// 振り向きの遅れ（秒）。0で即座に向く
-		float currentYaw_ = 90.0f;		// 今のモデルのY回転（度）
+		float facingRightYaw_ = 90.0f;
+		float facingLeftYaw_ = -90.0f;
+		float turnDelay_ = 0.1f;
+		float currentYaw_ = 90.0f;
 
 		// hp
 		float maxHp_ = 100.0f;
@@ -134,33 +137,39 @@ namespace AL4_1 {
 		float maxNoiseIntensity_ = 0.3f;
 		float hpEffectStartRaito_ = 0.5f;  // hp残量エフェクトの開始はhpが5割を切ってから
 
-		// --- 攻撃（パリィを兼ねる） ---
+		// --- 攻撃とパリイ ---
 		RyoEngine::OBB attackObb_{
 			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
 			.size = {1.0f,1.0f,1.0f}
 		};
-		bool isAttacking_ = false;			// 攻撃判定が出ている（＝回転中。その場で停止する）
+		// 攻撃中か
+		bool isAttacking_ = false;
+		// 攻撃が一度当たったか
 		bool isAttackHitDone_ = false;		// 今回の攻撃がもうボスに当たったか
-		float attackTimer_ = 0.0f;			// 攻撃判定の残り時間
-		float attackCooldownTimer_ = 0.0f;	// クールタイムの残り時間
-		float attackActiveTime_ = 0.35f;	// 攻撃判定（＝パリィ受付）が出ている時間（秒）。1回転にかかる時間も同じ
-		float attackCooldown_ = 0.35f;		// 攻撃が終わってから次に攻撃できるまで（秒）。成功・失敗に関係なく毎回
-		float attackDamage_ = 3.0f;			// 通常攻撃でボスに与えるダメージ
-		float attackReach_ = 0.3f;			// 体の中心から攻撃判定の中心までの横の距離（0で体の中心）
-		float attackOffsetY_ = 0.0f;		// 攻撃判定の高さのずれ
+		// 時間系
+		float attackTimer_ = 0.0f;
+		float attackCooldownTimer_ = 0.0f;
+		float attackActiveTime_ = 0.35f;
+		float attackCooldown_ = 0.35f;
+		// ボスに与えるダメージ
+		float attackDamage_ = 3.0f;
+
+		float attackReach_ = 0.3f;
+		float attackOffsetY_ = 0.0f;
 		RyoEngine::Vector3 attackHalfSize_ = { 1.6f,1.6f,1.0f };	// 回転するので体のまわりを囲む大きさ
 
 		// --- サマーソルト（攻撃中の1回転。見た目だけで判定は回さない） ---
-		float spinEasePower_ = 2.0f;		// 回り方（1:等速 大きいほど出だしが速く最後がゆっくり）
-		float spinDirection_ = 1.0f;		// 回る向き（後ろ宙返りにならなければ -1 にする）
-		RyoEngine::Vector4 attackColor_ = { 0.4f,0.9f,1.0f,1.0f };	// 攻撃中の色
-		RyoEngine::Vector4 cooldownColor_ = { 0.6f,0.6f,0.6f,1.0f };	// クールタイム中の色
+		float spinEasePower_ = 2.0f;
+		float spinDirection_ = 1.0f;
+		// 攻撃中とクールタイム中で色を分ける
+		RyoEngine::Vector4 attackColor_ = { 0.4f,0.9f,1.0f,1.0f };
+		RyoEngine::Vector4 cooldownColor_ = { 0.6f,0.6f,0.6f,1.0f };
 
 		// --- パリィ成功時の演出（色収差＋スロー） ---
-		// 色収差：始めが一番強く、duration にかけて EaseInOutCubic で弱まる
-		// スロー：0 → peakTime で一番遅くなり、peakTime → duration で元に戻る（どちらも実時間）
+		// エフェクトを出すか
 		bool isParryEffect_ = false;
-		float parryEffectTimer_ = 0.0f;		// 演出開始からの経過時間
+		// 経過時間
+		float parryEffectTimer_ = 0.0f;
 		// 今回の演出の値（弾パリィかカウンターかで切り替わる）
 		float effectDuration_ = 0.5f;
 		float effectPeakTime_ = 0.25f;
@@ -176,5 +185,12 @@ namespace AL4_1 {
 		float counterEffectPeakTime_ = 0.25f;
 		float counterMaxChromatic_ = 0.4f;
 		float counterSlowScale_ = 0.1f;
+
+		// --- 発光 ---
+		float emissiveIntensity_ = 0.0f;
+		RyoEngine::Vector3 emissiveColor_{};
+
+		// ライトの点灯用フラグ
+		bool isIllumination_ = true;
 	};
 }
