@@ -43,6 +43,11 @@ namespace RyoEngine {
         void Emit(const Vector3& position, const Vector3& velocity, const Vector4& color,
             float scale, const Vector3& rotation, float lifeTime);
 
+        // 今フレームにあと何個Emit()できるか(発生依頼バッファの空き)
+        uint32_t GetRemainingSpawnCapacity() const {
+            return kMaxSpawnRequestsPerFrame - static_cast<uint32_t>(pendingSpawnRequests_.size());
+        }
+
         // 重力(下向き、-Y方向の加速度)。0なら無重力。Emitter全体で共通の設定。
         void SetGravity(float gravity) { gravity_ = gravity; }
         float GetGravity() const { return gravity_; }
@@ -87,7 +92,7 @@ namespace RyoEngine {
         D3D12_RESOURCE_STATES particleState_ = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 
         // 発生依頼バッファ (Upload heap、CPUがマップして毎フレーム書き込む)
-        static constexpr uint32_t kMaxSpawnRequestsPerFrame = 256;
+        static constexpr uint32_t kMaxSpawnRequestsPerFrame = 1024;
         Microsoft::WRL::ComPtr<ID3D12Resource> spawnRequestResource_;
         GPUParticleData* spawnRequestData_ = nullptr;
         std::vector<GPUParticleData> pendingSpawnRequests_; // Emit()が積む、CPU側の一時リスト

@@ -17,6 +17,7 @@ namespace RyoEngine {
         uint32_t maxParticleCount = 500;
         float scale = 1.0f;
         float lifeTime = 1.0f;
+        uint32_t emitCount = 1; // 1回の発生で何粒出すか(1粒ごとに速度・座標オフセットの乱数は引き直す)
 
         // --- 速度 ---
         bool useRandomVelocity = false;
@@ -39,6 +40,13 @@ namespace RyoEngine {
         bool billboard = true;
         Vector3 fixedRotation = { 0.0f, 0.0f, 0.0f }; // billboard=false時、発生する全パーティクルに適用する固定姿勢
 
+        // --- 初期姿勢の乱数 ---
+        // useRandomRotation=trueなら、fixedRotationの代わりに1粒ごとにMin〜Maxの乱数で初期姿勢を決める(ラジアン)。
+        // ビルボード時はz(カメラ正面軸まわりのロール)のみ反映される
+        bool useRandomRotation = false;
+        Vector3 rotationRandomMin = { 0.0f, 0.0f, 0.0f };
+        Vector3 rotationRandomMax = { 0.0f, 0.0f, 6.2831853f };
+
         // --- 発生条件 ---
         // conditionFlagKey(マネージャーに登録されたフラグのキー)が空または未登録なら、
         // TriggerEmit()で明示的に発生させる運用のみになる。
@@ -57,6 +65,11 @@ namespace RyoEngine {
     /// </summary>
     class GPUParticleManager {
     public:
+        // 1回あたりの発生数の上限(GPUParticleEmitterの1フレームあたりの発生依頼上限と合わせる)
+        static constexpr uint32_t kMaxEmitCount = 1024;
+        // ImGuiで設定できるパーティクル最大数の上限
+        static constexpr int kMaxParticleCountLimit = 100000;
+
         static GPUParticleManager* GetInstance();
 
         void Initialize();
@@ -92,7 +105,7 @@ namespace RyoEngine {
         void SetConditionFlagKey(const std::string& emitterName, const std::string& key);
 
         /// <summary>
-        /// 条件フラグに関係なく、このEmitterから1個だけ手動で発生させる。
+        /// 条件フラグに関係なく、このEmitterから1回ぶん(設定した発生数ぶん)手動で発生させる。
         /// </summary>
         void TriggerEmit(const std::string& name);
 
@@ -123,6 +136,8 @@ namespace RyoEngine {
             GPUParticleEmitterConfig config;
             GPUParticleEmitter emitter;
 
+            bool isMeshValid = false; // objが読み込めているか(falseの間は発生・Update・描画をすべて飛ばす)
+
             const bool* lastFlagPtr = nullptr; // 前フレームに参照していたフラグ(参照先が変わったかの判定用。参照はしない)
             bool previousFlagState = false;
             float emitTimer = 0.0f;
@@ -131,11 +146,12 @@ namespace RyoEngine {
             // Enter/フォーカス外れで確定するまではこちらに溜めておく)
             char meshPathBuffer[256] = {};
             char texturePathBuffer[256] = {};
+            int maxParticleCountBuffer = 500; // DragInt用。ドラッグを離した瞬間にconfigへ反映する
         };
 
         // 1体ぶん、configの内容でEmitterを(再)生成する。パス変更時の再読み込みにも使う
         void ApplyConfig(ManagedEmitter& managed);
-        // 1体ぶん、configの設定(固定/乱数の速度・座標オフセット等)に従って実際にEmit()を1回呼ぶ
+        // 1体ぶん、configの設定(固定/乱数の速度・座標オフセット・初期姿勢・発生数等)に従って実際にEmit()を呼ぶ
         void EmitOnce(ManagedEmitter& managed);
 
         // キーから登録済みのポインタを引く。空キー・未登録ならnullptr

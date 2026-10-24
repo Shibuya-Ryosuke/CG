@@ -9,6 +9,7 @@
 
 #include <RyoEngine.h>
 #include <fstream>
+#include <filesystem>
 #include <vector>
 #include <utility>
 #include <json.hpp>
@@ -79,34 +80,70 @@ namespace RyoEngine {
         //       GPUParticleEmitterは内部バッファを作り直す必要があるため、一旦Finalize()してから
         //       Initialize()し直す(初回生成時もFinalize()は安全な空振りになる)。
         managed.emitter.Finalize();
+
+        // objが存在しない場合は読み込みに行かない(読み込み側のassertで落ちるのを防ぐ)
+        std::error_code ec;
+        if (managed.config.meshPath.empty() || !std::filesystem::is_regular_file(managed.config.meshPath, ec)) {
+            Logger::LogError("[GPUParticleManager] objパスの不整合 : 入力されたパス[" + managed.config.meshPath + "]");
+            managed.isMeshValid = false;
+            return;
+        }
+
         managed.emitter.Initialize(managed.config.meshPath, managed.config.maxParticleCount,
             managed.config.billboard, managed.config.blendMode);
         managed.emitter.SetGravity(managed.config.gravity);
         managed.emitter.SetTexture(managed.config.texturePath);
+        managed.isMeshValid = true;
     }
 
     void GPUParticleManager::EmitOnce(ManagedEmitter& managed) {
+        // objが読み込めていないEmitterはGPUバッファが無いので何もしない
+        if (!managed.isMeshValid) {
+            return;
+        }
+
         const GPUParticleEmitterConfig& config = managed.config;
 
         const Vector3* tracked = FindPosition(config.trackedPositionKey);
         Vector3 basePosition = tracked ? *tracked : config.basePosition;
-        Vector3 positionOffset = {
-            RandomFloat(config.positionOffsetRandomMin.x, config.positionOffsetRandomMax.x),
-            RandomFloat(config.positionOffsetRandomMin.y, config.positionOffsetRandomMax.y),
-            RandomFloat(config.positionOffsetRandomMin.z, config.positionOffsetRandomMax.z),
-        };
-        Vector3 position = basePosition + positionOffset;
 
-        Vector3 velocity = config.velocity;
-        if (config.useRandomVelocity) {
-            velocity = {
-                RandomFloat(config.velocityRandomMin.x, config.velocityRandomMax.x),
-                RandomFloat(config.velocityRandomMin.y, config.velocityRandomMax.y),
-                RandomFloat(config.velocityRandomMin.z, config.velocityRandomMax.z),
-            };
+        // 発生依頼の空きを超える分は出さない(Emit()側で1粒ごとにログが出て溢れるのを防ぐ)
+        uint32_t count = config.emitCount;
+        uint32_t capacity = managed.emitter.GetRemainingSpawnCapacity();
+        if (count > capacity) {
+            Logger::Log("[GPUParticleManager] EmitOnce: 1フレームあたりの発生依頼上限に達したため、一部を発生させませんでした\n");
+            count = capacity;
         }
 
-        managed.emitter.Emit(position, velocity, config.color, config.scale, config.fixedRotation, config.lifeTime);
+        for (uint32_t i = 0; i < count; ++i) {
+            // 1粒ごとに乱数を引き直して、ばらけて出るようにする
+            Vector3 positionOffset = {
+                RandomFloat(config.positionOffsetRandomMin.x, config.positionOffsetRandomMax.x),
+                RandomFloat(config.positionOffsetRandomMin.y, config.positionOffsetRandomMax.y),
+                RandomFloat(config.positionOffsetRandomMin.z, config.positionOffsetRandomMax.z),
+            };
+            Vector3 position = basePosition + positionOffset;
+
+            Vector3 velocity = config.velocity;
+            if (config.useRandomVelocity) {
+                velocity = {
+                    RandomFloat(config.velocityRandomMin.x, config.velocityRandomMax.x),
+                    RandomFloat(config.velocityRandomMin.y, config.velocityRandomMax.y),
+                    RandomFloat(config.velocityRandomMin.z, config.velocityRandomMax.z),
+                };
+            }
+
+            Vector3 rotation = config.fixedRotation;
+            if (config.useRandomRotation) {
+                rotation = {
+                    RandomFloat(config.rotationRandomMin.x, config.rotationRandomMax.x),
+                    RandomFloat(config.rotationRandomMin.y, config.rotationRandomMax.y),
+                    RandomFloat(config.rotationRandomMin.z, config.rotationRandomMax.z),
+                };
+            }
+
+            managed.emitter.Emit(position, velocity, config.color, config.scale, rotation, config.lifeTime);
+        }
     }
 
     bool GPUParticleManager::CreateEmitter(const std::string& name, const GPUParticleEmitterConfig& config) {
@@ -124,6 +161,7 @@ namespace RyoEngine {
 #ifdef _DEBUG
         strcpy_s(managed->meshPathBuffer, sizeof(managed->meshPathBuffer), config.meshPath.c_str());
         strcpy_s(managed->texturePathBuffer, sizeof(managed->texturePathBuffer), config.texturePath.c_str());
+        managed->maxParticleCountBuffer = static_cast<int>(config.maxParticleCount);
 #endif
 
         ApplyConfig(*managed);
@@ -217,6 +255,11 @@ namespace RyoEngine {
 
     void GPUParticleManager::Update(float deltaTime) {
         for (auto& [name, managed] : emitters_) {
+            // objが読み込めていないEmitterはGPUバッファが無いのでDispatchさせない
+            if (!managed->isMeshValid) {
+                continue;
+            }
+
             bool shouldEmit = false;
 
             const bool* flag = FindFlag(managed->config.conditionFlagKey);
@@ -258,6 +301,9 @@ namespace RyoEngine {
 
     void GPUParticleManager::Draw(const Camera& camera) {
         for (auto& [name, managed] : emitters_) {
+            if (!managed->isMeshValid) {
+                continue;
+            }
             managed->emitter.Draw(camera);
         }
     }
@@ -303,11 +349,15 @@ namespace RyoEngine {
             j["maxParticleCount"] = c.maxParticleCount;
             j["scale"] = c.scale;
             j["lifeTime"] = c.lifeTime;
+            j["emitCount"] = c.emitCount;
             j["gravity"] = c.gravity;
             j["color"] = ToJson(c.color);
             j["blendMode"] = (c.blendMode == GPUParticleCommon::BlendMode::Additive) ? "Additive" : "Alpha";
             j["billboard"] = c.billboard;
             j["fixedRotation"] = ToJson(c.fixedRotation);
+            j["useRandomRotation"] = c.useRandomRotation;
+            j["rotationRandomMin"] = ToJson(c.rotationRandomMin);
+            j["rotationRandomMax"] = ToJson(c.rotationRandomMax);
 
             j["useRandomVelocity"] = c.useRandomVelocity;
             j["velocity"] = ToJson(c.velocity);
@@ -334,6 +384,16 @@ namespace RyoEngine {
             c.maxParticleCount = j.value("maxParticleCount", def.maxParticleCount);
             c.scale = j.value("scale", def.scale);
             c.lifeTime = j.value("lifeTime", def.lifeTime);
+
+            // emitCountが無い古いファイルは1粒として読む。範囲外の値は1〜上限に収める
+            c.emitCount = j.value("emitCount", def.emitCount);
+            if (c.emitCount < 1) {
+                c.emitCount = 1;
+            }
+            if (c.emitCount > GPUParticleManager::kMaxEmitCount) {
+                c.emitCount = GPUParticleManager::kMaxEmitCount;
+            }
+
             c.gravity = j.value("gravity", def.gravity);
             c.color = ReadVector4(j, "color", def.color);
 
@@ -342,6 +402,10 @@ namespace RyoEngine {
 
             c.billboard = j.value("billboard", def.billboard);
             c.fixedRotation = ReadVector3(j, "fixedRotation", def.fixedRotation);
+            // 初期姿勢の乱数設定が無い古いファイルは、乱数なし(fixedRotationのみ)として読む
+            c.useRandomRotation = j.value("useRandomRotation", def.useRandomRotation);
+            c.rotationRandomMin = ReadVector3(j, "rotationRandomMin", def.rotationRandomMin);
+            c.rotationRandomMax = ReadVector3(j, "rotationRandomMax", def.rotationRandomMax);
 
             c.useRandomVelocity = j.value("useRandomVelocity", def.useRandomVelocity);
             c.velocity = ReadVector3(j, "velocity", def.velocity);
@@ -465,9 +529,12 @@ namespace RyoEngine {
             ImGui::InputText("名前", newNameBuffer_, sizeof(newNameBuffer_));
             ImGui::InputText("objパス", newMeshPathBuffer_, sizeof(newMeshPathBuffer_));
             ImGui::InputText("テクスチャパス(空可)", newTexturePathBuffer_, sizeof(newTexturePathBuffer_));
-            ImGui::InputInt("最大数", &newMaxParticleCount_);
+            ImGui::DragInt("最大数", &newMaxParticleCount_, 1.0f, 1, kMaxParticleCountLimit);
             if (newMaxParticleCount_ < 1) {
                 newMaxParticleCount_ = 1;
+            }
+            if (newMaxParticleCount_ > kMaxParticleCountLimit) {
+                newMaxParticleCount_ = kMaxParticleCountLimit;
             }
 
             if (ImGui::Button("作成")) {
@@ -495,6 +562,10 @@ namespace RyoEngine {
                 GPUParticleEmitterConfig& config = managed->config;
                 bool needReapply = false;
 
+                if (!managed->isMeshValid) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "objが読み込めていません(パスを確認してEnterで再読み込み)");
+                }
+
                 // objパス (Enter/フォーカス外れで確定)
                 bool meshEnter = ImGui::InputText("objパス", managed->meshPathBuffer, sizeof(managed->meshPathBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
                 if (meshEnter || ImGui::IsItemDeactivatedAfterEdit()) {
@@ -509,11 +580,15 @@ namespace RyoEngine {
                     managed->emitter.SetTexture(config.texturePath);
                 }
 
-                int maxCount = static_cast<int>(config.maxParticleCount);
-                ImGui::InputInt("最大数", &maxCount);
+                // 最大数はGPUバッファの作り直しが必要なので、ドラッグ中ではなく離した瞬間に1回だけ反映する
+                int& maxCount = managed->maxParticleCountBuffer;
+                ImGui::DragInt("最大数", &maxCount, 1.0f, 1, kMaxParticleCountLimit);
                 if (ImGui::IsItemDeactivatedAfterEdit()) {
                     if (maxCount < 1) {
                         maxCount = 1;
+                    }
+                    if (maxCount > kMaxParticleCountLimit) {
+                        maxCount = kMaxParticleCountLimit;
                     }
                     config.maxParticleCount = static_cast<uint32_t>(maxCount);
                     needReapply = true;
@@ -521,6 +596,22 @@ namespace RyoEngine {
 
                 ImGui::DragFloat("スケール", &config.scale, 0.01f, 0.01f, 100.0f);
                 ImGui::DragFloat("寿命(秒)", &config.lifeTime, 0.01f, 0.01f, 60.0f);
+
+                // 1回の発生で何粒出すか(再生成不要。次の発生から反映される)
+                int emitCount = static_cast<int>(config.emitCount);
+                if (ImGui::DragInt("発生数(1回あたり)", &emitCount, 1.0f, 1, static_cast<int>(kMaxEmitCount))) {
+                    if (emitCount < 1) {
+                        emitCount = 1;
+                    }
+                    if (emitCount > static_cast<int>(kMaxEmitCount)) {
+                        emitCount = static_cast<int>(kMaxEmitCount);
+                    }
+                    config.emitCount = static_cast<uint32_t>(emitCount);
+                }
+                if (config.emitCount > config.maxParticleCount) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "発生数が最大数を超えています(超えた分は出ません)");
+                }
+
                 if (ImGui::DragFloat("重力", &config.gravity, 0.01f, -50.0f, 50.0f)) {
                     managed->emitter.SetGravity(config.gravity);
                 }
@@ -537,7 +628,17 @@ namespace RyoEngine {
                 if (ImGui::Checkbox("ビルボード", &config.billboard)) {
                     needReapply = true;
                 }
-                if (!config.billboard) {
+
+                ImGui::Separator();
+                ImGui::Text("初期姿勢");
+                if (config.billboard) {
+                    ImGui::TextDisabled("ビルボード中はz(ロール)のみ反映されます");
+                }
+                ImGui::Checkbox("初期姿勢を乱数にする", &config.useRandomRotation);
+                if (config.useRandomRotation) {
+                    ImGui::DragFloat3("初期姿勢(最小・ラジアン)", &config.rotationRandomMin.x, 0.01f);
+                    ImGui::DragFloat3("初期姿勢(最大・ラジアン)", &config.rotationRandomMax.x, 0.01f);
+                } else {
                     ImGui::DragFloat3("固定姿勢(ラジアン)", &config.fixedRotation.x, 0.01f);
                 }
 
@@ -568,14 +669,14 @@ namespace RyoEngine {
                 if (const bool* flag = FindFlag(config.conditionFlagKey)) {
                     ImGui::Text("現在の値: %s", *flag ? "true" : "false");
                 } else {
-                    ImGui::TextDisabled("条件フラグ未選択(「今すぐ1個発生」での手動発生のみ)");
+                    ImGui::TextDisabled("条件フラグ未選択(「今すぐ発生」での手動発生のみ)");
                 }
                 ImGui::Checkbox("フラグが立っている間ずっと発生", &config.continuousWhileTrue);
                 if (config.continuousWhileTrue) {
                     ImGui::DragFloat("発生間隔(秒)", &config.emitInterval, 0.01f, 0.0f, 10.0f);
                 }
 
-                if (ImGui::Button("今すぐ1個発生")) {
+                if (ImGui::Button("今すぐ発生")) {
                     TriggerEmit(name);
                 }
                 ImGui::SameLine();
