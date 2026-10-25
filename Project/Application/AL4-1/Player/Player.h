@@ -35,6 +35,7 @@ namespace AL4_1 {
 		void OnDamage(float damage);
 		const RyoEngine::OBB GetOBB()const { return obb_; }
 		float GetHP() const { return hp_; }
+		float GetMaxHP() const { return maxHp_; }
 		bool IsDead() const { return isDead_; }
 
 		// --- 攻撃（パリィを兼ねる） ---

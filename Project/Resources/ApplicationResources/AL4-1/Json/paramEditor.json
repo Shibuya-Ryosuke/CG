@@ -1,4 +1,204 @@
 {
+    "Background": {
+        "Cube": {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "count": 10,
+            "emissiveColor": [
+                0.0,
+                0.09313726425170898,
+                0.027393316850066185
+            ],
+            "emissiveIntensity": 0.0,
+            "isRandomRotate": true,
+            "loopHalfWidth": 30.0,
+            "rotateSpeed": [
+                30.0,
+                50.0,
+                0.0
+            ],
+            "scaleMax": 0.8700000047683716,
+            "scaleMin": 0.3400000035762787,
+            "speed": 0.8799999952316284,
+            "yMax": 22.5,
+            "yMin": -0.699999988079071,
+            "z": 12.0
+        },
+        "DataCube": {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "count": 8,
+            "emissiveColor": [
+                0.0,
+                0.07295273244380951,
+                0.22549021244049072
+            ],
+            "emissiveIntensity": 0.12999999523162842,
+            "isRandomRotate": true,
+            "loopHalfWidth": 34.0,
+            "rotateSpeed": [
+                20.0,
+                40.0,
+                0.0
+            ],
+            "scaleMax": 1.159999966621399,
+            "scaleMin": 0.6000000238418579,
+            "speed": -0.7099999785423279,
+            "yMax": 22.5,
+            "yMin": 8.399999618530273,
+            "z": 16.0
+        },
+        "Monitor": {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "count": 5,
+            "emissiveColor": [
+                0.11072663217782974,
+                0.0,
+                0.11764705181121826
+            ],
+            "emissiveIntensity": 0.07000000029802322,
+            "isRandomRotate": true,
+            "loopHalfWidth": 36.0,
+            "rotateSpeed": [
+                3.0,
+                -1.0,
+                3.0
+            ],
+            "scaleMax": 2.5,
+            "scaleMin": 1.1699999570846558,
+            "speed": -1.2400000095367432,
+            "yMax": 21.100000381469727,
+            "yMin": -7.400000095367432,
+            "z": 18.0
+        },
+        "Pillar": {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "count": 6,
+            "emissiveColor": [
+                0.14705882966518402,
+                0.0,
+                0.1666666865348816
+            ],
+            "emissiveIntensity": 0.029999999329447746,
+            "isRandomRotate": false,
+            "loopHalfWidth": 50.0,
+            "rotateSpeed": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scaleMax": 1.840000033378601,
+            "scaleMin": 1.6200000047683716,
+            "speed": 0.8299999833106995,
+            "yMax": -3.0999999046325684,
+            "yMin": -13.5,
+            "z": 30.0
+        },
+        "Pipe": {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "count": 4,
+            "emissiveColor": [
+                0.0,
+                0.044117629528045654,
+                0.040224894881248474
+            ],
+            "emissiveIntensity": 0.17000000178813934,
+            "isRandomRotate": false,
+            "loopHalfWidth": 45.0,
+            "rotateSpeed": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scaleMax": 1.9900000095367432,
+            "scaleMin": 0.800000011920929,
+            "speed": -1.5,
+            "yMax": 22.700000762939453,
+            "yMin": 2.5,
+            "z": 26.0
+        },
+        "Server": {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "count": 4,
+            "emissiveColor": [
+                0.0024509821087121964,
+                0.0,
+                0.08333331346511841
+            ],
+            "emissiveIntensity": 0.10999999940395355,
+            "isRandomRotate": false,
+            "loopHalfWidth": 40.0,
+            "rotateSpeed": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scaleMax": 2.299999952316284,
+            "scaleMin": 1.7999999523162842,
+            "speed": 1.9600000381469727,
+            "yMax": 24.799999237060547,
+            "yMin": -27.200000762939453,
+            "z": 23.700000762939453
+        },
+        "Wall": {
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "count": 8,
+            "emissiveColor": [
+                0.0,
+                0.0015859431587159634,
+                0.05392158031463623
+            ],
+            "emissiveIntensity": 0.09000000357627869,
+            "isRandomRotate": false,
+            "loopHalfWidth": 60.0,
+            "rotateSpeed": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scaleMax": 6.340000152587891,
+            "scaleMin": 6.28000020980835,
+            "speed": 0.0,
+            "yMax": 5.400000095367432,
+            "yMin": 6.900000095367432,
+            "z": 39.400001525878906
+        },
+        "isEnabled": true,
+        "speedScale": 1.0
+    },
     "Boss": {
         "Emissive": {
             "color": [
@@ -6,8 +206,8 @@
                 0.0,
                 0.2647058963775635
             ],
-            "intensity": 6.789999961853027,
-            "isIllumination": true
+            "intensity": 5.019999980926514,
+            "isIllumination": false
         },
         "Look": {
             "baseColor": [
@@ -29,7 +229,7 @@
                 1.0
             ],
             "hitFlashTime": 0.15000000596046448,
-            "hitShake": 0.25,
+            "hitShake": 0.6499999761581421,
             "hitShakeTime": 0.20000000298023224,
             "meleeActiveColor": [
                 1.0,
@@ -54,15 +254,15 @@
         "Melee": {
             "activeTime": 0.20000000298023224,
             "burstReturnTime": 0.33000001311302185,
-            "burstScale": 1.2999999523162842,
+            "burstScale": 1.600000023841858,
             "counterDamage": 15.0,
             "damage": 20.0,
             "glintTime": 0.15000000596046448,
             "heightOffset": 0.0,
             "recoveryTime": 0.6000000238418579,
-            "stunKnockback": 3.0,
+            "stunKnockback": 7.0,
             "stunKnockbackTime": 0.30000001192092896,
-            "stunTime": 1.5,
+            "stunTime": 2.5,
             "windupTime": 0.699999988079071
         },
         "Shot": {
@@ -112,9 +312,9 @@
         ],
         "moveTime": 0.800000011920929,
         "obbHalfSize": [
-            3.0,
-            3.0,
-            3.0
+            0.0,
+            0.0,
+            0.0
         ],
         "targetAimOffsetY": 1.0,
         "transform": {
@@ -124,13 +324,13 @@
                 0.0
             ],
             "scale": [
-                1.5,
-                1.5,
-                1.5
+                0.0,
+                0.0,
+                0.0
             ],
             "translate": [
-                35.35419464111328,
-                15.934707641601563,
+                46.866031646728516,
+                17.234310150146484,
                 0.0
             ]
         }
@@ -155,15 +355,15 @@
         "turnRate": 180.0
     },
     "FollowCamera": {
-        "distance": 50.400001525878906,
+        "distance": 48.0,
         "focusDelay": 0.3499999940395355,
-        "focusDistance": 14.0,
+        "focusDistance": 11.800000190734863,
         "focusOffsetY": 0.0,
         "focusReturnTime": 1.0,
         "followDelay": 0.15000000596046448,
         "lookOffsetX": 0.0,
         "lookOffsetY": 1.0,
-        "pitch": 10.0,
+        "pitch": 9.0,
         "yaw": 0.0
     },
     "Game": {
@@ -262,8 +462,8 @@
                 1.0
             ],
             "translate": [
-                8.0,
-                3.0,
+                35.09648132324219,
+                11.0,
                 0.0
             ]
         },

@@ -127,6 +127,15 @@
     <Filter Include="Application\AL4-1\Enemy\Boss">
       <UniqueIdentifier>{69d083ed-445d-4600-ac84-98fb95115993}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Application\AL4-1\Background">
+      <UniqueIdentifier>{6b1938dd-bc77-4cf3-9298-c457ee0dbd73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1\UI">
+      <UniqueIdentifier>{fd656778-872f-49cb-be1b-6702558b0fb6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\AL4-1\Fade">
+      <UniqueIdentifier>{5a0c5657-0b74-4901-950a-544168fa7118}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Original\Externals\imgui\imgui.cpp">
@@ -318,6 +327,15 @@
     </ClCompile>
     <ClCompile Include="Application\AL4-1\Scene\Result.cpp">
       <Filter>Application\AL4-1\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\Background\Background.cpp">
+      <Filter>Application\AL4-1\Background</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\UI\GameUI.cpp">
+      <Filter>Application\AL4-1\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\AL4-1\Fade\Fade.cpp">
+      <Filter>Application\AL4-1\Fade</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -554,6 +572,15 @@
     </ClInclude>
     <ClInclude Include="Application\AL4-1\Scene\Result.h">
       <Filter>Application\AL4-1\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\Background\Background.h">
+      <Filter>Application\AL4-1\Background</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\UI\GameUI.h">
+      <Filter>Application\AL4-1\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\AL4-1\Fade\Fade.h">
+      <Filter>Application\AL4-1\Fade</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

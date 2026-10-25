@@ -56,7 +56,7 @@ namespace AL4_1 {
 		GPUParticleManager::GetInstance()->Draw(camera);
 		ground_->TransferMatrix(camera);
 		sky_->TransferMatrix(camera);
-		ground_->Draw();
+		//ground_->Draw();
 		sky_->Draw();
 		switch (scene_) {
 		case Scene::Title:

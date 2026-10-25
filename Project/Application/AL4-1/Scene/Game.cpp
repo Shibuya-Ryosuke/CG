@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "../GameResources/GameTex.h"
 #include <algorithm>
 
 using namespace RyoEngine;
@@ -18,6 +19,10 @@ namespace AL4_1 {
 		// 弾の共有パラメータを登録（インスタンスが増減するので1回だけ）
 		Bullet::RegisterInParamEditor();
 		RegisterInParamEditor();
+		// 背景のパラメータを登録（個数はロード後の値で作る）
+		background_.RegisterInParamEditor();
+		// UIのパラメータを登録
+		gameUI_.RegisterInParamEditor();
 
 		// マップ読み込み（ブロックのモデルは 1x1x1・原点が中心のobjを用意する）
 		mapChipField_.Load(
@@ -47,6 +52,12 @@ namespace AL4_1 {
 		// 追従カメラ（スポーン位置が決まった後に初期化する）
 		followCamera_.Initialize(&mapChipField_);
 
+		// 背景（ロードした個数で作り、プレイヤーのスポーン位置を基準に並べる）
+		background_.Initialize(player_.GetPosition());
+
+		// UI（登場演出が終わるまでは非表示）
+		gameUI_.Initialize();
+
 		// ボス登場演出から始める
 		ChangePhase(Phase::Intro);
 	}
@@ -60,8 +71,14 @@ namespace AL4_1 {
 		// プレイヤーの移動後にカメラを更新
 		followCamera_.Update(player_.GetPosition());
 
+		// 背景（プレイヤーの位置を基準にループ）
+		background_.Update(player_.GetPosition());
+
 		boss_.Update();
 		bulletManager_.Update();
+
+		// UI（HPの割合を渡す）
+		gameUI_.Update(player_.GetHP() / player_.GetMaxHP(), boss_.GetHP() / boss_.GetMaxHP());
 
 		// 当たり判定走査（戦闘中だけ）
 		if (phase_ == Phase::Battle) {
@@ -88,6 +105,8 @@ namespace AL4_1 {
 	}
 
 	void Game::Draw(RyoEngine::Camera& camera) {
+		background_.Draw(camera);
+
 		mapChipField_.Draw(camera);
 
 		player_.Draw(camera);
@@ -98,6 +117,9 @@ namespace AL4_1 {
 		if (boss_.IsCollidable()) {
 			PrimitiveRenderer::DrawOBB(boss_.GetOBB(), { 0.0f,1.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 		}
+
+		// UI
+		gameUI_.Draw();
 	}
 
 	void Game::Finalize() {}
@@ -163,22 +185,30 @@ namespace AL4_1 {
 			player_.SetControllable(false);
 			boss_.SetCanAct(false);
 			followCamera_.SetFocus(boss_.GetCenter());
+			// 登場演出が終わるまでUIは出さない
+			gameUI_.Reset();
 			break;
 
 		case Phase::Battle:
 			player_.SetControllable(true);
 			boss_.SetCanAct(true);
+			// 登場演出が終わったのでHPバーを出す
+			gameUI_.SetHpVisible(true);
 			break;
 
 		case Phase::BossDefeat:
 			player_.SetControllable(false);
 			bulletManager_.Clear();
 			followCamera_.SetFocus(boss_.GetCenter());
+			// HPバーは残したままクリアの文字を出す
+			gameUI_.ShowClearText();
 			break;
 
 		case Phase::GameOver:
 		{
 			boss_.SetCanAct(false);
+			// HPバーは残したまま失敗の文字を出す
+			gameUI_.ShowFailedText();
 			// 被弾・パリィの演出が途中で止まったままにならないように戻す
 			SetTimeScale(1.0f);
 			auto ppInstance = PostProcess::GetInstance();

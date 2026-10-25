@@ -6,6 +6,8 @@
 #include "../Bullet/BulletManager.h"
 #include "../MapChipField/MapChipField.h"
 #include "../FollowCamera/FollowCamera.h"
+#include "../Background/Background.h"
+#include "../UI/GameUI.h"
 
 namespace AL4_1 {
 	class Game {
@@ -69,6 +71,12 @@ namespace AL4_1 {
 
 		// プレイヤー追従カメラ
 		FollowCamera followCamera_{};
+
+		// 背景の装飾（横に流れてループする）
+		Background background_{};
+
+		// UI（HPバー・クリア/失敗の文字）
+		GameUI gameUI_{};
 
 		// ボスの弾（プールで使い回す）
 		BulletManager bulletManager_{};

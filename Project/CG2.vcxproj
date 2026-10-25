@@ -16,11 +16,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application\AL4-1\AL4_1.cpp" />
+    <ClCompile Include="Application\AL4-1\Background\Background.cpp" />
     <ClCompile Include="Application\AL4-1\Bullet\Bullet.cpp" />
     <ClCompile Include="Application\AL4-1\Bullet\BulletManager.cpp" />
     <ClCompile Include="Application\AL4-1\Enemy\Boss\Boss.cpp" />
     <ClCompile Include="Application\AL4-1\Enemy\ShotEnemy\ShotEnemy.cpp" />
     <ClCompile Include="Application\AL4-1\Enemy\WalkEnemy\WalkEnemy.cpp" />
+    <ClCompile Include="Application\AL4-1\Fade\Fade.cpp" />
     <ClCompile Include="Application\AL4-1\FollowCamera\FollowCamera.cpp" />
     <ClCompile Include="Application\AL4-1\MapChipField\MapChipField.cpp" />
     <ClCompile Include="Application\AL4-1\Player\Player.cpp" />
@@ -28,6 +30,7 @@
     <ClCompile Include="Application\AL4-1\Scene\Result.cpp" />
     <ClCompile Include="Application\AL4-1\Scene\SceneManager.cpp" />
     <ClCompile Include="Application\AL4-1\Scene\Title.cpp" />
+    <ClCompile Include="Application\AL4-1\UI\GameUI.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
@@ -150,12 +153,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AL4-1\AL4_1.h" />
+    <ClInclude Include="Application\AL4-1\Background\Background.h" />
     <ClInclude Include="Application\AL4-1\Bullet\Bullet.h" />
     <ClInclude Include="Application\AL4-1\Bullet\BulletManager.h" />
     <ClInclude Include="Application\AL4-1\Enemy\Boss\Boss.h" />
     <ClInclude Include="Application\AL4-1\Enemy\EnemyBase.h" />
     <ClInclude Include="Application\AL4-1\Enemy\ShotEnemy\ShotEnemy.h" />
     <ClInclude Include="Application\AL4-1\Enemy\WalkEnemy\WalkEnemy.h" />
+    <ClInclude Include="Application\AL4-1\Fade\Fade.h" />
     <ClInclude Include="Application\AL4-1\FollowCamera\FollowCamera.h" />
     <ClInclude Include="Application\AL4-1\GameResources\GameSound.h" />
     <ClInclude Include="Application\AL4-1\GameResources\GameTex.h" />
@@ -165,6 +170,7 @@
     <ClInclude Include="Application\AL4-1\Scene\Result.h" />
     <ClInclude Include="Application\AL4-1\Scene\SceneManager.h" />
     <ClInclude Include="Application\AL4-1\Scene\Title.h" />
+    <ClInclude Include="Application\AL4-1\UI\GameUI.h" />
     <ClInclude Include="Original\Graphics\2D\Sprite.h" />
     <ClInclude Include="Original\Graphics\2D\SpriteCommon.h" />
     <ClInclude Include="Original\Graphics\3D\InstancedModel.h" />

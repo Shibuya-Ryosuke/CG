@@ -51,6 +51,7 @@ namespace AL4_1 {
 		homingTimer_ = 0.0f;
 
 		owner_->SetInstanceTransform(handle_, transform_);
+		owner_->SetInstanceColor(handle_, { 0.6f,0.2f,0.8f,1.0f });
 	}
 
 	void Bullet::SetHoming(const RyoEngine::Vector3* target, const RyoEngine::Vector3& offset, float turnRateDeg, float duration) {
