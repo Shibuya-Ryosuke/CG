@@ -1,4 +1,5 @@
 #include "SceneManager.h"
+#include "../GameResources/GameTex.h"
 
 using namespace RyoEngine;
 using namespace std;
@@ -8,11 +9,24 @@ namespace AL4_1 {
 	SceneManager::~SceneManager() = default;
 
 	void SceneManager::Initialize(Scene scene) {
+		// テクスチャの読み込み（フェードやUIで使う）
+		GameImage::Initialize();
+		// ParamEditor::Load() は Game::Initialize() の中で呼ばれるので、その前に登録する
+		RegisterInParamEditor();
+
 		title_.Initialize();
 		game_.Initialize();
 		result_.Initialize();
 
 		scene_ = scene;
+
+		// 起動時も真っ黒からフェードインで始める
+		fade_.Initialize();
+		ChangeScene(scene_);
+		fade_.StartFadeOut(0.0f);
+		fade_.StartFadeIn(fadeInTime_);
+		isChanging_ = true;
+		isWaitingFadeIn_ = true;
 
 		ground_ = Model::Create("Resources/ApplicationResources/AL4-1/ground.obj");
 		sky_ = Model::Create("Resources/ApplicationResources/AL4-1/SkyDome/skydome.obj");
@@ -21,32 +35,56 @@ namespace AL4_1 {
 	void SceneManager::Update() {
 		GPUParticleManager::GetInstance()->Update(GetDeltaTime());
 
+		// フェード中（切り替えの途中）はキー入力を受け付けない
+		const bool isInputEnabled = !isChanging_;
+		title_.SetInputEnabled(isInputEnabled);
+		game_.SetInputEnabled(isInputEnabled);
+
 		switch (scene_) {
 		case Scene::Title:
 			title_.Update();
 			if (title_.IsFinished()) {
-				ChangeScene(Scene::Game);
+				RequestChangeScene(Scene::Game);
 			}
 			break;
 
 		case Scene::Game:
 			game_.Update();
+			// リザルトは使わない（クリア演出はGameの中で行う）
 			if (game_.IsClear()) {
-				ChangeScene(Scene::Result);
+				RequestChangeScene(Scene::Title);
 			} else if (game_.IsRequestTitle()) {
-				ChangeScene(Scene::Title);
+				RequestChangeScene(Scene::Title);
+			} else if (game_.IsRequestRetry()) {
+				// 同じシーンへ切り替える = Start() し直す
+				RequestChangeScene(Scene::Game);
 			}
 			break;
 
 		case Scene::Result:
 			result_.Update();
 			if (result_.IsFinished()) {
-				ChangeScene(Scene::Title);
+				RequestChangeScene(Scene::Title);
 			}
 			break;
 
 		default:
 			break;
+		}
+
+		// --- フェード ---
+		fade_.Update();
+		// 真っ黒になりきったら切り替えて、フェードインを始める
+		if (isChanging_ && !isWaitingFadeIn_ && fade_.IsFadeOutFinished()) {
+			ChangeScene(nextScene_);
+			fade_.StartFadeIn(fadeInTime_);
+			isWaitingFadeIn_ = true;
+		}
+		// フェードインが終わった
+		if (isWaitingFadeIn_ && fade_.GetState() == Fade::State::None) {
+			isWaitingFadeIn_ = false;
+			isChanging_ = false;
+			OnFadeInFinished();
 		}
 	}
 
@@ -74,9 +112,37 @@ namespace AL4_1 {
 		default:
 			break;
 		}
+
+		// フェードは一番最後に描く（全部の上に重ねる）
+		fade_.Draw();
 	}
 
-	void SceneManager::Finalize() {}
+	void SceneManager::Finalize() {
+		fade_.Finalize();
+	}
+
+	void SceneManager::RequestChangeScene(Scene next) {
+		// 切り替えの途中なら受け付けない（IsFinished などが true のままでも二重に切り替えない）
+		if (isChanging_) { return; }
+		nextScene_ = next;
+		isChanging_ = true;
+		isWaitingFadeIn_ = false;
+		fade_.StartFadeOut(fadeOutTime_);
+	}
+
+	void SceneManager::OnFadeInFinished() {
+		// ゲームはフェードインが終わってからボス登場演出を始める
+		if (scene_ == Scene::Game) {
+			game_.BeginIntro();
+		}
+	}
+
+	void SceneManager::RegisterInParamEditor() {
+		ParamEditor::BeginGroup("SceneManager");
+		ParamEditor::RegisterValue("fadeOutTime", &fadeOutTime_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::RegisterValue("fadeInTime", &fadeInTime_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::EndGroup();
+	}
 
 	void SceneManager::ChangeScene(Scene next) {
 		scene_ = next;

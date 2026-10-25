@@ -57,6 +57,8 @@ namespace AL4_1 {
 		void OnDamage(float damage);
 		// 近接攻撃をカウンターされた（攻撃判定中のみ有効）
 		void OnCountered();
+		// フルパリィを受けて感電する（パーティクルのフラグを shockTime_ の間立てる）
+		void StartShock();
 
 		// 狙う対象（Rush や HomingShot で使う）
 		void SetTarget(const RyoEngine::Vector3* target) { target_ = target; }
@@ -207,6 +209,7 @@ namespace AL4_1 {
 		float meleeBurstScale_ = 1.3f;		// 爆発の瞬間のスケールの倍率（判定も一緒に大きくなる）
 		float meleeBurstReturnTime_ = 0.33f;	// 爆発で大きくなってから元の大きさに戻るまでの時間（60fpsで約20フレーム）
 		float meleeBurstTimer_ = 0.0f;		// 元の大きさに戻るまでの残り時間
+		float meleeWindupShakeMax_ = 0.3f;	// 予備動作中の揺れの最大（爆発の直前で最大になる。見た目だけ）
 		float meleeDamage_ = 20.0f;
 		float meleeDir_ = -1.0f;			// 攻撃する向き（+1:右 -1:左）
 		bool meleeHitDone_ = false;
@@ -232,6 +235,13 @@ namespace AL4_1 {
 		float hitShake_ = 0.25f;		// 揺れ幅（時間とともに小さくなる）
 		// ダメージが入ったフレームだけtrue（パーティクルの発生フラグ用。次のUpdateの冒頭で戻す）
 		bool isHitTrigger_ = false;
+
+		// --- 感電（フルパリィを受けたとき）・スタン中（どちらもパーティクルのフラグ） ---
+		bool isShock_ = false;		// 感電中
+		bool isStunned_ = false;	// スタン中（カウンターで怯んでいる間）
+		float shockTimer_ = 0.0f;	// 感電の残り時間
+		float shockTime_ = 1.2f;	// 感電している時間
+		float shockShake_ = 0.12f;	// 感電中の細かい揺れ（見た目だけ）
 
 		// --- 色 ---
 		float hitFlashTimer_ = 0.0f;

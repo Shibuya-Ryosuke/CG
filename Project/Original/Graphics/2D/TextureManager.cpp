@@ -125,6 +125,7 @@ namespace RyoEngine {
         // テクスチャファイルを読んでプログラムで使えるようにする
         DirectX::ScratchImage image{};
         std::wstring filePathW = Logger::ConvertString(filePath);
+        OutputDebugStringA(("Load : " + filePath + "\n").c_str());
         HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
         assert(SUCCEEDED(hr));
 

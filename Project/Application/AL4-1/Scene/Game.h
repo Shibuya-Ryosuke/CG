@@ -14,9 +14,11 @@ namespace AL4_1 {
 	public:
 		// ゲームシーン内の進行
 		enum class Phase {
+			Wait,		// フェードインが終わるのを待つ（ボスはまだ出さない）
 			Intro,		// ボス登場演出
 			Battle,		// 戦闘
 			BossDefeat,	// ボス撃破演出
+			ClearResult,	// クリア結果（プレイヤーのズーム・クリアタイム・メニュー）
 			GameOver,	// ゲームオーバー演出
 			Clear,		// クリア
 		};
@@ -41,6 +43,12 @@ namespace AL4_1 {
 		bool IsClear() const { return phase_ == Phase::Clear; }
 		// ゲームオーバーからタイトルへ戻りたいか
 		bool IsRequestTitle() const { return isRequestTitle_; }
+		// ゲームオーバーからリトライしたいか（フェードを挟んで Start() し直してもらう）
+		bool IsRequestRetry() const { return isRequestRetry_; }
+		// フェードインが終わったら呼ぶ（ボス登場演出を始める）
+		void BeginIntro();
+		// キー入力を受け付けるか（フェード中は false にする）
+		void SetInputEnabled(bool enabled) { isInputEnabled_ = enabled; }
 
 		// ゲームシーン用の追従カメラ
 		RyoEngine::Camera& GetCamera() { return followCamera_.GetCamera(); }
@@ -57,6 +65,9 @@ namespace AL4_1 {
 		void UpdateIntro();
 		void UpdateBattle();
 		void UpdateBossDefeat();
+		void UpdateClearResult();
+		// メニューの操作（W/Sで選んでSpaceで決定）。クリア時とゲームオーバー時で共通
+		void UpdateMenu();
 		void UpdateGameOver();
 		// ゲームオーバー演出などで変えたポストエフェクトを元に戻す
 		void ResetPostEffects();
@@ -87,9 +98,18 @@ namespace AL4_1 {
 		RyoEngine::Vector3 playerSpawnPosition_{};
 
 		// ---- 進行 ----
-		Phase phase_ = Phase::Intro;
+		Phase phase_ = Phase::Wait;
 		float phaseTimer_ = 0.0f;		// 今のフェーズに入ってからの経過時間（実時間）
 		bool isRequestTitle_ = false;
+		bool isRequestRetry_ = false;
+		// クリアタイム（戦闘開始からボス撃破まで。実時間で計る）
+		float clearTime_ = 0.0f;
+		// メニューで選んでいる項目（GameUI::MenuItem の番号）
+		int32_t menuSelection_ = 0;
+		// フルパリィで跳ね返した弾（ボスに当たったら大ダメージ＋感電）。弾はプールなので、消えたら nullptr に戻す
+		const Bullet* fullParryBullet_ = nullptr;
+		// キー入力を受け付けるか
+		bool isInputEnabled_ = true;
 
 		// 登場演出
 		// ボスが降りきってからアップを続ける時間 → プレイヤーへ戻るのを待つ時間

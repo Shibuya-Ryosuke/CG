@@ -14,6 +14,10 @@ namespace AL4_1 {
 		GPUParticleManager::GetInstance()->RegisterFlag("isParryTrigger", &isParryTrigger_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerAttacking", &isAttacking_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerInvincible", &isInvincible_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge1", &isFirstCharge_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge2", &isSecondCharge_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerChargeMax", &isMaxCharge_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerFullParry", &isFullParryTrigger_);
 	}
 	Player::~Player() {
 		GPUParticleManager::GetInstance()->UnregisterPosition("playerPos");
@@ -22,6 +26,10 @@ namespace AL4_1 {
 		GPUParticleManager::GetInstance()->UnregisterFlag("isParryTrigger");
 		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerAttacking");
 		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerInvincible");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerCharge1");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerCharge2");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerChargeMax");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerFullParry");
 	}
 
 	void Player::Initialize() {
@@ -34,6 +42,7 @@ namespace AL4_1 {
 
 		// 1フレームだけのフラグを戻す（前フレームで立てた分は、このフレームの頭でパーティクルが読み終わっている）
 		isParryTrigger_ = false;
+		isFullParryTrigger_ = false;
 
 		// 移動
 		float moveX = 0.0f;
@@ -106,7 +115,11 @@ namespace AL4_1 {
 		attackObb_.size = attackHalfSize_;
 
 		// モデルの向きを facing_ の方へ補間（フレームレートに依存しない指数平滑）
-		const float targetYaw = facing_ > 0.0f ? facingRightYaw_ : facingLeftYaw_;
+		float targetYaw = facing_ > 0.0f ? facingRightYaw_ : facingLeftYaw_;
+		// クリア演出ではカメラの方を向く（左向きから回るときは、背中を見せないよう -360 した角度へ）
+		if (isFaceCamera_) {
+			targetYaw = currentYaw_ < 0.0f ? faceCameraYaw_ - 360.0f : faceCameraYaw_;
+		}
 		const float turnAlpha = turnDelay_ <= 0.0f ? 1.0f : 1.0f - std::exp(-dt / turnDelay_);
 		currentYaw_ += (targetYaw - currentYaw_) * turnAlpha;
 
@@ -140,7 +153,8 @@ namespace AL4_1 {
 		LightManager::SetLightPosition("playerLight", model_->GetTranslate());
 		LightManager::SetLightEnabled("playerLight", isIllumination_);
 		// 発光
-		model_->SetEmissive(emissiveColor_, emissiveIntensity_);
+		// （ゲージが溜まるほど強くなる。パーティクルの段階フラグもここで更新）
+		GaugeUpdate();
 	}
 
 	void Player::Draw(RyoEngine::Camera& camera) {
@@ -162,6 +176,8 @@ namespace AL4_1 {
 
 		// ダメージ処理
 		hp_ -= damage;
+		// 被弾したらゲージも少し減る（damageGaugePenalty_ が0なら減らない）
+		gauge_ = max(0.0f, gauge_ - damageGaugePenalty_);
 		if (hp_ <= 0.0f) {
 			hp_ = 0.0f;
 			isDead_ = true;
@@ -178,7 +194,10 @@ namespace AL4_1 {
 		PostProcess::GetInstance()->SetBlurEnabled(true);
 	}
 
-	void Player::OnParrySuccess(bool isCounter) {
+	bool Player::OnParrySuccess(bool isCounter) {
+		// ゲージ満タンでのパリィはフルパリィ（ゲージを全部使う）
+		const bool isFullParry = IsGaugeMax();
+
 		// 演出を最初から（カウンターの方が強く・遅く）
 		isParryEffect_ = true;
 		isParryTrigger_ = true;
@@ -188,7 +207,21 @@ namespace AL4_1 {
 		effectMaxChromatic_ = isCounter ? counterMaxChromatic_ : parryMaxChromatic_;
 		effectSlowScale_ = isCounter ? counterSlowScale_ : parrySlowScale_;
 
+		if (isFullParry) {
+			gauge_ = 0.0f;
+			isFullParryTrigger_ = true;
+			// フルパリィは一番強く・遅く
+			effectDuration_ = fullParryEffectDuration_;
+			effectPeakTime_ = fullParryEffectPeakTime_;
+			effectMaxChromatic_ = fullParryMaxChromatic_;
+			effectSlowScale_ = fullParrySlowScale_;
+		} else {
+			// ゲージを溜める（近接のカウンターの方が多く溜まる）
+			gauge_ = min(maxGauge_, gauge_ + (isCounter ? counterGaugeGain_ : parryGaugeGain_));
+		}
+
 		PostProcess::GetInstance()->SetChromaticAberrationEnabled(true);
+		return isFullParry;
 	}
 
 	void Player::ResetStatus() {
@@ -197,6 +230,7 @@ namespace AL4_1 {
 		velocity_ = { 0.0f,0.0f,0.0f };
 		facing_ = 1.0f;
 		currentYaw_ = facingRightYaw_;
+		isFaceCamera_ = false;
 		isAttacking_ = false;
 		isAttackHitDone_ = false;
 		attackTimer_ = 0.0f;
@@ -208,6 +242,12 @@ namespace AL4_1 {
 		damageTakenDuration_ = 0.0f;
 		isInvincible_ = false;
 		invincibleDuration_ = 0.0f;
+		gauge_ = 0.0f;
+		gaugeTimer_ = 0.0f;
+		isFirstCharge_ = false;
+		isSecondCharge_ = false;
+		isMaxCharge_ = false;
+		isFullParryTrigger_ = false;
 
 		if (model_) model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
 		auto ppInstance = PostProcess::GetInstance();
@@ -230,6 +270,7 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("facingRightYaw", &facingRightYaw_, 1.0f, -360.0f, 360.0f);
 		ParamEditor::RegisterValue("facingLeftYaw", &facingLeftYaw_, 1.0f, -360.0f, 360.0f);
 		ParamEditor::RegisterValue("turnDelay", &turnDelay_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("faceCameraYaw", &faceCameraYaw_, 1.0f, -360.0f, 360.0f);
 
 		ParamEditor::BeginGroup("Emissive");
 		ParamEditor::RegisterValue("intensity", &emissiveIntensity_, 0.01f);
@@ -275,6 +316,22 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("counterPeakTime", &counterEffectPeakTime_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::RegisterValue("counterMaxChromatic", &counterMaxChromatic_, 0.01f, 0.0f, 2.0f);
 		ParamEditor::RegisterValue("counterSlowScale", &counterSlowScale_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::EndGroup();
+
+		ParamEditor::BeginGroup("Gauge");
+		ParamEditor::RegisterValue("max", &maxGauge_, 1.0f, 1.0f, 1000.0f);
+		ParamEditor::RegisterValue("parryGain", &parryGaugeGain_, 0.5f, 0.0f, 1000.0f);
+		ParamEditor::RegisterValue("counterGain", &counterGaugeGain_, 0.5f, 0.0f, 1000.0f);
+		ParamEditor::RegisterValue("damagePenalty", &damageGaugePenalty_, 0.5f, 0.0f, 1000.0f);
+		ParamEditor::RegisterValue("fullParryDamage", &fullParryDamage_, 0.5f, 0.0f, 1000.0f);
+		ParamEditor::RegisterColor("chargeEmissiveColor", &chargeEmissiveColor_);
+		ParamEditor::RegisterValue("chargeEmissiveIntensity", &chargeEmissiveIntensity_, 0.01f, 0.0f, 20.0f);
+		ParamEditor::RegisterValue("maxPulseSpeed", &maxPulseSpeed_, 0.1f, 0.0f, 20.0f);
+		ParamEditor::RegisterValue("maxPulseAmount", &maxPulseAmount_, 0.01f, 0.0f, 20.0f);
+		ParamEditor::RegisterValue("fullParryDuration", &fullParryEffectDuration_, 0.01f, 0.01f, 3.0f);
+		ParamEditor::RegisterValue("fullParryPeakTime", &fullParryEffectPeakTime_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::RegisterValue("fullParryMaxChromatic", &fullParryMaxChromatic_, 0.01f, 0.0f, 2.0f);
+		ParamEditor::RegisterValue("fullParrySlowScale", &fullParrySlowScale_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 
 		ParamEditor::EndGroup();
@@ -417,6 +474,28 @@ namespace AL4_1 {
 				SetTimeScale(1.0f);
 			}
 		}
+	}
+
+	void Player::GaugeUpdate() {
+		const float ratio = GetGaugeRatio();
+
+		// パーティクルの段階（エミッターを重ねて、溜まるほどパリパリが増えるようにする）
+		isFirstCharge_ = ratio >= 1.0f / 3.0f;
+		isSecondCharge_ = ratio >= 2.0f / 3.0f;
+		isMaxCharge_ = IsGaugeMax();
+
+		// 溜まるほど強く光る。満タンのときは脈打つ（スローの影響を受けないように実時間）
+		gaugeTimer_ += GetDeltaTime();
+		float intensity = emissiveIntensity_ + (chargeEmissiveIntensity_ - emissiveIntensity_) * ratio;
+		if (isMaxCharge_) {
+			intensity += maxPulseAmount_ * (0.5f + 0.5f * std::sin(gaugeTimer_ * maxPulseSpeed_ * 2.0f * std::numbers::pi_v<float>));
+		}
+		const Vector3 color = {
+			emissiveColor_.x + (chargeEmissiveColor_.x - emissiveColor_.x) * ratio,
+			emissiveColor_.y + (chargeEmissiveColor_.y - emissiveColor_.y) * ratio,
+			emissiveColor_.z + (chargeEmissiveColor_.z - emissiveColor_.z) * ratio,
+		};
+		model_->SetEmissive(color, intensity);
 	}
 
 }

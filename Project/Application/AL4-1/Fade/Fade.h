@@ -22,6 +22,9 @@ namespace AL4_1 {
 
 		Fade(const Fade&) = delete;
 		Fade& operator=(const Fade&) = delete;
+		// ムーブは許可（これが無いと、Fadeを持つ SceneManager もムーブできなくなる）
+		Fade(Fade&&) noexcept = default;
+		Fade& operator=(Fade&&) noexcept = default;
 
 		/// <summary>
 		/// 初期化(画面を覆うスプライトを作る)

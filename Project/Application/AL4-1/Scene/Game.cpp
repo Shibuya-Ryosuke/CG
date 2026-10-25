@@ -16,6 +16,9 @@ namespace AL4_1 {
 	Game::~Game() = default;
 
 	void Game::Initialize() {
+		// UIなどのテクスチャ読み込み（2回目以降は何もしない）
+		GameImage::Initialize();
+
 		// 弾の共有パラメータを登録（インスタンスが増減するので1回だけ）
 		Bullet::RegisterInParamEditor();
 		RegisterInParamEditor();
@@ -59,10 +62,19 @@ namespace AL4_1 {
 		gameUI_.Initialize();
 
 		// ボス登場演出から始める
+		// （フェードインが終わるまでは Wait で待ち、BeginIntro() で登場演出に入る）
+		ChangePhase(Phase::Wait);
+	}
+
+	void Game::BeginIntro() {
+		if (phase_ != Phase::Wait) { return; }
 		ChangePhase(Phase::Intro);
 	}
 
 	void Game::Update() {
+		// 操作できるのは戦闘中で、入力を受け付けているときだけ（フェード中は止める）
+		player_.SetControllable(phase_ == Phase::Battle && isInputEnabled_);
+
 		// 死んだら操作できないようにする
 		if (!player_.IsDead()) {
 			player_.Update();
@@ -74,11 +86,14 @@ namespace AL4_1 {
 		// 背景（プレイヤーの位置を基準にループ）
 		background_.Update(player_.GetPosition());
 
-		boss_.Update();
+		// ボスはフェードインが終わるまで出さない
+		if (phase_ != Phase::Wait) {
+			boss_.Update();
+		}
 		bulletManager_.Update();
 
 		// UI（HPの割合を渡す）
-		gameUI_.Update(player_.GetHP() / player_.GetMaxHP(), boss_.GetHP() / boss_.GetMaxHP());
+		gameUI_.Update(player_.GetHP() / player_.GetMaxHP(), boss_.GetHP() / boss_.GetMaxHP(), player_.GetGaugeRatio());
 
 		// 当たり判定走査（戦闘中だけ）
 		if (phase_ == Phase::Battle) {
@@ -96,6 +111,9 @@ namespace AL4_1 {
 		case Phase::BossDefeat:
 			UpdateBossDefeat();
 			break;
+		case Phase::ClearResult:
+			UpdateClearResult();
+			break;
 		case Phase::GameOver:
 			UpdateGameOver();
 			break;
@@ -110,7 +128,10 @@ namespace AL4_1 {
 		mapChipField_.Draw(camera);
 
 		player_.Draw(camera);
-		boss_.Draw(camera);
+		// ボスはフェードインが終わるまで出さない
+		if (phase_ != Phase::Wait) {
+			boss_.Draw(camera);
+		}
 
 		bulletManager_.Draw(camera);
 
@@ -150,7 +171,10 @@ namespace AL4_1 {
 		boss_.Reset();
 
 		isRequestTitle_ = false;
-		ChangePhase(Phase::Intro);
+		isRequestRetry_ = false;
+		fullParryBullet_ = nullptr;
+		// フェードインが終わるまでは Wait で待つ
+		ChangePhase(Phase::Wait);
 		// 登場演出はボスのアップから始まるので、ボスの位置へ瞬間移動
 		followCamera_.Snap();
 	}
@@ -181,6 +205,15 @@ namespace AL4_1 {
 
 		// フェーズに入った瞬間の処理
 		switch (phase_) {
+		case Phase::Wait:
+			player_.SetControllable(false);
+			boss_.SetCanAct(false);
+			// 登場位置を先に映しておく（ボスは描画しない）
+			followCamera_.SetFocus(boss_.GetCenter());
+			// 登場演出が終わるまでUIは出さない
+			gameUI_.Reset();
+			break;
+
 		case Phase::Intro:
 			player_.SetControllable(false);
 			boss_.SetCanAct(false);
@@ -194,14 +227,26 @@ namespace AL4_1 {
 			boss_.SetCanAct(true);
 			// 登場演出が終わったのでHPバーを出す
 			gameUI_.SetHpVisible(true);
+			// クリアタイムを計り始める
+			clearTime_ = 0.0f;
 			break;
 
 		case Phase::BossDefeat:
 			player_.SetControllable(false);
 			bulletManager_.Clear();
 			followCamera_.SetFocus(boss_.GetCenter());
-			// HPバーは残したままクリアの文字を出す
-			gameUI_.ShowClearText();
+			break;
+
+		case Phase::ClearResult:
+			player_.SetControllable(false);
+			// プレイヤーをこちらに向かせて、横に情報を出せるようにズームする
+			player_.SetFaceCamera(true);
+			followCamera_.SetZoomFocus(&player_.GetPosition());
+			// HPバーは残したまま、クリアの文字 → クリアタイム → メニューの順に出す
+			gameUI_.ShowClearResult(clearTime_);
+			menuSelection_ = 0;
+			gameUI_.ShowMenu(true);
+			gameUI_.SetMenuSelection(menuSelection_);
 			break;
 
 		case Phase::GameOver:
@@ -240,6 +285,9 @@ namespace AL4_1 {
 	}
 
 	void Game::UpdateBattle() {
+		// クリアタイム（パリィのスローで得をしないように実時間で計る）
+		clearTime_ += GetDeltaTime();
+
 		if (player_.IsDead()) {
 			ChangePhase(Phase::GameOver);
 			return;
@@ -255,14 +303,15 @@ namespace AL4_1 {
 		if (!boss_.IsDead()) { return; }
 
 		phaseTimer_ += GetDeltaTime();
-		if (followCamera_.IsFocusing() && phaseTimer_ >= defeatHoldTime_) {
-			followCamera_.ClearFocus();
-		}
-		// 戻りきったらクリア（SceneManager がリザルトへ）
-		if (phaseTimer_ >= defeatHoldTime_ + defeatReturnTime_) {
+		// 少しアップを続けてから、プレイヤーのズーム（クリア結果）へ
+		if (phaseTimer_ >= defeatHoldTime_) {
 			ResetPostEffects();
-			ChangePhase(Phase::Clear);
+			ChangePhase(Phase::ClearResult);
 		}
+	}
+
+	void Game::UpdateClearResult() {
+		UpdateMenu();
 	}
 
 	void Game::UpdateGameOver() {
@@ -274,13 +323,37 @@ namespace AL4_1 {
 		ppInstance->SetNoiseIntensity(EaseInCubic(t, 0.0f, gameOverMaxNoise_));
 		ppInstance->SetBlurStrength(EaseInCubic(t, 0.0f, gameOverMaxBlur_));
 
-		// 演出が終わったら R:リトライ T:タイトル
+		// 演出が終わったらメニューを出す（W/Sで選んでSpaceで決定）
 		if (t < 1.0f) { return; }
-		if (Input::TriggerKey(DIK_R)) {
-			Restart();
-		} else if (Input::TriggerKey(DIK_T)) {
-			ResetPostEffects();
-			isRequestTitle_ = true;
+		if (!gameUI_.IsMenuVisible()) {
+			menuSelection_ = 0;
+			gameUI_.ShowMenu(false);
+			gameUI_.SetMenuSelection(menuSelection_);
+		}
+		UpdateMenu();
+	}
+
+	void Game::UpdateMenu() {
+		// フェード中と、メニューが出きるまでは受け付けない
+		if (!isInputEnabled_ || !gameUI_.IsMenuReady()) { return; }
+
+		const int32_t count = static_cast<int32_t>(GameUI::MenuItem::Count);
+		if (Input::TriggerKey(DIK_W)) {
+			menuSelection_ = (menuSelection_ + count - 1) % count;
+		}
+		if (Input::TriggerKey(DIK_S)) {
+			menuSelection_ = (menuSelection_ + 1) % count;
+		}
+		gameUI_.SetMenuSelection(menuSelection_);
+
+		if (Input::TriggerKey(DIK_SPACE)) {
+			if (menuSelection_ == static_cast<int32_t>(GameUI::MenuItem::Retry)) {
+				// リトライはフェードを挟むので、SceneManager に Start() し直してもらう
+				isRequestRetry_ = true;
+			} else {
+				ResetPostEffects();
+				isRequestTitle_ = true;
+			}
 		}
 	}
 
@@ -311,12 +384,23 @@ namespace AL4_1 {
 
 		// プレイヤーとボスの弾、パリィで跳ね返した弾とボスの判定
 		for (auto& bullet : bulletManager_.GetBullets()) {
-			if (bullet.IsDead()) continue;
+			if (bullet.IsDead()) {
+				// フルパリィの弾がボス以外で消えたら覚えておくのをやめる（プールで使い回されるので）
+				if (&bullet == fullParryBullet_) { fullParryBullet_ = nullptr; }
+				continue;
+			}
 
 			// パリィされた弾はボスにだけ当たる
 			if (bullet.IsReflected()) {
 				if (boss_.IsCollidable() && IsCollision(bullet.GetOBB(), boss_.GetOBB())) {
-					boss_.OnDamage(bullet.GetDamage());
+					// フルパリィで跳ね返した弾なら大ダメージ＋感電
+					const bool isFullParryBullet = &bullet == fullParryBullet_;
+					const float damage = bullet.GetDamage() + (isFullParryBullet ? player_.GetFullParryDamage() : 0.0f);
+					boss_.OnDamage(damage);
+					if (isFullParryBullet) {
+						boss_.StartShock();
+						fullParryBullet_ = nullptr;
+					}
 					bullet.OnCollision();
 				}
 				continue;
@@ -325,7 +409,10 @@ namespace AL4_1 {
 			// パリィ受付中に判定へ触れたらはね返す
 			if (canParry && IsCollision(parryOBB, bullet.GetOBB())) {
 				bullet.Reflect(boss_.GetCenter());
-				player_.OnParrySuccess(false);
+				// ゲージ満タンでのパリィ（フルパリィ）なら、この弾がボスに当たったときに大ダメージ
+				if (player_.OnParrySuccess(false)) {
+					fullParryBullet_ = &bullet;
+				}
 				continue;
 			}
 
@@ -342,7 +429,11 @@ namespace AL4_1 {
 			if (canParry && IsCollision(parryOBB, meleeOBB)) {
 				// カウンター成功
 				boss_.OnCountered();
-				player_.OnParrySuccess(true);
+				// ゲージ満タンでのカウンター（フルパリィ）なら、その場で大ダメージ＋感電
+				if (player_.OnParrySuccess(true)) {
+					boss_.OnDamage(player_.GetFullParryDamage());
+					boss_.StartShock();
+				}
 				player_.SetAttackHitDone();
 			} else if (!boss_.IsMeleeHitDone() && IsCollision(playerOBB, meleeOBB)) {
 				player_.OnDamage(boss_.GetMeleeDamage());

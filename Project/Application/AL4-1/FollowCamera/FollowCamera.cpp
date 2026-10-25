@@ -34,6 +34,9 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("focusOffsetY", &focusOffsetY_, 0.1f, -20.0f, 20.0f);
 		ParamEditor::RegisterValue("focusDelay", &focusDelay_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::RegisterValue("focusReturnTime", &focusReturnTime_, 0.01f, 0.0f, 5.0f);
+		ParamEditor::RegisterValue("zoomDistance", &zoomDistance_, 0.1f, 1.0f, 200.0f);
+		ParamEditor::RegisterValue("zoomOffsetX", &zoomOffsetX_, 0.1f, -20.0f, 20.0f);
+		ParamEditor::RegisterValue("zoomOffsetY", &zoomOffsetY_, 0.1f, -20.0f, 20.0f);
 		ParamEditor::EndGroup();
 	}
 
@@ -106,6 +109,12 @@ namespace AL4_1 {
 			desiredX = focusTarget_->x;
 			desiredY = focusTarget_->y + focusOffsetY_;
 			desiredDist = focusDistance_;
+			// ズーム演出のときは専用の距離とずれを使う
+			if (isZoomFocus_) {
+				desiredX = focusTarget_->x + zoomOffsetX_;
+				desiredY = focusTarget_->y + zoomOffsetY_;
+				desiredDist = zoomDistance_;
+			}
 		}
 
 		// アップへ寄る・戻る途中は、いつもよりゆっくり追いかける

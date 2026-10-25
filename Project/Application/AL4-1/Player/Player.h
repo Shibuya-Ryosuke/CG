@@ -52,12 +52,21 @@ namespace AL4_1 {
 		/// パリィ成功
 		/// </summary>
 		/// <param name="isCounter">近接攻撃をパリィした時trueを入れる</param>
-		void OnParrySuccess(bool isCounter);
+		/// <returns>ゲージ満タンでのパリィ（フルパリィ）だったらtrue。ゲージは0に戻る</returns>
+		bool OnParrySuccess(bool isCounter);
+
+		// --- ゲージ（パリィで溜まり、満タンでパリィするとフルパリィ） ---
+		float GetGaugeRatio() const { return maxGauge_ > 0.0f ? gauge_ / maxGauge_ : 0.0f; }
+		bool IsGaugeMax() const { return gauge_ >= maxGauge_; }
+		// フルパリィでボスに与える追加ダメージ
+		float GetFullParryDamage() const { return fullParryDamage_; }
 
 		void ResetStatus();
 
 		// 操作を受け付けるか
 		void SetControllable(bool controllable) { isControllable_ = controllable; }
+		// カメラの方を向かせるか（クリア演出用）
+		void SetFaceCamera(bool faceCamera) { isFaceCamera_ = faceCamera; }
 	private:
 		void RegisterInParamEditor();
 		void Jump();
@@ -68,6 +77,8 @@ namespace AL4_1 {
 		void InvincibleUpdate();
 		void AttackUpdate();
 		void ParryEffectUpdate();
+		// ゲージに合わせた発光とパーティクルのフラグ
+		void GaugeUpdate();
 
 	private:
 		// 自身
@@ -98,6 +109,9 @@ namespace AL4_1 {
 		float facingLeftYaw_ = -90.0f;
 		float turnDelay_ = 0.1f;
 		float currentYaw_ = 90.0f;
+		// カメラの方を向くときの向き（クリア演出）
+		float faceCameraYaw_ = 180.0f;
+		bool isFaceCamera_ = false;
 
 		// hp
 		float maxHp_ = 100.0f;
@@ -199,5 +213,31 @@ namespace AL4_1 {
 
 		// ライトの点灯用フラグ
 		bool isIllumination_ = true;
+
+		// --- ゲージ（パリィで溜まり、満タンでパリィするとフルパリィ） ---
+		float maxGauge_ = 100.0f;
+		float gauge_ = 0.0f;
+		float parryGaugeGain_ = 10.0f;		// 弾をパリィしたとき
+		float counterGaugeGain_ = 30.0f;	// 近接攻撃をカウンターしたとき
+		float damageGaugePenalty_ = 0.0f;	// 被弾したときに減る量
+		float fullParryDamage_ = 30.0f;		// フルパリィでボスに与える追加ダメージ
+		// 溜まるほど強く光る（emissiveColor_/emissiveIntensity_ からこの色・強さへ）
+		RyoEngine::Vector3 chargeEmissiveColor_ = { 0.4f,0.9f,1.0f };
+		float chargeEmissiveIntensity_ = 2.0f;
+		// 満タンのときは脈打つ
+		float maxPulseSpeed_ = 3.0f;		// 1秒あたりの回数
+		float maxPulseAmount_ = 0.5f;		// 発光に足す強さ
+		float gaugeTimer_ = 0.0f;
+		// パーティクル用の段階フラグ（1/3以上・2/3以上・満タン）。エミッターを重ねて、溜まるほどパリパリが増える
+		bool isFirstCharge_ = false;
+		bool isSecondCharge_ = false;
+		bool isMaxCharge_ = false;
+		// フルパリィしたフレームだけtrue（パーティクルの発生フラグ用。次のUpdateの冒頭で戻す）
+		bool isFullParryTrigger_ = false;
+		// フルパリィの演出（通常のパリィ・カウンターより強く・遅く）
+		float fullParryEffectDuration_ = 0.8f;
+		float fullParryEffectPeakTime_ = 0.3f;
+		float fullParryMaxChromatic_ = 0.6f;
+		float fullParrySlowScale_ = 0.05f;
 	};
 }

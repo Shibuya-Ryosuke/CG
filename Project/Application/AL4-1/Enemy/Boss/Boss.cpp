@@ -9,10 +9,14 @@ namespace AL4_1 {
 	Boss::Boss() {
 		GPUParticleManager::GetInstance()->RegisterPosition("bossPos", &transform_.translate);
 		GPUParticleManager::GetInstance()->RegisterFlag("isBossHit", &isHitTrigger_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isBossShock", &isShock_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isBossStun", &isStunned_);
 	}
 	Boss::~Boss() {
 		GPUParticleManager::GetInstance()->UnregisterPosition("bossPos");
 		GPUParticleManager::GetInstance()->UnregisterFlag("isBossHit");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isBossShock");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isBossStun");
 	}
 
 	void Boss::Initialize() {
@@ -37,7 +41,12 @@ namespace AL4_1 {
 		transform_.scale = baseScale_;
 		isIllumination_ = false;
 		isHitTrigger_ = false;
+		isShock_ = false;
+		isStunned_ = false;
+		shockTimer_ = 0.0f;
 		ChangeState(State::Appear);
+		// 登場演出の前（Update前）でもカメラが登場位置を映せるように、判定の中心も合わせておく
+		obb_.center = transform_.translate;
 	}
 
 	void Boss::Update() {
@@ -76,6 +85,16 @@ namespace AL4_1 {
 			hitFlashTimer_ -= dt;
 		}
 
+		// パーティクル用のフラグ（スタン中・感電中）
+		isStunned_ = state_ == State::Stun;
+		if (shockTimer_ > 0.0f) {
+			shockTimer_ -= dt;
+			if (shockTimer_ <= 0.0f) {
+				shockTimer_ = 0.0f;
+				isShock_ = false;
+			}
+		}
+
 		// 爆発で大きくなったスケールを元に戻す（判定は transform_.scale から作るので一緒に戻る）
 		if (meleeBurstTimer_ > 0.0f && state_ != State::Appear && state_ != State::Destroy && state_ != State::Dead) {
 			meleeBurstTimer_ -= dt;
@@ -98,6 +117,20 @@ namespace AL4_1 {
 			float shake = hitShake_ * std::clamp(hitShakeTimer_ / hitShakeTime_, 0.0f, 1.0f);
 			drawTransform_.translate.x += RandomFloat(-shake, shake);
 			drawTransform_.translate.y += RandomFloat(-shake, shake);
+		}
+		// 近接攻撃の予備動作中は、爆発の直前に向かってだんだん大きく揺らす（見た目だけ）
+		if (state_ == State::Attack && attackType_ == AttackType::Melee && meleePhase_ == MeleePhase::Windup) {
+			float t = meleeWindupTime_ > 0.0f ? std::clamp(stateTimer_ / meleeWindupTime_, 0.0f, 1.0f) : 1.0f;
+			// 光る合図の間は最大で揺らす
+			if (stateTimer_ >= meleeWindupTime_ - meleeGlintTime_) { t = 1.0f; }
+			const float shake = meleeWindupShakeMax_ * t * t;
+			drawTransform_.translate.x += RandomFloat(-shake, shake);
+			drawTransform_.translate.y += RandomFloat(-shake, shake);
+		}
+		// 感電中は細かく震える（見た目だけ）
+		if (isShock_) {
+			drawTransform_.translate.x += RandomFloat(-shockShake_, shockShake_);
+			drawTransform_.translate.y += RandomFloat(-shockShake_, shockShake_);
 		}
 
 		// モデルにセット
@@ -139,6 +172,11 @@ namespace AL4_1 {
 			hp_ = 0.0f;
 			ChangeState(State::Destroy);
 		}
+	}
+
+	void Boss::StartShock() {
+		isShock_ = true;
+		shockTimer_ = shockTime_;
 	}
 
 	void Boss::OnCountered() {
@@ -220,11 +258,17 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("heightOffset", &meleeHeightOffset_, 0.1f, -10.0f, 10.0f);
 		ParamEditor::RegisterValue("burstScale", &meleeBurstScale_, 0.01f, 1.0f, 5.0f);
 		ParamEditor::RegisterValue("burstReturnTime", &meleeBurstReturnTime_, 0.01f, 0.01f, 3.0f);
+		ParamEditor::RegisterValue("windupShakeMax", &meleeWindupShakeMax_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::RegisterValue("damage", &meleeDamage_, 1.0f, 0.0f, 100.0f);
 		ParamEditor::RegisterValue("counterDamage", &counterDamage_, 1.0f, 0.0f, 500.0f);
 		ParamEditor::RegisterValue("stunTime", &stunTime_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("stunKnockback", &stunKnockback_, 0.1f, 0.0f, 20.0f);
 		ParamEditor::RegisterValue("stunKnockbackTime", &stunKnockbackTime_, 0.01f, 0.01f, 3.0f);
+		ParamEditor::EndGroup();
+
+		ParamEditor::BeginGroup("Shock");
+		ParamEditor::RegisterValue("shockTime", &shockTime_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("shockShake", &shockShake_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::EndGroup();
 
 		ParamEditor::EndGroup();

@@ -207,7 +207,7 @@
                 0.2647058963775635
             ],
             "intensity": 5.019999980926514,
-            "isIllumination": false
+            "isIllumination": true
         },
         "Look": {
             "baseColor": [
@@ -263,7 +263,12 @@
             "stunKnockback": 7.0,
             "stunKnockbackTime": 0.30000001192092896,
             "stunTime": 2.5,
-            "windupTime": 0.699999988079071
+            "windupShakeMax": 0.30000001192092896,
+            "windupTime": 1.0
+        },
+        "Shock": {
+            "shockShake": 0.11999999731779099,
+            "shockTime": 1.2000000476837158
         },
         "Shot": {
             "attackTime_Homing": 3.0,
@@ -312,9 +317,9 @@
         ],
         "moveTime": 0.800000011920929,
         "obbHalfSize": [
-            0.0,
-            0.0,
-            0.0
+            3.0,
+            3.0,
+            3.0
         ],
         "targetAimOffsetY": 1.0,
         "transform": {
@@ -324,13 +329,13 @@
                 0.0
             ],
             "scale": [
-                0.0,
-                0.0,
-                0.0
+                1.5,
+                1.5,
+                1.5
             ],
             "translate": [
-                46.866031646728516,
-                17.234310150146484,
+                25.79279327392578,
+                17.720687866210938,
                 0.0
             ]
         }
@@ -364,7 +369,10 @@
         "lookOffsetX": 0.0,
         "lookOffsetY": 1.0,
         "pitch": 9.0,
-        "yaw": 0.0
+        "yaw": 0.0,
+        "zoomDistance": 9.0,
+        "zoomOffsetX": 1.7000000476837158,
+        "zoomOffsetY": 1.2000000476837158
     },
     "Game": {
         "maxBulletCount": 128
@@ -377,6 +385,180 @@
         "gameOverTime": 1.5,
         "introHoldTime": 1.0,
         "introReturnTime": 1.2000000476837158
+    },
+    "GameUI": {
+        "BossHp": {
+            "fillOffset": [
+                25.5,
+                0.0
+            ],
+            "fillScale": [
+                1.0,
+                1.0
+            ],
+            "ghostColor": [
+                0.8549019694328308,
+                0.6509804129600525,
+                1.0,
+                0.800000011920929
+            ],
+            "ghostDelay": 0.4000000059604645,
+            "ghostSpeed": 0.5,
+            "labelOffset": [
+                13.5,
+                -55.0
+            ],
+            "labelScale": [
+                1.0,
+                1.0
+            ],
+            "position": [
+                561.0,
+                60.0
+            ],
+            "scale": [
+                0.699999988079071,
+                0.699999988079071
+            ]
+        },
+        "ClearTime": {
+            "charAdvance": 44.0,
+            "delay": 0.4000000059604645,
+            "dotAdvance": 24.0,
+            "fadeTime": 0.4000000059604645,
+            "numberOffset": [
+                430.0,
+                0.0
+            ],
+            "numberScale": [
+                1.0,
+                1.0
+            ],
+            "position": [
+                640.0,
+                360.0
+            ],
+            "scale": [
+                0.800000011920929,
+                0.800000011920929
+            ]
+        },
+        "Gauge": {
+            "fillOffset": [
+                4.0,
+                0.0
+            ],
+            "fillScale": [
+                1.0,
+                1.0
+            ],
+            "fillSpeed": 1.5,
+            "maxBlinkSpeed": 3.0,
+            "maxDimColor": [
+                0.5,
+                0.800000011920929,
+                1.0,
+                1.0
+            ],
+            "position": [
+                52.0,
+                649.0
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        "Menu": {
+            "clearDelay": 0.800000011920929,
+            "clearPosition": [
+                700.0,
+                470.0
+            ],
+            "fadeTime": 0.30000001192092896,
+            "failedPosition": [
+                470.0,
+                470.0
+            ],
+            "itemSpacing": 80.0,
+            "normalColor": [
+                0.550000011920929,
+                0.6000000238418579,
+                0.75,
+                0.800000011920929
+            ],
+            "pulseAmount": 0.03999999910593033,
+            "pulseSpeed": 2.0,
+            "scale": [
+                0.6000000238418579,
+                0.6000000238418579
+            ],
+            "selectedColor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "selectedScale": 1.149999976158142
+        },
+        "PlayerHp": {
+            "fillOffset": [
+                14.5,
+                1.0
+            ],
+            "fillScale": [
+                1.0,
+                1.0
+            ],
+            "ghostColor": [
+                0.9815455675125122,
+                1.0,
+                0.843137264251709,
+                1.0
+            ],
+            "ghostDelay": 0.8500000238418579,
+            "ghostSpeed": 0.5,
+            "labelOffset": [
+                5.0,
+                -79.0
+            ],
+            "labelScale": [
+                1.0,
+                1.0
+            ],
+            "position": [
+                40.0,
+                688.0
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        "TextClear": {
+            "delay": 0.0,
+            "fadeTime": 0.5,
+            "position": [
+                900.0,
+                230.0
+            ],
+            "scale": [
+                0.6000000238418579,
+                0.6000000238418579
+            ]
+        },
+        "TextFailed": {
+            "delay": 0.5,
+            "fadeTime": 0.5,
+            "position": [
+                640.0,
+                280.0
+            ],
+            "scale": [
+                0.800000011920929,
+                0.800000011920929
+            ]
+        }
     },
     "Player": {
         "Attack": {
@@ -423,6 +605,25 @@
             "intensity": 0.029999999329447746,
             "isIllumination": true
         },
+        "Gauge": {
+            "chargeEmissiveColor": [
+                0.4000000059604645,
+                0.8999999761581421,
+                1.0
+            ],
+            "chargeEmissiveIntensity": 2.0,
+            "counterGain": 30.0,
+            "damagePenalty": 0.0,
+            "fullParryDamage": 30.0,
+            "fullParryDuration": 0.800000011920929,
+            "fullParryMaxChromatic": 0.6000000238418579,
+            "fullParryPeakTime": 0.30000001192092896,
+            "fullParrySlowScale": 0.05000000074505806,
+            "max": 100.0,
+            "maxPulseAmount": 0.5,
+            "maxPulseSpeed": 3.0,
+            "parryGain": 10.0
+        },
         "HpEffect": {
             "maxGrayScale": 0.699999988079071,
             "maxNoise": 0.30000001192092896,
@@ -438,6 +639,7 @@
             "parryPeakTime": 0.25,
             "parrySlowScale": 0.07999999821186066
         },
+        "faceCameraYaw": 180.0,
         "facingLeftYaw": -90.0,
         "facingRightYaw": 90.0,
         "gravity": 80.0,
@@ -462,11 +664,39 @@
                 1.0
             ],
             "translate": [
-                35.09648132324219,
-                11.0,
+                26.48763084411621,
+                12.593247413635254,
                 0.0
             ]
         },
         "turnDelay": 0.10000000149011612
+    },
+    "SceneManager": {
+        "fadeInTime": 0.5,
+        "fadeOutTime": 0.5
+    },
+    "Title": {
+        "blinkMinAlpha": 0.25,
+        "blinkSpeed": 1.2000000476837158,
+        "flickerInterval": 1.600000023841858,
+        "flickerMinAlpha": 0.5,
+        "flickerOffset": 6.0,
+        "flickerTime": 0.11999999731779099,
+        "logoPosition": [
+            640.0,
+            260.0
+        ],
+        "logoScale": [
+            0.8500000238418579,
+            0.8500000238418579
+        ],
+        "pressSpacePosition": [
+            640.0,
+            540.0
+        ],
+        "pressSpaceScale": [
+            0.699999988079071,
+            0.699999988079071
+        ]
     }
 }

@@ -31,11 +31,23 @@ namespace AL4_1 {
 		/// プレイヤーの代わりに target をアップで映す（ボスの登場・撃破演出など）。
 		/// target のアドレスは演出中ずっと有効であること
 		/// </summary>
-		void SetFocus(const RyoEngine::Vector3* target) { focusTarget_ = target; }
+		void SetFocus(const RyoEngine::Vector3* target) {
+			focusTarget_ = target;
+			isZoomFocus_ = false;
+		}
+		/// <summary>
+		/// target をズームで映す（クリア演出など）。zoomOffsetX/Y の分だけ注視点をずらすので、
+		/// 対象の横に情報を出す余白が作れる。target のアドレスは演出中ずっと有効であること
+		/// </summary>
+		void SetZoomFocus(const RyoEngine::Vector3* target) {
+			focusTarget_ = target;
+			isZoomFocus_ = true;
+		}
 		/// <summary>アップをやめてプレイヤーへ戻る（focusDelay_ でゆっくり戻る）</summary>
 		void ClearFocus() {
 			if (focusTarget_) { returnTimer_ = focusReturnTime_; }
 			focusTarget_ = nullptr;
+			isZoomFocus_ = false;
 		}
 		bool IsFocusing() const { return focusTarget_ != nullptr; }
 
@@ -66,6 +78,12 @@ namespace AL4_1 {
 		float focusOffsetY_ = 0.0f;		// アップのときの注視点の高さのずれ
 		float focusDelay_ = 0.35f;		// アップへ寄る・プレイヤーへ戻るときの遅延（followDelay_ より遅くする）
 		float focusReturnTime_ = 1.0f;	// アップをやめてから focusDelay_ を使い続ける時間
+
+		// --- ズーム演出（クリア時のプレイヤーのアップ） ---
+		float zoomDistance_ = 9.0f;		// ズームのときの距離
+		float zoomOffsetX_ = 3.0f;		// 注視点の横のずれ（プラスで対象が画面の左に寄る）
+		float zoomOffsetY_ = 1.2f;		// 注視点の高さのずれ
+		bool isZoomFocus_ = false;
 
 		bool limitDistanceToMap_ = true;
 
