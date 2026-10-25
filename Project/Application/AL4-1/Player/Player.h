@@ -43,10 +43,10 @@ namespace AL4_1 {
 		// 攻撃判定（パリィ判定も兼ねる）
 		const RyoEngine::OBB& GetAttackOBB() const { return attackObb_; }
 		float GetAttackDamage() const { return attackDamage_; }
-		
+
 		bool IsAttackHitDone() const { return isAttackHitDone_; }
 		void SetAttackHitDone() { isAttackHitDone_ = true; }
-		
+
 		/// <summary>
 		/// パリィ成功
 		/// </summary>
@@ -161,6 +161,10 @@ namespace AL4_1 {
 		// --- サマーソルト（攻撃中の1回転。見た目だけで判定は回さない） ---
 		float spinEasePower_ = 2.0f;
 		float spinDirection_ = 1.0f;
+		// 回転の軌跡パーティクルの発生位置（体の中心から回転に合わせて円を描く）
+		RyoEngine::Vector3 spinTrailPos_ = { 0.0f,0.0f,0.0f };
+		// 体の中心から軌跡までの距離（足先あたりが通るくらい）
+		float spinTrailRadius_ = 1.0f;
 		// 攻撃中とクールタイム中で色を分ける
 		RyoEngine::Vector4 attackColor_ = { 0.4f,0.9f,1.0f,1.0f };
 		RyoEngine::Vector4 cooldownColor_ = { 0.6f,0.6f,0.6f,1.0f };
@@ -168,6 +172,8 @@ namespace AL4_1 {
 		// --- パリィ成功時の演出（色収差＋スロー） ---
 		// エフェクトを出すか
 		bool isParryEffect_ = false;
+		// パリィが成功したフレームだけtrue（パーティクルの発生フラグ用。次のUpdateの冒頭で戻す）
+		bool isParryTrigger_ = false;
 		// 経過時間
 		float parryEffectTimer_ = 0.0f;
 		// 今回の演出の値（弾パリィかカウンターかで切り替わる）

@@ -162,10 +162,10 @@ namespace AL4_1 {
 		{
 			{
 				0.0f,	// None
-			    2.0f,	// Shot
-			    2.4f,	// SpreadShot
-			    3.0f,	// HomingShot
-			    0.0f,	// Melee（meleeWindupTime_ + meleeActiveTime_ + meleeRecoveryTime_ を使う）
+				2.0f,	// Shot
+				2.4f,	// SpreadShot
+				3.0f,	// HomingShot
+				0.0f,	// Melee（meleeWindupTime_ + meleeActiveTime_ + meleeRecoveryTime_ を使う）
 			}
 		};
 
@@ -230,6 +230,8 @@ namespace AL4_1 {
 		float hitShakeTimer_ = 0.0f;
 		float hitShakeTime_ = 0.2f;
 		float hitShake_ = 0.25f;		// 揺れ幅（時間とともに小さくなる）
+		// ダメージが入ったフレームだけtrue（パーティクルの発生フラグ用。次のUpdateの冒頭で戻す）
+		bool isHitTrigger_ = false;
 
 		// --- 色 ---
 		float hitFlashTimer_ = 0.0f;

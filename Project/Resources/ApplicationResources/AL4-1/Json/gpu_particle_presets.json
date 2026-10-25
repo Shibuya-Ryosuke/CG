@@ -1,0 +1,141 @@
+{
+    "emitters": {
+        "parry": {
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "billboard": true,
+            "blendMode": "Additive",
+            "color": [
+                0.8039215803146362,
+                0.7631227970123291,
+                0.1103421226143837,
+                1.0
+            ],
+            "conditionFlagKey": "isParryTrigger",
+            "continuousWhileTrue": true,
+            "emitCount": 350,
+            "emitInterval": 0.0,
+            "fixedRotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "gravity": 0.0,
+            "lifeTime": 0.4099999964237213,
+            "maxParticleCount": 500,
+            "meshPath": "Resources/ApplicationResources/AL4-1/Particle/quad.obj",
+            "positionOffsetRandomMax": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "positionOffsetRandomMin": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotationRandomMax": [
+                0.0,
+                0.0,
+                3.872999906539917
+            ],
+            "rotationRandomMin": [
+                0.0,
+                0.0,
+                -3.0299999713897705
+            ],
+            "scale": 0.6600000262260437,
+            "texturePath": "Resources/ApplicationResources/AL4-1/Particle/parry_glint.png",
+            "trackedPositionKey": "playerPos",
+            "useRandomRotation": true,
+            "useRandomVelocity": true,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityRandomMax": [
+                19.860000610351563,
+                19.110000610351563,
+                0.0
+            ],
+            "velocityRandomMin": [
+                -22.290000915527344,
+                -18.06999969482422,
+                0.0
+            ]
+        },
+        "playerAttack": {
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "billboard": true,
+            "blendMode": "Additive",
+            "color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "conditionFlagKey": "isPlayerAttacking",
+            "continuousWhileTrue": true,
+            "emitCount": 8,
+            "emitInterval": 0.019999999552965164,
+            "fixedRotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "gravity": 0.0,
+            "lifeTime": 0.4699999988079071,
+            "maxParticleCount": 500,
+            "meshPath": "Resources/ApplicationResources/AL4-1/Particle/quad.obj",
+            "positionOffsetRandomMax": [
+                0.5299999713897705,
+                0.41999998688697815,
+                0.0
+            ],
+            "positionOffsetRandomMin": [
+                -0.6700000166893005,
+                -0.3799999952316284,
+                0.0
+            ],
+            "rotationRandomMax": [
+                0.0,
+                0.0,
+                6.2831854820251465
+            ],
+            "rotationRandomMin": [
+                0.0,
+                0.0,
+                -4.820000171661377
+            ],
+            "scale": 0.6499999761581421,
+            "texturePath": "Resources/ApplicationResources/AL4-1/Particle/particle_slash.png",
+            "trackedPositionKey": "playerSpinPos",
+            "useRandomRotation": true,
+            "useRandomVelocity": true,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityRandomMax": [
+                2.259999990463257,
+                0.5699999928474426,
+                0.0
+            ],
+            "velocityRandomMin": [
+                -1.5199999809265137,
+                -0.6200000047683716,
+                0.0
+            ]
+        }
+    },
+    "version": 1
+}

@@ -172,7 +172,7 @@ namespace RyoEngine {
         int newMaxParticleCount_ = 500;
 
         // --- 保存/読込 ---
-        std::string folderPath_ = "Resources/ApplicationResources/AL4_1/Json/";
+        std::string folderPath_ = "Resources/ApplicationResources/AL4-1/Json/";
         char folderPathBuffer_[256] = {};
         static const std::string kFileName;
 

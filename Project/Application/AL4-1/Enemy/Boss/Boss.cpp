@@ -8,9 +8,11 @@ using namespace RyoEngine;
 namespace AL4_1 {
 	Boss::Boss() {
 		GPUParticleManager::GetInstance()->RegisterPosition("bossPos", &transform_.translate);
+		GPUParticleManager::GetInstance()->RegisterFlag("isBossHit", &isHitTrigger_);
 	}
 	Boss::~Boss() {
 		GPUParticleManager::GetInstance()->UnregisterPosition("bossPos");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isBossHit");
 	}
 
 	void Boss::Initialize() {
@@ -18,7 +20,7 @@ namespace AL4_1 {
 
 		attackType_ = AttackType::None;
 		prevAttackType_ = AttackType::None;
-		
+
 
 		RegisterInParamEditor();
 		transform_.scale = baseScale_;
@@ -34,12 +36,16 @@ namespace AL4_1 {
 		meleeBurstTimer_ = 0.0f;
 		transform_.scale = baseScale_;
 		isIllumination_ = false;
+		isHitTrigger_ = false;
 		ChangeState(State::Appear);
 	}
 
 	void Boss::Update() {
 		const float dt = GetScaleTime();
 		stateTimer_ += dt;
+
+		// 1フレームだけのフラグを戻す（前フレームで立てた分は、このフレームの頭でパーティクルが読み終わっている）
+		isHitTrigger_ = false;
 
 		switch (state_) {
 		case State::Appear:
@@ -124,6 +130,8 @@ namespace AL4_1 {
 		if (!IsCollidable()) { return; }
 
 		hp_ -= damage;
+		// 被弾パーティクル用（次のUpdateの冒頭で戻す）
+		isHitTrigger_ = true;
 		// 被弾したら赤くして少し揺らす
 		hitFlashTimer_ = hitFlashTime_;
 		hitShakeTimer_ = hitShakeTime_;
@@ -272,7 +280,7 @@ namespace AL4_1 {
 	void Boss::UpdateAppear() {
 		// 上から降りてくる
 		float t = std::clamp(stateTimer_ / appearTime_, 0.0f, 1.0f);
-		transform_.translate = Lerp(homePosition_ + appearOffset_, homePosition_, EaseOutCubic(t,0.0f,1.0f));
+		transform_.translate = Lerp(homePosition_ + appearOffset_, homePosition_, EaseOutCubic(t, 0.0f, 1.0f));
 		// ゆっくり回りながら（だんだん遅くなって正面で止まる）
 		transform_.rotate.y = EaseOutCubic(t, 0.0f, appearSpinTurns_ * 2.0f * std::numbers::pi_v<float>);
 
@@ -293,7 +301,7 @@ namespace AL4_1 {
 
 	void Boss::UpdateMove() {
 		float t = std::clamp(stateTimer_ / moveTime_, 0.0f, 1.0f);
-		transform_.translate = Lerp(moveStart_, moveEnd_, EaseInOutCubic(t,0.0f,1.0f));
+		transform_.translate = Lerp(moveStart_, moveEnd_, EaseInOutCubic(t, 0.0f, 1.0f));
 
 		if (t >= 1.0f) {
 			ChangeState(State::Attack);
@@ -346,7 +354,7 @@ namespace AL4_1 {
 			destroyBasePosition_.y + RandomFloat(-shake, shake),
 			destroyBasePosition_.z,
 		};
-		float s = EaseInOutCubic(t,1.0f,0.0f);
+		float s = EaseInOutCubic(t, 1.0f, 0.0f);
 		transform_.scale = { baseScale_.x * s, baseScale_.y * s, baseScale_.z * s };
 
 		if (t >= 1.0f) {

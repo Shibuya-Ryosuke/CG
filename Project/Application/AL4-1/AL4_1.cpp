@@ -23,6 +23,7 @@ namespace AL4_1 {
 
 		ParamEditor::Load();
 		LightManager::Load();
+		GPUParticleManager::GetInstance()->Load();
 
 		GetDebugCamera().SetAvailable(false);
 	}

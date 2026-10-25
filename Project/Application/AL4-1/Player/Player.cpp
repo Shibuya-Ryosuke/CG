@@ -9,11 +9,19 @@ using namespace std;
 namespace AL4_1 {
 	Player::Player() {
 		GPUParticleManager::GetInstance()->RegisterPosition("playerPos", &transform_.translate);
+		GPUParticleManager::GetInstance()->RegisterPosition("playerSpinPos", &spinTrailPos_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isParrying", &isParryEffect_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isParryTrigger", &isParryTrigger_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerAttacking", &isAttacking_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerInvincible", &isInvincible_);
 	}
 	Player::~Player() {
 		GPUParticleManager::GetInstance()->UnregisterPosition("playerPos");
+		GPUParticleManager::GetInstance()->UnregisterPosition("playerSpinPos");
 		GPUParticleManager::GetInstance()->UnregisterFlag("isParrying");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isParryTrigger");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerAttacking");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerInvincible");
 	}
 
 	void Player::Initialize() {
@@ -23,6 +31,9 @@ namespace AL4_1 {
 
 	void Player::Update() {
 		const float dt = GetScaleTime();
+
+		// 1フレームだけのフラグを戻す（前フレームで立てた分は、このフレームの頭でパーティクルが読み終わっている）
+		isParryTrigger_ = false;
 
 		// 移動
 		float moveX = 0.0f;
@@ -102,6 +113,8 @@ namespace AL4_1 {
 		// 見た目用のトランスフォーム（攻撃中はサマーソルトで1回転）
 		Transform drawTransform = transform_;
 		drawTransform.rotate.y += currentYaw_ * std::numbers::pi_v<float> / 180.0f;
+		// 回転の軌跡パーティクルの発生位置（攻撃していないときは体の中心）
+		spinTrailPos_ = { translate.x, translate.y + halfSize_.y, translate.z };
 		if (isAttacking_) {
 			// 0 → 1 の進み具合
 			float t = 1.0f - std::clamp(attackTimer_ / attackActiveTime_, 0.0f, 1.0f);
@@ -114,6 +127,10 @@ namespace AL4_1 {
 			const float pivot = halfSize_.y;
 			drawTransform.translate.x += pivot * std::sin(angle);
 			drawTransform.translate.y += pivot - pivot * std::cos(angle);
+
+			// 足先が通る位置（モデルの回転と同じ向きに円を描く）
+			spinTrailPos_.x += spinTrailRadius_ * std::sin(angle);
+			spinTrailPos_.y -= spinTrailRadius_ * std::cos(angle);
 		}
 
 		// modelにセット
@@ -132,7 +149,7 @@ namespace AL4_1 {
 
 		// 描画
 		model_->Draw();
-		PrimitiveRenderer::DrawOBB(obb_, { 0.0f,1.0f,0.0f,1.0f },PrimitiveDrawMode::Wireframe);
+		PrimitiveRenderer::DrawOBB(obb_, { 0.0f,1.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 		// デバッグ：攻撃中は攻撃（パリィ）判定を赤で表示
 		if (isAttacking_) {
 			PrimitiveRenderer::DrawOBB(attackObb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
@@ -164,6 +181,7 @@ namespace AL4_1 {
 	void Player::OnParrySuccess(bool isCounter) {
 		// 演出を最初から（カウンターの方が強く・遅く）
 		isParryEffect_ = true;
+		isParryTrigger_ = true;
 		parryEffectTimer_ = 0.0f;
 		effectDuration_ = isCounter ? counterEffectDuration_ : parryEffectDuration_;
 		effectPeakTime_ = isCounter ? counterEffectPeakTime_ : parryEffectPeakTime_;
@@ -184,6 +202,7 @@ namespace AL4_1 {
 		attackTimer_ = 0.0f;
 		attackCooldownTimer_ = 0.0f;
 		isParryEffect_ = false;
+		isParryTrigger_ = false;
 		parryEffectTimer_ = 0.0f;
 		isDamageTaken_ = false;
 		damageTakenDuration_ = 0.0f;
@@ -242,6 +261,7 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("halfSize", &attackHalfSize_, 0.01f, 0.05f, 10.0f);
 		ParamEditor::RegisterValue("spinEasePower", &spinEasePower_, 0.01f, 0.1f, 10.0f);
 		ParamEditor::RegisterValue("spinDirection", &spinDirection_, 2.0f, -1.0f, 1.0f);
+		ParamEditor::RegisterValue("spinTrailRadius", &spinTrailRadius_, 0.01f, 0.0f, 5.0f);
 		ParamEditor::RegisterColor("attackColor", &attackColor_);
 		ParamEditor::RegisterColor("cooldownColor", &cooldownColor_);
 		ParamEditor::EndGroup();
