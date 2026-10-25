@@ -14,9 +14,9 @@ namespace AL4_1 {
 		GPUParticleManager::GetInstance()->RegisterFlag("isParryTrigger", &isParryTrigger_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerAttacking", &isAttacking_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerInvincible", &isInvincible_);
-		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge1", &isFirstCharge_);
-		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge2", &isSecondCharge_);
-		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerChargeMax", &isMaxCharge_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge1", &isCharge1_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge2", &isCharge2_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerChargeMax", &isChargeMax_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerFullParry", &isFullParryTrigger_);
 	}
 	Player::~Player() {
@@ -206,6 +206,7 @@ namespace AL4_1 {
 		effectPeakTime_ = isCounter ? counterEffectPeakTime_ : parryEffectPeakTime_;
 		effectMaxChromatic_ = isCounter ? counterMaxChromatic_ : parryMaxChromatic_;
 		effectSlowScale_ = isCounter ? counterSlowScale_ : parrySlowScale_;
+		effectHoldTime_ = 0.0f;
 
 		if (isFullParry) {
 			gauge_ = 0.0f;
@@ -215,6 +216,7 @@ namespace AL4_1 {
 			effectPeakTime_ = fullParryEffectPeakTime_;
 			effectMaxChromatic_ = fullParryMaxChromatic_;
 			effectSlowScale_ = fullParrySlowScale_;
+			effectHoldTime_ = fullParryEffectHoldTime_;
 		} else {
 			// ゲージを溜める（近接のカウンターの方が多く溜まる）
 			gauge_ = min(maxGauge_, gauge_ + (isCounter ? counterGaugeGain_ : parryGaugeGain_));
@@ -244,9 +246,9 @@ namespace AL4_1 {
 		invincibleDuration_ = 0.0f;
 		gauge_ = 0.0f;
 		gaugeTimer_ = 0.0f;
-		isFirstCharge_ = false;
-		isSecondCharge_ = false;
-		isMaxCharge_ = false;
+		isCharge1_ = false;
+		isCharge2_ = false;
+		isChargeMax_ = false;
 		isFullParryTrigger_ = false;
 
 		if (model_) model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
@@ -330,6 +332,7 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("maxPulseAmount", &maxPulseAmount_, 0.01f, 0.0f, 20.0f);
 		ParamEditor::RegisterValue("fullParryDuration", &fullParryEffectDuration_, 0.01f, 0.01f, 3.0f);
 		ParamEditor::RegisterValue("fullParryPeakTime", &fullParryEffectPeakTime_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::RegisterValue("fullParryHoldTime", &fullParryEffectHoldTime_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::RegisterValue("fullParryMaxChromatic", &fullParryMaxChromatic_, 0.01f, 0.0f, 2.0f);
 		ParamEditor::RegisterValue("fullParrySlowScale", &fullParrySlowScale_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
@@ -447,11 +450,15 @@ namespace AL4_1 {
 
 		// 0 → 1（peakTime） → 0（duration）の山なりの強さ（スローに使う）
 		const float peak = std::clamp(effectPeakTime_, 0.0f, effectDuration_);
+		// 一番遅い状態を保つ終わりの時間（フルパリィ以外は holdTime が0なので peak と同じ）
+		const float holdEnd = std::clamp(peak + effectHoldTime_, peak, effectDuration_);
 		float w = 0.0f;
 		if (parryEffectTimer_ < peak) {
 			w = parryEffectTimer_ / peak;
-		} else if (effectDuration_ > peak) {
-			w = 1.0f - (parryEffectTimer_ - peak) / (effectDuration_ - peak);
+		} else if (parryEffectTimer_ < holdEnd) {
+			w = 1.0f;
+		} else if (effectDuration_ > holdEnd) {
+			w = 1.0f - (parryEffectTimer_ - holdEnd) / (effectDuration_ - holdEnd);
 		}
 		w = std::clamp(w, 0.0f, 1.0f);
 
@@ -480,22 +487,19 @@ namespace AL4_1 {
 		const float ratio = GetGaugeRatio();
 
 		// パーティクルの段階（エミッターを重ねて、溜まるほどパリパリが増えるようにする）
-		isFirstCharge_ = ratio >= 1.0f / 3.0f;
-		isSecondCharge_ = ratio >= 2.0f / 3.0f;
-		isMaxCharge_ = IsGaugeMax();
+		isCharge1_ = ratio >= 1.0f / 3.0f;
+		isCharge2_ = ratio >= 2.0f / 3.0f;
+		isChargeMax_ = IsGaugeMax();
 
-		// 溜まるほど強く光る。満タンのときは脈打つ（スローの影響を受けないように実時間）
+		// 溜まるほど強く光る（ゲージ0で0、満タンで chargeEmissiveIntensity_）
+		// 満タンのときは最大を超えないように下へ脈打つ（スローの影響を受けないように実時間）
 		gaugeTimer_ += GetDeltaTime();
-		float intensity = emissiveIntensity_ + (chargeEmissiveIntensity_ - emissiveIntensity_) * ratio;
-		if (isMaxCharge_) {
-			intensity += maxPulseAmount_ * (0.5f + 0.5f * std::sin(gaugeTimer_ * maxPulseSpeed_ * 2.0f * std::numbers::pi_v<float>));
+		float intensity = chargeEmissiveIntensity_ * ratio;
+		if (isChargeMax_) {
+			const float wave = 0.5f + 0.5f * std::sin(gaugeTimer_ * maxPulseSpeed_ * 2.0f * std::numbers::pi_v<float>);
+			intensity *= 1.0f - maxPulseAmount_ * wave;
 		}
-		const Vector3 color = {
-			emissiveColor_.x + (chargeEmissiveColor_.x - emissiveColor_.x) * ratio,
-			emissiveColor_.y + (chargeEmissiveColor_.y - emissiveColor_.y) * ratio,
-			emissiveColor_.z + (chargeEmissiveColor_.z - emissiveColor_.z) * ratio,
-		};
-		model_->SetEmissive(color, intensity);
+		model_->SetEmissive(chargeEmissiveColor_, intensity);
 	}
 
 }

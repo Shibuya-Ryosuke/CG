@@ -24,6 +24,10 @@ namespace AL4_1 {
 		bool IsFinished() const { return isFinished_; }
 		// キー入力を受け付けるか（フェード中は false にする）
 		void SetInputEnabled(bool enabled) { isInputEnabled_ = enabled; }
+		// タイトル用のカメラ（ゲームとは別の構図）
+		RyoEngine::Camera& GetCamera() { return camera_; }
+		// カメラの位置（背景のループの基準に使う）
+		const RyoEngine::Vector3& GetCameraTranslate() const { return cameraTranslate_; }
 
 	private:
 		void RegisterInParamEditor();
@@ -31,6 +35,11 @@ namespace AL4_1 {
 	private:
 		bool isFinished_ = false;
 		bool isInputEnabled_ = true;
+
+		// --- タイトル用のカメラ（背景だけを映す） ---
+		RyoEngine::Camera camera_{};
+		RyoEngine::Vector3 cameraTranslate_ = { 30.0f,10.0f,-35.0f };
+		RyoEngine::Vector3 cameraRotate_ = { 10.0f,0.0f,0.0f };	// 度
 
 		// --- タイトルロゴ（パリパリパリィ） ---
 		std::unique_ptr<RyoEngine::Sprite> logo_ = nullptr;

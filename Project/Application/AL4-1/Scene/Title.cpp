@@ -9,6 +9,8 @@ using namespace std;
 
 namespace AL4_1 {
 	void Title::Initialize() {
+		camera_.Initialize();
+
 		// ロゴとPRESS SPACE（中央を基準にする）
 		logo_ = make_unique<Sprite>();
 		logo_->Initialize(GameImage::GetImage(GameImage::Image::TitleLogo), logoPosition_, Anchor::Center);
@@ -20,6 +22,8 @@ namespace AL4_1 {
 
 	void Title::RegisterInParamEditor() {
 		ParamEditor::BeginGroup("Title");
+		ParamEditor::RegisterValue("cameraTranslate", &cameraTranslate_, 0.1f, -500.0f, 500.0f);
+		ParamEditor::RegisterValue("cameraRotate", &cameraRotate_, 0.5f, -180.0f, 180.0f);
 		ParamEditor::RegisterValue("logoPosition", &logoPosition_, 1.0f, -2000.0f, 4000.0f);
 		ParamEditor::RegisterValue("logoScale", &logoScale_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("flickerInterval", &flickerInterval_, 0.01f, 0.05f, 10.0f);
@@ -36,6 +40,12 @@ namespace AL4_1 {
 	void Title::Update() {
 		const float dt = GetDeltaTime();
 		timer_ += dt;
+
+		// --- カメラ（ParamEditorの値をそのまま使う） ---
+		constexpr float degToRad = std::numbers::pi_v<float> / 180.0f;
+		camera_.SetTranslate(cameraTranslate_);
+		camera_.SetRotate({ cameraRotate_.x * degToRad, cameraRotate_.y * degToRad, cameraRotate_.z * degToRad });
+		camera_.Update();
 
 		// --- ロゴ：ときどきチラつく（パリパリ） ---
 		flickerCooldown_ -= dt;

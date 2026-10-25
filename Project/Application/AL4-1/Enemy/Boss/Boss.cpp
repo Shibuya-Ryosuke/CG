@@ -177,6 +177,17 @@ namespace AL4_1 {
 	void Boss::StartShock() {
 		isShock_ = true;
 		shockTimer_ = shockTime_;
+
+		// フルパリィでもスタンさせる（カウンターで既にスタンしているときはそのまま）
+		if (IsCollidable() && state_ != State::Stun) {
+			// 攻撃中なら中断する（次の攻撃が同じにならないよう、前回の攻撃として覚えておく）
+			if (attackType_ != AttackType::None) {
+				prevAttackType_ = attackType_;
+			}
+			attackType_ = AttackType::None;
+			meleePhase_ = MeleePhase::None;
+			ChangeState(State::Stun);
+		}
 	}
 
 	void Boss::OnCountered() {

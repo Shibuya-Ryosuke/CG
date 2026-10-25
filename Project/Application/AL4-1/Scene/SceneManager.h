@@ -4,6 +4,7 @@
 #include "Game.h"
 #include "Result.h"
 #include "../Fade/Fade.h"
+#include "../Background/Background.h"
 
 namespace AL4_1 {
 	enum class Scene : int32_t {
@@ -49,6 +50,9 @@ namespace AL4_1 {
 		Title title_{};
 		Game game_{};
 		Result result_{};
+
+		// 背景の装飾（タイトルとゲームで共有する。1つだけなのでパラメータも重複しない）
+		Background background_{};
 
 		// --- フェード ---
 		Fade fade_{};

@@ -57,7 +57,8 @@ namespace AL4_1 {
 		void OnDamage(float damage);
 		// 近接攻撃をカウンターされた（攻撃判定中のみ有効）
 		void OnCountered();
-		// フルパリィを受けて感電する（パーティクルのフラグを shockTime_ の間立てる）
+		// フルパリィを受けて感電する（パーティクルのフラグを shockTime_ の間立てる）。
+		// まだスタンしていなければスタンもさせる（攻撃中なら中断）
 		void StartShock();
 
 		// 狙う対象（Rush や HomingShot で使う）

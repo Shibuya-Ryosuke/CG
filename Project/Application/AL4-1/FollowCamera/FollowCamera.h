@@ -34,6 +34,7 @@ namespace AL4_1 {
 		void SetFocus(const RyoEngine::Vector3* target) {
 			focusTarget_ = target;
 			isZoomFocus_ = false;
+			CancelPunchZoom();
 		}
 		/// <summary>
 		/// target をズームで映す（クリア演出など）。zoomOffsetX/Y の分だけ注視点をずらすので、
@@ -42,7 +43,18 @@ namespace AL4_1 {
 		void SetZoomFocus(const RyoEngine::Vector3* target) {
 			focusTarget_ = target;
 			isZoomFocus_ = true;
+			CancelPunchZoom();
 		}
+		/// <summary>
+		/// target へ素早く寄って punchZoomTime_ の間保ち、元の距離へ戻る（フルパリィの瞬間など）。
+		/// スロー中でも止まらないよう、寄る・戻る間は実時間で動く。target のアドレスは演出中ずっと有効であること
+		/// </summary>
+		void StartPunchZoom(const RyoEngine::Vector3* target) {
+			punchTarget_ = target;
+			punchTimer_ = punchZoomTime_;
+			punchReturnTimer_ = 0.0f;
+		}
+		bool IsPunchZooming() const { return punchTarget_ != nullptr; }
 		/// <summary>アップをやめてプレイヤーへ戻る（focusDelay_ でゆっくり戻る）</summary>
 		void ClearFocus() {
 			if (focusTarget_) { returnTimer_ = focusReturnTime_; }
@@ -52,6 +64,13 @@ namespace AL4_1 {
 		bool IsFocusing() const { return focusTarget_ != nullptr; }
 
 	private:
+		// パンチズームを途中でやめる（ほかの注目演出が始まったとき）
+		void CancelPunchZoom() {
+			punchTarget_ = nullptr;
+			punchTimer_ = 0.0f;
+			punchReturnTimer_ = 0.0f;
+		}
+
 		void RegisterInParamEditor();
 
 		// 注視点を原点・カメラ距離1.0としたときの、視界の四隅がマップ面(z=0)に映る範囲を求める
@@ -84,6 +103,16 @@ namespace AL4_1 {
 		float zoomOffsetX_ = 3.0f;		// 注視点の横のずれ（プラスで対象が画面の左に寄る）
 		float zoomOffsetY_ = 1.2f;		// 注視点の高さのずれ
 		bool isZoomFocus_ = false;
+
+		// --- パンチズーム（フルパリィの瞬間にプレイヤーへ素早く寄る。スロー中でも動くよう実時間で進める） ---
+		float punchZoomDistance_ = 8.0f;	// 寄ったときの距離
+		float punchZoomOffsetY_ = 1.0f;		// 寄ったときの注視点の高さのずれ
+		float punchZoomTime_ = 0.7f;		// 寄っている時間（実時間）
+		float punchZoomInDelay_ = 0.06f;	// 寄るときの遅延（小さいほど一瞬で寄る）
+		float punchZoomOutDelay_ = 0.3f;	// 戻るときの遅延
+		const RyoEngine::Vector3* punchTarget_ = nullptr;
+		float punchTimer_ = 0.0f;			// 寄っている残り時間
+		float punchReturnTimer_ = 0.0f;		// 戻っている途中の残り時間
 
 		bool limitDistanceToMap_ = true;
 

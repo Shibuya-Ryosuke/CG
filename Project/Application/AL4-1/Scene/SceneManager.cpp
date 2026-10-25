@@ -13,10 +13,14 @@ namespace AL4_1 {
 		GameImage::Initialize();
 		// ParamEditor::Load() は Game::Initialize() の中で呼ばれるので、その前に登録する
 		RegisterInParamEditor();
+		background_.RegisterInParamEditor();
 
 		title_.Initialize();
 		game_.Initialize();
 		result_.Initialize();
+
+		// 背景（ロードした個数で作り、プレイヤーのスポーン位置を基準に並べる）
+		background_.Initialize(game_.GetPlayerPosition());
 
 		scene_ = scene;
 
@@ -72,6 +76,9 @@ namespace AL4_1 {
 			break;
 		}
 
+		// 背景（タイトル中はタイトル用カメラ、それ以外はプレイヤーの位置を基準にループ）
+		background_.Update(scene_ == Scene::Title ? title_.GetCameraTranslate() : game_.GetPlayerPosition());
+
 		// --- フェード ---
 		fade_.Update();
 		// 真っ黒になりきったら切り替えて、フェードインを始める
@@ -89,13 +96,16 @@ namespace AL4_1 {
 	}
 
 	void SceneManager::Draw(RyoEngine::Camera& debugCamera) {
-		Camera& camera = GetActiveCamera(debugCamera);
+		// タイトル中はタイトル用のカメラを使う（デバッグカメラが有効ならそちらが優先される）
+		Camera& camera = GetActiveCamera(scene_ == Scene::Title ? title_.GetCamera() : debugCamera);
 
 		GPUParticleManager::GetInstance()->Draw(camera);
 		ground_->TransferMatrix(camera);
 		sky_->TransferMatrix(camera);
 		//ground_->Draw();
 		sky_->Draw();
+		// 背景の装飾（どのシーンでも、シーンの描画より先に描く）
+		background_.Draw(camera);
 		switch (scene_) {
 		case Scene::Title:
 			title_.Draw();
@@ -150,6 +160,7 @@ namespace AL4_1 {
 		switch (scene_) {
 		case Scene::Title:
 			title_.Start();
+			game_.ResetPostEffects();
 			break;
 		case Scene::Game:
 			game_.Start();

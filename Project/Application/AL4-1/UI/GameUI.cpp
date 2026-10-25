@@ -44,6 +44,13 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("maxBlinkSpeed", &gauge_.maxBlinkSpeed, 0.1f, 0.0f, 20.0f);
 		ParamEditor::EndGroup();
 
+		ParamEditor::BeginGroup("FailedDim");
+		ParamEditor::RegisterValue("position", &failedDim_.position, 1.0f, -2000.0f, 4000.0f);
+		ParamEditor::RegisterValue("scale", &failedDim_.scale, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("maxAlpha", &failedDim_.maxAlpha, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("fadeTime", &failedDim_.fadeTime, 0.01f, 0.0f, 5.0f);
+		ParamEditor::EndGroup();
+
 		ParamEditor::BeginGroup("ClearTime");
 		ParamEditor::RegisterValue("position", &time_.position, 1.0f, -2000.0f, 4000.0f);
 		ParamEditor::RegisterValue("scale", &time_.scale, 0.01f, 0.0f, 10.0f);
@@ -120,6 +127,8 @@ namespace AL4_1 {
 		// 文字は中央を基準にする
 		clearText_.sprite = create(GameImage::Image::TextClear, Anchor::Center);
 		failedText_.sprite = create(GameImage::Image::TextFailed, Anchor::Center);
+		// ゲームオーバー時の黒（フェードと同じ黒い画像）
+		failedDim_.sprite = create(GameImage::Image::FadeBlack, Anchor::Center);
 
 		// クリアタイム（数字は全部同じ大きさの画像なので、毎フレーム画像を差し替えて使う）
 		time_.label = create(GameImage::Image::TextClearTime, Anchor::Left);
@@ -140,6 +149,7 @@ namespace AL4_1 {
 		UpdateGauge(gaugeRatio);
 		UpdateText(clearText_);
 		UpdateText(failedText_);
+		UpdateDim();
 		UpdateTime();
 		UpdateMenu();
 	}
@@ -250,6 +260,20 @@ namespace AL4_1 {
 		text.sprite->TransferMatrix();
 	}
 
+	void GameUI::UpdateDim() {
+		if (!failedDim_.sprite) return;
+
+		float alpha = 0.0f;
+		if (failedDim_.isVisible) {
+			failedDim_.timer += GetDeltaTime();
+			alpha = FadeAlpha(failedDim_.timer, 0.0f, failedDim_.fadeTime) * failedDim_.maxAlpha;
+		}
+		failedDim_.sprite->SetTranslate(failedDim_.position);
+		failedDim_.sprite->SetScale(failedDim_.scale);
+		failedDim_.sprite->SetColor({ 1.0f,1.0f,1.0f,alpha });
+		failedDim_.sprite->TransferMatrix();
+	}
+
 	void GameUI::UpdateTime() {
 		if (!time_.label) return;
 
@@ -332,6 +356,10 @@ namespace AL4_1 {
 				}
 			}
 		}
+		// ゲームオーバー時の黒（HPなどのUIの上、文字の下）
+		if (failedDim_.isVisible && failedDim_.sprite) {
+			failedDim_.sprite->Draw();
+		}
 		if (clearText_.isVisible && clearText_.sprite) {
 			clearText_.sprite->Draw();
 		}
@@ -379,6 +407,7 @@ namespace AL4_1 {
 		finalize(gauge_.fill);
 		finalize(clearText_.sprite);
 		finalize(failedText_.sprite);
+		finalize(failedDim_.sprite);
 		finalize(time_.label);
 		for (auto& c : time_.chars) {
 			finalize(c);
@@ -403,6 +432,9 @@ namespace AL4_1 {
 	void GameUI::ShowFailedText() {
 		failedText_.isVisible = true;
 		failedText_.timer = 0.0f;
+		// 文字と一緒に黒を敷く
+		failedDim_.isVisible = true;
+		failedDim_.timer = 0.0f;
 	}
 
 	void GameUI::ShowMenu(bool isClearLayout) {
@@ -425,6 +457,8 @@ namespace AL4_1 {
 		clearText_.timer = 0.0f;
 		failedText_.isVisible = false;
 		failedText_.timer = 0.0f;
+		failedDim_.isVisible = false;
+		failedDim_.timer = 0.0f;
 		time_.isVisible = false;
 		time_.timer = 0.0f;
 		time_.text.clear();

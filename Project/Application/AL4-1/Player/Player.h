@@ -67,6 +67,9 @@ namespace AL4_1 {
 		void SetControllable(bool controllable) { isControllable_ = controllable; }
 		// カメラの方を向かせるか（クリア演出用）
 		void SetFaceCamera(bool faceCamera) { isFaceCamera_ = faceCamera; }
+
+		// クリア時に光ってると見にくいのでgameから消せるように
+		void SetIntensity(float intensity) { model_->SetEmissive({ 0.0f,0.0f,0.0f }, intensity); }
 	private:
 		void RegisterInParamEditor();
 		void Jump();
@@ -196,6 +199,7 @@ namespace AL4_1 {
 		float effectPeakTime_ = 0.25f;
 		float effectMaxChromatic_ = 0.0f;
 		float effectSlowScale_ = 1.0f;
+		float effectHoldTime_ = 0.0f;	// 一番遅い状態を保つ時間（フルパリィのときだけ使う）
 		// 弾をパリィしたとき
 		float parryEffectDuration_ = 0.5f;
 		float parryEffectPeakTime_ = 0.25f;
@@ -221,23 +225,24 @@ namespace AL4_1 {
 		float counterGaugeGain_ = 30.0f;	// 近接攻撃をカウンターしたとき
 		float damageGaugePenalty_ = 0.0f;	// 被弾したときに減る量
 		float fullParryDamage_ = 30.0f;		// フルパリィでボスに与える追加ダメージ
-		// 溜まるほど強く光る（emissiveColor_/emissiveIntensity_ からこの色・強さへ）
+		// 溜まるほど強く光る（ゲージ0で発光0、満タンで chargeEmissiveIntensity_）
 		RyoEngine::Vector3 chargeEmissiveColor_ = { 0.4f,0.9f,1.0f };
-		float chargeEmissiveIntensity_ = 2.0f;
-		// 満タンのときは脈打つ
+		float chargeEmissiveIntensity_ = 1.5f;
+		// 満タンのときは脈打つ（最大の強さを超えないよう、下へ揺らす）
 		float maxPulseSpeed_ = 3.0f;		// 1秒あたりの回数
-		float maxPulseAmount_ = 0.5f;		// 発光に足す強さ
+		float maxPulseAmount_ = 0.3f;		// 最大の強さから下げる割合（0.3なら 1.5 → 1.05 の間で揺れる）
 		float gaugeTimer_ = 0.0f;
 		// パーティクル用の段階フラグ（1/3以上・2/3以上・満タン）。エミッターを重ねて、溜まるほどパリパリが増える
-		bool isFirstCharge_ = false;
-		bool isSecondCharge_ = false;
-		bool isMaxCharge_ = false;
+		bool isCharge1_ = false;
+		bool isCharge2_ = false;
+		bool isChargeMax_ = false;
 		// フルパリィしたフレームだけtrue（パーティクルの発生フラグ用。次のUpdateの冒頭で戻す）
 		bool isFullParryTrigger_ = false;
 		// フルパリィの演出（通常のパリィ・カウンターより強く・遅く）
-		float fullParryEffectDuration_ = 0.8f;
+		float fullParryEffectDuration_ = 1.2f;
 		float fullParryEffectPeakTime_ = 0.3f;
+		float fullParryEffectHoldTime_ = 0.4f;	// 一番遅い状態を保つ時間（duration に含まれる）
 		float fullParryMaxChromatic_ = 0.6f;
-		float fullParrySlowScale_ = 0.05f;
+		float fullParrySlowScale_ = 0.03f;
 	};
 }

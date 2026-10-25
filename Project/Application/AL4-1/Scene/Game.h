@@ -6,7 +6,6 @@
 #include "../Bullet/BulletManager.h"
 #include "../MapChipField/MapChipField.h"
 #include "../FollowCamera/FollowCamera.h"
-#include "../Background/Background.h"
 #include "../UI/GameUI.h"
 
 namespace AL4_1 {
@@ -52,6 +51,11 @@ namespace AL4_1 {
 
 		// ゲームシーン用の追従カメラ
 		RyoEngine::Camera& GetCamera() { return followCamera_.GetCamera(); }
+		// プレイヤーの足元の位置（背景のループの基準に使う）
+		const RyoEngine::Vector3& GetPlayerPosition() const { return player_.GetPosition(); }
+
+		// ゲームオーバー演出などで変えたポストエフェクトを元に戻す
+		void ResetPostEffects();
 
 	private:
 		void SpawnFromMap();
@@ -69,9 +73,7 @@ namespace AL4_1 {
 		// メニューの操作（W/Sで選んでSpaceで決定）。クリア時とゲームオーバー時で共通
 		void UpdateMenu();
 		void UpdateGameOver();
-		// ゲームオーバー演出などで変えたポストエフェクトを元に戻す
-		void ResetPostEffects();
-
+		
 		void RegisterInParamEditor();
 	private:
 		// マップ
@@ -82,9 +84,6 @@ namespace AL4_1 {
 
 		// プレイヤー追従カメラ
 		FollowCamera followCamera_{};
-
-		// 背景の装飾（横に流れてループする）
-		Background background_{};
 
 		// UI（HPバー・クリア/失敗の文字）
 		GameUI gameUI_{};

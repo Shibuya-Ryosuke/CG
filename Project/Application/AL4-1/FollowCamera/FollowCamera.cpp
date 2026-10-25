@@ -37,6 +37,11 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("zoomDistance", &zoomDistance_, 0.1f, 1.0f, 200.0f);
 		ParamEditor::RegisterValue("zoomOffsetX", &zoomOffsetX_, 0.1f, -20.0f, 20.0f);
 		ParamEditor::RegisterValue("zoomOffsetY", &zoomOffsetY_, 0.1f, -20.0f, 20.0f);
+		ParamEditor::RegisterValue("punchZoomDistance", &punchZoomDistance_, 0.1f, 1.0f, 200.0f);
+		ParamEditor::RegisterValue("punchZoomOffsetY", &punchZoomOffsetY_, 0.1f, -20.0f, 20.0f);
+		ParamEditor::RegisterValue("punchZoomTime", &punchZoomTime_, 0.01f, 0.0f, 5.0f);
+		ParamEditor::RegisterValue("punchZoomInDelay", &punchZoomInDelay_, 0.005f, 0.0f, 2.0f);
+		ParamEditor::RegisterValue("punchZoomOutDelay", &punchZoomOutDelay_, 0.005f, 0.0f, 2.0f);
 		ParamEditor::EndGroup();
 	}
 
@@ -99,6 +104,18 @@ namespace AL4_1 {
 
 	void FollowCamera::Update(const Vector3& playerFeet) {
 		const float dt = GetScaleTime();
+		// パンチズームはスロー中でも止まらないよう実時間で進める
+		const float realDt = GetDeltaTime();
+		if (punchTarget_) {
+			punchTimer_ -= realDt;
+			if (punchTimer_ <= 0.0f) {
+				// 寄り終わったら戻り始める（遅延の数倍の時間で、ほぼ元の距離に戻る）
+				punchTarget_ = nullptr;
+				punchReturnTimer_ = punchZoomOutDelay_ * 4.0f;
+			}
+		} else if (punchReturnTimer_ > 0.0f) {
+			punchReturnTimer_ -= realDt;
+		}
 
 		// --- 追いかけたい注視点 ---
 		float desiredX = playerFeet.x + lookOffsetX_;
@@ -116,13 +133,28 @@ namespace AL4_1 {
 				desiredDist = zoomDistance_;
 			}
 		}
+		// パンチズーム中は対象へ寄る
+		if (punchTarget_) {
+			desiredX = punchTarget_->x;
+			desiredY = punchTarget_->y + punchZoomOffsetY_;
+			desiredDist = punchZoomDistance_;
+		}
 
 		// アップへ寄る・戻る途中は、いつもよりゆっくり追いかける
 		if (returnTimer_ > 0.0f) {
 			returnTimer_ -= dt;
 		}
-		const float delay = (focusTarget_ || returnTimer_ > 0.0f) ? focusDelay_ : followDelay_;
-		const float alpha = needSnap_ ? 1.0f : (delay <= 0.0f ? 1.0f : 1.0f - std::exp(-dt / delay));
+		float delay = (focusTarget_ || returnTimer_ > 0.0f) ? focusDelay_ : followDelay_;
+		float stepDt = dt;
+		// パンチズームの寄る・戻る間は、専用の遅延を実時間でかける
+		if (punchTarget_) {
+			delay = punchZoomInDelay_;
+			stepDt = realDt;
+		} else if (punchReturnTimer_ > 0.0f) {
+			delay = punchZoomOutDelay_;
+			stepDt = realDt;
+		}
+		const float alpha = needSnap_ ? 1.0f : (delay <= 0.0f ? 1.0f : 1.0f - std::exp(-stepDt / delay));
 
 		// 距離も遅延をかけて変える
 		currentDistance_ += (desiredDist - currentDistance_) * alpha;

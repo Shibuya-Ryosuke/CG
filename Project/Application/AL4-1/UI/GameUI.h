@@ -133,6 +133,26 @@ namespace AL4_1 {
 			float timer = 0.0f;
 		};
 
+		// ゲームオーバー時に、文字の後ろ・HPなどのUIの上に敷く黒（文字を見やすくする）
+		struct Dim {
+			Dim() = default;
+			// コピー禁止（ユニークポインタを持つので）
+			Dim(const Dim&) = delete;
+			Dim& operator=(const Dim&) = delete;
+			// ムーブは許可
+			Dim(Dim&&) noexcept = default;
+			Dim& operator=(Dim&&) noexcept = default;
+
+			std::unique_ptr<RyoEngine::Sprite> sprite = nullptr;
+			RyoEngine::Vector2 position = { 640.0f,360.0f };	// 画面の中央（画像は1280x720）
+			RyoEngine::Vector2 scale = { 1.0f,1.0f };
+			float maxAlpha = 0.75f;		// 一番濃いときのアルファ（1.0で後ろのUIを完全に隠す）
+			float fadeTime = 0.5f;
+
+			bool isVisible = false;
+			float timer = 0.0f;
+		};
+
 		// クリアタイム（「クリアタイム」の文字 + 数字を1文字ずつ）
 		static constexpr size_t kMaxTimeChars = 8;	// "999.99s" が入る長さ
 		struct TimeDisplay {
@@ -198,6 +218,7 @@ namespace AL4_1 {
 		void UpdateGauge(float ratio);
 		void UpdateText(Text& text);
 		void UpdateTime();
+		void UpdateDim();
 		void UpdateMenu();
 		void DrawHpBar(HpBar& bar);
 		void ResetHpBar(HpBar& bar);
@@ -210,6 +231,7 @@ namespace AL4_1 {
 		Gauge gauge_{};
 		Text clearText_{};
 		Text failedText_{};
+		Dim failedDim_{};
 		TimeDisplay time_{};
 		Menu menu_{};
 

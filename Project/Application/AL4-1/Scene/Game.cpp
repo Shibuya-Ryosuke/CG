@@ -22,8 +22,6 @@ namespace AL4_1 {
 		// 弾の共有パラメータを登録（インスタンスが増減するので1回だけ）
 		Bullet::RegisterInParamEditor();
 		RegisterInParamEditor();
-		// 背景のパラメータを登録（個数はロード後の値で作る）
-		background_.RegisterInParamEditor();
 		// UIのパラメータを登録
 		gameUI_.RegisterInParamEditor();
 
@@ -55,9 +53,6 @@ namespace AL4_1 {
 		// 追従カメラ（スポーン位置が決まった後に初期化する）
 		followCamera_.Initialize(&mapChipField_);
 
-		// 背景（ロードした個数で作り、プレイヤーのスポーン位置を基準に並べる）
-		background_.Initialize(player_.GetPosition());
-
 		// UI（登場演出が終わるまでは非表示）
 		gameUI_.Initialize();
 
@@ -82,9 +77,6 @@ namespace AL4_1 {
 
 		// プレイヤーの移動後にカメラを更新
 		followCamera_.Update(player_.GetPosition());
-
-		// 背景（プレイヤーの位置を基準にループ）
-		background_.Update(player_.GetPosition());
 
 		// ボスはフェードインが終わるまで出さない
 		if (phase_ != Phase::Wait) {
@@ -123,8 +115,6 @@ namespace AL4_1 {
 	}
 
 	void Game::Draw(RyoEngine::Camera& camera) {
-		background_.Draw(camera);
-
 		mapChipField_.Draw(camera);
 
 		player_.Draw(camera);
@@ -311,6 +301,9 @@ namespace AL4_1 {
 	}
 
 	void Game::UpdateClearResult() {
+		// ポストエフェクトも発光も邪魔なので消す
+		ResetPostEffects();
+		player_.SetIntensity(0.0f);
 		UpdateMenu();
 	}
 
@@ -351,7 +344,6 @@ namespace AL4_1 {
 				// リトライはフェードを挟むので、SceneManager に Start() し直してもらう
 				isRequestRetry_ = true;
 			} else {
-				ResetPostEffects();
 				isRequestTitle_ = true;
 			}
 		}
@@ -412,6 +404,8 @@ namespace AL4_1 {
 				// ゲージ満タンでのパリィ（フルパリィ）なら、この弾がボスに当たったときに大ダメージ
 				if (player_.OnParrySuccess(false)) {
 					fullParryBullet_ = &bullet;
+					// フルパリィの瞬間はプレイヤーへ素早く寄る
+					followCamera_.StartPunchZoom(&player_.GetPosition());
 				}
 				continue;
 			}
@@ -433,6 +427,8 @@ namespace AL4_1 {
 				if (player_.OnParrySuccess(true)) {
 					boss_.OnDamage(player_.GetFullParryDamage());
 					boss_.StartShock();
+					// フルパリィの瞬間はプレイヤーへ素早く寄る
+					followCamera_.StartPunchZoom(&player_.GetPosition());
 				}
 				player_.SetAttackHitDone();
 			} else if (!boss_.IsMeleeHitDone() && IsCollision(playerOBB, meleeOBB)) {
