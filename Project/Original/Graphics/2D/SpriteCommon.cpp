@@ -12,20 +12,23 @@ namespace RyoEngine {
     }
 
     void SpriteCommon::Initialize() {
+        SpriteCommon* instance = GetInstance();
+
         Logger::Log("SpriteCommon : Initializing...\n");
-        dxCommon_ = DirectXCommon::GetInstance();
-        CreateRootSignature();
-        CreatePipelineStates();
+        instance->CreateRootSignature();
+        instance->CreatePipelineStates();
         Logger::LogSuccess("SpriteCommon : Initialized\n");
     }
 
     void SpriteCommon::BeginDraw() {
-        auto commandList = dxCommon_->GetCommandList();
-        commandList->SetGraphicsRootSignature(rootSignature_.Get());
+        SpriteCommon* instance = GetInstance();
+
+        auto commandList = DirectXCommon::GetCommandList();
+        commandList->SetGraphicsRootSignature(instance->rootSignature_.Get());
 
         // 現在の blendMode_ に応じたPSOをセット
-        size_t blendIdx = static_cast<size_t>(blendMode_);
-        commandList->SetPipelineState(graphicsPipelineStates_[blendIdx].Get());
+        size_t blendIdx = static_cast<size_t>(instance->blendMode_);
+        commandList->SetPipelineState(instance->graphicsPipelineStates_[blendIdx].Get());
 
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -34,24 +37,25 @@ namespace RyoEngine {
     }
 
     void SpriteCommon::Draw() {
+        SpriteCommon* instance = GetInstance();
+
         BeginDraw();
-        for (const auto& command : drawCommands_) {
+        for (const auto& command : instance->drawCommands_) {
             command();
         }
     }
 
     void SpriteCommon::Finalize() {
+        SpriteCommon* instance = GetInstance();
+
         Logger::Log("SpriteCommon : Finalizing...\n");
         // グラフィックスパイプラインを解放
-        for (auto& pso : graphicsPipelineStates_) {
+        for (auto& pso : instance->graphicsPipelineStates_) {
             pso.Reset();
         }
 
         // ルートシグネチャを解放
-        rootSignature_.Reset();
-
-        // 保持していた DirectXCommon のポインタをクリア
-        dxCommon_ = nullptr;
+        instance->rootSignature_.Reset();
         Logger::LogSuccess("SpriteCommon : Finalized\n");
     }
 
@@ -106,7 +110,7 @@ namespace RyoEngine {
         }
 
         // ルートシグネチャの生成
-        hr = dxCommon_->GetDevice()->CreateRootSignature(0,
+        hr = DirectXCommon::GetDevice()->CreateRootSignature(0,
             signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
         assert(SUCCEEDED(hr));
     }
@@ -125,8 +129,8 @@ namespace RyoEngine {
         inputLayoutDesc.pInputElementDescs = inputElementDescs;
         inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Sprite/Sprite.VS.hlsl", L"vs_6_0");
-        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Sprite/Sprite.PS.hlsl", L"ps_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Sprite/Sprite.VS.hlsl", L"vs_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Sprite/Sprite.PS.hlsl", L"ps_6_0");
 
         D3D12_RASTERIZER_DESC rasterizerDesc{};
         rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
@@ -157,7 +161,7 @@ namespace RyoEngine {
             psoDesc.SampleDesc.Count = 1;
             psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-            HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&graphicsPipelineStates_[i]));
+            HRESULT hr = DirectXCommon::GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&graphicsPipelineStates_[i]));
             assert(SUCCEEDED(hr));
         }
     }

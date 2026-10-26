@@ -21,32 +21,32 @@ namespace RyoEngine {
     /// </summary>
     class InstancedModelCommon {
     public:
-        static InstancedModelCommon* GetInstance();
+        static void Initialize();
+        static void Finalize();
 
-        void Initialize();
-        void Finalize();
-
-        ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
+        static ID3D12RootSignature* GetRootSignature() { return GetInstance()->rootSignature_.Get(); }
         // 現在のブレンドモードに応じたPSOを返す
-        ID3D12PipelineState* GetPipelineState() const {
-            return pipelineStates_[static_cast<size_t>(blendMode_)].Get();
+        static ID3D12PipelineState* GetPipelineState() {
+            return GetInstance()->pipelineStates_[static_cast<size_t>(GetInstance()->blendMode_)].Get();
         }
 
         // --- ブレンドモードの設定・取得 ---
-        void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
-        BlendMode GetBlendMode() const { return blendMode_; }
+        static void SetBlendMode(BlendMode blendMode) { GetInstance()->blendMode_ = blendMode; }
+        static BlendMode GetBlendMode() { return GetInstance()->blendMode_; }
 
         // 描画開始時に現在のブレンドモードのPSOをセットする
-        void BeginDraw();
+        static void BeginDraw();
 
         // 描画コマンドの予約(InstancedModel::Draw()から呼ばれる)
-        void SetDrawCommands(const std::function<void()>& function) { drawCommands_.push_back(function); }
+        static void SetDrawCommands(const std::function<void()>& function) { GetInstance()->drawCommands_.push_back(function); }
         // 予約された描画コマンドを全て実行する(EndFrame()内、3Dシーンパス中に呼ぶこと)
-        void Draw();
+        static void Draw();
         // 予約をクリアする(NewFrame()の先頭で呼ぶこと)
-        void CommandsClear() { drawCommands_.clear(); }
+        static void CommandsClear() { GetInstance()->drawCommands_.clear(); }
 
     private:
+        static InstancedModelCommon* GetInstance();
+
         InstancedModelCommon() = default;
         ~InstancedModelCommon() = default;
         InstancedModelCommon(const InstancedModelCommon&) = delete;

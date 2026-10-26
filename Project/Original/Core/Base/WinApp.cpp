@@ -40,18 +40,20 @@ namespace RyoEngine {
 	}
 
 	void WinApp::Initialize(const wchar_t* title, int32_t width, int32_t height) {
+		WinApp* instance = GetInstance();
+
 		Logger::Log("WinApp : Initializing...\n");
 
 		// ウィンドウプロシージャ
-		wc_.lpfnWndProc = WindowProc;
+		instance->wc_.lpfnWndProc = WindowProc;
 		// ウィンドウクラス名(何でもいい)
-		wc_.lpszClassName = L"OriginalEngine";
+		instance->wc_.lpszClassName = L"OriginalEngine";
 		// インスタンスハンドル
-		wc_.hInstance = GetModuleHandle(nullptr);
+		instance->wc_.hInstance = GetModuleHandle(nullptr);
 		// カーソル
-		wc_.hCursor = LoadCursor(nullptr, IDC_ARROW);
+		instance->wc_.hCursor = LoadCursor(nullptr, IDC_ARROW);
 		// ウィンドウクラスを登録する
-		RegisterClass(&wc_);
+		RegisterClass(&instance->wc_);
 
 		// ウィンドウサイズを表す構造体にクライアント領域を入れる
 		RECT wrc = { 0,0,width,height };
@@ -60,8 +62,8 @@ namespace RyoEngine {
 		AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
 		// ウィンドウの生成
-		hwnd_ = CreateWindow(
-			wc_.lpszClassName,        // 利用するクラス名
+		instance->hwnd_ = CreateWindow(
+			instance->wc_.lpszClassName,        // 利用するクラス名
 			title,                   // タイトルバーの文字
 			WS_OVERLAPPEDWINDOW,     // よく見るウィンドウスタイル
 			CW_USEDEFAULT,           // 表示X座標(Windowsに任せる)
@@ -70,7 +72,7 @@ namespace RyoEngine {
 			wrc.bottom - wrc.top,    // ウィンドウ縦幅
 			nullptr,                 // 親ウィンドウハンドル
 			nullptr,                 // メニューハンドル
-			wc_.hInstance,            // インスタンスハンドル
+			instance->wc_.hInstance,            // インスタンスハンドル
 			nullptr                  // オプション
 		);
 
@@ -85,13 +87,13 @@ namespace RyoEngine {
 		}
         #endif
 
-		if (!hwnd_) {
+		if (!instance->hwnd_) {
 			Logger::Log("WinApp: Failed to create window.\n");
 			return;
 		}
 
 		// ウィンドウを表示する
-		ShowWindow(hwnd_, SW_SHOW);
+		ShowWindow(instance->hwnd_, SW_SHOW);
 		Logger::LogSuccess("WinApp : Initialized\n");
 	}
 
@@ -108,8 +110,10 @@ namespace RyoEngine {
 	}
 
 	void WinApp::Finalize() {
+		WinApp* instance = GetInstance();
+
 		Logger::Log("WinApp : Finalizing...\n");
-		UnregisterClass(wc_.lpszClassName, wc_.hInstance);
+		UnregisterClass(instance->wc_.lpszClassName, instance->wc_.hInstance);
 		Logger::LogSuccess("WinApp : Finalized\n");
 	}
 	

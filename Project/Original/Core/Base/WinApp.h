@@ -9,29 +9,29 @@ namespace RyoEngine {
 		// ウィンドウプロシージャ
 		static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-		// インスタンスの取得
-		static WinApp* GetInstance();
-
 		/// <summary>
 		/// 初期化
 		/// </summary>
 		/// <param name="title">ウィンドウに表示させる文字</param>
 		/// <param name="width">ウィンドウの横幅</param>
 		/// <param name="height">ウィンドウの縦幅</param>
-		void Initialize(const wchar_t* title, int32_t width = 1280, int32_t height = 720);
+		static void Initialize(const wchar_t* title, int32_t width = 1280, int32_t height = 720);
 
 		// メッセージ処理
-		bool ProcessMessage();
+		static bool ProcessMessage();
 
 		// 終了
-		void Finalize();
+		static void Finalize();
 
 
 		// ゲッター
-		HWND GetHwnd() const { return hwnd_; }
-		HINSTANCE GetHInstance() const { return wc_.hInstance; };
+		static HWND GetHwnd() { return GetInstance()->hwnd_; }
+		static HINSTANCE GetHInstance() { return GetInstance()->wc_.hInstance; };
 
 	private:
+		// インスタンスの取得
+		static WinApp* GetInstance();
+
 		WinApp() = default;
 		~WinApp() = default;
 		WinApp(const WinApp&) = delete;

@@ -63,7 +63,7 @@ namespace RyoEngine {
             POINT cursolPos;
             GetCursorPos(&cursolPos);
 
-            HWND hwnd = WinApp::GetInstance()->GetHwnd();
+            HWND hwnd = WinApp::GetHwnd();
             ScreenToClient(hwnd, &cursolPos);
 
             return { static_cast<float>(cursolPos.x),static_cast<float>(cursolPos.y) };

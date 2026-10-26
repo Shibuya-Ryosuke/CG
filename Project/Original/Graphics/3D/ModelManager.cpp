@@ -81,8 +81,7 @@ namespace RyoEngine {
             return kInvalidModelIndex;
         }
 
-        auto device = DirectXCommon::GetInstance()->GetDevice();
-        auto textureManager = TextureManager::GetInstance();
+        auto device = DirectXCommon::GetDevice();
 
         auto asset = std::make_unique<ModelAsset>();
         asset->filePath = filePath;
@@ -123,9 +122,9 @@ namespace RyoEngine {
             }
             // UVが無いメッシュはテクスチャを引けない(texcoordは(0,0)固定)ので、必ず white にする
             if (mesh.hasUV && !texturePath.empty()) {
-                mesh.defaultTextureHandle = textureManager->Load(texturePath);
+                mesh.defaultTextureHandle = TextureManager::Load(texturePath);
             } else {
-                mesh.defaultTextureHandle = textureManager->GetWhiteTex();
+                mesh.defaultTextureHandle = TextureManager::GetWhiteTex();
             }
 
             asset->meshes.push_back(std::move(mesh));
@@ -203,7 +202,7 @@ namespace RyoEngine {
             retired_.push_back(std::move(retired));
         }
 
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         instanceResource_ = DirectXCommon::CreateBufferResource(device, sizeof(ModelInstanceData) * newCapacity);
         instanceResource_->Map(0, nullptr, reinterpret_cast<void**>(&instanceMapped_));
         instanceCapacity_ = newCapacity;
@@ -253,10 +252,7 @@ namespace RyoEngine {
     // 描画
     // ------------------------------------------------------------------
     void ModelManager::BindCommonState() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        auto lightManager = LightManager::GetInstance();
-        auto shadowMap = ShadowMap::GetInstance();
-        auto textureManager = TextureManager::GetInstance();
+        auto commandList = DirectXCommon::GetCommandList();
 
         commandList->SetGraphicsRootSignature(rootSignature_.Get());
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -266,23 +262,22 @@ namespace RyoEngine {
 
         // root 0: カメラVP / 3: ライト配列 / 4: ライト数 / 5: アンビエント / 6: ライトVP / 7: シャドウマップ
         commandList->SetGraphicsRootConstantBufferView(0, cameraVPResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootShaderResourceView(3, lightManager->GetLightGPUVirtualAddress());
-        commandList->SetGraphicsRootConstantBufferView(4, lightManager->GetLightCountGPUVirtualAddress());
-        commandList->SetGraphicsRootConstantBufferView(5, lightManager->GetAmbientGPUVirtualAddress());
-        commandList->SetGraphicsRootConstantBufferView(6, shadowMap->GetLightViewProjGPUVirtualAddress());
-        commandList->SetGraphicsRootDescriptorTable(7, textureManager->GetGPUHandle(shadowMap->GetShadowMapTextureHandle()));
+        commandList->SetGraphicsRootShaderResourceView(3, LightManager::GetLightGPUVirtualAddress());
+        commandList->SetGraphicsRootConstantBufferView(4, LightManager::GetLightCountGPUVirtualAddress());
+        commandList->SetGraphicsRootConstantBufferView(5, LightManager::GetAmbientGPUVirtualAddress());
+        commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetLightViewProjGPUVirtualAddress());
+        commandList->SetGraphicsRootDescriptorTable(7, TextureManager::GetGPUHandle(ShadowMap::GetShadowMapTextureHandle()));
     }
 
     void ModelManager::DrawGroups(bool bindTexture) {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        auto textureManager = TextureManager::GetInstance();
+        auto commandList = DirectXCommon::GetCommandList();
         const D3D12_GPU_VIRTUAL_ADDRESS base = instanceResource_->GetGPUVirtualAddress();
 
         for (const Group& group : groups_) {
             const MeshAsset& mesh = assets_[group.modelIndex - 1]->meshes[group.meshIndex];
 
             if (bindTexture) {
-                commandList->SetGraphicsRootDescriptorTable(2, textureManager->GetGPUHandle(group.textureHandle));
+                commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetGPUHandle(group.textureHandle));
             }
             commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
 
@@ -302,7 +297,7 @@ namespace RyoEngine {
             return;
         }
 
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
         instance->BindCommonState();
         commandList->SetPipelineState(instance->pipelineStates_[static_cast<size_t>(instance->blendMode_)].Get());
         instance->DrawGroups(true);
@@ -316,11 +311,11 @@ namespace RyoEngine {
             return;
         }
 
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
         // シャドウパス中はシャドウマップ自体をSRVとして結ばない (深度書き込み中のため)
         commandList->SetGraphicsRootSignature(instance->rootSignature_.Get());
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetInstance()->GetLightViewProjGPUVirtualAddress());
+        commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetLightViewProjGPUVirtualAddress());
         commandList->SetPipelineState(instance->shadowPipelineState_.Get());
         instance->DrawGroups(false);
     }
@@ -329,7 +324,7 @@ namespace RyoEngine {
     // 初期化 (ルートシグネチャ / PSO / バッファ)
     // ------------------------------------------------------------------
     void ModelManager::CreateBuffers() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
         cameraVPResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Matrix4x4));
         cameraVPResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraVPData_));
@@ -339,7 +334,7 @@ namespace RyoEngine {
     }
 
     void ModelManager::CreateRootSignature() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         // テクスチャ (t0, Pixel)
@@ -432,7 +427,7 @@ namespace RyoEngine {
     }
 
     void ModelManager::CreatePipelineStates() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
@@ -461,8 +456,8 @@ namespace RyoEngine {
             rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
             rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-            Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/ModelBatch.VS.hlsl", L"vs_6_0");
-            Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/ModelBatch.PS.hlsl", L"ps_6_0");
+            Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/ModelBatch.VS.hlsl", L"vs_6_0");
+            Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/ModelBatch.PS.hlsl", L"ps_6_0");
             assert(vertexShaderBlob != nullptr);
             assert(pixelShaderBlob != nullptr);
 
@@ -506,7 +501,7 @@ namespace RyoEngine {
             rasterizerDesc.DepthBiasClamp = 0.0f;
             rasterizerDesc.SlopeScaledDepthBias = 1.5f;
 
-            Microsoft::WRL::ComPtr<IDxcBlob> shadowVSBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/ModelBatchShadow.VS.hlsl", L"vs_6_0");
+            Microsoft::WRL::ComPtr<IDxcBlob> shadowVSBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/ModelBatchShadow.VS.hlsl", L"vs_6_0");
             assert(shadowVSBlob != nullptr);
 
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};

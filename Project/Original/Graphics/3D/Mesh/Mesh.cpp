@@ -10,7 +10,7 @@
 namespace RyoEngine {
 
     void Mesh::CreateTriangle(const Vector3& position, const Vector2& size, const Vector4& color) {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
         float halfX = size.x / 2.0f;
         float halfY = size.y / 2.0f;
@@ -53,18 +53,18 @@ namespace RyoEngine {
         //       ライトはシーン全体で1つに共有する方針になったため、
         //       個々のMesh生成時にLightManagerの向きを書き換えるのは他のオブジェクトにも
         //       影響してしまい不適切なので削除した。正面から照らしたい場合は、
-        //       シーン側で明示的に LightManager::GetInstance()->SetDirection(...) を呼ぶこと。
+        //       シーン側で明示的に LightManager::SetDirection(...) を呼ぶこと。
 
         // 位置の設定
         transform_.translate = position;
         // カラーを設定
         materialData_->color = color;
         // テクスチャ
-        textureHandle_ = TextureManager::GetInstance()->GetWhiteTex();
+        textureHandle_ = TextureManager::GetWhiteTex();
     }
 
     void Mesh::CreateSphere(const Vector3& position, uint32_t subdivision, const Vector4& color) {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
         // Geometry.h のヘルパー関数で頂点数・インデックス数を計算
         uint32_t vertexCount = CalculateSphereVertices(subdivision);
@@ -109,13 +109,13 @@ namespace RyoEngine {
         materialData_->enableLighting = 1;
         materialData_->shadingMode = ShadingMode::HALF_LAMBERT;
         // テクスチャ
-        textureHandle_ = TextureManager::GetInstance()->GetWhiteTex();
+        textureHandle_ = TextureManager::GetWhiteTex();
     }
 
-    void Mesh::SetTex(const std::string& filepath) { textureHandle_ = TextureManager::GetInstance()->Load(filepath); }
+    void Mesh::SetTex(const std::string& filepath) { textureHandle_ = TextureManager::Load(filepath); }
 
     void Mesh::CreateMaterialResource() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         materialResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Material));
         materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
 
@@ -138,7 +138,7 @@ namespace RyoEngine {
     }
 
     void Mesh::CreateWVPResource() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         wvpResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Matrix4x4));
         wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&wvpData_));
         wvpData_->World = MakeIdentity4x4();
@@ -146,24 +146,23 @@ namespace RyoEngine {
     }
 
     void Mesh::InternalDraw() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
 
         // 自分自身のバッファをパイプラインにバインド
         commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
         commandList->IASetIndexBuffer(&indexBufferView_);
 
         // RootParameter (0:Material, 1:WVP) 
-        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
+        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetGPUHandle(textureHandle_));
         commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
         commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
 
         // ライト関連のバッファをセット (シーン共有のLightManagerが持つものを全オブジェクトで参照する)
         // NOTE: 複数灯対応により、ライトは3リソースに分かれた。ルートシグネチャ側の
         //       root param 3をCBVからSRVに変更し、4・5番を新規追加する必要がある。
-        auto lightManager = LightManager::GetInstance();
-        commandList->SetGraphicsRootShaderResourceView(3, lightManager->GetLightGPUVirtualAddress());  // Light配列 (Root Descriptor SRV)
-        commandList->SetGraphicsRootConstantBufferView(4, lightManager->GetLightCountGPUVirtualAddress()); // 有効ライト数
-        commandList->SetGraphicsRootConstantBufferView(5, lightManager->GetAmbientGPUVirtualAddress());    // アンビエントライト
+        commandList->SetGraphicsRootShaderResourceView(3, LightManager::GetLightGPUVirtualAddress());  // Light配列 (Root Descriptor SRV)
+        commandList->SetGraphicsRootConstantBufferView(4, LightManager::GetLightCountGPUVirtualAddress()); // 有効ライト数
+        commandList->SetGraphicsRootConstantBufferView(5, LightManager::GetAmbientGPUVirtualAddress());    // アンビエントライト
         // 描画実行
         commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
     }
@@ -187,7 +186,7 @@ namespace RyoEngine {
     }
 
     void Mesh::Draw() {
-        ModelCommon::GetInstance()->SetDrawCommands([this]() {
+        ModelCommon::SetDrawCommands([this]() {
             InternalDraw();
         });
     }

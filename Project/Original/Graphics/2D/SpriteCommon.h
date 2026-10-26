@@ -11,28 +11,28 @@ namespace RyoEngine {
 
     class SpriteCommon {
     public:
-        static SpriteCommon* GetInstance();
-
-        void Initialize();
-        void BeginDraw();
-        void Draw();
-        void Finalize();
+        static void Initialize();
+        static void BeginDraw();
+        static void Draw();
+        static void Finalize();
 
         // --- ブレンドモードの設定・取得 ---
-        void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
-        BlendMode GetBlendMode() const { return blendMode_; }
+        static void SetBlendMode(BlendMode blendMode) { GetInstance()->blendMode_ = blendMode; }
+        static BlendMode GetBlendMode() { return GetInstance()->blendMode_; }
 
         // Getter
-        ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
+        static ID3D12RootSignature* GetRootSignature() { return GetInstance()->rootSignature_.Get(); }
 
-        ID3D12PipelineState* GetPipelineState() const {
-            return graphicsPipelineStates_[static_cast<size_t>(blendMode_)].Get();
+        static ID3D12PipelineState* GetPipelineState() {
+            return GetInstance()->graphicsPipelineStates_[static_cast<size_t>(GetInstance()->blendMode_)].Get();
         }
 
-        void SetDrawCommands(const std::function<void()>& function) { drawCommands_.push_back(function); }
-        void CommandsClear() { drawCommands_.clear(); }
+        static void SetDrawCommands(const std::function<void()>& function) { GetInstance()->drawCommands_.push_back(function); }
+        static void CommandsClear() { GetInstance()->drawCommands_.clear(); }
 
     private:
+        static SpriteCommon* GetInstance();
+
         SpriteCommon() = default;
         ~SpriteCommon() = default;
         SpriteCommon(const SpriteCommon&) = delete;
@@ -43,7 +43,6 @@ namespace RyoEngine {
         D3D12_BLEND_DESC CreateBlendDesc(BlendMode blendMode); // 追加
 
     private:
-        DirectXCommon* dxCommon_ = nullptr;
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
 
         // --- 内部で保持する現在のブレンドモードと、6種類分のPSO配列 ---

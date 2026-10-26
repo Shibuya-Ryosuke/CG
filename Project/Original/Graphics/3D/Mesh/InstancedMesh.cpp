@@ -21,7 +21,7 @@ namespace RyoEngine {
     }
 
     void InstancedMesh::LoadFromFile(const std::string& filePath) {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
         ModelLoader::ModelData modelData = ModelLoader::LoadModelFile(filePath);
 
@@ -50,9 +50,9 @@ namespace RyoEngine {
         // テクスチャ (メッシュが参照するマテリアルのmap_Kdから読み込む。無ければ白テクスチャ)
         if (srcMesh.materialIndex < modelData.materials.size() &&
             !modelData.materials[srcMesh.materialIndex].textureFilePath.empty()) {
-            textureHandle_ = TextureManager::GetInstance()->Load(modelData.materials[srcMesh.materialIndex].textureFilePath);
+            textureHandle_ = TextureManager::Load(modelData.materials[srcMesh.materialIndex].textureFilePath);
         } else {
-            textureHandle_ = TextureManager::GetInstance()->GetWhiteTex();
+            textureHandle_ = TextureManager::GetWhiteTex();
         }
     }
 }

@@ -14,7 +14,7 @@ namespace RyoEngine {
         Initialize();
 
         // --- メインループ ---
-        while (GetWinApp()->ProcessMessage()) {
+        while (WinApp::ProcessMessage()) {
             // フレーム開始
             NewFrame();
 

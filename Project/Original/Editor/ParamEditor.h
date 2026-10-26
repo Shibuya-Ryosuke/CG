@@ -10,12 +10,6 @@ namespace RyoEngine {
     enum class Anchor;
     class ParamEditor {
     public:
-        // シングルトンのインスタンス取得（内部用）
-        static ParamEditor& GetInstance() {
-            static ParamEditor instance;
-            return instance;
-        }
-
         // コピー・ムーブ禁止
         ParamEditor(const ParamEditor&) = delete;
         ParamEditor& operator=(const ParamEditor&) = delete;
@@ -66,6 +60,12 @@ namespace RyoEngine {
         static void ClearEntries();
 
     private:
+        // シングルトンのインスタンス取得（内部用）
+        static ParamEditor& GetInstance() {
+            static ParamEditor instance;
+            return instance;
+        }
+
         ParamEditor() = default;
         ~ParamEditor() = default;
 

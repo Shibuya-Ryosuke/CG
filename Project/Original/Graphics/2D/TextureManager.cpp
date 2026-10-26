@@ -12,80 +12,92 @@ namespace RyoEngine {
     }
 
     void TextureManager::Initialize() {
+        TextureManager* instance = GetInstance();
+
         Logger::Log("TexManager : Initializing...\n");
-        device_ = DirectXCommon::GetInstance()->GetDevice();
+        instance->device_ = DirectXCommon::GetDevice();
 
         // ヒープの生成・ImGui用スロットの予約はSrvManager/ImGuiManager側の責務になったので、ここでは行わない
         assert(SrvManager::GetDescriptorHeap() != nullptr && "SrvManager::Initialize()を先に呼ぶこと");
 
-        whiteTex_ = Load("Resources/EngineResources/white1x1.png");
+        instance->whiteTex_ = Load("Resources/EngineResources/white1x1.png");
 
         Logger::LogSuccess("TexManager : Initialized\n");
     }
 
     void TextureManager::Finalize() {
+        TextureManager* instance = GetInstance();
+
         Logger::Log("TexManager : Finalizing...\n");
         // 中間リソース解放
-        intermediateResources_.clear();
+        instance->intermediateResources_.clear();
 
         // 確保していたスロットをSrvManagerへ返却してから、テクスチャの実体を解放
-        for (auto& [index, resource] : textures_) {
+        for (auto& [index, resource] : instance->textures_) {
             SrvManager::Free(index);
         }
-        textures_.clear();
+        instance->textures_.clear();
 
         // 重複読み込み防止用のマップをクリア
-        filePathMap_.clear();
+        instance->filePathMap_.clear();
 
         // デバイスポインタを初期化
-        device_ = nullptr;
+        instance->device_ = nullptr;
         Logger::LogSuccess("TexManager : Finalized\n");
     }
 
     uint32_t TextureManager::Load(const std::string& filePath) {
+        TextureManager* instance = GetInstance();
+
         // 読み込み済みならそのまま返す(上限チェックより先に行うことで、満杯時でも既存テクスチャは取得できる)
-        if (auto it = filePathMap_.find(filePath); it != filePathMap_.end()) {
+        if (auto it = instance->filePathMap_.find(filePath); it != instance->filePathMap_.end()) {
             return it->second;
         }
 
-        DirectX::ScratchImage mipImages = LoadTexture(filePath);
-        auto resource = CreateTextureResource(mipImages.GetMetadata());
-        auto intermediate = UploadTextureData(resource, mipImages, DirectXCommon::GetInstance()->GetCommandList());
-        intermediateResources_.push_back(intermediate);
+        DirectX::ScratchImage mipImages = instance->LoadTexture(filePath);
+        auto resource = instance->CreateTextureResource(mipImages.GetMetadata());
+        auto intermediate = instance->UploadTextureData(resource, mipImages, DirectXCommon::GetCommandList());
+        instance->intermediateResources_.push_back(intermediate);
 
         // SRVのスロットを確保して生成(上限チェックはSrvManager::Allocate()内で行う)
         uint32_t handle = SrvManager::Allocate();
         SrvManager::CreateSRVForTexture2D(handle, resource.Get(), resource->GetDesc().Format);
 
-        textures_[handle] = resource;
-        filePathMap_[filePath] = handle;
+        instance->textures_[handle] = resource;
+        instance->filePathMap_[filePath] = handle;
 
         return handle;
     }
 
     void TextureManager::ClearIntermediateResources() {
-        intermediateResources_.clear();
+        TextureManager* instance = GetInstance();
+
+        instance->intermediateResources_.clear();
     }
 
-    ID3D12Resource* TextureManager::GetResource(uint32_t handle) const {
-        auto it = textures_.find(handle);
-        assert(it != textures_.end() && "TextureManagerに登録されていないハンドル");
+    ID3D12Resource* TextureManager::GetResource(uint32_t handle) {
+        TextureManager* instance = GetInstance();
+
+        auto it = instance->textures_.find(handle);
+        assert(it != instance->textures_.end() && "TextureManagerに登録されていないハンドル");
         return it->second.Get();
     }
 
-    ID3D12DescriptorHeap* TextureManager::GetDescriptorHeap() const {
+    ID3D12DescriptorHeap* TextureManager::GetDescriptorHeap() {
         return SrvManager::GetDescriptorHeap();
     }
 
-    D3D12_CPU_DESCRIPTOR_HANDLE TextureManager::GetCPUHandle(uint32_t index) const {
+    D3D12_CPU_DESCRIPTOR_HANDLE TextureManager::GetCPUHandle(uint32_t index) {
         return SrvManager::GetCPUHandle(index);
     }
 
-    D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetGPUHandle(uint32_t index) const {
+    D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetGPUHandle(uint32_t index) {
         return SrvManager::GetGPUHandle(index);
     }
 
     uint32_t TextureManager::RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT srvFormatOverride) {
+        TextureManager* instance = GetInstance();
+
         // NOTE: srvFormatOverrideが指定されていればそちらを優先する。
         //       DXGI_FORMAT_R32_TYPELESS等のTYPELESSリソース(シャドウマップの深度テクスチャ等)は
         //       resource自体のFormatをそのままSRVに渡すと失敗するため、呼び出し側で
@@ -95,7 +107,7 @@ namespace RyoEngine {
         uint32_t index = SrvManager::Allocate();
         SrvManager::CreateSRVForTexture2D(index, resource.Get(), format, 1);
 
-        textures_[index] = resource;
+        instance->textures_[index] = resource;
         return index;
     }
 

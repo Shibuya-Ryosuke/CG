@@ -18,48 +18,47 @@ namespace RyoEngine {
             SHADOW,
         };
 
-        static ModelCommon* GetInstance();
-
-        void Initialize();
+        static void Initialize();
 
         // 描画開始（内部で保持している blendMode_ を使用する）
-        void BeginDraw(DrawType drawType = DrawType::REAL);
-        void Draw();
+        static void BeginDraw(DrawType drawType = DrawType::REAL);
+        static void Draw();
 
-        void DrawShadow();
+        static void DrawShadow();
 
-        void Finalize();
+        static void Finalize();
 
         // --- ブレンドモードの設定・取得 ---
-        void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
-        BlendMode GetBlendMode() const { return blendMode_; }
+        static void SetBlendMode(BlendMode blendMode) { GetInstance()->blendMode_ = blendMode; }
+        static BlendMode GetBlendMode() { return GetInstance()->blendMode_; }
 
-        ID3D12RootSignature* GetRootSignature() const { return rootSignature_.Get(); }
+        static ID3D12RootSignature* GetRootSignature() { return GetInstance()->rootSignature_.Get(); }
 
-        ID3D12PipelineState* GetPipelineState(DrawType drawType) const {
-            size_t blendIdx = static_cast<size_t>(blendMode_);
+        static ID3D12PipelineState* GetPipelineState(DrawType drawType) {
+            size_t blendIdx = static_cast<size_t>(GetInstance()->blendMode_);
             switch (drawType) {
-            case DrawType::REAL:          return realPipelineStates_[blendIdx].Get();
-            case DrawType::REFLECT:       return reflectPipelineStates_[blendIdx].Get();
-            case DrawType::NO_UV:         return noUVPipelineStates_[blendIdx].Get();
-            case DrawType::REFLECT_NO_UV: return reflectNoUVPipelineStates_[blendIdx].Get();
-            case DrawType::SHADOW:        return shadowPipelineState_.Get();
+            case DrawType::REAL:          return GetInstance()->realPipelineStates_[blendIdx].Get();
+            case DrawType::REFLECT:       return GetInstance()->reflectPipelineStates_[blendIdx].Get();
+            case DrawType::NO_UV:         return GetInstance()->noUVPipelineStates_[blendIdx].Get();
+            case DrawType::REFLECT_NO_UV: return GetInstance()->reflectNoUVPipelineStates_[blendIdx].Get();
+            case DrawType::SHADOW:        return GetInstance()->shadowPipelineState_.Get();
             }
-            return realPipelineStates_[blendIdx].Get();
+            return GetInstance()->realPipelineStates_[blendIdx].Get();
         }
 
-        void SetDrawCommands(const std::function<void()>& function) { drawCommands_.push_back(function); }
-        void CommandsClear() { drawCommands_.clear(); }
+        static void SetDrawCommands(const std::function<void()>& function) { GetInstance()->drawCommands_.push_back(function); }
+        static void CommandsClear() { GetInstance()->drawCommands_.clear(); }
 
-        DrawType GetCurrentDrawType() const { return currentDrawType_; }
+        static DrawType GetCurrentDrawType() { return GetInstance()->currentDrawType_; }
 
     private:
+        static ModelCommon* GetInstance();
+
         ModelCommon() = default;
         ~ModelCommon() = default;
         ModelCommon(const ModelCommon&) = delete;
         ModelCommon& operator=(const ModelCommon&) = delete;
 
-        DirectXCommon* dxCommon_ = nullptr;
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
 
         // --- 内部で保持する現在のブレンドモード ---

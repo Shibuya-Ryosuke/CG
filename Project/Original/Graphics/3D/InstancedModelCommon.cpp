@@ -14,38 +14,46 @@ namespace RyoEngine {
     }
 
     void InstancedModelCommon::Initialize() {
+        InstancedModelCommon* instance = GetInstance();
+
         Logger::Log("InstancedModelCommon : Initializing...\n");
-        CreateRootSignature();
-        CreatePipelineStates();
+        instance->CreateRootSignature();
+        instance->CreatePipelineStates();
         Logger::LogSuccess("InstancedModelCommon : Initialized\n");
     }
 
     void InstancedModelCommon::Finalize() {
+        InstancedModelCommon* instance = GetInstance();
+
         Logger::Log("InstancedModelCommon : Finalizing...\n");
-        for (auto& pso : pipelineStates_) {
+        for (auto& pso : instance->pipelineStates_) {
             pso.Reset();
         }
-        rootSignature_.Reset();
+        instance->rootSignature_.Reset();
         Logger::LogSuccess("InstancedModelCommon : Finalized\n");
     }
 
     void InstancedModelCommon::BeginDraw() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        commandList->SetGraphicsRootSignature(rootSignature_.Get());
+        InstancedModelCommon* instance = GetInstance();
+
+        auto commandList = DirectXCommon::GetCommandList();
+        commandList->SetGraphicsRootSignature(instance->rootSignature_.Get());
 
         // 現在のblendMode_に対応するPSOをセット
-        size_t blendIdx = static_cast<size_t>(blendMode_);
-        commandList->SetPipelineState(pipelineStates_[blendIdx].Get());
+        size_t blendIdx = static_cast<size_t>(instance->blendMode_);
+        commandList->SetPipelineState(instance->pipelineStates_[blendIdx].Get());
     }
 
     void InstancedModelCommon::Draw() {
-        for (const auto& command : drawCommands_) {
+        InstancedModelCommon* instance = GetInstance();
+
+        for (const auto& command : instance->drawCommands_) {
             command();
         }
     }
 
     void InstancedModelCommon::CreateRootSignature() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         // テクスチャ用DescriptorRange (t0, Pixel)
@@ -115,7 +123,7 @@ namespace RyoEngine {
     }
 
     void InstancedModelCommon::CreatePipelineStates() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
@@ -140,9 +148,9 @@ namespace RyoEngine {
         rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
         rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Instanced.VS.hlsl", L"vs_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Instanced.VS.hlsl", L"vs_6_0");
         assert(vertexShaderBlob != nullptr);
-        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Instanced.PS.hlsl", L"ps_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Instanced.PS.hlsl", L"ps_6_0");
         assert(pixelShaderBlob != nullptr);
 
         D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};

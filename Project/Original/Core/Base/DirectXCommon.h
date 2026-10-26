@@ -6,80 +6,78 @@
 #include <wrl.h>
 #include <cstdint>
 
-class ShaderCompiler;
-
 namespace RyoEngine {
 
 	class DirectXCommon {
 	public:
-		// インスタンス取得
-		static DirectXCommon* GetInstance();
-
 		/// <summary>
 		/// DirectX初期化
 		/// </summary>
-		void Initialize(class WinApp* winApp, int32_t width = 1280, int32_t height = 720);
+		static void Initialize(int32_t width = 1280, int32_t height = 720);
 
 		/// <summary>
 		/// 解放
 		/// </summary>
-		void Finalize();
+		static void Finalize();
 
 		/// <summary>
 		/// フレーム開始
 		/// </summary>
-		void PreDraw();
+		static void PreDraw();
 
 		/// <summary>
 		/// フレーム終了
 		/// </summary>
-		void PostDraw();
+		static void PostDraw();
 
-		void CreateGameRenderTarget();
+		static void CreateGameRenderTarget();
 
-		void WaitForFence();
+		static void WaitForFence();
 		// ディスクリプタヒープの生成
 		static Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(
 			ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 
 		// CPUのDescriptorHandleを取得
-		D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
-			const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index) const;
+		static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
+			const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
 
 		static Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(const Microsoft::WRL::ComPtr<ID3D12Device> device, size_t sizeInBytes);
 
 		// ゲッター
-		ID3D12Device* GetDevice() const { return device_.Get(); }
-		ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); }
-		D3D12_CPU_DESCRIPTOR_HANDLE GetDSVHandle() const {
-			return dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+		static ID3D12Device* GetDevice() { return GetInstance()->device_.Get(); }
+		static ID3D12GraphicsCommandList* GetCommandList() { return GetInstance()->commandList_.Get(); }
+		static D3D12_CPU_DESCRIPTOR_HANDLE GetDSVHandle() {
+			return GetInstance()->dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 		}
-		int32_t GetBackBufferWidth() const { return backBufferWidth_; }
-		int32_t GetBackBufferHeight() const { return backBufferHeight_; }
-		uint32_t GetBackBufferCount() const { return 2; }
-		DXGI_FORMAT GetBackBufferFormat() const { return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; }
+		static int32_t GetBackBufferWidth() { return GetInstance()->backBufferWidth_; }
+		static int32_t GetBackBufferHeight() { return GetInstance()->backBufferHeight_; }
+		static uint32_t GetBackBufferCount() { return 2; }
+		static DXGI_FORMAT GetBackBufferFormat() { return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; }
 
 		// メインループでImGui::Imageに渡すためのGPUハンドルを取得するゲッター
-		D3D12_GPU_DESCRIPTOR_HANDLE GetGameTextureGPUHandle() const {
-			return SrvManager::GetGPUHandle(gameTextureSrvIndex_);
+		static D3D12_GPU_DESCRIPTOR_HANDLE GetGameTextureGPUHandle() {
+			return SrvManager::GetGPUHandle(GetInstance()->gameTextureSrvIndex_);
 		}
 
 		// PostProcess::Composite()が、HDR合成後の結果をgameRenderTargetResource_へ
 		// 書き戻す際にOMSetRenderTargetsで使うためのRTV CPUハンドル
-		D3D12_CPU_DESCRIPTOR_HANDLE GetGameRenderTargetRTVHandle() const {
+		static D3D12_CPU_DESCRIPTOR_HANDLE GetGameRenderTargetRTVHandle() {
 #ifdef _DEBUG
 			// Debug時: ImGui表示用のゲームテクスチャのRTVを返す
-			return gameRtvHeap_->GetCPUDescriptorHandleForHeapStart();
+			return GetInstance()->gameRtvHeap_->GetCPUDescriptorHandleForHeapStart();
 #else
 			// Release時: スワップチェーンの現在のバックバッファのRTVを返す
-			uint32_t backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
-			const uint32_t descriptorSizeRTV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-			return GetCPUDescriptorHandle(rtvHeap_, descriptorSizeRTV, backBufferIndex);
+			uint32_t backBufferIndex = GetInstance()->swapChain_->GetCurrentBackBufferIndex();
+			const uint32_t descriptorSizeRTV = GetInstance()->device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			return GetCPUDescriptorHandle(GetInstance()->rtvHeap_, descriptorSizeRTV, backBufferIndex);
 #endif
 		}
 
 	private:
+		// インスタンス取得
+		static DirectXCommon* GetInstance();
+
 		DirectXCommon() = default;
 		~DirectXCommon() = default;
 

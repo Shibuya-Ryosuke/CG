@@ -38,7 +38,7 @@ namespace RyoEngine {
         auto instance = GetInstance();
 
         Logger::Log("LightManager : Initializing...\n");
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
         instance->lightResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Light) * kMaxLightCount);
         instance->lightResource_->Map(0, nullptr, reinterpret_cast<void**>(&instance->lightMappedData_));

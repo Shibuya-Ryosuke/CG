@@ -19,8 +19,6 @@ namespace RyoEngine {
     /// </summary>
     class ShadowMap {
     public:
-        static ShadowMap* GetInstance();
-
         static void Initialize();
         static void Finalize();
 
@@ -47,6 +45,8 @@ namespace RyoEngine {
         static void SetTargetPosition(const Vector3& position) { GetInstance()->targetPosition_ = position; }
 
     private:
+        static ShadowMap* GetInstance();
+
         ShadowMap() = default;
         ~ShadowMap() = default;
         ShadowMap(const ShadowMap&) = delete;

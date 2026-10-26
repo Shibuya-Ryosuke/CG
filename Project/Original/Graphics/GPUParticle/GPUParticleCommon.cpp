@@ -55,7 +55,7 @@ namespace RyoEngine {
     }
 
     void GPUParticleCommon::CreateComputeRootSignature() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         D3D12_ROOT_PARAMETER rootParameters[4] = {};
@@ -95,12 +95,12 @@ namespace RyoEngine {
     }
 
     void GPUParticleCommon::CreateComputePipelineStates() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         // --- リセットパス：カウンターを0に戻すだけの、1スレッドだけの軽いシェーダー ---
         {
-            Microsoft::WRL::ComPtr<IDxcBlob> csBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/GPUParticle/GPUParticleReset.CS.hlsl", L"cs_6_0");
+            Microsoft::WRL::ComPtr<IDxcBlob> csBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/GPUParticle/GPUParticleReset.CS.hlsl", L"cs_6_0");
             assert(csBlob != nullptr);
 
             D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc{};
@@ -113,7 +113,7 @@ namespace RyoEngine {
 
         // --- シミュレーション本体パス：物理演算＋新規発生の消化 ---
         {
-            Microsoft::WRL::ComPtr<IDxcBlob> csBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/GPUParticle/GPUParticleSimulate.CS.hlsl", L"cs_6_0");
+            Microsoft::WRL::ComPtr<IDxcBlob> csBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/GPUParticle/GPUParticleSimulate.CS.hlsl", L"cs_6_0");
             assert(csBlob != nullptr);
 
             D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc{};
@@ -126,7 +126,7 @@ namespace RyoEngine {
     }
 
     void GPUParticleCommon::CreateRenderRootSignature() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         // テクスチャ用DescriptorRange (t0, Pixel)
@@ -180,7 +180,7 @@ namespace RyoEngine {
     }
 
     void GPUParticleCommon::CreateRenderPipelineStates() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         // 頂点フォーマットはModel/InstancedModelと共通のVertexData(position/texcoord/normal)を使う
@@ -240,13 +240,13 @@ namespace RyoEngine {
         baseDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT; // メインの深度バッファと合わせる
 
         // 共通のピクセルシェーダー(テクスチャ×パーティクル色。ライティング計算は一切無し)
-        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/GPUParticle/GPUParticle.PS.hlsl", L"ps_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/GPUParticle/GPUParticle.PS.hlsl", L"ps_6_0");
         assert(pixelShaderBlob != nullptr);
 
         // 非ビルボード用/ビルボード用の2種類の頂点シェーダー
-        Microsoft::WRL::ComPtr<IDxcBlob> vsNoBillboardBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/GPUParticle/GPUParticle.VS.hlsl", L"vs_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> vsNoBillboardBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/GPUParticle/GPUParticle.VS.hlsl", L"vs_6_0");
         assert(vsNoBillboardBlob != nullptr);
-        Microsoft::WRL::ComPtr<IDxcBlob> vsBillboardBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/GPUParticle/GPUParticleBillboard.VS.hlsl", L"vs_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> vsBillboardBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/GPUParticle/GPUParticleBillboard.VS.hlsl", L"vs_6_0");
         assert(vsBillboardBlob != nullptr);
 
         // インデックス: 0=通常/非ビルボード, 1=通常/ビルボード, 2=加算/非ビルボード, 3=加算/ビルボード

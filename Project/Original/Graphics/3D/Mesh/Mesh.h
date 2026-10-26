@@ -115,7 +115,7 @@ namespace RyoEngine {
 
 		// NOTE: 以前はここに「指向性ライトの取得(GetDirectionalLight/GetDLColor/GetDLDirection/GetDLIntensity)」
 		//       があったが、ライトはMesh固有の情報ではなくシーン共有の情報であるため削除した。
-		//       ライトの状態を知りたい場合は LightManager::GetInstance() に直接アクセスすること。
+		//       ライトの状態を知りたい場合は LightManager の static 関数に直接アクセスすること。
 
 
 		/// セッター
@@ -195,7 +195,7 @@ namespace RyoEngine {
 		// NOTE: 以前はここに「指向性ライトの指定(SetDirectionalLight/SetDLColor/SetDLDirection/SetDLIntensity)」
 		//       があったが、これは実態が「シーン全体の共有ライトを書き換える」グローバルな操作であり、
 		//       Mesh個別のセッターとして生えているのは実態と見た目が食い違っていたため削除した。
-		//       ライトを変更したい場合は LightManager::GetInstance() に直接アクセスすること。
+		//       ライトを変更したい場合は LightManager の static 関数に直接アクセスすること。
 
 	private:
 		// 各種リソース生成

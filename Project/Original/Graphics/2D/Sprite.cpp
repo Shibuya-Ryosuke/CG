@@ -50,7 +50,7 @@ namespace RyoEngine {
     }
 
     void Sprite::Initialize(const std::string& filePath, Vector2 position, Anchor anchor) {
-        Initialize(TextureManager::GetInstance()->Load(filePath), position, anchor);
+        Initialize(TextureManager::Load(filePath), position, anchor);
     }
 
     void Sprite::Finalize() {
@@ -86,8 +86,8 @@ namespace RyoEngine {
         // 正投影行列
         Matrix4x4 projectionMatrix = MakeOrthographicMatrix(
             0.0f, 0.0f,
-            (float)DirectXCommon::GetInstance()->GetBackBufferWidth(),
-            (float)DirectXCommon::GetInstance()->GetBackBufferHeight(),
+            (float)DirectXCommon::GetBackBufferWidth(),
+            (float)DirectXCommon::GetBackBufferHeight(),
             0.0f, 100.0f
         );
 
@@ -111,7 +111,7 @@ namespace RyoEngine {
     }
 
     void Sprite::Draw() {
-        SpriteCommon::GetInstance()->SetDrawCommands([this]() {
+        SpriteCommon::SetDrawCommands([this]() {
             InternalDraw();
             });
     }
@@ -134,7 +134,7 @@ namespace RyoEngine {
     }
 
     void Sprite::SetTex(const std::string& filePath) {
-        SetTex(TextureManager::GetInstance()->Load(filePath));
+        SetTex(TextureManager::Load(filePath));
     }
 
     void Sprite::SetTextureRect(uint32_t startX, uint32_t startY, uint32_t endX, uint32_t endY, bool resizeSprite) {
@@ -188,7 +188,7 @@ namespace RyoEngine {
         textureHandle_ = textureHandle;
 
         // ハンドル(index)からリソースを取り、Desc(詳細設定)から画像の元サイズを得る
-        ID3D12Resource* resource = TextureManager::GetInstance()->GetResource(textureHandle);
+        ID3D12Resource* resource = TextureManager::GetResource(textureHandle);
         D3D12_RESOURCE_DESC resDesc = resource->GetDesc();
 
         sourceTexSize_.x = static_cast<float>(resDesc.Width);
@@ -200,7 +200,7 @@ namespace RyoEngine {
     }
 
     void Sprite::CreateVertexResource() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         vertexResource_ = DirectXCommon::CreateBufferResource(device, sizeof(SpriteVertexData) * 4);
 
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
@@ -211,7 +211,7 @@ namespace RyoEngine {
     }
 
     void Sprite::CreateIndexResource() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         indexResource_ = DirectXCommon::CreateBufferResource(device, sizeof(uint32_t) * 6);
 
         indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
@@ -222,7 +222,7 @@ namespace RyoEngine {
     }
 
     void Sprite::CreateMaterialResource() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         materialResource_ = DirectXCommon::CreateBufferResource(device, sizeof(SpriteMaterial));
         materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
 
@@ -230,7 +230,7 @@ namespace RyoEngine {
     }
 
     void Sprite::CreateWVPResource() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         wvpResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Matrix4x4));
         wvpResource_->Map(0, nullptr, reinterpret_cast<void**>(&wvpData_));
         *wvpData_ = MakeIdentity4x4();
@@ -282,14 +282,14 @@ namespace RyoEngine {
     }
 
     void Sprite::InternalDraw() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
 
         commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
         commandList->IASetIndexBuffer(&indexBufferView_);
 
         commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
         commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
+        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetGPUHandle(textureHandle_));
 
         commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
     }

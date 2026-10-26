@@ -16,14 +16,15 @@ namespace RyoEngine {
 	}
 
 	void ModelCommon::Initialize() {
+		ModelCommon* instance = GetInstance();
+
 		Logger::Log("ModelCommon : Initializing...\n");
-		dxCommon_ = DirectXCommon::GetInstance();
-		CreateRootSignature();
-		CreateRealPipelineStates();
-		CreateReflectPipelineStates();
-		CreateNoUVPipelineStates();
-		CreateReflectNoUVPipelineStates();
-		CreateShadowPipelineState();
+		instance->CreateRootSignature();
+		instance->CreateRealPipelineStates();
+		instance->CreateReflectPipelineStates();
+		instance->CreateNoUVPipelineStates();
+		instance->CreateReflectNoUVPipelineStates();
+		instance->CreateShadowPipelineState();
 		Logger::LogSuccess("ModelCommon : Initialized\n");
 	}
 
@@ -83,32 +84,34 @@ namespace RyoEngine {
 	}
 
 	void ModelCommon::BeginDraw(DrawType drawType) {
-		currentDrawType_ = drawType;
+		ModelCommon* instance = GetInstance();
 
-		auto commandList = dxCommon_->GetCommandList();
-		commandList->SetGraphicsRootSignature(rootSignature_.Get());
+		instance->currentDrawType_ = drawType;
 
-		size_t blendIdx = static_cast<size_t>(blendMode_);
+		auto commandList = DirectXCommon::GetCommandList();
+		commandList->SetGraphicsRootSignature(instance->rootSignature_.Get());
+
+		size_t blendIdx = static_cast<size_t>(instance->blendMode_);
 
 		switch (drawType) {
 		case DrawType::REAL:
-			commandList->SetPipelineState(realPipelineStates_[blendIdx].Get());
+			commandList->SetPipelineState(instance->realPipelineStates_[blendIdx].Get());
 			break;
 
 		case DrawType::REFLECT:
-			commandList->SetPipelineState(reflectPipelineStates_[blendIdx].Get());
+			commandList->SetPipelineState(instance->reflectPipelineStates_[blendIdx].Get());
 			break;
 
 		case DrawType::NO_UV:
-			commandList->SetPipelineState(noUVPipelineStates_[blendIdx].Get());
+			commandList->SetPipelineState(instance->noUVPipelineStates_[blendIdx].Get());
 			break;
 
 		case DrawType::REFLECT_NO_UV:
-			commandList->SetPipelineState(reflectNoUVPipelineStates_[blendIdx].Get());
+			commandList->SetPipelineState(instance->reflectNoUVPipelineStates_[blendIdx].Get());
 			break;
 
 		case DrawType::SHADOW:
-			commandList->SetPipelineState(shadowPipelineState_.Get());
+			commandList->SetPipelineState(instance->shadowPipelineState_.Get());
 			break;
 		}
 
@@ -117,41 +120,44 @@ namespace RyoEngine {
 		SrvManager::PreDraw(commandList);
 
 		if (drawType == DrawType::SHADOW) {
-			commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetInstance()->GetLightViewProjGPUVirtualAddress());
+			commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetLightViewProjGPUVirtualAddress());
 		} else {
-			commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetInstance()->GetLightViewProjGPUVirtualAddress());
-			commandList->SetGraphicsRootDescriptorTable(7, SrvManager::GetGPUHandle(ShadowMap::GetInstance()->GetShadowMapTextureHandle()));
+			commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetLightViewProjGPUVirtualAddress());
+			commandList->SetGraphicsRootDescriptorTable(7, SrvManager::GetGPUHandle(ShadowMap::GetShadowMapTextureHandle()));
 		}
 	}
 
 	void ModelCommon::Draw() {
+		ModelCommon* instance = GetInstance();
+
 		BeginDraw(DrawType::REAL);
-		for (const auto& command : drawCommands_) {
+		for (const auto& command : instance->drawCommands_) {
 			command();
 		}
 	}
 
 	void ModelCommon::DrawShadow() {
+		ModelCommon* instance = GetInstance();
+
 		BeginDraw(DrawType::SHADOW);
-		for (const auto& command : drawCommands_) {
+		for (const auto& command : instance->drawCommands_) {
 			command();
 		}
 	}
 
 	void ModelCommon::Finalize() {
+		ModelCommon* instance = GetInstance();
+
 		Logger::Log("ModelCommon : Finalizing...\n");
 		// グラフィックスパイプラインを解放
-		shadowPipelineState_.Reset();
-		for (auto& pso : reflectNoUVPipelineStates_) pso.Reset();
-		for (auto& pso : noUVPipelineStates_) pso.Reset();
-		for (auto& pso : reflectPipelineStates_) pso.Reset();
-		for (auto& pso : realPipelineStates_) pso.Reset();
+		instance->shadowPipelineState_.Reset();
+		for (auto& pso : instance->reflectNoUVPipelineStates_) pso.Reset();
+		for (auto& pso : instance->noUVPipelineStates_) pso.Reset();
+		for (auto& pso : instance->reflectPipelineStates_) pso.Reset();
+		for (auto& pso : instance->realPipelineStates_) pso.Reset();
 
 		// ルートシグネチャを解放
-		rootSignature_.Reset();
-
-		// 保持していた DirectXCommon のポインタをクリア
-		dxCommon_ = nullptr;
+		instance->rootSignature_.Reset();
 		Logger::LogSuccess("ModelCommon : Finaled\n");
 	}
 
@@ -266,7 +272,7 @@ namespace RyoEngine {
 			assert(false);
 		}
 		// バイナリをもとに生成
-		hr = dxCommon_->GetDevice()->CreateRootSignature(0,
+		hr = DirectXCommon::GetDevice()->CreateRootSignature(0,
 			signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 
@@ -294,8 +300,8 @@ namespace RyoEngine {
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model.VS.hlsl", L"vs_6_0");
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model.PS.hlsl", L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Model.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Model.PS.hlsl", L"ps_6_0");
 		assert(vertexShaderBlob != nullptr);
 		assert(pixelShaderBlob != nullptr);
 
@@ -324,7 +330,7 @@ namespace RyoEngine {
 			desc.DepthStencilState = depthStencilDesc;
 			desc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-			hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&realPipelineStates_[i]));
+			hr = DirectXCommon::GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&realPipelineStates_[i]));
 			assert(SUCCEEDED(hr));
 		}
 	}
@@ -352,8 +358,8 @@ namespace RyoEngine {
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_FRONT; // 反射用
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model.VS.hlsl", L"vs_6_0");
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model.PS.hlsl", L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Model.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Model.PS.hlsl", L"ps_6_0");
 
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 		depthStencilDesc.DepthEnable = true;
@@ -379,7 +385,7 @@ namespace RyoEngine {
 			desc.DepthStencilState = depthStencilDesc;
 			desc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-			hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&reflectPipelineStates_[i]));
+			hr = DirectXCommon::GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&reflectPipelineStates_[i]));
 			assert(SUCCEEDED(hr));
 		}
 	}
@@ -403,8 +409,8 @@ namespace RyoEngine {
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.VS.hlsl", L"vs_6_0");
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.PS.hlsl", L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.PS.hlsl", L"ps_6_0");
 
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 		depthStencilDesc.DepthEnable = true;
@@ -430,7 +436,7 @@ namespace RyoEngine {
 			desc.DepthStencilState = depthStencilDesc;
 			desc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-			hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&noUVPipelineStates_[i]));
+			hr = DirectXCommon::GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&noUVPipelineStates_[i]));
 			assert(SUCCEEDED(hr));
 		}
 	}
@@ -454,8 +460,8 @@ namespace RyoEngine {
 		rasterizerDesc.CullMode = D3D12_CULL_MODE_FRONT;
 		rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.VS.hlsl", L"vs_6_0");
-		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.PS.hlsl", L"ps_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Model_NoUV.PS.hlsl", L"ps_6_0");
 
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 		depthStencilDesc.DepthEnable = true;
@@ -481,7 +487,7 @@ namespace RyoEngine {
 			desc.DepthStencilState = depthStencilDesc;
 			desc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-			hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&reflectNoUVPipelineStates_[i]));
+			hr = DirectXCommon::GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&reflectNoUVPipelineStates_[i]));
 			assert(SUCCEEDED(hr));
 		}
 	}
@@ -512,7 +518,7 @@ namespace RyoEngine {
 		rasterizerDesc.SlopeScaledDepthBias = 1.5f;
 
 		// シャドウ専用の頂点シェーダーのみ使用 (ピクセルシェーダーは無し＝深度だけ書く)
-		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Shadow/ShadowMap.VS.hlsl", L"vs_6_0");
+		Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Shadow/ShadowMap.VS.hlsl", L"vs_6_0");
 		assert(vertexShaderBlob != nullptr);
 
 		D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
@@ -533,7 +539,7 @@ namespace RyoEngine {
 		graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 		graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
 		graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;  // ShadowMapのDSVフォーマットと一致させる
-		hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
+		hr = DirectXCommon::GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
 			IID_PPV_ARGS(&shadowPipelineState_));
 		assert(SUCCEEDED(hr));
 	}

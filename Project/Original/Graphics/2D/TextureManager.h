@@ -17,18 +17,15 @@ namespace RyoEngine {
 	/// </summary>
 	class TextureManager {
 	public:
-		// インスタンス取得
-		static TextureManager* GetInstance();
-
 		/// <summary>
 		/// 初期化 (SrvManager::Initialize()より後に呼ぶこと)
 		/// </summary>
-		void Initialize();
+		static void Initialize();
 
 		/// <summary>
 		/// 解放 (SrvManager::Finalize()より前に呼ぶこと)
 		/// </summary>
-		void Finalize();
+		static void Finalize();
 
 
 		/// <summary>
@@ -36,28 +33,31 @@ namespace RyoEngine {
 		/// </summary>
 		/// <param name="filePath">ファイルパス</param>
 		/// <returns>テクスチャのSRVが格納されたSrvManagerのスロット番号</returns>
-		uint32_t Load(const std::string& filePath);
+		static uint32_t Load(const std::string& filePath);
 
-		void ClearIntermediateResources();
+		static void ClearIntermediateResources();
 
 		// ゲッター
-		ID3D12Resource* GetResource(uint32_t handle) const;
+		static ID3D12Resource* GetResource(uint32_t handle);
 
-		uint32_t GetWhiteTex() const { return whiteTex_; }
+		static uint32_t GetWhiteTex() { return GetInstance()->whiteTex_; }
 
 		// --- 互換用(既存コードがそのままコンパイルできるように残している) ---
 		// 新しく書くコードではSrvManagerの同名関数を直接使うこと。
-		ID3D12DescriptorHeap* GetDescriptorHeap() const;
-		D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index) const;
-		D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) const;
+		static ID3D12DescriptorHeap* GetDescriptorHeap();
+		static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index);
+		static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index);
 
 		// 外部で作ったリソースを登録してSRVのスロット番号を返す(互換用。中身はSrvManagerへの委譲)
 		// srvFormatOverride省略時(DXGI_FORMAT_UNKNOWN)はresource自体のFormatをSRVに使う。
 		// DXGI_FORMAT_R32_TYPELESS等、TYPELESSなリソース(シャドウマップの深度テクスチャ等)を登録する場合は、
 		// SRVとして解釈させたい具体的なフォーマット(例：DXGI_FORMAT_R32_FLOAT)を明示的に渡すこと。
-		uint32_t RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT srvFormatOverride = DXGI_FORMAT_UNKNOWN);
+		static uint32_t RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT srvFormatOverride = DXGI_FORMAT_UNKNOWN);
 
 	private:
+		// インスタンス取得
+		static TextureManager* GetInstance();
+
 		TextureManager() = default;
 		~TextureManager() = default;
 		TextureManager(const TextureManager&) = delete;

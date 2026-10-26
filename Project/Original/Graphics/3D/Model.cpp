@@ -227,7 +227,7 @@ namespace RyoEngine {
     }
 
     void Model::SetTex(const std::string& filePath, int32_t meshIndex) {
-        SetTex(TextureManager::GetInstance()->Load(filePath), meshIndex);
+        SetTex(TextureManager::Load(filePath), meshIndex);
     }
 
     void Model::SetColor(const Vector4& color, int32_t meshIndex) {

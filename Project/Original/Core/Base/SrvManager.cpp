@@ -15,7 +15,7 @@ namespace RyoEngine {
         SrvManager* instance = GetInstance();
 
         Logger::Log("SrvManager : Initializing...\n");
-        instance->device_ = DirectXCommon::GetInstance()->GetDevice();
+        instance->device_ = DirectXCommon::GetDevice();
         assert(instance->device_ != nullptr && "DirectXCommon::Initialize()より後に呼ぶこと");
 
         instance->descriptorHeap_ = DirectXCommon::CreateDescriptorHeap(

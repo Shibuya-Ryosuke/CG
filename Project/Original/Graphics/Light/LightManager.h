@@ -22,8 +22,6 @@ namespace RyoEngine {
 
     class LightManager {
     public:
-        static LightManager* GetInstance();
-
         static void Initialize();
         static void Finalize();
         static void Update();
@@ -155,6 +153,8 @@ namespace RyoEngine {
         static void DrawImGui();
 
     private:
+        static LightManager* GetInstance();
+
         LightManager() = default;
         ~LightManager() = default;
         LightManager(const LightManager&) = delete;

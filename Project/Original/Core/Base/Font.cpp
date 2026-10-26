@@ -14,7 +14,7 @@ namespace RyoEngine {
 
         LoadFnt(fntFilePath);
 
-        textureHandle_ = TextureManager::GetInstance()->Load(textureFilePath);
+        textureHandle_ = TextureManager::Load(textureFilePath);
 
         Logger::LogSuccess("Font loader : Initialized\n");
     }
@@ -48,7 +48,7 @@ namespace RyoEngine {
     }
 
     void Font::CreateResource() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
         // ----------------------------------------------------
         // 1. 頂点リソースの作成とマッピング
@@ -104,8 +104,8 @@ namespace RyoEngine {
         // WVP行列には正投影行列（Orthographic）をあらかじめ入れておきます。
         *wvpData_ = MakeOrthographicMatrix(
             0.0f, 0.0f,
-            (float)DirectXCommon::GetInstance()->GetBackBufferWidth(),
-            (float)DirectXCommon::GetInstance()->GetBackBufferHeight(),
+            (float)DirectXCommon::GetBackBufferWidth(),
+            (float)DirectXCommon::GetBackBufferHeight(),
             0.0f, 100.0f
         );
     }
@@ -244,20 +244,20 @@ namespace RyoEngine {
         if (charCount > 0) {
             *wvpData_ = MakeOrthographicMatrix(
                 0.0f, 0.0f,
-                (float)DirectXCommon::GetInstance()->GetBackBufferWidth(),
-                (float)DirectXCommon::GetInstance()->GetBackBufferHeight(),
+                (float)DirectXCommon::GetBackBufferWidth(),
+                (float)DirectXCommon::GetBackBufferHeight(),
                 0.0f, 100.0f
             );
             materialData_->uvTransform = MakeIdentity4x4();
 
-            auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+            auto commandList = DirectXCommon::GetCommandList();
 
             // リソースバインドとドローコール（前のターンの通り、Begin2dDraw側でPSO設定されていればバインドのみでOK）
             commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
             commandList->IASetIndexBuffer(&indexBufferView_);
             commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
             commandList->SetGraphicsRootConstantBufferView(1, wvpResource_->GetGPUVirtualAddress());
-            commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle_));
+            commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetGPUHandle(textureHandle_));
 
             // 全ての合計文字数を一発でドロー！
             commandList->DrawIndexedInstanced(charCount * 6, 1, 0, 0, 0);

@@ -28,42 +28,30 @@ namespace RyoEngine {
 #endif
     // 匿名名前空間：この cpp ファイルの中からしかアクセスできない領域
     namespace {
-        WinApp* winApp_ = nullptr;
-        DirectXCommon* dxCommon_ = nullptr;
-        ShaderCompiler* shaderCompiler_ = nullptr;
-        TextureManager* textureManager_ = nullptr;
-
-        ModelCommon* modelCommon_ = nullptr;
-        SpriteCommon* spriteCommon_ = nullptr;
         //ReflectCommon* reflectCommon_ = nullptr;
         std::unique_ptr<Font> fontOutputer_;
-        Audio* audio_ = nullptr;
     }
 
     void Initialize(const wchar_t* title) {
         Logger::Initialize();
 
-        winApp_ = WinApp::GetInstance();
-        winApp_->Initialize(title);
+        WinApp::Initialize(title);
 
         // DirectX基盤の初期化
-        dxCommon_ = DirectXCommon::GetInstance();
-        dxCommon_->Initialize(winApp_);
+        DirectXCommon::Initialize();
 
         // srvマネージャーの初期化
         SrvManager::Initialize();
 
-        shaderCompiler_ = RyoEngine::ShaderCompiler::GetInstance();
-        shaderCompiler_->Initialize();
+        ShaderCompiler::Initialize();
 
         // 入力関係初期化
-        Input::Initialize(winApp_->GetHInstance(), winApp_->GetHwnd());
+        Input::Initialize(WinApp::GetHInstance(), WinApp::GetHwnd());
 
         // テクスチャマネージャーの初期化
-        textureManager_ = TextureManager::GetInstance();
-        textureManager_->Initialize();
+        TextureManager::Initialize();
 
-        dxCommon_->CreateGameRenderTarget();
+        DirectXCommon::CreateGameRenderTarget();
 
         // HDRとか
         PostProcess::Initialize();
@@ -77,30 +65,27 @@ namespace RyoEngine {
         // 各種描画共通部の初期化
         PrimitiveRenderer::Initialize();
 
-        modelCommon_ = ModelCommon::GetInstance();
-        modelCommon_->Initialize();
+        ModelCommon::Initialize();
 
         ModelManager::Initialize();
 
         GPUParticleCommon::Initialize();
         GPUParticleManager::Initialize();
 
-        spriteCommon_ = SpriteCommon::GetInstance();
-        spriteCommon_->Initialize();
+        SpriteCommon::Initialize();
 
         //reflectCommon_ = ReflectCommon::GetInstance();
         //reflectCommon_->Initialize();
 
         // オーディオの初期化
-        audio_ = Audio::GetInstance();
-        audio_->Initialize();
+        Audio::Initialize();
 
         // ImGui初期化
         ImGuiManager::Initialize(
-            winApp_->GetHwnd(),
-            dxCommon_->GetDevice(),
-            static_cast<int>(dxCommon_->GetBackBufferCount()),
-            dxCommon_->GetBackBufferFormat()
+            WinApp::GetHwnd(),
+            DirectXCommon::GetDevice(),
+            static_cast<int>(DirectXCommon::GetBackBufferCount()),
+            DirectXCommon::GetBackBufferFormat()
         );
 
         // フォント
@@ -125,28 +110,28 @@ namespace RyoEngine {
 
         ImGuiManager::Finalize();
 
-        audio_->Finalize();
+        Audio::Finalize();
 
         //reflectCommon_->Finalize();
-        spriteCommon_->Finalize();
+        SpriteCommon::Finalize();
         GPUParticleManager::Finalize();
         GPUParticleCommon::Finalize();
         ModelManager::Finalize();
-        modelCommon_->Finalize();
+        ModelCommon::Finalize();
         PrimitiveRenderer::Finalize();
         ShadowMap::Finalize();
         LightManager::Finalize();
-        textureManager_->Finalize();
+        TextureManager::Finalize();
         SrvManager::Finalize();
-        shaderCompiler_->Finalize();
+        ShaderCompiler::Finalize();
 
         PostProcess::Finalize();
 
         // DirectXの基盤を止める（デバイスなどの破棄）
-        dxCommon_->Finalize();
+        DirectXCommon::Finalize();
 
         // 最後に WindowsAPI の登録を解除する
-        winApp_->Finalize();
+        WinApp::Finalize();
 
         Microsoft::WRL::ComPtr<IDXGIDebug1> debug;
         if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
@@ -157,19 +142,19 @@ namespace RyoEngine {
     }
 
     void Begin3dDraw() {
-        GetDxCommon()->PreDraw();
+        DirectXCommon::PreDraw();
         PostProcess::BeginScenePass();   // ← 追加：描画先をHDRバッファへ切り替える
-        GetModelCommon()->BeginDraw();
+        ModelCommon::BeginDraw();
     }
 
     void Begin2dDraw() {
-        GetSpriteCommon()->BeginDraw();
+        SpriteCommon::BeginDraw();
     }
 
     void NewFrame() {
         PrimitiveRenderer::NewFrame();
-        modelCommon_->CommandsClear();
-        spriteCommon_->CommandsClear();
+        ModelCommon::CommandsClear();
+        SpriteCommon::CommandsClear();
         ModelManager::NewFrame();
         GPUParticleCommon::CommandsClear();
 
@@ -196,7 +181,7 @@ namespace RyoEngine {
 
         // ゲーム画面
         ImGui::Begin("Game View");
-        D3D12_GPU_DESCRIPTOR_HANDLE gameTexHandle = dxCommon_->GetGameTextureGPUHandle();
+        D3D12_GPU_DESCRIPTOR_HANDLE gameTexHandle = DirectXCommon::GetGameTextureGPUHandle();
         ImVec2 viewSize{ viewSize_.x,viewSize_.y };
         ImGui::Image(reinterpret_cast<ImTextureID>(gameTexHandle.ptr), viewSize);
         // ギズモの描画範囲 = ゲーム画面の画像範囲
@@ -213,7 +198,7 @@ namespace RyoEngine {
         ImGui::End();
 
         // ライト
-        LightManager::GetInstance()->DrawImGui();
+        LightManager::DrawImGui();
         // ギズモ操作モード(W/E/R・ローカル/ワールド・スナップ)
         Gizmo::DrawToolbar();
         // ポストプロセス(HDR/ブルームのON-OFF)
@@ -281,16 +266,16 @@ namespace RyoEngine {
 
         // シャドウパス：ライト視点で深度だけ先に描画する
         ShadowMap::BeginShadowPass();
-        modelCommon_->DrawShadow();
+        ModelCommon::DrawShadow();
         ModelManager::DrawShadow();
-        ShadowMap::GetInstance()->EndShadowPass();
+        ShadowMap::EndShadowPass();
 
         // 即時描画
         PrimitiveRenderer::Flush();
 
         // 3d描画
         Begin3dDraw();
-        modelCommon_->Draw();
+        ModelCommon::Draw();
         ModelManager::Draw();
         GPUParticleCommon::Draw();
 
@@ -300,7 +285,7 @@ namespace RyoEngine {
 
         // 2d描画
         Begin2dDraw();
-        spriteCommon_->Draw();
+        SpriteCommon::Draw();
 
         fontOutputer_->DrawAllText();
 
@@ -309,7 +294,7 @@ namespace RyoEngine {
         // クリック選択・ギズモ編集(ゲーム画面上のModelを自動で対象にする)
         ModelPicker::Update(GetOnTheGameView());
 
-        GetDxCommon()->PostDraw();  // ImGuiの終了処理はこの中にいる
+        DirectXCommon::PostDraw();  // ImGuiの終了処理はこの中にいる
     }
 
     int32_t RandomInt32_t(int32_t min, int32_t max) {
@@ -343,7 +328,7 @@ namespace RyoEngine {
 
     uint32_t LoadTex(const std::string& filePath) {
         std::string fullPath = "Resources/ApplicationResources/" + filePath;
-        return GetTexManager()->Load(fullPath);
+        return TextureManager::Load(fullPath);
     }
 
     uint32_t LoadBGM(const std::string& filePath) {
@@ -357,21 +342,16 @@ namespace RyoEngine {
     }
 
     void Change2DBlendMode(BlendMode blendMode) {
-        spriteCommon_->SetBlendMode(blendMode);
+        SpriteCommon::SetBlendMode(blendMode);
     }
 
     void Change3DBlendMode(BlendMode blendMode) {
-        modelCommon_->SetBlendMode(blendMode);
+        ModelCommon::SetBlendMode(blendMode);
         ModelManager::SetBlendMode(blendMode);
     }
 
     // --- ゲッターの実装 ---
-    // これらは Engine 名前空間の関数なので、上の匿名名前空間にある変数にアクセスできます。
-    WinApp* GetWinApp() { return winApp_; }
-    DirectXCommon* GetDxCommon() { return dxCommon_; }
-    TextureManager* GetTexManager() { return textureManager_; }
-    ModelCommon* GetModelCommon() { return modelCommon_; }
-    SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
+    // これは Engine 名前空間の関数なので、上の匿名名前空間にある変数にアクセスできます。
     //ReflectCommon* GetReflectCommon() { return reflectCommon_; }
     Font* GetFontOutputter() { return fontOutputer_.get(); }
 

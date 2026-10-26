@@ -7,7 +7,7 @@
 #include <cassert>
 
 // 使用するシェーダー: Resources/HLSL/Primitive/Primitive_VS.hlsl, Primitive_PS.hlsl, Primitive.hlsli
-// (ModelCommon.cppの ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Model/Model.VS.hlsl", ...) と
+// (ModelCommon.cppの ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/Model.VS.hlsl", ...) と
 //  同じ呼び方に合わせて "Resources/EngineResources/HLSL/Primitive/Primitive_VS.hlsl" を読みに行っている。
 //  実際の配置フォルダがHLSL/Model/以外の場所であれば、CreatePipelineStates()内のパスを合わせて変更すること)
 
@@ -48,7 +48,7 @@ namespace RyoEngine {
     // ============================================================
 
     void PrimitiveRenderer::Initialize() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
         // --- 動的頂点バッファ(4グループぶんを1本の大きなUpload Heapとして確保) ---
         vertexCapacity_ = kMaxVerticesPerGroup * 4;
@@ -72,7 +72,7 @@ namespace RyoEngine {
     }
 
     void PrimitiveRenderer::CreateRootSignature() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         // b0 = ViewProjection行列のみ(Material/Texture/Lightは使わない)
@@ -100,7 +100,7 @@ namespace RyoEngine {
     }
 
     void PrimitiveRenderer::CreatePipelineStates() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         // InputLayout: POSITION(float4) / COLOR(float4)
@@ -144,11 +144,11 @@ namespace RyoEngine {
         depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
         Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob =
-            ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Primitive/Primitive_VS.hlsl", L"vs_6_0");
+            ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Primitive/Primitive_VS.hlsl", L"vs_6_0");
         assert(vertexShaderBlob != nullptr);
 
         Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob =
-            ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/Primitive/Primitive_PS.hlsl", L"ps_6_0");
+            ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Primitive/Primitive_PS.hlsl", L"ps_6_0");
         assert(pixelShaderBlob != nullptr);
 
         D3D12_GRAPHICS_PIPELINE_STATE_DESC baseDesc{};
@@ -246,10 +246,10 @@ namespace RyoEngine {
         D3D12_GPU_VIRTUAL_ADDRESS vp3DAddress = vpResource3D_->GetGPUVirtualAddress();
         D3D12_GPU_VIRTUAL_ADDRESS vp2DAddress = vpResource2D_->GetGPUVirtualAddress();
 
-        ModelCommon::GetInstance()->SetDrawCommands(
+        ModelCommon::SetDrawCommands(
             [vbBase, vp3DAddress, vp2DAddress,
             countLine3D, countTri3D, countLine2D, countTri2D]() {
-                auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+                auto commandList = DirectXCommon::GetCommandList();
 
                 // NOTE: ModelCommon::Draw() は BeginDraw() で ModelCommon 自身の RootSignature を
                 //       1度セットしてから drawCommands_ を順に実行する。

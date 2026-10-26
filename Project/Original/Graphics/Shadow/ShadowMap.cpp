@@ -17,7 +17,7 @@ namespace RyoEngine {
         ShadowMap* instance = GetInstance();
 
         Logger::Log("ShadowMap : Initializing...\n");
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
         // 深度テクスチャ本体
         // NOTE: R32_TYPELESSで作ることで、DSVは D32_FLOAT、SRVは R32_FLOAT として
@@ -60,7 +60,7 @@ namespace RyoEngine {
 
         // TextureManagerにSRVとして登録する。
         // R32_TYPELESSのままだとSRVが作れないため、明示的にR32_FLOATを指定する。
-        instance->shadowMapTextureHandle_ = TextureManager::GetInstance()->RegisterResource(instance->shadowMapResource_, DXGI_FORMAT_R32_FLOAT);
+        instance->shadowMapTextureHandle_ = TextureManager::RegisterResource(instance->shadowMapResource_, DXGI_FORMAT_R32_FLOAT);
 
         // ライトView-Projection行列用の定数バッファ
         instance->lightVPResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Matrix4x4));
@@ -99,7 +99,7 @@ namespace RyoEngine {
     void ShadowMap::UpdateLightViewProj() {
         ShadowMap* instance = GetInstance();
         // 現在のLightManagerの代表ライト(Light 0)の向きから、ライト視点のView-Projectionを作る
-        Vector3 direction = Normalize(LightManager::GetInstance()->GetDirection());
+        Vector3 direction = Normalize(LightManager::GetDirection());
 
         // ターゲット位置から、光の来る方向(-direction)へlightDistance_だけ離した位置を仮想的な光源位置にする
         Vector3 eye = instance->targetPosition_ - direction * instance->lightDistance_;
@@ -118,7 +118,7 @@ namespace RyoEngine {
 
     void ShadowMap::BeginShadowPass() {
         ShadowMap* instance = GetInstance();
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
 
         TransitionTo(D3D12_RESOURCE_STATE_DEPTH_WRITE, commandList);
 
@@ -148,7 +148,7 @@ namespace RyoEngine {
     }
 
     void ShadowMap::EndShadowPass() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
         // 通常描画パスのピクセルシェーダーから読めるように状態を遷移させる
         TransitionTo(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, commandList);
     }

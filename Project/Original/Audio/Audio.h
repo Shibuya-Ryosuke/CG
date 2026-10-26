@@ -67,9 +67,9 @@ namespace RyoEngine {
 		/// <param name="volume">音量(1.0が等倍)</param>
 		static void SetBGMVolume(uint32_t handle, float volume);
 
+	private:
 		static Audio* GetInstance();
 
-	private:
 		// デコード済み波形データ(BGM/SE共通)
 		struct SoundData {
 			WAVEFORMATEX wfex{};
@@ -111,6 +111,16 @@ namespace RyoEngine {
 		struct PlayingSE {
 			IXAudio2SourceVoice* pSourceVoice = nullptr;
 			std::unique_ptr<SEVoiceCallback> pCallback;
+
+			PlayingSE() = default;
+			~PlayingSE() = default;
+
+			// unique_ptrを持つためコピー不可(ムーブのみ可)
+			// 暗黙の削除警告(C4625/C4626)を避けるため明示する
+			PlayingSE(const PlayingSE&) = delete;
+			PlayingSE& operator=(const PlayingSE&) = delete;
+			PlayingSE(PlayingSE&&) = default;
+			PlayingSE& operator=(PlayingSE&&) = default;
 		};
 
 		Audio() = default;

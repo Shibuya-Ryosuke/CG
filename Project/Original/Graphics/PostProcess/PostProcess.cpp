@@ -25,7 +25,7 @@ namespace RyoEngine {
         instance->CreateBloomLevels();
         instance->CreateBloomPipelineStates();
 
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         instance->compositeParamsResource_ = DirectXCommon::CreateBufferResource(device, sizeof(PostProcessParams));
         instance->compositeParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&instance->compositeParamsData_));
         instance->compositeParamsData_->acesEnabled = instance->acesEnabled_ ? 1 : 0;
@@ -73,12 +73,11 @@ namespace RyoEngine {
     }
 
     void PostProcess::CreateSceneColorResource() {
-        auto dxCommon = DirectXCommon::GetInstance();
-        auto device = dxCommon->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
         D3D12_RESOURCE_DESC resourceDesc{};
-        resourceDesc.Width = static_cast<UINT>(dxCommon->GetBackBufferWidth());
-        resourceDesc.Height = static_cast<UINT>(dxCommon->GetBackBufferHeight());
+        resourceDesc.Width = static_cast<UINT>(DirectXCommon::GetBackBufferWidth());
+        resourceDesc.Height = static_cast<UINT>(DirectXCommon::GetBackBufferHeight());
         resourceDesc.MipLevels = 1;
         resourceDesc.DepthOrArraySize = 1;
         resourceDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -111,11 +110,11 @@ namespace RyoEngine {
 
         device->CreateRenderTargetView(sceneColorResource_.Get(), nullptr, sceneColorRtvHeap_->GetCPUDescriptorHandleForHeapStart());
 
-        sceneColorTextureHandle_ = TextureManager::GetInstance()->RegisterResource(sceneColorResource_);
+        sceneColorTextureHandle_ = TextureManager::RegisterResource(sceneColorResource_);
     }
 
     void PostProcess::CreateRootSignatureAndPSO() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
         // t0 : メインの入力テクスチャ (シーンカラー、またはブルームの各レベル)
@@ -174,9 +173,9 @@ namespace RyoEngine {
         hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&compositeRootSignature_));
         assert(SUCCEEDED(hr));
 
-        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/PostProcess/Composite.VS.hlsl", L"vs_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/PostProcess/Composite.VS.hlsl", L"vs_6_0");
         assert(vertexShaderBlob != nullptr);
-        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/PostProcess/Composite.PS.hlsl", L"ps_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/PostProcess/Composite.PS.hlsl", L"ps_6_0");
         assert(pixelShaderBlob != nullptr);
 
         D3D12_BLEND_DESC blendDesc{};
@@ -194,7 +193,7 @@ namespace RyoEngine {
         psoDesc.BlendState = blendDesc;
         psoDesc.RasterizerState = rasterizerDesc;
         psoDesc.NumRenderTargets = 1;
-        psoDesc.RTVFormats[0] = DirectXCommon::GetInstance()->GetBackBufferFormat(); // gameRenderTargetResource_と同じフォーマット
+        psoDesc.RTVFormats[0] = DirectXCommon::GetBackBufferFormat(); // gameRenderTargetResource_と同じフォーマット
         psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
         psoDesc.SampleDesc.Count = 1;
         psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
@@ -206,11 +205,10 @@ namespace RyoEngine {
     }
 
     void PostProcess::CreateBloomLevels() {
-        auto dxCommon = DirectXCommon::GetInstance();
-        auto device = dxCommon->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
-        uint32_t width = static_cast<uint32_t>(dxCommon->GetBackBufferWidth());
-        uint32_t height = static_cast<uint32_t>(dxCommon->GetBackBufferHeight());
+        uint32_t width = static_cast<uint32_t>(DirectXCommon::GetBackBufferWidth());
+        uint32_t height = static_cast<uint32_t>(DirectXCommon::GetBackBufferHeight());
 
         bloomLevels_.clear();
         bloomLevels_.reserve(kBloomLevelCount);
@@ -255,17 +253,17 @@ namespace RyoEngine {
             assert(SUCCEEDED(hr));
             device->CreateRenderTargetView(level.resource.Get(), nullptr, level.rtvHeap->GetCPUDescriptorHandleForHeapStart());
 
-            level.textureHandle = TextureManager::GetInstance()->RegisterResource(level.resource);
+            level.textureHandle = TextureManager::RegisterResource(level.resource);
 
             bloomLevels_.push_back(level);
         }
     }
 
     void PostProcess::CreateBloomPipelineStates() {
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
         HRESULT hr = S_OK;
 
-        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/PostProcess/Composite.VS.hlsl", L"vs_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/PostProcess/Composite.VS.hlsl", L"vs_6_0");
         assert(vertexShaderBlob != nullptr);
 
         D3D12_RASTERIZER_DESC rasterizerDesc{};
@@ -287,7 +285,7 @@ namespace RyoEngine {
 
         // --- 閾値抽出パス (上書き) ---
         {
-            Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/PostProcess/BloomThreshold.PS.hlsl", L"ps_6_0");
+            Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/PostProcess/BloomThreshold.PS.hlsl", L"ps_6_0");
             assert(pixelShaderBlob != nullptr);
 
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = baseDesc;
@@ -302,7 +300,7 @@ namespace RyoEngine {
 
         // ダウンサンプル・アップサンプルは全く同じシェーダー(単純なサンプル→出力)を使い回し、
         // PSOのBlendStateの違い(上書き/加算)だけで役割を変える
-        Microsoft::WRL::ComPtr<IDxcBlob> sampleShaderBlob = ShaderCompiler::GetInstance()->Compile(L"Resources/EngineResources/HLSL/PostProcess/BloomSample.PS.hlsl", L"ps_6_0");
+        Microsoft::WRL::ComPtr<IDxcBlob> sampleShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/PostProcess/BloomSample.PS.hlsl", L"ps_6_0");
         assert(sampleShaderBlob != nullptr);
 
         // --- ダウンサンプルパス (上書き) ---
@@ -347,7 +345,7 @@ namespace RyoEngine {
         barrier.Transition.pResource = sceneColorResource_.Get();
         barrier.Transition.StateBefore = sceneColorState_;
         barrier.Transition.StateAfter = newState;
-        DirectXCommon::GetInstance()->GetCommandList()->ResourceBarrier(1, &barrier);
+        DirectXCommon::GetCommandList()->ResourceBarrier(1, &barrier);
         sceneColorState_ = newState;
     }
 
@@ -361,12 +359,12 @@ namespace RyoEngine {
         barrier.Transition.pResource = level.resource.Get();
         barrier.Transition.StateBefore = level.state;
         barrier.Transition.StateAfter = newState;
-        DirectXCommon::GetInstance()->GetCommandList()->ResourceBarrier(1, &barrier);
+        DirectXCommon::GetCommandList()->ResourceBarrier(1, &barrier);
         level.state = newState;
     }
 
     void PostProcess::DrawFullscreenTriangle(uint32_t width, uint32_t height) {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
 
         D3D12_VIEWPORT viewport{};
         viewport.Width = static_cast<float>(width);
@@ -386,12 +384,12 @@ namespace RyoEngine {
     void PostProcess::BeginScenePass() {
         PostProcess* instance = GetInstance();
 
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
 
         instance->TransitionSceneColor(D3D12_RESOURCE_STATE_RENDER_TARGET);
 
         D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = instance->sceneColorRtvHeap_->GetCPUDescriptorHandleForHeapStart();
-        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = DirectXCommon::GetInstance()->GetDSVHandle();
+        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = DirectXCommon::GetDSVHandle();
 
         commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 
@@ -409,7 +407,7 @@ namespace RyoEngine {
         if (bloomLevels_.empty()) {
             return;
         }
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
         size_t levelCount = bloomLevels_.size();
 
         // --- 閾値抽出：シーンカラー(フル解像度) → bloomLevels_[0](半解像度) ---
@@ -419,7 +417,7 @@ namespace RyoEngine {
             D3D12_CPU_DESCRIPTOR_HANDLE rtv = bloomLevels_[0].rtvHeap->GetCPUDescriptorHandleForHeapStart();
             commandList->OMSetRenderTargets(1, &rtv, false, nullptr);
         }
-        commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetInstance()->GetGPUHandle(sceneColorTextureHandle_));
+        commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetGPUHandle(sceneColorTextureHandle_));
         DrawFullscreenTriangle(bloomLevels_[0].width, bloomLevels_[0].height);
         TransitionBloomLevel(0, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
@@ -431,7 +429,7 @@ namespace RyoEngine {
                 D3D12_CPU_DESCRIPTOR_HANDLE rtv = bloomLevels_[i + 1].rtvHeap->GetCPUDescriptorHandleForHeapStart();
                 commandList->OMSetRenderTargets(1, &rtv, false, nullptr);
             }
-            commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetInstance()->GetGPUHandle(bloomLevels_[i].textureHandle));
+            commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetGPUHandle(bloomLevels_[i].textureHandle));
             DrawFullscreenTriangle(bloomLevels_[i + 1].width, bloomLevels_[i + 1].height);
             TransitionBloomLevel(i + 1, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
@@ -444,7 +442,7 @@ namespace RyoEngine {
                 D3D12_CPU_DESCRIPTOR_HANDLE rtv = bloomLevels_[i - 1].rtvHeap->GetCPUDescriptorHandleForHeapStart();
                 commandList->OMSetRenderTargets(1, &rtv, false, nullptr);
             }
-            commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetInstance()->GetGPUHandle(bloomLevels_[i].textureHandle));
+            commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetGPUHandle(bloomLevels_[i].textureHandle));
             DrawFullscreenTriangle(bloomLevels_[i - 1].width, bloomLevels_[i - 1].height);
             TransitionBloomLevel(i - 1, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
@@ -455,7 +453,7 @@ namespace RyoEngine {
     void PostProcess::Composite() {
         PostProcess* instance = GetInstance();
 
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
 
         commandList->SetGraphicsRootSignature(instance->compositeRootSignature_.Get());
         
@@ -463,7 +461,7 @@ namespace RyoEngine {
         // NOTE: root param1(t1)はRootSignature上、常に何か有効な値がバインドされている必要があるため、
         //       ブルームを使わない/まだ計算していない段階ではひとまずシーンカラー自体を仮に入れておく
         //       (Threshold/Downsample/Upsampleの各シェーダーはt1を一切参照しないので実害無し)
-        commandList->SetGraphicsRootDescriptorTable(1, TextureManager::GetInstance()->GetGPUHandle(instance->sceneColorTextureHandle_));
+        commandList->SetGraphicsRootDescriptorTable(1, TextureManager::GetGPUHandle(instance->sceneColorTextureHandle_));
         commandList->SetGraphicsRootConstantBufferView(2, instance->compositeParamsResource_->GetGPUVirtualAddress());
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -492,30 +490,29 @@ namespace RyoEngine {
 
         if (instance->bloomEnabled_) {
             instance->RenderBloom();
-            commandList->SetGraphicsRootDescriptorTable(1, TextureManager::GetInstance()->GetGPUHandle(instance->bloomLevels_[0].textureHandle));
+            commandList->SetGraphicsRootDescriptorTable(1, TextureManager::GetGPUHandle(instance->bloomLevels_[0].textureHandle));
         }
 
         // 描画先をgameRenderTargetResource_へ戻す
-        D3D12_CPU_DESCRIPTOR_HANDLE gameRtvHandle = DirectXCommon::GetInstance()->GetGameRenderTargetRTVHandle();
+        D3D12_CPU_DESCRIPTOR_HANDLE gameRtvHandle = DirectXCommon::GetGameRenderTargetRTVHandle();
         commandList->OMSetRenderTargets(1, &gameRtvHandle, false, nullptr);
 
         // NOTE: RenderBloom()内でビューポート/シザーをブルーム用の縮小解像度に変更しているため、
         //       ここでバックバッファサイズへ明示的に戻す必要がある
-        auto dxCommon = DirectXCommon::GetInstance();
         D3D12_VIEWPORT viewport{};
-        viewport.Width = static_cast<float>(dxCommon->GetBackBufferWidth());
-        viewport.Height = static_cast<float>(dxCommon->GetBackBufferHeight());
+        viewport.Width = static_cast<float>(DirectXCommon::GetBackBufferWidth());
+        viewport.Height = static_cast<float>(DirectXCommon::GetBackBufferHeight());
         viewport.MinDepth = 0.0f;
         viewport.MaxDepth = 1.0f;
         commandList->RSSetViewports(1, &viewport);
 
         D3D12_RECT scissorRect{};
-        scissorRect.right = static_cast<LONG>(dxCommon->GetBackBufferWidth());
-        scissorRect.bottom = static_cast<LONG>(dxCommon->GetBackBufferHeight());
+        scissorRect.right = static_cast<LONG>(DirectXCommon::GetBackBufferWidth());
+        scissorRect.bottom = static_cast<LONG>(DirectXCommon::GetBackBufferHeight());
         commandList->RSSetScissorRects(1, &scissorRect);
 
         commandList->SetPipelineState(instance->compositePipelineState_.Get());
-        commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetInstance()->GetGPUHandle(instance->sceneColorTextureHandle_));
+        commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetGPUHandle(instance->sceneColorTextureHandle_));
 
         commandList->DrawInstanced(3, 1, 0, 0);
     }

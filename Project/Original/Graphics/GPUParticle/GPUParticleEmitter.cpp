@@ -43,7 +43,7 @@ namespace RyoEngine {
         billboard_ = billboard;
         blendMode_ = blendMode;
 
-        auto device = DirectXCommon::GetInstance()->GetDevice();
+        auto device = DirectXCommon::GetDevice();
 
         // パーティクル本体 (DEFAULT heap、UAV)
         particleResource_ = CreateUAVBufferResource(device, sizeof(GPUParticleData) * maxParticleCount_);
@@ -105,7 +105,7 @@ namespace RyoEngine {
             overrideTextureHandle_ = 0; // メッシュ本来のテクスチャに戻す
             return;
         }
-        overrideTextureHandle_ = TextureManager::GetInstance()->Load(filePath);
+        overrideTextureHandle_ = TextureManager::Load(filePath);
     }
 
     void GPUParticleEmitter::Update(float deltaTime) {
@@ -158,12 +158,12 @@ namespace RyoEngine {
         barrier.Transition.pResource = particleResource_.Get();
         barrier.Transition.StateBefore = particleState_;
         barrier.Transition.StateAfter = newState;
-        DirectXCommon::GetInstance()->GetCommandList()->ResourceBarrier(1, &barrier);
+        DirectXCommon::GetCommandList()->ResourceBarrier(1, &barrier);
         particleState_ = newState;
     }
 
     void GPUParticleEmitter::InternalDispatch() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
 
         // コンピュートシェーダーが読み書きできる状態にしておく
         TransitionParticleBuffer(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -191,7 +191,7 @@ namespace RyoEngine {
     }
 
     void GPUParticleEmitter::InternalDraw() {
-        auto commandList = DirectXCommon::GetInstance()->GetCommandList();
+        auto commandList = DirectXCommon::GetCommandList();
 
         // 頂点シェーダー(Vertexステージ)がStructuredBufferとして読めるように、
         // UAV → NON_PIXEL_SHADER_RESOURCE(Pixel以外のステージ用SRV状態)へ遷移させる
@@ -212,7 +212,7 @@ namespace RyoEngine {
 
         commandList->SetGraphicsRootShaderResourceView(0, particleResource_->GetGPUVirtualAddress());
         commandList->SetGraphicsRootConstantBufferView(1, cameraResource_->GetGPUVirtualAddress());
-        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetGPUHandle(textureHandle));
+        commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetGPUHandle(textureHandle));
 
         // maxParticleCount_ぶん常に全部描く(簡易版)。死んでいるスロットは寿命フェードで
         // アルファ0になるため、見た目上は問題にならない。
