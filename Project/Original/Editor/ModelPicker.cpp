@@ -3,6 +3,7 @@
 #ifdef _DEBUG
 #include <vector>
 #include <cmath>
+#include <algorithm>
 #include "../Graphics/3D/Model.h"
 #include "../Core/Input/Input.h"
 #include "Gizmo.h"
@@ -49,6 +50,23 @@ namespace RyoEngine {
             if (hit < 0.0f) hit = t + half; // 始点が球の中
             if (hit < 0.0f) return false;   // 球が背後
             outT = hit;
+            return true;
+        }
+
+        // ワールド座標 → ゲーム画面上のピクセル座標。カメラの後ろなら false
+        bool WorldToScreen(const Vector3& p, float minX, float minY, float w, float h, Vector2& out) {
+            const float v[4] = { p.x, p.y, p.z, 1.0f };
+            float o[4] = { 0, 0, 0, 0 };
+            for (int j = 0; j < 4; ++j) {
+                for (int i = 0; i < 4; ++i) {
+                    o[j] += v[i] * viewProj_.m[i][j];
+                }
+            }
+            if (o[3] <= 1e-6f) return false;
+            const float ndcX = o[0] / o[3];
+            const float ndcY = o[1] / o[3];
+            out.x = minX + (ndcX + 1.0f) * 0.5f * w;
+            out.y = minY + (1.0f - ndcY) * 0.5f * h;
             return true;
         }
     }
@@ -128,13 +146,59 @@ namespace RyoEngine {
                 const Vector3 farPos = Unproject(invVP, ndcX, ndcY, 1.0f);
                 const Vector3 dir = Normalize(farPos - nearPos);
 
+                // カメラの位置と右方向 (ビュー行列の逆 = カメラのワールド行列)
+                const Matrix4x4 invView = Inverse(view_);
+                const Vector3 cameraPos = { invView.m[3][0], invView.m[3][1], invView.m[3][2] };
+                const Vector3 cameraRight = Normalize(Vector3{ invView.m[0][0], invView.m[0][1], invView.m[0][2] });
+
+                // レイが境界球に当たったものを候補にし、その中から
+                // 「画面上でのカーソルと中心の距離 ÷ 画面上での球の半径」が一番小さいものを選ぶ。
+                // (大きい球が小さいモデルを包んでいても、狙った小さい方が選ばれるようにするため)
+                // カメラが球の中にいるもの(足元の地面など)は画面上の半径が巨大になりスコアが壊れるので、
+                // 他に候補が無いときだけ、手前のものを選ぶ低優先扱いにする。
                 Model* best = nullptr;
+                bool bestLowPriority = true;
+                float bestScore = 0.0f;
                 float bestT = 0.0f;
                 for (const auto& c : candidates_) {
                     if (!c.model) continue;
                     float t;
-                    if (RaySphere(nearPos, dir, c.center, c.radius, t) && (!best || t < bestT)) {
+                    if (!RaySphere(nearPos, dir, c.center, c.radius, t)) continue;
+
+                    const Vector3 toCenter = c.center - cameraPos;
+                    bool lowPriority = Dot(toCenter, toCenter) <= c.radius * c.radius;
+                    float score = 0.0f;
+                    if (!lowPriority) {
+                        Vector2 centerPx{};
+                        Vector2 edgePx{};
+                        if (WorldToScreen(c.center, minX, minY, w, h, centerPx) &&
+                            WorldToScreen(c.center + cameraRight * c.radius, minX, minY, w, h, edgePx)) {
+                            const float dx = mouse.x - centerPx.x;
+                            const float dy = mouse.y - centerPx.y;
+                            const float ex = edgePx.x - centerPx.x;
+                            const float ey = edgePx.y - centerPx.y;
+                            const float screenRadius = (std::max)(std::sqrt(ex * ex + ey * ey), 1.0f);
+                            score = std::sqrt(dx * dx + dy * dy) / screenRadius;
+                        } else {
+                            lowPriority = true; // 中心がカメラの後ろ側
+                        }
+                    }
+
+                    bool better = false;
+                    if (!best) {
+                        better = true;
+                    } else if (lowPriority != bestLowPriority) {
+                        better = !lowPriority; // 通常の候補を低優先の候補より優先する
+                    } else if (!lowPriority) {
+                        better = (score < bestScore) || (score == bestScore && t < bestT);
+                    } else {
+                        better = t < bestT;
+                    }
+
+                    if (better) {
                         best = c.model;
+                        bestLowPriority = lowPriority;
+                        bestScore = score;
                         bestT = t;
                     }
                 }

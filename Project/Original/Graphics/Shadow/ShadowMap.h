@@ -7,7 +7,7 @@
 namespace RyoEngine {
 
     // シャドウマップの解像度
-    constexpr uint32_t kShadowMapSize = 2048;
+    constexpr uint32_t kShadowMapSize = 4096;
 
     /// <summary>
     /// シーンの主要なDirectionalLight(LightManagerのLight 0)から見た深度テクスチャ(シャドウマップ)と、
@@ -37,12 +37,27 @@ namespace RyoEngine {
         // --- ゲッター ---
         static D3D12_GPU_VIRTUAL_ADDRESS GetLightViewProjGPUVirtualAddress() { return GetInstance()->lightVPResource_->GetGPUVirtualAddress(); }
         static uint32_t GetShadowMapTextureHandle() { return GetInstance()->shadowMapTextureHandle_; }
+        static const Vector3& GetTargetPosition() { return GetInstance()->targetPosition_; }
 
-        // --- セッター(影を落とす範囲の調整用。暫定：固定値運用) ---
+        // --- セッター(影を落とす範囲の調整用。ImGuiの「Shadow」ウィンドウからも変更できる) ---
         static void SetOrthoHalfSize(float halfSize) { GetInstance()->orthoHalfSize_ = halfSize; }
         static void SetOrthoDepthRange(float nearZ, float farZ) { GetInstance()->nearZ_ = nearZ;  GetInstance()->farZ_ = farZ; }
         static void SetLightDistance(float distance) { GetInstance()->lightDistance_ = distance; }
+        // カメラ追従OFF時に使う、影を落とす範囲の中心(追従ON中は毎フレーム上書きされる)
         static void SetTargetPosition(const Vector3& position) { GetInstance()->targetPosition_ = position; }
+
+        // --- カメラ追従 ---
+        // true: 影を落とす範囲の中心を、毎フレームカメラに追従させる / false: SetTargetPosition()の位置に固定
+        static void SetFollowCamera(bool follow) { GetInstance()->followCamera_ = follow; }
+        // true: デバッグカメラ使用中はデバッグカメラに追従 / false: 常にゲームカメラに追従
+        static void SetFollowDebugCamera(bool follow) { GetInstance()->followDebugCamera_ = follow; }
+        // カメラの水平前方へ、範囲の中心をどれだけずらすか
+        static void SetForwardOffset(float offset) { GetInstance()->forwardOffset_ = offset; }
+
+        /// <summary>
+        /// 範囲・距離・カメラ追従を調整するImGuiパネル(デバッグ用)
+        /// </summary>
+        static void DrawImGui();
 
     private:
         static ShadowMap* GetInstance();
@@ -54,6 +69,9 @@ namespace RyoEngine {
 
         // ライトのView-Projection行列を計算し、lightVPData_へ書き込む
         static void UpdateLightViewProj();
+
+        // カメラ追従ON時、カメラ位置から影を落とす範囲の中心(targetPosition_)を求める
+        static void UpdateTargetPosition();
 
         // リソースの状態(currentState_)と異なる場合のみバリアを発行する
         static void TransitionTo(D3D12_RESOURCE_STATES newState, ID3D12GraphicsCommandList* commandList);
@@ -70,12 +88,17 @@ namespace RyoEngine {
         Microsoft::WRL::ComPtr<ID3D12Resource> lightVPResource_;
         Matrix4x4* lightVPData_ = nullptr;
 
-        // 正射影の範囲(暫定：ターゲット位置を中心とした固定サイズのボックス。
-        //  カメラ視錐台に合わせて動的にフィットさせる本格版は今後の課題)
-        float orthoHalfSize_ = 20.0f;
+        // 正射影の範囲(ターゲット位置を中心とした固定サイズのボックス。100x100)
+        //  カメラ視錐台に合わせて動的にフィットさせる本格版(カスケード等)は今後の課題
+        float orthoHalfSize_ = 50.0f;
         float nearZ_ = 0.1f;
-        float farZ_ = 100.0f;
-        float lightDistance_ = 30.0f;                     // targetPosition_からどれだけ光源側(-direction方向)へ離すか
-        Vector3 targetPosition_ = { 0.0f, 0.0f, 0.0f };   // 影を落とす範囲の中心(暫定：原点固定)
+        float farZ_ = 150.0f;
+        float lightDistance_ = 60.0f;                     // targetPosition_からどれだけ光源側(-direction方向)へ離すか
+        Vector3 targetPosition_ = { 0.0f, 0.0f, 0.0f };   // 影を落とす範囲の中心(カメラ追従ON中は毎フレーム自動で更新される)
+
+        // カメラ追従
+        bool followCamera_ = true;        // 範囲の中心をカメラに追従させるか
+        bool followDebugCamera_ = true;   // デバッグカメラ使用中はデバッグカメラに追従させるか(falseなら常にゲームカメラ)
+        float forwardOffset_ = 25.0f;     // カメラの水平前方へ中心をずらす量(カメラの後ろ側に範囲を無駄遣いしないため)
     };
 }

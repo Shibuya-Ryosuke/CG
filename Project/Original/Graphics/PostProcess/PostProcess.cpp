@@ -298,15 +298,18 @@ namespace RyoEngine {
             assert(SUCCEEDED(hr));
         }
 
-        // ダウンサンプル・アップサンプルは全く同じシェーダー(単純なサンプル→出力)を使い回し、
-        // PSOのBlendStateの違い(上書き/加算)だけで役割を変える
-        Microsoft::WRL::ComPtr<IDxcBlob> sampleShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/PostProcess/BloomSample.PS.hlsl", L"ps_6_0");
-        assert(sampleShaderBlob != nullptr);
+        // ダウンサンプルは13点の重み付き平均、アップサンプルは3x3のテントフィルタで行う
+        // (1回のバイリニアだけだと、低解像度の段を引き伸ばしたときにブロック状のムラが出るため)
+        // 上書き/加算の違いは、これまで通りPSOのBlendStateで決める
+        Microsoft::WRL::ComPtr<IDxcBlob> downsampleShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/PostProcess/BloomDownsample.PS.hlsl", L"ps_6_0");
+        assert(downsampleShaderBlob != nullptr);
+        Microsoft::WRL::ComPtr<IDxcBlob> upsampleShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/PostProcess/BloomUpsample.PS.hlsl", L"ps_6_0");
+        assert(upsampleShaderBlob != nullptr);
 
         // --- ダウンサンプルパス (上書き) ---
         {
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = baseDesc;
-            psoDesc.PS = { sampleShaderBlob->GetBufferPointer(), sampleShaderBlob->GetBufferSize() };
+            psoDesc.PS = { downsampleShaderBlob->GetBufferPointer(), downsampleShaderBlob->GetBufferSize() };
             D3D12_BLEND_DESC blendDesc{};
             blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
             psoDesc.BlendState = blendDesc;
@@ -318,7 +321,7 @@ namespace RyoEngine {
         // --- アップサンプル+加算合成パス (加算ブレンド：SrcColor*1 + DestColor*1) ---
         {
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = baseDesc;
-            psoDesc.PS = { sampleShaderBlob->GetBufferPointer(), sampleShaderBlob->GetBufferSize() };
+            psoDesc.PS = { upsampleShaderBlob->GetBufferPointer(), upsampleShaderBlob->GetBufferSize() };
 
             D3D12_BLEND_DESC blendDesc{};
             blendDesc.RenderTarget[0].BlendEnable = true;

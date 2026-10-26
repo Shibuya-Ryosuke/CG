@@ -118,8 +118,9 @@ namespace RyoEngine {
     /// 画像の読み込み
     /// </summary>
     /// <param name="filePath">Resources/ApplicationResources/　の後のパスを記述</param>
+    /// <param name="isSRGB">true:色のテクスチャ / false:法線マップなど色ではないデータ(リニアのまま読む)</param>
     /// <returns></returns>
-    uint32_t LoadTex(const std::string& filePath);
+    uint32_t LoadTex(const std::string& filePath, bool isSRGB = true);
     
     /// <summary>
     /// BGMの読み込み

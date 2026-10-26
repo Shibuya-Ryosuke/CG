@@ -95,7 +95,8 @@ namespace RyoEngine {
         rootParameters[6].Descriptor.ShaderRegister = 2; // b2 (Pixel)
 
         D3D12_STATIC_SAMPLER_DESC staticSampler{};
-        staticSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        staticSampler.Filter = D3D12_FILTER_ANISOTROPIC;  // 異方性フィルタ(斜めから見た地面などをくっきりさせる。ミップマップ前提)
+        staticSampler.MaxAnisotropy = 16;  // 1〜16。static samplerなので実行中には変更できない
         staticSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;

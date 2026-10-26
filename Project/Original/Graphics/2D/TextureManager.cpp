@@ -46,16 +46,19 @@ namespace RyoEngine {
         Logger::LogSuccess("TexManager : Finalized\n");
     }
 
-    uint32_t TextureManager::Load(const std::string& filePath) {
+    uint32_t TextureManager::Load(const std::string& filePath, bool isSRGB) {
         TextureManager* instance = GetInstance();
 
+        // 同じ画像でもsRGB版とリニア版は別物として扱うため、キャッシュのキーを分ける
+        const std::string cacheKey = isSRGB ? filePath : filePath + "?linear";
+
         // 読み込み済みならそのまま返す(上限チェックより先に行うことで、満杯時でも既存テクスチャは取得できる)
-        if (auto it = instance->filePathMap_.find(filePath); it != instance->filePathMap_.end()) {
+        if (auto it = instance->filePathMap_.find(cacheKey); it != instance->filePathMap_.end()) {
             return it->second;
         }
 
-        DirectX::ScratchImage mipImages = instance->LoadTexture(filePath);
-        auto resource = instance->CreateTextureResource(mipImages.GetMetadata());
+        DirectX::ScratchImage mipImages = instance->LoadTexture(filePath, isSRGB);
+        auto resource = instance->CreateTextureResource(mipImages.GetMetadata(), isSRGB);
         auto intermediate = instance->UploadTextureData(resource, mipImages, DirectXCommon::GetCommandList());
         instance->intermediateResources_.push_back(intermediate);
 
@@ -64,7 +67,7 @@ namespace RyoEngine {
         SrvManager::CreateSRVForTexture2D(handle, resource.Get(), resource->GetDesc().Format);
 
         instance->textures_[handle] = resource;
-        instance->filePathMap_[filePath] = handle;
+        instance->filePathMap_[cacheKey] = handle;
 
         return handle;
     }
@@ -111,30 +114,51 @@ namespace RyoEngine {
         return index;
     }
 
-    DirectX::ScratchImage TextureManager::LoadTexture(const std::string& filePath) {
+    DirectX::ScratchImage TextureManager::LoadTexture(const std::string& filePath, bool isSRGB) {
         // テクスチャファイルを読んでプログラムで使えるようにする
         DirectX::ScratchImage image{};
         std::wstring filePathW = Logger::ConvertString(filePath);
-        HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+        // 色のテクスチャはsRGBとして、法線マップなどのデータはファイル内のsRGB指定を無視してリニアのまま読む
+        const DirectX::WIC_FLAGS wicFlags = isSRGB ? DirectX::WIC_FLAGS_FORCE_SRGB : DirectX::WIC_FLAGS_IGNORE_SRGB;
+        HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), wicFlags, nullptr, image);
         assert(SUCCEEDED(hr));
 
+        // ミップマップを1x1まで生成する(遠く・斜めから見たときのザラつきやモアレを防ぐ)
+        // 圧縮フォーマットや1x1の画像は生成できない/不要なので、元画像のまま使う
         DirectX::ScratchImage mipImages{};
-        mipImages = std::move(image);
-
-        // 元画像サイズのまま出している。ミップマップを作っていない(RailSTGの時に変えた。戻しても良い)
+        const DirectX::TexMetadata& metadata = image.GetMetadata();
+        bool generated = false;
+        if (!DirectX::IsCompressed(metadata.format) && (metadata.width > 1 || metadata.height > 1)) {
+            // sRGBのテクスチャはリニア空間で平均しないと縮小段が暗くなるため、TEX_FILTER_SRGBを付ける
+            // (リニアのデータはそのまま平均すればよいので付けない)
+            const DirectX::TEX_FILTER_FLAGS mipFilter = isSRGB ? DirectX::TEX_FILTER_SRGB : DirectX::TEX_FILTER_DEFAULT;
+            hr = DirectX::GenerateMipMaps(*image.GetImage(0, 0, 0), mipFilter, 0, mipImages);
+            if (SUCCEEDED(hr)) {
+                generated = true;
+            } else {
+                Logger::LogError("[TextureManager] ミップマップの生成に失敗したため、元画像のまま使います: " + filePath + "\n");
+            }
+        }
+        if (!generated) {
+            mipImages = std::move(image);
+        }
 
         // ミップマップ付きのデータを返す
         return mipImages;
     }
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(const DirectX::TexMetadata& metadata) {
+    Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(const DirectX::TexMetadata& metadata, bool isSRGB) {
         // metadataを基にResourceの設定
         D3D12_RESOURCE_DESC resourceDesc{};
         resourceDesc.Width = UINT(metadata.width);  // Textureの幅
         resourceDesc.Height = UINT(metadata.height);  // Textureの高さ
         resourceDesc.MipLevels = UINT16(metadata.mipLevels);  // mipmapの数
         resourceDesc.DepthOrArraySize = UINT16(metadata.arraySize);  // 奥行き or 配列Textureの数
-        resourceDesc.Format = metadata.format;  // TextureのFormat
+        // TextureのFormat。isSRGB=trueなら、sRGB版があるフォーマットは必ずsRGBとして扱う
+        // (WIC_FLAGS_FORCE_SRGBで読んでも、読み込み結果によってはsRGBにならない場合があるため念押し)
+        // isSRGB=false(法線マップなど)なら、逆に必ずリニア版のフォーマットにする
+        // SRVはresource->GetDesc().Formatから作るので、ここを変えればSRVも同じになる
+        resourceDesc.Format = isSRGB ? DirectX::MakeSRGB(metadata.format) : DirectX::MakeLinear(metadata.format);
         resourceDesc.SampleDesc.Count = 1;  // サンプリングのカウント。1固定
         resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION(metadata.dimension);  // Textureの次元数
 

@@ -199,6 +199,8 @@ namespace RyoEngine {
 
         // ライト
         LightManager::DrawImGui();
+        // シャドウ(範囲・カメラ追従)
+        ShadowMap::DrawImGui();
         // ギズモ操作モード(W/E/R・ローカル/ワールド・スナップ)
         Gizmo::DrawToolbar();
         // ポストプロセス(HDR/ブルームのON-OFF)
@@ -326,9 +328,9 @@ namespace RyoEngine {
         return ModelManager::LoadObj(fullPath);
     }
 
-    uint32_t LoadTex(const std::string& filePath) {
+    uint32_t LoadTex(const std::string& filePath, bool isSRGB) {
         std::string fullPath = "Resources/ApplicationResources/" + filePath;
-        return TextureManager::Load(fullPath);
+        return TextureManager::Load(fullPath, isSRGB);
     }
 
     uint32_t LoadBGM(const std::string& filePath) {

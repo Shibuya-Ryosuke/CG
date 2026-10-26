@@ -389,7 +389,8 @@ namespace RyoEngine {
 
         D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
         // s0: 通常のテクスチャ用
-        staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        staticSamplers[0].Filter = D3D12_FILTER_ANISOTROPIC;  // 異方性フィルタ(斜めから見た地面などをくっきりさせる。ミップマップ前提)
+        staticSamplers[0].MaxAnisotropy = 16;  // 1〜16。static samplerなので実行中には変更できない
         staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;

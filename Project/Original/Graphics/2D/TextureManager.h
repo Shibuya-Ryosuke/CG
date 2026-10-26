@@ -32,8 +32,9 @@ namespace RyoEngine {
 		/// テクスチャの読み込み
 		/// </summary>
 		/// <param name="filePath">ファイルパス</param>
+		/// <param name="isSRGB">true:色のテクスチャ(sRGBとして扱う) / false:法線マップなど色ではないデータ(リニアのまま扱う)</param>
 		/// <returns>テクスチャのSRVが格納されたSrvManagerのスロット番号</returns>
-		static uint32_t Load(const std::string& filePath);
+		static uint32_t Load(const std::string& filePath, bool isSRGB = true);
 
 		static void ClearIntermediateResources();
 
@@ -69,11 +70,11 @@ namespace RyoEngine {
 		std::unordered_map<std::string, uint32_t> filePathMap_; // 重複読み込み防止
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources_;  // 中間リソースを一時的に貯めておく
 
-		// Textureデータ読み込み
-		DirectX::ScratchImage LoadTexture(const std::string& filePath);
+		// Textureデータ読み込み(isSRGB=falseならsRGB変換をせず、ミップもリニアのまま平均する)
+		DirectX::ScratchImage LoadTexture(const std::string& filePath, bool isSRGB);
 
-		// TextureResource作成
-		Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata& metadata);
+		// TextureResource作成(isSRGBに応じて、フォーマットをsRGB版/リニア版にそろえる)
+		Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata& metadata, bool isSRGB);
 
 		// TextureResourceにデータを転送
 		[[nodiscard]]  // 戻り値を破棄してはならない(破棄したら警告)

@@ -493,5 +493,11 @@
     <FxCompile Include="Resources\EngineResources\HLSL\Model\ModelBatchShadow.VS.hlsl">
       <Filter>HLSL\Model</Filter>
     </FxCompile>
+    <FxCompile Include="Resources\EngineResources\HLSL\PostProcess\BloomDownsample.PS.hlsl">
+      <Filter>HLSL\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\EngineResources\HLSL\PostProcess\BloomUpsample.PS.hlsl">
+      <Filter>HLSL\PostProcess</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
