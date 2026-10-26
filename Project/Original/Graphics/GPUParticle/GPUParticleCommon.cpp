@@ -14,34 +14,42 @@ namespace RyoEngine {
     }
 
     void GPUParticleCommon::Initialize() {
+        GPUParticleCommon* instance = GetInstance();
+
         Logger::Log("GPUParticleCommon : Initializing...\n");
-        CreateComputeRootSignature();
-        CreateComputePipelineStates();
-        CreateRenderRootSignature();
-        CreateRenderPipelineStates();
+        instance->CreateComputeRootSignature();
+        instance->CreateComputePipelineStates();
+        instance->CreateRenderRootSignature();
+        instance->CreateRenderPipelineStates();
         Logger::LogSuccess("GPUParticleCommon : Initialized\n");
     }
 
     void GPUParticleCommon::Finalize() {
+        GPUParticleCommon* instance = GetInstance();
+
         Logger::Log("GPUParticleCommon : Finalizing...\n");
-        for (auto& pso : renderPipelineStates_) {
+        for (auto& pso : instance->renderPipelineStates_) {
             pso.Reset();
         }
-        renderRootSignature_.Reset();
-        simulatePipelineState_.Reset();
-        resetPipelineState_.Reset();
-        computeRootSignature_.Reset();
+        instance->renderRootSignature_.Reset();
+        instance->simulatePipelineState_.Reset();
+        instance->resetPipelineState_.Reset();
+        instance->computeRootSignature_.Reset();
         Logger::LogSuccess("GPUParticleCommon : Finalized\n");
     }
 
     void GPUParticleCommon::Dispatch() {
-        for (const auto& command : dispatchCommands_) {
+        GPUParticleCommon* instance = GetInstance();
+
+        for (const auto& command : instance->dispatchCommands_) {
             command();
         }
     }
 
     void GPUParticleCommon::Draw() {
-        for (const auto& command : drawCommands_) {
+        GPUParticleCommon* instance = GetInstance();
+
+        for (const auto& command : instance->drawCommands_) {
             command();
         }
     }

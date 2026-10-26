@@ -21,18 +21,17 @@ namespace RyoEngine {
 
         // 3. 各種初期化
         // フォントテクスチャ用のSRVスロットをSrvManagerから確保する(以前は0番固定だった)
-        SrvManager* srvManager = SrvManager::GetInstance();
         ImGuiManager* instance = GetInstance();
-        instance->fontSrvIndex_ = srvManager->Allocate();
+        instance->fontSrvIndex_ = SrvManager::Allocate();
 
         ImGui_ImplWin32_Init(hwnd);
         ImGui_ImplDX12_Init(
             device,
             bufferCount,
             rtvFormat,
-            srvManager->GetDescriptorHeap(),
-            srvManager->GetCPUHandle(instance->fontSrvIndex_),
-            srvManager->GetGPUHandle(instance->fontSrvIndex_)
+            SrvManager::GetDescriptorHeap(),
+            SrvManager::GetCPUHandle(instance->fontSrvIndex_),
+            SrvManager::GetGPUHandle(instance->fontSrvIndex_)
         );
 
         ImGuiIO& io = ImGui::GetIO();
@@ -127,7 +126,7 @@ namespace RyoEngine {
         ImGui::Render();
 
         // DescriptorHeapのセット
-        SrvManager::GetInstance()->PreDraw(commandList);
+        SrvManager::PreDraw(commandList);
 
         // 描画コマンド発行
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
@@ -142,7 +141,7 @@ namespace RyoEngine {
         ImGui::DestroyContext();
 
         // フォント用に確保していたスロットを返却
-        SrvManager::GetInstance()->Free(instance->fontSrvIndex_);
+        SrvManager::Free(instance->fontSrvIndex_);
         Logger::LogSuccess("ImGuiManager : Finalized\n");
     }
 }

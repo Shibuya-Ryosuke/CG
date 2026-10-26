@@ -62,7 +62,7 @@ namespace RyoEngine {
 
 		// メインループでImGui::Imageに渡すためのGPUハンドルを取得するゲッター
 		D3D12_GPU_DESCRIPTOR_HANDLE GetGameTextureGPUHandle() const {
-			return SrvManager::GetInstance()->GetGPUHandle(gameTextureSrvIndex_);
+			return SrvManager::GetGPUHandle(gameTextureSrvIndex_);
 		}
 
 		// PostProcess::Composite()が、HDR合成後の結果をgameRenderTargetResource_へ

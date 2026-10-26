@@ -56,75 +56,75 @@ namespace RyoEngine {
     /// </summary>
     class GPUParticleManager {
     public:
-        static GPUParticleManager* GetInstance();
-
-        void Initialize();
-        void Finalize();
+        static void Initialize();
+        static void Finalize();
 
         /// <summary>
         /// 新しいEmitterを名前付きで作成する。同名が既にあれば失敗しfalseを返す。
         /// </summary>
-        bool CreateEmitter(const std::string& name, const GPUParticleEmitterConfig& config);
-        void DestroyEmitter(const std::string& name);
+        static bool CreateEmitter(const std::string& name, const GPUParticleEmitterConfig& config);
+        static void DestroyEmitter(const std::string& name);
 
         /// <summary>
         /// 追従対象の座標をキー名で登録する(コード側から呼ぶ)。Emitter名とは無関係。
         /// 同じキーで再登録すると上書きされる。posがnullptrなら登録解除と同じ。
         /// 対象オブジェクトを破棄する前にUnregisterPosition()を呼ぶこと。
         /// </summary>
-        void RegisterPosition(const std::string& key, const Vector3* pos);
-        void UnregisterPosition(const std::string& key);
+        static void RegisterPosition(const std::string& key, const Vector3* pos);
+        static void UnregisterPosition(const std::string& key);
 
         /// <summary>
         /// 発生条件として監視するフラグをキー名で登録する(コード側から呼ぶ)。Emitter名とは無関係。
         /// 同じキーで再登録すると上書きされる。flagがnullptrなら登録解除と同じ。
         /// 対象オブジェクトを破棄する前にUnregisterFlag()を呼ぶこと。
         /// </summary>
-        void RegisterFlag(const std::string& key, const bool* flag);
-        void UnregisterFlag(const std::string& key);
+        static void RegisterFlag(const std::string& key, const bool* flag);
+        static void UnregisterFlag(const std::string& key);
 
         /// <summary>
         /// 登録済みの座標・フラグをすべて解除する(Emitterは残す)。
         /// シーン切り替え時にSceneManagerから呼ばれる。
         /// </summary>
-        void ClearRegistrations();
+        static void ClearRegistrations();
 
         /// <summary>
         /// コード側から、Emitterが使う座標/フラグのキーを切り替える(空文字で解除)。
         /// ImGuiで選ぶのが基本だが、コードから固定したい場合に使う。
         /// </summary>
-        void SetTrackedPositionKey(const std::string& emitterName, const std::string& key);
-        void SetConditionFlagKey(const std::string& emitterName, const std::string& key);
+        static void SetTrackedPositionKey(const std::string& emitterName, const std::string& key);
+        static void SetConditionFlagKey(const std::string& emitterName, const std::string& key);
 
         /// <summary>
         /// 条件フラグに関係なく、このEmitterから1個だけ手動で発生させる。
         /// </summary>
-        void TriggerEmit(const std::string& name);
+        static void TriggerEmit(const std::string& name);
 
         /// <summary>
         /// 全Emitterぶんまとめて、条件判定とUpdate()を行う。
         /// </summary>
-        void Update(float deltaTime);
+        static void Update(float deltaTime);
 
         /// <summary>
         /// 全Emitterぶんまとめて描画を予約する。
         /// カメラはCameraManager::UpdateAll()で確定済みの描画カメラ(CameraManager::GetActive())を使う。
         /// </summary>
-        void Draw();
+        static void Draw();
 
         /// <summary>
         /// 新規作成フォーム・各Emitterの設定・保存/読込ボタンのImGuiパネルを描画する。
         /// </summary>
-        void DrawImGui();
+        static void DrawImGui();
 
-        void SetFolderPath(const std::string& path);
-        void Save();
-        void Load();
+        static void SetFolderPath(const std::string& path);
+        static void Save();
+        static void Load();
 
         // フルパスを取得するヘルパー関数
-        std::string GetFullFilePath() const { return folderPath_ + kFileName; }
+        static std::string GetFullFilePath() { return GetInstance()->folderPath_ + kFileName; }
 
     private:
+        static GPUParticleManager* GetInstance();
+
         struct ManagedEmitter {
             GPUParticleEmitterConfig config;
             GPUParticleEmitter emitter;

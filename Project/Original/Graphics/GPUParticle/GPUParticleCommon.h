@@ -61,36 +61,36 @@ namespace RyoEngine {
             Additive, // 加算合成(炎・火花など)
         };
 
-        static GPUParticleCommon* GetInstance();
-
-        void Initialize();
-        void Finalize();
+        static void Initialize();
+        static void Finalize();
 
         // --- コンピュート ---
-        ID3D12RootSignature* GetComputeRootSignature() const { return computeRootSignature_.Get(); }
-        ID3D12PipelineState* GetResetPipelineState() const { return resetPipelineState_.Get(); }
-        ID3D12PipelineState* GetSimulatePipelineState() const { return simulatePipelineState_.Get(); }
+        static ID3D12RootSignature* GetComputeRootSignature() { return GetInstance()->computeRootSignature_.Get(); }
+        static ID3D12PipelineState* GetResetPipelineState() { return GetInstance()->resetPipelineState_.Get(); }
+        static ID3D12PipelineState* GetSimulatePipelineState() { return GetInstance()->simulatePipelineState_.Get(); }
 
         // --- 描画 ---
-        ID3D12RootSignature* GetRenderRootSignature() const { return renderRootSignature_.Get(); }
-        ID3D12PipelineState* GetRenderPipelineState(bool billboard, BlendMode blendMode) const {
+        static ID3D12RootSignature* GetRenderRootSignature() { return GetInstance()->renderRootSignature_.Get(); }
+        static ID3D12PipelineState* GetRenderPipelineState(bool billboard, BlendMode blendMode) {
             int index = (billboard ? 1 : 0) + (blendMode == BlendMode::Additive ? 2 : 0);
-            return renderPipelineStates_[index].Get();
+            return GetInstance()->renderPipelineStates_[index].Get();
         }
 
         // --- 予約キュー ---
         // シミュレーション(Dispatch)の予約。EndFrame()の早い段階(シャドウパスの前あたり)で実行すること。
-        void SetDispatchCommands(const std::function<void()>& function) { dispatchCommands_.push_back(function); }
+        static void SetDispatchCommands(const std::function<void()>& function) { GetInstance()->dispatchCommands_.push_back(function); }
         // 描画の予約。3Dシーンパス中(ModelCommon::Draw()等と同じタイミング)で実行すること。
-        void SetDrawCommands(const std::function<void()>& function) { drawCommands_.push_back(function); }
+        static void SetDrawCommands(const std::function<void()>& function) { GetInstance()->drawCommands_.push_back(function); }
 
-        void Dispatch();
-        void Draw();
+        static void Dispatch();
+        static void Draw();
 
         // 予約をクリアする(NewFrame()の先頭で呼ぶこと)
-        void CommandsClear() { dispatchCommands_.clear(); drawCommands_.clear(); }
+        static void CommandsClear() { GetInstance()->dispatchCommands_.clear(); GetInstance()->drawCommands_.clear(); }
 
     private:
+        static GPUParticleCommon* GetInstance();
+
         GPUParticleCommon() = default;
         ~GPUParticleCommon() = default;
         GPUParticleCommon(const GPUParticleCommon&) = delete;

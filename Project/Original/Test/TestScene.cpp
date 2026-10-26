@@ -13,7 +13,7 @@ namespace Test {
 		// テクスチャ初期化
 		flower.Initialize("Resources/EngineResources/Test/flower.png");
 		// 弾用モデルを1回だけ読み込む (modelIndex を全弾で共有)
-		bulletModelIndex_ = ModelManager::GetInstance()->LoadObj("Resources/EngineResources/Test/TR.obj");
+		bulletModelIndex_ = ModelManager::LoadObj("Resources/EngineResources/Test/TR.obj");
 
 		// プレイヤー初期化（自分自身のポインタを渡して、弾を発射できるようにする）
 		player_.Initialize(this);
@@ -35,8 +35,8 @@ namespace Test {
 
 
 		// gpuパーティクルマネージャーに登録
-		GPUParticleManager::GetInstance()->RegisterFlag("test emit", &particleEmit_);
-		GPUParticleManager::GetInstance()->RegisterPosition("tracked pos", &player_.GetTranslate());
+		GPUParticleManager::RegisterFlag("test emit", &particleEmit_);
+		GPUParticleManager::RegisterPosition("tracked pos", &player_.GetTranslate());
 
 		// ↓ パーティクルのobjファイルパス
 		// Resources/EngineResources/Test/Particle/quad.obj
@@ -119,7 +119,7 @@ namespace Test {
 		// NOTE: カメラの行列計算・描画カメラの確定は、game->Update()の後にエンジン側(EndUpdate)で行われる
 
 		// gpuパーティクル
-		GPUParticleManager::GetInstance()->Update(GetScaleTime());
+		GPUParticleManager::Update(GetScaleTime());
 	}
 
 	void TestScene::Draw() {
@@ -137,7 +137,7 @@ namespace Test {
 		//fireEmitter_.Draw(GetDebugCamera());
 
 		// gpuパーティクル
-		GPUParticleManager::GetInstance()->Draw();
+		GPUParticleManager::Draw();
 	}
 
 	void TestScene::SpawnBullet(const Vector3& position) {

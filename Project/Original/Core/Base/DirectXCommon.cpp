@@ -408,9 +408,8 @@ namespace RyoEngine {
 
 		// 3. SrvManagerでスロットを確保し、ImGui::Image等で表示するためのSRVを作る
 		//    (SrvManager::Initialize()より後に呼ぶこと)
-		SrvManager* srvManager = SrvManager::GetInstance();
-		gameTextureSrvIndex_ = srvManager->Allocate();
-		srvManager->CreateSRVForTexture2D(gameTextureSrvIndex_, gameRenderTargetResource_.Get(), texDesc.Format, 1);
+		gameTextureSrvIndex_ = SrvManager::Allocate();
+		SrvManager::CreateSRVForTexture2D(gameTextureSrvIndex_, gameRenderTargetResource_.Get(), texDesc.Format, 1);
 
 		Logger::LogSuccess("* Created *\n");
 	}

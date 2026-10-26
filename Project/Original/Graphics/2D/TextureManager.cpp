@@ -16,7 +16,7 @@ namespace RyoEngine {
         device_ = DirectXCommon::GetInstance()->GetDevice();
 
         // ヒープの生成・ImGui用スロットの予約はSrvManager/ImGuiManager側の責務になったので、ここでは行わない
-        assert(SrvManager::GetInstance()->GetDescriptorHeap() != nullptr && "SrvManager::Initialize()を先に呼ぶこと");
+        assert(SrvManager::GetDescriptorHeap() != nullptr && "SrvManager::Initialize()を先に呼ぶこと");
 
         whiteTex_ = Load("Resources/EngineResources/white1x1.png");
 
@@ -30,7 +30,7 @@ namespace RyoEngine {
 
         // 確保していたスロットをSrvManagerへ返却してから、テクスチャの実体を解放
         for (auto& [index, resource] : textures_) {
-            SrvManager::GetInstance()->Free(index);
+            SrvManager::Free(index);
         }
         textures_.clear();
 
@@ -54,9 +54,8 @@ namespace RyoEngine {
         intermediateResources_.push_back(intermediate);
 
         // SRVのスロットを確保して生成(上限チェックはSrvManager::Allocate()内で行う)
-        SrvManager* srvManager = SrvManager::GetInstance();
-        uint32_t handle = srvManager->Allocate();
-        srvManager->CreateSRVForTexture2D(handle, resource.Get(), resource->GetDesc().Format);
+        uint32_t handle = SrvManager::Allocate();
+        SrvManager::CreateSRVForTexture2D(handle, resource.Get(), resource->GetDesc().Format);
 
         textures_[handle] = resource;
         filePathMap_[filePath] = handle;
@@ -75,15 +74,15 @@ namespace RyoEngine {
     }
 
     ID3D12DescriptorHeap* TextureManager::GetDescriptorHeap() const {
-        return SrvManager::GetInstance()->GetDescriptorHeap();
+        return SrvManager::GetDescriptorHeap();
     }
 
     D3D12_CPU_DESCRIPTOR_HANDLE TextureManager::GetCPUHandle(uint32_t index) const {
-        return SrvManager::GetInstance()->GetCPUHandle(index);
+        return SrvManager::GetCPUHandle(index);
     }
 
     D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetGPUHandle(uint32_t index) const {
-        return SrvManager::GetInstance()->GetGPUHandle(index);
+        return SrvManager::GetGPUHandle(index);
     }
 
     uint32_t TextureManager::RegisterResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT srvFormatOverride) {
@@ -93,9 +92,8 @@ namespace RyoEngine {
         //       具体的な型(例：DXGI_FORMAT_R32_FLOAT)を明示的に渡す必要がある。
         DXGI_FORMAT format = (srvFormatOverride != DXGI_FORMAT_UNKNOWN) ? srvFormatOverride : resource->GetDesc().Format;
 
-        SrvManager* srvManager = SrvManager::GetInstance();
-        uint32_t index = srvManager->Allocate();
-        srvManager->CreateSRVForTexture2D(index, resource.Get(), format, 1);
+        uint32_t index = SrvManager::Allocate();
+        SrvManager::CreateSRVForTexture2D(index, resource.Get(), format, 1);
 
         textures_[index] = resource;
         return index;

@@ -114,13 +114,13 @@ namespace RyoEngine {
 
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		SrvManager::GetInstance()->PreDraw(commandList);
+		SrvManager::PreDraw(commandList);
 
 		if (drawType == DrawType::SHADOW) {
 			commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetInstance()->GetLightViewProjGPUVirtualAddress());
 		} else {
 			commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetInstance()->GetLightViewProjGPUVirtualAddress());
-			commandList->SetGraphicsRootDescriptorTable(7, SrvManager::GetInstance()->GetGPUHandle(ShadowMap::GetInstance()->GetShadowMapTextureHandle()));
+			commandList->SetGraphicsRootDescriptorTable(7, SrvManager::GetGPUHandle(ShadowMap::GetInstance()->GetShadowMapTextureHandle()));
 		}
 	}
 

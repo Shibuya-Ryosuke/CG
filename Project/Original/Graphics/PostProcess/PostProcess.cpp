@@ -16,55 +16,59 @@ namespace RyoEngine {
     }
 
     void PostProcess::Initialize() {
+        PostProcess* instance = GetInstance();
+
         Logger::Log("PostProcess : Initializing...\n");
 
-        CreateSceneColorResource();
-        CreateRootSignatureAndPSO();
-        CreateBloomLevels();
-        CreateBloomPipelineStates();
+        instance->CreateSceneColorResource();
+        instance->CreateRootSignatureAndPSO();
+        instance->CreateBloomLevels();
+        instance->CreateBloomPipelineStates();
 
         auto device = DirectXCommon::GetInstance()->GetDevice();
-        compositeParamsResource_ = DirectXCommon::CreateBufferResource(device, sizeof(PostProcessParams));
-        compositeParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&compositeParamsData_));
-        compositeParamsData_->acesEnabled = acesEnabled_ ? 1 : 0;
-        compositeParamsData_->bloomEnabled = bloomEnabled_ ? 1 : 0;
-        compositeParamsData_->exposure = exposure_;
-        compositeParamsData_->threshold = bloomThreshold_;
-        compositeParamsData_->bloomIntensity = bloomIntensity_;
-        compositeParamsData_->distortionEnabled = distortionEnabled_ ? 1 : 0;
-        compositeParamsData_->distortionStrength = distortionStrength_;
-        compositeParamsData_->glitchEnabled = glitchEnabled_ ? 1 : 0;
-        compositeParamsData_->glitchIntensity = glitchIntensity_;
-        compositeParamsData_->chromaticAberrationEnabled = chromaticAberrationEnabled_ ? 1 : 0;
-        compositeParamsData_->chromaticAberrationStrength = chromaticAberrationStrength_;
-        compositeParamsData_->blurEnabled = blurEnabled_ ? 1 : 0;
-        compositeParamsData_->blurStrength = blurStrength_;
-        compositeParamsData_->grayscaleEnabled = grayscaleEnabled_ ? 1 : 0;
-        compositeParamsData_->grayscaleIntensity = grayscaleIntensity_;
-        compositeParamsData_->noiseEnabled = noiseEnabled_ ? 1 : 0;
-        compositeParamsData_->noiseIntensity = noiseIntensity_;
-        compositeParamsData_->time = 0.0f;
+        instance->compositeParamsResource_ = DirectXCommon::CreateBufferResource(device, sizeof(PostProcessParams));
+        instance->compositeParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&instance->compositeParamsData_));
+        instance->compositeParamsData_->acesEnabled = instance->acesEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->bloomEnabled = instance->bloomEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->exposure = instance->exposure_;
+        instance->compositeParamsData_->threshold = instance->bloomThreshold_;
+        instance->compositeParamsData_->bloomIntensity = instance->bloomIntensity_;
+        instance->compositeParamsData_->distortionEnabled = instance->distortionEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->distortionStrength = instance->distortionStrength_;
+        instance->compositeParamsData_->glitchEnabled = instance->glitchEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->glitchIntensity = instance->glitchIntensity_;
+        instance->compositeParamsData_->chromaticAberrationEnabled = instance->chromaticAberrationEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->chromaticAberrationStrength = instance->chromaticAberrationStrength_;
+        instance->compositeParamsData_->blurEnabled = instance->blurEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->blurStrength = instance->blurStrength_;
+        instance->compositeParamsData_->grayscaleEnabled = instance->grayscaleEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->grayscaleIntensity = instance->grayscaleIntensity_;
+        instance->compositeParamsData_->noiseEnabled = instance->noiseEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->noiseIntensity = instance->noiseIntensity_;
+        instance->compositeParamsData_->time = 0.0f;
 
         // ノイズ/グリッチのアニメーション用に、経過時間の起点をここで記録しておく
-        startTime_ = std::chrono::steady_clock::now();
+        instance->startTime_ = std::chrono::steady_clock::now();
 
         Logger::LogSuccess("PostProcess : Initialized\n");
     }
 
     void PostProcess::Finalize() {
+        PostProcess* instance = GetInstance();
+
         Logger::Log("PostProcess : Finalizing...\n");
-        compositeParamsResource_.Reset();
-        compositeParamsData_ = nullptr;
+        instance->compositeParamsResource_.Reset();
+        instance->compositeParamsData_ = nullptr;
 
-        bloomUpsamplePipelineState_.Reset();
-        bloomDownsamplePipelineState_.Reset();
-        bloomThresholdPipelineState_.Reset();
-        bloomLevels_.clear();
+        instance->bloomUpsamplePipelineState_.Reset();
+        instance->bloomDownsamplePipelineState_.Reset();
+        instance->bloomThresholdPipelineState_.Reset();
+        instance->bloomLevels_.clear();
 
-        compositePipelineState_.Reset();
-        compositeRootSignature_.Reset();
-        sceneColorRtvHeap_.Reset();
-        sceneColorResource_.Reset();
+        instance->compositePipelineState_.Reset();
+        instance->compositeRootSignature_.Reset();
+        instance->sceneColorRtvHeap_.Reset();
+        instance->sceneColorResource_.Reset();
         Logger::LogSuccess("PostProcess : Finalized\n");
     }
 
@@ -380,11 +384,13 @@ namespace RyoEngine {
     }
 
     void PostProcess::BeginScenePass() {
+        PostProcess* instance = GetInstance();
+
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
-        TransitionSceneColor(D3D12_RESOURCE_STATE_RENDER_TARGET);
+        instance->TransitionSceneColor(D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = sceneColorRtvHeap_->GetCPUDescriptorHandleForHeapStart();
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = instance->sceneColorRtvHeap_->GetCPUDescriptorHandleForHeapStart();
         D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = DirectXCommon::GetInstance()->GetDSVHandle();
 
         commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
@@ -394,7 +400,9 @@ namespace RyoEngine {
     }
 
     void PostProcess::EndScenePass() {
-        TransitionSceneColor(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        PostProcess* instance = GetInstance();
+
+        instance->TransitionSceneColor(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
 
     void PostProcess::RenderBloom() {
@@ -445,44 +453,46 @@ namespace RyoEngine {
     }
 
     void PostProcess::Composite() {
+        PostProcess* instance = GetInstance();
+
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
 
-        commandList->SetGraphicsRootSignature(compositeRootSignature_.Get());
+        commandList->SetGraphicsRootSignature(instance->compositeRootSignature_.Get());
         
-        SrvManager::GetInstance()->PreDraw(commandList);
+        SrvManager::PreDraw(commandList);
         // NOTE: root param1(t1)はRootSignature上、常に何か有効な値がバインドされている必要があるため、
         //       ブルームを使わない/まだ計算していない段階ではひとまずシーンカラー自体を仮に入れておく
         //       (Threshold/Downsample/Upsampleの各シェーダーはt1を一切参照しないので実害無し)
-        commandList->SetGraphicsRootDescriptorTable(1, TextureManager::GetInstance()->GetGPUHandle(sceneColorTextureHandle_));
-        commandList->SetGraphicsRootConstantBufferView(2, compositeParamsResource_->GetGPUVirtualAddress());
+        commandList->SetGraphicsRootDescriptorTable(1, TextureManager::GetInstance()->GetGPUHandle(instance->sceneColorTextureHandle_));
+        commandList->SetGraphicsRootConstantBufferView(2, instance->compositeParamsResource_->GetGPUVirtualAddress());
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         // ImGuiでの切り替え内容をシェーダー用バッファへ反映
-        compositeParamsData_->acesEnabled = acesEnabled_ ? 1 : 0;
-        compositeParamsData_->bloomEnabled = bloomEnabled_ ? 1 : 0;
-        compositeParamsData_->exposure = exposure_;
-        compositeParamsData_->threshold = bloomThreshold_;
-        compositeParamsData_->bloomIntensity = bloomIntensity_;
-        compositeParamsData_->distortionEnabled = distortionEnabled_ ? 1 : 0;
-        compositeParamsData_->distortionStrength = distortionStrength_;
-        compositeParamsData_->glitchEnabled = glitchEnabled_ ? 1 : 0;
-        compositeParamsData_->glitchIntensity = glitchIntensity_;
-        compositeParamsData_->chromaticAberrationEnabled = chromaticAberrationEnabled_ ? 1 : 0;
-        compositeParamsData_->chromaticAberrationStrength = chromaticAberrationStrength_;
-        compositeParamsData_->blurEnabled = blurEnabled_ ? 1 : 0;
-        compositeParamsData_->blurStrength = blurStrength_;
-        compositeParamsData_->grayscaleEnabled = grayscaleEnabled_ ? 1 : 0;
-        compositeParamsData_->grayscaleIntensity = grayscaleIntensity_;
-        compositeParamsData_->noiseEnabled = noiseEnabled_ ? 1 : 0;
-        compositeParamsData_->noiseIntensity = noiseIntensity_;
+        instance->compositeParamsData_->acesEnabled = instance->acesEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->bloomEnabled = instance->bloomEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->exposure = instance->exposure_;
+        instance->compositeParamsData_->threshold = instance->bloomThreshold_;
+        instance->compositeParamsData_->bloomIntensity = instance->bloomIntensity_;
+        instance->compositeParamsData_->distortionEnabled = instance->distortionEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->distortionStrength = instance->distortionStrength_;
+        instance->compositeParamsData_->glitchEnabled = instance->glitchEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->glitchIntensity = instance->glitchIntensity_;
+        instance->compositeParamsData_->chromaticAberrationEnabled = instance->chromaticAberrationEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->chromaticAberrationStrength = instance->chromaticAberrationStrength_;
+        instance->compositeParamsData_->blurEnabled = instance->blurEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->blurStrength = instance->blurStrength_;
+        instance->compositeParamsData_->grayscaleEnabled = instance->grayscaleEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->grayscaleIntensity = instance->grayscaleIntensity_;
+        instance->compositeParamsData_->noiseEnabled = instance->noiseEnabled_ ? 1 : 0;
+        instance->compositeParamsData_->noiseIntensity = instance->noiseIntensity_;
 
         // ノイズ/グリッチのアニメーション用の経過時間(秒)
-        std::chrono::duration<float> elapsed = std::chrono::steady_clock::now() - startTime_;
-        compositeParamsData_->time = elapsed.count();
+        std::chrono::duration<float> elapsed = std::chrono::steady_clock::now() - instance->startTime_;
+        instance->compositeParamsData_->time = elapsed.count();
 
-        if (bloomEnabled_) {
-            RenderBloom();
-            commandList->SetGraphicsRootDescriptorTable(1, TextureManager::GetInstance()->GetGPUHandle(bloomLevels_[0].textureHandle));
+        if (instance->bloomEnabled_) {
+            instance->RenderBloom();
+            commandList->SetGraphicsRootDescriptorTable(1, TextureManager::GetInstance()->GetGPUHandle(instance->bloomLevels_[0].textureHandle));
         }
 
         // 描画先をgameRenderTargetResource_へ戻す
@@ -504,56 +514,58 @@ namespace RyoEngine {
         scissorRect.bottom = static_cast<LONG>(dxCommon->GetBackBufferHeight());
         commandList->RSSetScissorRects(1, &scissorRect);
 
-        commandList->SetPipelineState(compositePipelineState_.Get());
-        commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetInstance()->GetGPUHandle(sceneColorTextureHandle_));
+        commandList->SetPipelineState(instance->compositePipelineState_.Get());
+        commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetInstance()->GetGPUHandle(instance->sceneColorTextureHandle_));
 
         commandList->DrawInstanced(3, 1, 0, 0);
     }
 
     void PostProcess::DrawImGui() {
+        PostProcess* instance = GetInstance();
+
 #ifdef _DEBUG
         ImGui::Begin("PostProcess");
-        ImGui::SliderFloat("露出", &exposure_, 0.0f, 5.0f);
-        ImGui::Checkbox("ACES トーンマッピング", &acesEnabled_);
-        if (!acesEnabled_) {
+        ImGui::SliderFloat("露出", &instance->exposure_, 0.0f, 5.0f);
+        ImGui::Checkbox("ACES トーンマッピング", &instance->acesEnabled_);
+        if (!instance->acesEnabled_) {
             ImGui::TextDisabled("(OFF時は露出後の値を単純にクリップします)");
         }
         ImGui::Separator();
-        ImGui::Checkbox("Bloom", &bloomEnabled_);
-        if (bloomEnabled_) {
-            ImGui::SliderFloat("Bloom対象となる境界値", &bloomThreshold_, 0.0f, 10.0f);
-            ImGui::SliderFloat("Bloomの強さ", &bloomIntensity_, 0.0f, 10.0f);
+        ImGui::Checkbox("Bloom", &instance->bloomEnabled_);
+        if (instance->bloomEnabled_) {
+            ImGui::SliderFloat("Bloom対象となる境界値", &instance->bloomThreshold_, 0.0f, 10.0f);
+            ImGui::SliderFloat("Bloomの強さ", &instance->bloomIntensity_, 0.0f, 10.0f);
         }
         ImGui::Separator();
-        ImGui::Checkbox("色収差(Chromatic Aberration)", &chromaticAberrationEnabled_);
-        if (chromaticAberrationEnabled_) {
-            ImGui::SliderFloat("色収差の強さ", &chromaticAberrationStrength_, 0.0f, 0.05f);
+        ImGui::Checkbox("色収差(Chromatic Aberration)", &instance->chromaticAberrationEnabled_);
+        if (instance->chromaticAberrationEnabled_) {
+            ImGui::SliderFloat("色収差の強さ", &instance->chromaticAberrationStrength_, 0.0f, 0.05f);
         }
         ImGui::Separator();
-        ImGui::Checkbox("ブラー(簡易版)", &blurEnabled_);
-        if (blurEnabled_) {
-            ImGui::SliderFloat("ブラーの強さ", &blurStrength_, 0.0f, 0.02f);
+        ImGui::Checkbox("ブラー(簡易版)", &instance->blurEnabled_);
+        if (instance->blurEnabled_) {
+            ImGui::SliderFloat("ブラーの強さ", &instance->blurStrength_, 0.0f, 0.02f);
             ImGui::TextDisabled("(3x3の簡易ボックスブラー。強くかけるとバンディングが出やすい)");
         }
         ImGui::Separator();
-        ImGui::Checkbox("ノイズ(グレイン)", &noiseEnabled_);
-        if (noiseEnabled_) {
-            ImGui::SliderFloat("ノイズの強さ", &noiseIntensity_, 0.0f, 0.5f);
+        ImGui::Checkbox("ノイズ(グレイン)", &instance->noiseEnabled_);
+        if (instance->noiseEnabled_) {
+            ImGui::SliderFloat("ノイズの強さ", &instance->noiseIntensity_, 0.0f, 0.5f);
         }
         ImGui::Separator();
-        ImGui::Checkbox("グリッチ", &glitchEnabled_);
-        if (glitchEnabled_) {
-            ImGui::SliderFloat("グリッチの強さ", &glitchIntensity_, 0.0f, 0.3f);
+        ImGui::Checkbox("グリッチ", &instance->glitchEnabled_);
+        if (instance->glitchEnabled_) {
+            ImGui::SliderFloat("グリッチの強さ", &instance->glitchIntensity_, 0.0f, 0.3f);
         }
         ImGui::Separator();
-        ImGui::Checkbox("ゆがみ(Distortion)", &distortionEnabled_);
-        if (distortionEnabled_) {
-            ImGui::SliderFloat("ゆがみの強さ", &distortionStrength_, 0.0f, 0.05f);
+        ImGui::Checkbox("ゆがみ(Distortion)", &instance->distortionEnabled_);
+        if (instance->distortionEnabled_) {
+            ImGui::SliderFloat("ゆがみの強さ", &instance->distortionStrength_, 0.0f, 0.05f);
         }
         ImGui::Separator();
-        ImGui::Checkbox("白黒化(Grayscale)", &grayscaleEnabled_);
-        if (grayscaleEnabled_) {
-            ImGui::SliderFloat("白黒の度合い", &grayscaleIntensity_, 0.0f, 1.0f);
+        ImGui::Checkbox("白黒化(Grayscale)", &instance->grayscaleEnabled_);
+        if (instance->grayscaleEnabled_) {
+            ImGui::SliderFloat("白黒の度合い", &instance->grayscaleIntensity_, 0.0f, 1.0f);
         }
         ImGui::End();
 #endif

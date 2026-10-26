@@ -28,72 +28,72 @@ namespace RyoEngine {
     /// </summary>
     class PostProcess {
     public:
-        static PostProcess* GetInstance();
+        static void Initialize();
+        static void Finalize();
 
-        void Initialize();
-        void Finalize();
-
-        void BeginScenePass();
-        void EndScenePass();
+        static void BeginScenePass();
+        static void EndScenePass();
 
         /// <summary>
         /// (ブルームON時は内部でRenderBloom()を実行した上で)HDRバッファの内容を、
         /// 露出→ACES(ON)またはクリップ(OFF)によりLDRへ圧縮し、gameRenderTargetResource_へ書き戻す。
         /// EndScenePass()の後、2D描画の前に呼ぶこと。
         /// </summary>
-        void Composite();
+        static void Composite();
 
         /// <summary>
         /// 露出・ACES・ブルームのON/OFFや数値を切り替えるImGuiパネルを描画する。
         /// </summary>
-        void DrawImGui();
+        static void DrawImGui();
 
         // --- 外部から直接切り替えたい場合用 ---
-        void SetACESEnabled(bool enabled) { acesEnabled_ = enabled; }
-        bool IsACESEnabled() const { return acesEnabled_; }
-        void SetExposure(float exposure) { exposure_ = exposure; }
-        float GetExposure() const { return exposure_; }
-        void SetBloomEnabled(bool enabled) { bloomEnabled_ = enabled; }
-        bool IsBloomEnabled() const { return bloomEnabled_; }
-        void SetBloomThreshold(float threshold) { bloomThreshold_ = threshold; }
-        float GetBloomThreshold() const { return bloomThreshold_; }
-        void SetBloomIntensity(float intensity) { bloomIntensity_ = intensity; }
-        float GetBloomIntensity() const { return bloomIntensity_; }
+        static void SetACESEnabled(bool enabled) { GetInstance()->acesEnabled_ = enabled; }
+        static bool IsACESEnabled() { return GetInstance()->acesEnabled_; }
+        static void SetExposure(float exposure) { GetInstance()->exposure_ = exposure; }
+        static float GetExposure() { return GetInstance()->exposure_; }
+        static void SetBloomEnabled(bool enabled) { GetInstance()->bloomEnabled_ = enabled; }
+        static bool IsBloomEnabled() { return GetInstance()->bloomEnabled_; }
+        static void SetBloomThreshold(float threshold) { GetInstance()->bloomThreshold_ = threshold; }
+        static float GetBloomThreshold() { return GetInstance()->bloomThreshold_; }
+        static void SetBloomIntensity(float intensity) { GetInstance()->bloomIntensity_ = intensity; }
+        static float GetBloomIntensity() { return GetInstance()->bloomIntensity_; }
 
         // --- 追加エフェクト ---
-        void SetDistortionEnabled(bool enabled) { distortionEnabled_ = enabled; }
-        bool IsDistortionEnabled() const { return distortionEnabled_; }
-        void SetDistortionStrength(float strength) { distortionStrength_ = strength; }
-        float GetDistortionStrength() const { return distortionStrength_; }
+        static void SetDistortionEnabled(bool enabled) { GetInstance()->distortionEnabled_ = enabled; }
+        static bool IsDistortionEnabled() { return GetInstance()->distortionEnabled_; }
+        static void SetDistortionStrength(float strength) { GetInstance()->distortionStrength_ = strength; }
+        static float GetDistortionStrength() { return GetInstance()->distortionStrength_; }
 
-        void SetGlitchEnabled(bool enabled) { glitchEnabled_ = enabled; }
-        bool IsGlitchEnabled() const { return glitchEnabled_; }
-        void SetGlitchIntensity(float intensity) { glitchIntensity_ = intensity; }
-        float GetGlitchIntensity() const { return glitchIntensity_; }
+        static void SetGlitchEnabled(bool enabled) { GetInstance()->glitchEnabled_ = enabled; }
+        static bool IsGlitchEnabled() { return GetInstance()->glitchEnabled_; }
+        static void SetGlitchIntensity(float intensity) { GetInstance()->glitchIntensity_ = intensity; }
+        static float GetGlitchIntensity() { return GetInstance()->glitchIntensity_; }
 
-        void SetChromaticAberrationEnabled(bool enabled) { chromaticAberrationEnabled_ = enabled; }
-        bool IsChromaticAberrationEnabled() const { return chromaticAberrationEnabled_; }
-        void SetChromaticAberrationStrength(float strength) { chromaticAberrationStrength_ = strength; }
-        float GetChromaticAberrationStrength() const { return chromaticAberrationStrength_; }
+        static void SetChromaticAberrationEnabled(bool enabled) { GetInstance()->chromaticAberrationEnabled_ = enabled; }
+        static bool IsChromaticAberrationEnabled() { return GetInstance()->chromaticAberrationEnabled_; }
+        static void SetChromaticAberrationStrength(float strength) { GetInstance()->chromaticAberrationStrength_ = strength; }
+        static float GetChromaticAberrationStrength() { return GetInstance()->chromaticAberrationStrength_; }
 
         // NOTE: 簡易版(3x3ボックスブラーの1パス)。強くかけるとバンディングが出やすいので、
         //       本格的なブラーが必要になったらブルームと同じダウンサンプル方式に切り替えること。
-        void SetBlurEnabled(bool enabled) { blurEnabled_ = enabled; }
-        bool IsBlurEnabled() const { return blurEnabled_; }
-        void SetBlurStrength(float strength) { blurStrength_ = strength; }
-        float GetBlurStrength() const { return blurStrength_; }
+        static void SetBlurEnabled(bool enabled) { GetInstance()->blurEnabled_ = enabled; }
+        static bool IsBlurEnabled() { return GetInstance()->blurEnabled_; }
+        static void SetBlurStrength(float strength) { GetInstance()->blurStrength_ = strength; }
+        static float GetBlurStrength() { return GetInstance()->blurStrength_; }
 
-        void SetGrayscaleEnabled(bool enabled) { grayscaleEnabled_ = enabled; }
-        bool IsGrayscaleEnabled() const { return grayscaleEnabled_; }
-        void SetGrayscaleIntensity(float intensity) { grayscaleIntensity_ = intensity; }
-        float GetGrayscaleIntensity() const { return grayscaleIntensity_; }
+        static void SetGrayscaleEnabled(bool enabled) { GetInstance()->grayscaleEnabled_ = enabled; }
+        static bool IsGrayscaleEnabled() { return GetInstance()->grayscaleEnabled_; }
+        static void SetGrayscaleIntensity(float intensity) { GetInstance()->grayscaleIntensity_ = intensity; }
+        static float GetGrayscaleIntensity() { return GetInstance()->grayscaleIntensity_; }
 
-        void SetNoiseEnabled(bool enabled) { noiseEnabled_ = enabled; }
-        bool IsNoiseEnabled() const { return noiseEnabled_; }
-        void SetNoiseIntensity(float intensity) { noiseIntensity_ = intensity; }
-        float GetNoiseIntensity() const { return noiseIntensity_; }
+        static void SetNoiseEnabled(bool enabled) { GetInstance()->noiseEnabled_ = enabled; }
+        static bool IsNoiseEnabled() { return GetInstance()->noiseEnabled_; }
+        static void SetNoiseIntensity(float intensity) { GetInstance()->noiseIntensity_ = intensity; }
+        static float GetNoiseIntensity() { return GetInstance()->noiseIntensity_; }
 
     private:
+        static PostProcess* GetInstance();
+
         PostProcess() = default;
         ~PostProcess() = default;
         PostProcess(const PostProcess&) = delete;

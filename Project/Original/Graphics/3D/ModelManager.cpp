@@ -28,35 +28,39 @@ namespace RyoEngine {
     }
 
     void ModelManager::Initialize() {
+        ModelManager* instance = GetInstance();
+
         Logger::Log("ModelManager : Initializing...\n");
-        viewProjection_ = MakeIdentity4x4();
-        CreateRootSignature();
-        CreatePipelineStates();
-        CreateBuffers();
+        instance->viewProjection_ = MakeIdentity4x4();
+        instance->CreateRootSignature();
+        instance->CreatePipelineStates();
+        instance->CreateBuffers();
         Logger::LogSuccess("ModelManager : Initialized\n");
     }
 
     void ModelManager::Finalize() {
+        ModelManager* instance = GetInstance();
+
         Logger::Log("ModelManager : Finalizing...\n");
-        frameData_.clear();
-        entries_.clear();
-        groups_.clear();
-        retired_.clear();
+        instance->frameData_.clear();
+        instance->entries_.clear();
+        instance->groups_.clear();
+        instance->retired_.clear();
 
-        instanceResource_.Reset();
-        instanceMapped_ = nullptr;
-        instanceCapacity_ = 0;
-        cameraVPResource_.Reset();
-        cameraVPData_ = nullptr;
+        instance->instanceResource_.Reset();
+        instance->instanceMapped_ = nullptr;
+        instance->instanceCapacity_ = 0;
+        instance->cameraVPResource_.Reset();
+        instance->cameraVPData_ = nullptr;
 
-        assets_.clear();
-        pathToIndex_.clear();
+        instance->assets_.clear();
+        instance->pathToIndex_.clear();
 
-        shadowPipelineState_.Reset();
-        for (auto& pso : pipelineStates_) {
+        instance->shadowPipelineState_.Reset();
+        for (auto& pso : instance->pipelineStates_) {
             pso.Reset();
         }
-        rootSignature_.Reset();
+        instance->rootSignature_.Reset();
         Logger::LogSuccess("ModelManager : Finalized\n");
     }
 
@@ -64,8 +68,10 @@ namespace RyoEngine {
     // モデルの読み込み
     // ------------------------------------------------------------------
     uint32_t ModelManager::LoadObj(const std::string& filePath) {
-        auto cached = pathToIndex_.find(filePath);
-        if (cached != pathToIndex_.end()) {
+        ModelManager* instance = GetInstance();
+
+        auto cached = instance->pathToIndex_.find(filePath);
+        if (cached != instance->pathToIndex_.end()) {
             return cached->second;
         }
 
@@ -125,40 +131,46 @@ namespace RyoEngine {
             asset->meshes.push_back(std::move(mesh));
         }
 
-        assets_.push_back(std::move(asset));
-        const uint32_t modelIndex = static_cast<uint32_t>(assets_.size()); // 1始まり
-        pathToIndex_[filePath] = modelIndex;
+        instance->assets_.push_back(std::move(asset));
+        const uint32_t modelIndex = static_cast<uint32_t>(instance->assets_.size()); // 1始まり
+        instance->pathToIndex_[filePath] = modelIndex;
         return modelIndex;
     }
 
-    const ModelManager::ModelAsset* ModelManager::GetAsset(uint32_t modelIndex) const {
-        if (modelIndex == kInvalidModelIndex || modelIndex > assets_.size()) {
+    const ModelManager::ModelAsset* ModelManager::GetAsset(uint32_t modelIndex) {
+        ModelManager* instance = GetInstance();
+
+        if (modelIndex == kInvalidModelIndex || modelIndex > instance->assets_.size()) {
             return nullptr;
         }
-        return assets_[modelIndex - 1].get();
+        return instance->assets_[modelIndex - 1].get();
     }
 
     // ------------------------------------------------------------------
     // フレーム処理
     // ------------------------------------------------------------------
     void ModelManager::NewFrame() {
+        ModelManager* instance = GetInstance();
+
         ModelPicker::NewFrame();
-        frameData_.clear();
-        entries_.clear();
-        groups_.clear();
-        prepared_ = false;
+        instance->frameData_.clear();
+        instance->entries_.clear();
+        instance->groups_.clear();
+        instance->prepared_ = false;
 
         // 作り直し前の古いバッファを、時間が経ったものから解放する
-        for (auto& retired : retired_) {
+        for (auto& retired : instance->retired_) {
             --retired.framesLeft;
         }
-        retired_.erase(
-            std::remove_if(retired_.begin(), retired_.end(),
+        instance->retired_.erase(
+            std::remove_if(instance->retired_.begin(), instance->retired_.end(),
                 [](const RetiredBuffer& r) { return r.framesLeft <= 0; }),
-            retired_.end());
+            instance->retired_.end());
     }
 
     void ModelManager::Submit(uint32_t modelIndex, uint32_t meshIndex, uint32_t textureHandle, const ModelInstanceData& data) {
+        ModelManager* instance = GetInstance();
+
         const ModelAsset* asset = GetAsset(modelIndex);
         if (!asset || meshIndex >= asset->meshes.size()) {
             return;
@@ -168,10 +180,10 @@ namespace RyoEngine {
         entry.key = (static_cast<uint64_t>(modelIndex) << 48) |
             (static_cast<uint64_t>(meshIndex & 0xFFFFu) << 32) |
             static_cast<uint64_t>(textureHandle);
-        entry.dataIndex = static_cast<uint32_t>(frameData_.size());
+        entry.dataIndex = static_cast<uint32_t>(instance->frameData_.size());
 
-        frameData_.push_back(data);
-        entries_.push_back(entry);
+        instance->frameData_.push_back(data);
+        instance->entries_.push_back(entry);
     }
 
     void ModelManager::EnsureInstanceCapacity(size_t count) {
@@ -250,7 +262,7 @@ namespace RyoEngine {
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
        
-        SrvManager::GetInstance()->PreDraw(commandList);
+        SrvManager::PreDraw(commandList);
 
         // root 0: カメラVP / 3: ライト配列 / 4: ライト数 / 5: アンビエント / 6: ライトVP / 7: シャドウマップ
         commandList->SetGraphicsRootConstantBufferView(0, cameraVPResource_->GetGPUVirtualAddress());
@@ -283,30 +295,34 @@ namespace RyoEngine {
     }
 
     void ModelManager::Draw() {
-        BuildFrame();
-        if (groups_.empty()) {
+        ModelManager* instance = GetInstance();
+
+        instance->BuildFrame();
+        if (instance->groups_.empty()) {
             return;
         }
 
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        BindCommonState();
-        commandList->SetPipelineState(pipelineStates_[static_cast<size_t>(blendMode_)].Get());
-        DrawGroups(true);
+        instance->BindCommonState();
+        commandList->SetPipelineState(instance->pipelineStates_[static_cast<size_t>(instance->blendMode_)].Get());
+        instance->DrawGroups(true);
     }
 
     void ModelManager::DrawShadow() {
-        BuildFrame();
-        if (groups_.empty()) {
+        ModelManager* instance = GetInstance();
+
+        instance->BuildFrame();
+        if (instance->groups_.empty()) {
             return;
         }
 
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
         // シャドウパス中はシャドウマップ自体をSRVとして結ばない (深度書き込み中のため)
-        commandList->SetGraphicsRootSignature(rootSignature_.Get());
+        commandList->SetGraphicsRootSignature(instance->rootSignature_.Get());
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetInstance()->GetLightViewProjGPUVirtualAddress());
-        commandList->SetPipelineState(shadowPipelineState_.Get());
-        DrawGroups(false);
+        commandList->SetPipelineState(instance->shadowPipelineState_.Get());
+        instance->DrawGroups(false);
     }
 
     // ------------------------------------------------------------------

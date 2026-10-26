@@ -30,7 +30,7 @@ namespace RyoEngine {
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
-        SrvManager::GetInstance()->PreDraw(commandList);
+        SrvManager::PreDraw(commandList);
     }
 
     void SpriteCommon::Draw() {

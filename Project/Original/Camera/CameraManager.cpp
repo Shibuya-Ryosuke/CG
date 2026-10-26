@@ -64,7 +64,7 @@ namespace RyoEngine {
         // 描画カメラを確定し、カメラを必要とする描画系へ渡す
         void ApplyRenderCamera() {
             renderCamera = &DecideActive();
-            ModelManager::GetInstance()->SetViewProjection(renderCamera->GetViewProjectionMatrix());
+            ModelManager::SetViewProjection(renderCamera->GetViewProjectionMatrix());
             ModelPicker::SetCamera(*renderCamera);
         }
     }

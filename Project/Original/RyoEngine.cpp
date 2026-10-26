@@ -51,7 +51,7 @@ namespace RyoEngine {
         dxCommon_->Initialize(winApp_);
 
         // srvマネージャーの初期化
-        SrvManager::GetInstance()->Initialize();
+        SrvManager::Initialize();
 
         shaderCompiler_ = RyoEngine::ShaderCompiler::GetInstance();
         shaderCompiler_->Initialize();
@@ -66,7 +66,7 @@ namespace RyoEngine {
         dxCommon_->CreateGameRenderTarget();
 
         // HDRとか
-        PostProcess::GetInstance()->Initialize();
+        PostProcess::Initialize();
 
         // ライトマネージャー
         LightManager::Initialize();
@@ -80,10 +80,10 @@ namespace RyoEngine {
         modelCommon_ = ModelCommon::GetInstance();
         modelCommon_->Initialize();
 
-        ModelManager::GetInstance()->Initialize();
+        ModelManager::Initialize();
 
-        GPUParticleCommon::GetInstance()->Initialize();
-        GPUParticleManager::GetInstance()->Initialize();
+        GPUParticleCommon::Initialize();
+        GPUParticleManager::Initialize();
 
         spriteCommon_ = SpriteCommon::GetInstance();
         spriteCommon_->Initialize();
@@ -129,18 +129,18 @@ namespace RyoEngine {
 
         //reflectCommon_->Finalize();
         spriteCommon_->Finalize();
-        GPUParticleManager::GetInstance()->Finalize();
-        GPUParticleCommon::GetInstance()->Finalize();
-        ModelManager::GetInstance()->Finalize();
+        GPUParticleManager::Finalize();
+        GPUParticleCommon::Finalize();
+        ModelManager::Finalize();
         modelCommon_->Finalize();
         PrimitiveRenderer::Finalize();
         ShadowMap::Finalize();
         LightManager::Finalize();
         textureManager_->Finalize();
-        SrvManager::GetInstance()->Finalize();
+        SrvManager::Finalize();
         shaderCompiler_->Finalize();
 
-        PostProcess::GetInstance()->Finalize();
+        PostProcess::Finalize();
 
         // DirectXの基盤を止める（デバイスなどの破棄）
         dxCommon_->Finalize();
@@ -158,7 +158,7 @@ namespace RyoEngine {
 
     void Begin3dDraw() {
         GetDxCommon()->PreDraw();
-        PostProcess::GetInstance()->BeginScenePass();   // ← 追加：描画先をHDRバッファへ切り替える
+        PostProcess::BeginScenePass();   // ← 追加：描画先をHDRバッファへ切り替える
         GetModelCommon()->BeginDraw();
     }
 
@@ -170,8 +170,8 @@ namespace RyoEngine {
         PrimitiveRenderer::NewFrame();
         modelCommon_->CommandsClear();
         spriteCommon_->CommandsClear();
-        ModelManager::GetInstance()->NewFrame();
-        GPUParticleCommon::GetInstance()->CommandsClear();
+        ModelManager::NewFrame();
+        GPUParticleCommon::CommandsClear();
 
         Input::Update();
 
@@ -217,9 +217,9 @@ namespace RyoEngine {
         // ギズモ操作モード(W/E/R・ローカル/ワールド・スナップ)
         Gizmo::DrawToolbar();
         // ポストプロセス(HDR/ブルームのON-OFF)
-        PostProcess::GetInstance()->DrawImGui();
+        PostProcess::DrawImGui();
         // GPUパーティクル
-        GPUParticleManager::GetInstance()->DrawImGui();
+        GPUParticleManager::DrawImGui();
         // カメラ(一覧・切り替え)
         CameraManager::DrawImGui();
 
@@ -277,12 +277,12 @@ namespace RyoEngine {
         ParamEditor::DrawImGuiWindow();
 
         // GPUパーティクルのシミュレーション(Dispatch)：RTV/DSVに依存しないので一番早く実行する
-        GPUParticleCommon::GetInstance()->Dispatch();
+        GPUParticleCommon::Dispatch();
 
         // シャドウパス：ライト視点で深度だけ先に描画する
         ShadowMap::BeginShadowPass();
         modelCommon_->DrawShadow();
-        ModelManager::GetInstance()->DrawShadow();
+        ModelManager::DrawShadow();
         ShadowMap::GetInstance()->EndShadowPass();
 
         // 即時描画
@@ -291,12 +291,12 @@ namespace RyoEngine {
         // 3d描画
         Begin3dDraw();
         modelCommon_->Draw();
-        ModelManager::GetInstance()->Draw();
-        GPUParticleCommon::GetInstance()->Draw();
+        ModelManager::Draw();
+        GPUParticleCommon::Draw();
 
         // HDR→LDR合成 (トーンマッピングのON/OFFはここで反映される)
-        PostProcess::GetInstance()->EndScenePass();
-        PostProcess::GetInstance()->Composite();
+        PostProcess::EndScenePass();
+        PostProcess::Composite();
 
         // 2d描画
         Begin2dDraw();
@@ -338,7 +338,7 @@ namespace RyoEngine {
 
     uint32_t LoadObj(const std::string& filePath) {
         std::string fullPath = "Resources/ApplicationResources/" + filePath;
-        return ModelManager::GetInstance()->LoadObj(fullPath);
+        return ModelManager::LoadObj(fullPath);
     }
 
     uint32_t LoadTex(const std::string& filePath) {
@@ -362,7 +362,7 @@ namespace RyoEngine {
 
     void Change3DBlendMode(BlendMode blendMode) {
         modelCommon_->SetBlendMode(blendMode);
-        ModelManager::GetInstance()->SetBlendMode(blendMode);
+        ModelManager::SetBlendMode(blendMode);
     }
 
     // --- ゲッターの実装 ---

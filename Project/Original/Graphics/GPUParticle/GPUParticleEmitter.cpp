@@ -125,7 +125,7 @@ namespace RyoEngine {
         // 依頼はもうGPU用バッファへ書き込み済みなので、CPU側のリストはここでクリアしてよい
         pendingSpawnRequests_.clear();
 
-        GPUParticleCommon::GetInstance()->SetDispatchCommands([this]() {
+        GPUParticleCommon::SetDispatchCommands([this]() {
             InternalDispatch();
             });
     }
@@ -144,7 +144,7 @@ namespace RyoEngine {
         cameraData_->cameraRight = Normalize(Vector3{ cameraWorldMatrix.m[0][0], cameraWorldMatrix.m[0][1], cameraWorldMatrix.m[0][2] });
         cameraData_->cameraUp = Normalize(Vector3{ cameraWorldMatrix.m[1][0], cameraWorldMatrix.m[1][1], cameraWorldMatrix.m[1][2] });
 
-        GPUParticleCommon::GetInstance()->SetDrawCommands([this]() {
+        GPUParticleCommon::SetDrawCommands([this]() {
             InternalDraw();
             });
     }
@@ -164,19 +164,18 @@ namespace RyoEngine {
 
     void GPUParticleEmitter::InternalDispatch() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        auto common = GPUParticleCommon::GetInstance();
 
         // コンピュートシェーダーが読み書きできる状態にしておく
         TransitionParticleBuffer(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-        commandList->SetComputeRootSignature(common->GetComputeRootSignature());
+        commandList->SetComputeRootSignature(GPUParticleCommon::GetComputeRootSignature());
         commandList->SetComputeRootUnorderedAccessView(0, particleResource_->GetGPUVirtualAddress());
         commandList->SetComputeRootUnorderedAccessView(1, claimCounterResource_->GetGPUVirtualAddress());
         commandList->SetComputeRootShaderResourceView(2, spawnRequestResource_->GetGPUVirtualAddress());
         commandList->SetComputeRootConstantBufferView(3, simParamsResource_->GetGPUVirtualAddress());
 
         // ① カウンターを0に戻す(1スレッドだけ)
-        commandList->SetPipelineState(common->GetResetPipelineState());
+        commandList->SetPipelineState(GPUParticleCommon::GetResetPipelineState());
         commandList->Dispatch(1, 1, 1);
 
         // リセットの書き込みが完全に終わってから本体パスが読めるように、UAVバリアを挟む
@@ -186,24 +185,23 @@ namespace RyoEngine {
         commandList->ResourceBarrier(1, &uavBarrier);
 
         // ② 本体：物理演算＋新規発生の消化
-        commandList->SetPipelineState(common->GetSimulatePipelineState());
+        commandList->SetPipelineState(GPUParticleCommon::GetSimulatePipelineState());
         uint32_t groupCount = (maxParticleCount_ + 255) / 256; // シェーダー側は[numthreads(256,1,1)]
         commandList->Dispatch(groupCount, 1, 1);
     }
 
     void GPUParticleEmitter::InternalDraw() {
         auto commandList = DirectXCommon::GetInstance()->GetCommandList();
-        auto common = GPUParticleCommon::GetInstance();
 
         // 頂点シェーダー(Vertexステージ)がStructuredBufferとして読めるように、
         // UAV → NON_PIXEL_SHADER_RESOURCE(Pixel以外のステージ用SRV状態)へ遷移させる
         TransitionParticleBuffer(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
-        commandList->SetGraphicsRootSignature(common->GetRenderRootSignature());
-        commandList->SetPipelineState(common->GetRenderPipelineState(billboard_, blendMode_));
+        commandList->SetGraphicsRootSignature(GPUParticleCommon::GetRenderRootSignature());
+        commandList->SetPipelineState(GPUParticleCommon::GetRenderPipelineState(billboard_, blendMode_));
 
 
-        SrvManager::GetInstance()->PreDraw(commandList);
+        SrvManager::PreDraw(commandList);
 
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         D3D12_VERTEX_BUFFER_VIEW vbv = mesh_->GetVertexBufferView();

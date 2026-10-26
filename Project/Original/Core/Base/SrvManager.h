@@ -20,42 +20,42 @@ namespace RyoEngine {
     /// </summary>
     class SrvManager {
     public:
-        static SrvManager* GetInstance();
-
-        void Initialize();
-        void Finalize();
+        static void Initialize();
+        static void Finalize();
 
         // --- スロット管理 ---
         // 空きスロットを1つ確保してindexを返す(返却済みのスロットがあれば優先して再利用する)
-        uint32_t Allocate();
+        static uint32_t Allocate();
         // スロットを返却する。返却したindexのGPUハンドルを使い続けないこと
         // (GPUがまだそのディスクリプタを参照している可能性がある場合は、フェンス待ちの後に呼ぶこと)
-        void Free(uint32_t index);
+        static void Free(uint32_t index);
 
         // --- ビュー生成 ---
         // Texture2DのSRV。mipLevels=0を渡すとresourceのMipLevelsをそのまま使う
-        void CreateSRVForTexture2D(uint32_t index, ID3D12Resource* resource, DXGI_FORMAT format, UINT mipLevels = 0);
+        static void CreateSRVForTexture2D(uint32_t index, ID3D12Resource* resource, DXGI_FORMAT format, UINT mipLevels = 0);
         // StructuredBufferのSRV
-        void CreateSRVForStructuredBuffer(uint32_t index, ID3D12Resource* resource, UINT numElements, UINT structureByteStride);
+        static void CreateSRVForStructuredBuffer(uint32_t index, ID3D12Resource* resource, UINT numElements, UINT structureByteStride);
         // RWStructuredBufferのUAV(カウンター無し)
-        void CreateUAVForStructuredBuffer(uint32_t index, ID3D12Resource* resource, UINT numElements, UINT structureByteStride);
+        static void CreateUAVForStructuredBuffer(uint32_t index, ID3D12Resource* resource, UINT numElements, UINT structureByteStride);
         // RWTexture2DのUAV(リソースはD3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS付きで作ること)
-        void CreateUAVForTexture2D(uint32_t index, ID3D12Resource* resource, DXGI_FORMAT format);
+        static void CreateUAVForTexture2D(uint32_t index, ID3D12Resource* resource, DXGI_FORMAT format);
 
         // --- ハンドル取得 ---
-        D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index) const;
-        D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) const;
-        ID3D12DescriptorHeap* GetDescriptorHeap() const { return descriptorHeap_.Get(); }
+        static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index);
+        static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index);
+        static ID3D12DescriptorHeap* GetDescriptorHeap() { return GetInstance()->descriptorHeap_.Get(); }
 
         // ヒープをコマンドリストにセットする(描画/ディスパッチでDescriptorTableを使う前に呼ぶ)
-        void PreDraw(ID3D12GraphicsCommandList* commandList);
+        static void PreDraw(ID3D12GraphicsCommandList* commandList);
 
         // 確保中のスロット数(デバッグ表示用)
-        uint32_t GetUsedCount() const { return nextIndex_ - static_cast<uint32_t>(freeList_.size()); }
+        static uint32_t GetUsedCount() { return GetInstance()->nextIndex_ - static_cast<uint32_t>(GetInstance()->freeList_.size()); }
 
         static constexpr uint32_t kMaxSRVCount = 512;
 
     private:
+        static SrvManager* GetInstance();
+
         SrvManager() = default;
         ~SrvManager() = default;
         SrvManager(const SrvManager&) = delete;

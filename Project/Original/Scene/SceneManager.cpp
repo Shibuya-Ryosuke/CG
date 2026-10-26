@@ -105,7 +105,7 @@ namespace RyoEngine {
         // シーンが登録したもの(シーンのメンバへのポインタ)を、シーンが生きているうちに解除する
         // (ParamEditorは解除時に今の値をキャッシュへ退避するので、破棄後だと解放済みのメモリを読んでしまう)
         ParamEditor::ClearEntries();
-        GPUParticleManager::GetInstance()->ClearRegistrations();
+        GPUParticleManager::ClearRegistrations();
 
         currentScene_->Finalize();
         currentScene_.reset();

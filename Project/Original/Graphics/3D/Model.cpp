@@ -52,7 +52,7 @@ namespace RyoEngine {
     }
 
     void Model::SetModel(const std::string& filePath, uint32_t textureIndex) {
-        SetModel(ModelManager::GetInstance()->LoadObj(filePath), textureIndex);
+        SetModel(ModelManager::LoadObj(filePath), textureIndex);
     }
 
     void Model::SetModel(uint32_t modelIndex, uint32_t textureIndex) {
@@ -77,7 +77,7 @@ namespace RyoEngine {
         meshes_.clear();
         isVisible_ = true;
 
-        const ModelManager::ModelAsset* asset = ModelManager::GetInstance()->GetAsset(modelIndex);
+        const ModelManager::ModelAsset* asset = ModelManager::GetAsset(modelIndex);
         if (!asset) {
             return; // 無効なindex。描画されないだけで落とさない
         }
@@ -114,7 +114,7 @@ namespace RyoEngine {
         // 視錐台判定はカメラ確定後のDraw()で行うので、ここでは指定だけ覚えておく
         frustumCulling_ = frustumCulling;
 
-        const ModelManager::ModelAsset* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
+        const ModelManager::ModelAsset* asset = ModelManager::GetAsset(modelIndex_);
         if (!asset) {
             isVisible_ = false;
             return;
@@ -131,8 +131,7 @@ namespace RyoEngine {
     }
 
     void Model::Draw() {
-        auto manager = ModelManager::GetInstance();
-        const ModelManager::ModelAsset* asset = manager->GetAsset(modelIndex_);
+        const ModelManager::ModelAsset* asset = ModelManager::GetAsset(modelIndex_);
         if (!asset) {
             isVisible_ = false;
             return;
@@ -180,7 +179,7 @@ namespace RyoEngine {
             // UVを持たないメッシュはテクスチャを引けないので、上書きされていても既定(white)を使う
             const uint32_t textureHandle = meshAsset.hasUV ? state.textureHandle : meshAsset.defaultTextureHandle;
 
-            manager->Submit(modelIndex_, static_cast<uint32_t>(i), textureHandle, data);
+            ModelManager::Submit(modelIndex_, static_cast<uint32_t>(i), textureHandle, data);
         }
     }
 
@@ -188,18 +187,18 @@ namespace RyoEngine {
     // Getter
     // ------------------------------------------------------------------
     bool Model::GetHasUV(size_t meshIndex) const {
-        const auto* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
+        const auto* asset = ModelManager::GetAsset(modelIndex_);
         return asset && meshIndex < asset->meshes.size() ? asset->meshes[meshIndex].hasUV : true;
     }
 
     const std::string& Model::GetMaterialName(size_t meshIndex) const {
         static const std::string empty;
-        const auto* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
+        const auto* asset = ModelManager::GetAsset(modelIndex_);
         return asset && meshIndex < asset->meshes.size() ? asset->meshes[meshIndex].materialName : empty;
     }
 
     int32_t Model::GetMeshIndexByName(const std::string& materialName) const {
-        const auto* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
+        const auto* asset = ModelManager::GetAsset(modelIndex_);
         if (!asset) return -1;
         for (size_t i = 0; i < asset->meshes.size(); ++i) {
             if (asset->meshes[i].materialName == materialName) {
@@ -213,7 +212,7 @@ namespace RyoEngine {
     // Setter
     // ------------------------------------------------------------------
     void Model::SetTex(uint32_t handle, int32_t meshIndex) {
-        const auto* asset = ModelManager::GetInstance()->GetAsset(modelIndex_);
+        const auto* asset = ModelManager::GetAsset(modelIndex_);
         if (!asset) return;
         ForEachMesh(meshIndex, [&](MeshState& mesh) {
             const size_t index = static_cast<size_t>(&mesh - meshes_.data());

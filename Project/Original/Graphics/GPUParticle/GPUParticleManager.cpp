@@ -57,21 +57,25 @@ namespace RyoEngine {
     }
 
     void GPUParticleManager::Initialize() {
+        GPUParticleManager* instance = GetInstance();
+
         Logger::Log("GPUParticleManager : Initializing...\n");
 #ifdef _DEBUG
-        strcpy_s(folderPathBuffer_, sizeof(folderPathBuffer_), folderPath_.c_str());
+        strcpy_s(instance->folderPathBuffer_, sizeof(instance->folderPathBuffer_), instance->folderPath_.c_str());
 #endif
         Logger::LogSuccess("GPUParticleManager : Initialized\n");
     }
 
     void GPUParticleManager::Finalize() {
+        GPUParticleManager* instance = GetInstance();
+
         Logger::Log("GPUParticleManager : Finalizing...\n");
-        for (auto& [name, managed] : emitters_) {
+        for (auto& [name, managed] : instance->emitters_) {
             managed->emitter.Finalize();
         }
-        emitters_.clear();
-        positions_.clear();
-        flags_.clear();
+        instance->emitters_.clear();
+        instance->positions_.clear();
+        instance->flags_.clear();
         Logger::LogSuccess("GPUParticleManager : Finalized\n");
     }
 
@@ -111,7 +115,9 @@ namespace RyoEngine {
     }
 
     bool GPUParticleManager::CreateEmitter(const std::string& name, const GPUParticleEmitterConfig& config) {
-        if (emitters_.contains(name)) {
+        GPUParticleManager* instance = GetInstance();
+
+        if (instance->emitters_.contains(name)) {
             Logger::Log("[GPUParticleManager] CreateEmitter: 同名のEmitterが既に存在します: " + name + "\n");
             return false;
         }
@@ -127,56 +133,68 @@ namespace RyoEngine {
         strcpy_s(managed->texturePathBuffer, sizeof(managed->texturePathBuffer), config.texturePath.c_str());
 #endif
 
-        ApplyConfig(*managed);
+        instance->ApplyConfig(*managed);
 
-        emitters_[name] = std::move(managed);
+        instance->emitters_[name] = std::move(managed);
         return true;
     }
 
     void GPUParticleManager::DestroyEmitter(const std::string& name) {
-        auto it = emitters_.find(name);
-        if (it == emitters_.end()) {
+        GPUParticleManager* instance = GetInstance();
+
+        auto it = instance->emitters_.find(name);
+        if (it == instance->emitters_.end()) {
             return;
         }
         it->second->emitter.Finalize();
-        emitters_.erase(it);
+        instance->emitters_.erase(it);
     }
 
     void GPUParticleManager::RegisterPosition(const std::string& key, const Vector3* pos) {
+        GPUParticleManager* instance = GetInstance();
+
         if (key.empty()) {
             Logger::Log("[GPUParticleManager] RegisterPosition: キーが空です\n");
             return;
         }
         if (pos == nullptr) {
-            positions_.erase(key);
+            instance->positions_.erase(key);
             return;
         }
-        positions_[key] = pos;
+        instance->positions_[key] = pos;
     }
 
     void GPUParticleManager::UnregisterPosition(const std::string& key) {
-        positions_.erase(key);
+        GPUParticleManager* instance = GetInstance();
+
+        instance->positions_.erase(key);
     }
 
     void GPUParticleManager::RegisterFlag(const std::string& key, const bool* flag) {
+        GPUParticleManager* instance = GetInstance();
+
         if (key.empty()) {
             Logger::Log("[GPUParticleManager] RegisterFlag: キーが空です\n");
             return;
         }
         if (flag == nullptr) {
-            flags_.erase(key);
+            instance->flags_.erase(key);
             return;
         }
-        flags_[key] = flag;
+        instance->flags_[key] = flag;
     }
 
     void GPUParticleManager::UnregisterFlag(const std::string& key) {
-        flags_.erase(key);
+        GPUParticleManager* instance = GetInstance();
+
+        instance->flags_.erase(key);
     }
 
     void GPUParticleManager::ClearRegistrations() {
-        positions_.clear();
-        flags_.clear();
+        GPUParticleManager* instance = GetInstance();
+
+        instance->positions_.clear();
+        instance->flags_.clear();
     }
 
     const Vector3* GPUParticleManager::FindPosition(const std::string& key) const {
@@ -196,8 +214,10 @@ namespace RyoEngine {
     }
 
     void GPUParticleManager::SetTrackedPositionKey(const std::string& emitterName, const std::string& key) {
-        auto it = emitters_.find(emitterName);
-        if (it == emitters_.end()) {
+        GPUParticleManager* instance = GetInstance();
+
+        auto it = instance->emitters_.find(emitterName);
+        if (it == instance->emitters_.end()) {
             Logger::Log("[GPUParticleManager] SetTrackedPositionKey: 該当するEmitterがありません: " + emitterName + "\n");
             return;
         }
@@ -205,8 +225,10 @@ namespace RyoEngine {
     }
 
     void GPUParticleManager::SetConditionFlagKey(const std::string& emitterName, const std::string& key) {
-        auto it = emitters_.find(emitterName);
-        if (it == emitters_.end()) {
+        GPUParticleManager* instance = GetInstance();
+
+        auto it = instance->emitters_.find(emitterName);
+        if (it == instance->emitters_.end()) {
             Logger::Log("[GPUParticleManager] SetConditionFlagKey: 該当するEmitterがありません: " + emitterName + "\n");
             return;
         }
@@ -214,18 +236,22 @@ namespace RyoEngine {
     }
 
     void GPUParticleManager::TriggerEmit(const std::string& name) {
-        auto it = emitters_.find(name);
-        if (it == emitters_.end()) {
+        GPUParticleManager* instance = GetInstance();
+
+        auto it = instance->emitters_.find(name);
+        if (it == instance->emitters_.end()) {
             return;
         }
-        EmitOnce(*it->second);
+        instance->EmitOnce(*it->second);
     }
 
     void GPUParticleManager::Update(float deltaTime) {
-        for (auto& [name, managed] : emitters_) {
+        GPUParticleManager* instance = GetInstance();
+
+        for (auto& [name, managed] : instance->emitters_) {
             bool shouldEmit = false;
 
-            const bool* flag = FindFlag(managed->config.conditionFlagKey);
+            const bool* flag = instance->FindFlag(managed->config.conditionFlagKey);
 
             // 参照先が変わった(キー変更・登録・解除があった)フレームは、
             // 偽の「立ち上がり」を検出しないよう、現在値で前回状態を合わせ直す
@@ -255,7 +281,7 @@ namespace RyoEngine {
             }
 
             if (shouldEmit) {
-                EmitOnce(*managed);
+                instance->EmitOnce(*managed);
             }
 
             managed->emitter.Update(deltaTime);
@@ -263,21 +289,25 @@ namespace RyoEngine {
     }
 
     void GPUParticleManager::Draw() {
+        GPUParticleManager* instance = GetInstance();
+
         // CameraManager::UpdateAll()で確定済みの描画カメラを使う(Modelのカリングと同じカメラになる)
         const Camera& camera = CameraManager::GetActive();
-        for (auto& [name, managed] : emitters_) {
+        for (auto& [name, managed] : instance->emitters_) {
             managed->emitter.Draw(camera);
         }
     }
 
     void GPUParticleManager::SetFolderPath(const std::string& path) {
-        folderPath_ = path;
-        if (!folderPath_.empty() && folderPath_.back() != '/') {
-            folderPath_ += '/';
+        GPUParticleManager* instance = GetInstance();
+
+        instance->folderPath_ = path;
+        if (!instance->folderPath_.empty() && instance->folderPath_.back() != '/') {
+            instance->folderPath_ += '/';
         }
 #ifdef _DEBUG
         // ImGui用の入力バッファも同期する
-        strcpy_s(folderPathBuffer_, sizeof(folderPathBuffer_), folderPath_.c_str());
+        strcpy_s(instance->folderPathBuffer_, sizeof(instance->folderPathBuffer_), instance->folderPath_.c_str());
 #endif
     }
 
@@ -389,20 +419,24 @@ namespace RyoEngine {
     }
 
     void GPUParticleManager::Save() {
+        GPUParticleManager* instance = GetInstance();
+
         std::string fullPath = GetFullFilePath();
 #ifdef _DEBUG
         if (std::filesystem::exists(fullPath)) {
-            showOverwriteModal_ = true;
+            instance->showOverwriteModal_ = true;
         } else {
-            SaveToFileInternal(fullPath);
+            instance->SaveToFileInternal(fullPath);
         }
 #else
-        SaveToFileInternal(fullPath);
+        instance->SaveToFileInternal(fullPath);
 #endif
     }
 
     void GPUParticleManager::Load() {
-        std::string fullPath = folderPath_ + kFileName;
+        GPUParticleManager* instance = GetInstance();
+
+        std::string fullPath = instance->folderPath_ + kFileName;
         std::ifstream file(fullPath);
         if (!file.is_open()) {
             Logger::LogError("[GPUParticleManager] Load: ファイルを開けませんでした: " + fullPath + "\n");
@@ -429,10 +463,10 @@ namespace RyoEngine {
         }
 
         // 読み込んだ内容で作り直すため、既存のEmitterは一旦全部破棄する
-        for (auto& [name, managed] : emitters_) {
+        for (auto& [name, managed] : instance->emitters_) {
             managed->emitter.Finalize();
         }
-        emitters_.clear();
+        instance->emitters_.clear();
 
         for (const auto& [name, config] : loaded) {
             CreateEmitter(name, config);
@@ -442,27 +476,29 @@ namespace RyoEngine {
     }
 
     void GPUParticleManager::DrawImGui() {
+        GPUParticleManager* instance = GetInstance();
+
 #ifdef _DEBUG
         ImGui::Begin("GPUParticleManager");
 
         // --- 保存・読込エリア ---
         ImGui::Text("保存・読込先");
-        if (folderPathBuffer_[0] == '\0' && !folderPath_.empty()) {
-            strcpy_s(folderPathBuffer_, sizeof(folderPathBuffer_), folderPath_.c_str());
+        if (instance->folderPathBuffer_[0] == '\0' && !instance->folderPath_.empty()) {
+            strcpy_s(instance->folderPathBuffer_, sizeof(instance->folderPathBuffer_), instance->folderPath_.c_str());
         }
-        bool folderEnter = ImGui::InputText("フォルダパス", folderPathBuffer_, sizeof(folderPathBuffer_), ImGuiInputTextFlags_EnterReturnsTrue);
+        bool folderEnter = ImGui::InputText("フォルダパス", instance->folderPathBuffer_, sizeof(instance->folderPathBuffer_), ImGuiInputTextFlags_EnterReturnsTrue);
         if (folderEnter || ImGui::IsItemDeactivatedAfterEdit()) {
-            SetFolderPath(folderPathBuffer_);
+            SetFolderPath(instance->folderPathBuffer_);
         }
         ImGui::Text("ファイル名 : %s", kFileName.c_str());
         ImGui::Spacing();
         if (ImGui::Button("Save")) {
-            SetFolderPath(folderPathBuffer_);
+            SetFolderPath(instance->folderPathBuffer_);
             Save();
         }
         ImGui::SameLine();
         if (ImGui::Button("Load")) {
-            SetFolderPath(folderPathBuffer_);
+            SetFolderPath(instance->folderPathBuffer_);
             Load();
         }
 
@@ -470,25 +506,25 @@ namespace RyoEngine {
 
         // --- 新規作成フォーム ---
         if (ImGui::CollapsingHeader("新規Emitter作成")) {
-            ImGui::InputText("名前", newNameBuffer_, sizeof(newNameBuffer_));
-            ImGui::InputText("objパス", newMeshPathBuffer_, sizeof(newMeshPathBuffer_));
-            ImGui::InputText("テクスチャパス(空可)", newTexturePathBuffer_, sizeof(newTexturePathBuffer_));
-            ImGui::InputInt("最大数", &newMaxParticleCount_);
-            if (newMaxParticleCount_ < 1) {
-                newMaxParticleCount_ = 1;
+            ImGui::InputText("名前", instance->newNameBuffer_, sizeof(instance->newNameBuffer_));
+            ImGui::InputText("objパス", instance->newMeshPathBuffer_, sizeof(instance->newMeshPathBuffer_));
+            ImGui::InputText("テクスチャパス(空可)", instance->newTexturePathBuffer_, sizeof(instance->newTexturePathBuffer_));
+            ImGui::InputInt("最大数", &instance->newMaxParticleCount_);
+            if (instance->newMaxParticleCount_ < 1) {
+                instance->newMaxParticleCount_ = 1;
             }
 
             if (ImGui::Button("作成")) {
                 GPUParticleEmitterConfig config{};
-                config.meshPath = newMeshPathBuffer_;
-                config.texturePath = newTexturePathBuffer_;
-                config.maxParticleCount = static_cast<uint32_t>(newMaxParticleCount_);
+                config.meshPath = instance->newMeshPathBuffer_;
+                config.texturePath = instance->newTexturePathBuffer_;
+                config.maxParticleCount = static_cast<uint32_t>(instance->newMaxParticleCount_);
 
-                if (CreateEmitter(newNameBuffer_, config)) {
-                    newNameBuffer_[0] = '\0';
-                    newMeshPathBuffer_[0] = '\0';
-                    newTexturePathBuffer_[0] = '\0';
-                    newMaxParticleCount_ = 500;
+                if (CreateEmitter(instance->newNameBuffer_, config)) {
+                    instance->newNameBuffer_[0] = '\0';
+                    instance->newMeshPathBuffer_[0] = '\0';
+                    instance->newTexturePathBuffer_[0] = '\0';
+                    instance->newMaxParticleCount_ = 500;
                 }
             }
         }
@@ -497,7 +533,7 @@ namespace RyoEngine {
 
         // --- 各Emitterの設定 ---
         std::string nameToDestroy;
-        for (auto& [name, managed] : emitters_) {
+        for (auto& [name, managed] : instance->emitters_) {
             ImGui::PushID(name.c_str());
             if (ImGui::CollapsingHeader(name.c_str())) {
                 GPUParticleEmitterConfig& config = managed->config;
@@ -561,8 +597,8 @@ namespace RyoEngine {
 
                 ImGui::Separator();
                 ImGui::Text("発生位置");
-                DrawKeyCombo("追従する座標", config.trackedPositionKey, positions_);
-                if (const Vector3* tracked = FindPosition(config.trackedPositionKey)) {
+                DrawKeyCombo("追従する座標", config.trackedPositionKey, instance->positions_);
+                if (const Vector3* tracked = instance->FindPosition(config.trackedPositionKey)) {
                     ImGui::Text("追従中の座標: (%.2f, %.2f, %.2f)", tracked->x, tracked->y, tracked->z);
                 } else {
                     ImGui::DragFloat3("基準座標", &config.basePosition.x, 0.1f);
@@ -572,8 +608,8 @@ namespace RyoEngine {
 
                 ImGui::Separator();
                 ImGui::Text("発生条件");
-                DrawKeyCombo("条件フラグ", config.conditionFlagKey, flags_);
-                if (const bool* flag = FindFlag(config.conditionFlagKey)) {
+                DrawKeyCombo("条件フラグ", config.conditionFlagKey, instance->flags_);
+                if (const bool* flag = instance->FindFlag(config.conditionFlagKey)) {
                     ImGui::Text("現在の値: %s", *flag ? "true" : "false");
                 } else {
                     ImGui::TextDisabled("条件フラグ未選択(「今すぐ1個発生」での手動発生のみ)");
@@ -592,7 +628,7 @@ namespace RyoEngine {
                 }
 
                 if (needReapply) {
-                    ApplyConfig(*managed);
+                    instance->ApplyConfig(*managed);
                 }
             }
             ImGui::PopID();
@@ -603,10 +639,10 @@ namespace RyoEngine {
         }
 
         // --- 上書き確認ポップアップ ---
-        if (showOverwriteModal_) {
+        if (instance->showOverwriteModal_) {
             ImGui::OpenPopup("GPUParticleManager 上書き確認");
             Logger::LogWarning("[GPUParticleManager] Overwrite check.");
-            showOverwriteModal_ = false;
+            instance->showOverwriteModal_ = false;
         }
 
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -614,11 +650,11 @@ namespace RyoEngine {
 
         if (ImGui::BeginPopupModal("GPUParticleManager 上書き確認", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("該当フォルダには既に同名のファイルが存在します。上書きしますか？");
-            ImGui::Text("フォルダパス : %s", folderPath_.c_str());
+            ImGui::Text("フォルダパス : %s", instance->folderPath_.c_str());
             ImGui::Separator();
 
             if (ImGui::Button("上書きする", ImVec2(120, 0))) {
-                SaveToFileInternal(GetFullFilePath());
+                instance->SaveToFileInternal(GetFullFilePath());
                 ImGui::CloseCurrentPopup();
             }
             ImGui::SetItemDefaultFocus();

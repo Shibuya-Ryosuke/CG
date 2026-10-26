@@ -59,53 +59,53 @@ namespace RyoEngine {
             float boundingRadius = 0.0f; // ローカル原点から一番遠い頂点までの距離 (カリング用)
         };
 
-        static ModelManager* GetInstance();
-
-        void Initialize();
-        void Finalize();
+        static void Initialize();
+        static void Finalize();
 
         /// <summary>
         /// モデルを読み込んで登録する。同じfilePathなら読み込み済みのものを返す。
         /// </summary>
         /// <returns>modelIndex (1以上)。失敗時は kInvalidModelIndex(0)</returns>
-        uint32_t LoadObj(const std::string& filePath);
+        static uint32_t LoadObj(const std::string& filePath);
 
         /// <summary>
         /// modelIndexからモデルデータを取得する。無効なら nullptr
         /// </summary>
-        const ModelAsset* GetAsset(uint32_t modelIndex) const;
+        static const ModelAsset* GetAsset(uint32_t modelIndex);
 
         // --- ブレンドモード (3D全体で1つ) ---
-        void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
-        BlendMode GetBlendMode() const { return blendMode_; }
+        static void SetBlendMode(BlendMode blendMode) { GetInstance()->blendMode_ = blendMode; }
+        static BlendMode GetBlendMode() { return GetInstance()->blendMode_; }
 
         // --- フレーム処理 ---
         /// <summary>
         /// 前フレームに積んだものを破棄する。NewFrame()の先頭で呼ぶこと
         /// </summary>
-        void NewFrame();
+        static void NewFrame();
 
         /// <summary>
         /// このフレームのカメラのView-Projection。CameraManager::UpdateAll() で描画カメラが確定したときに設定される
         /// </summary>
-        void SetViewProjection(const Matrix4x4& viewProjection) { viewProjection_ = viewProjection; }
+        static void SetViewProjection(const Matrix4x4& viewProjection) { GetInstance()->viewProjection_ = viewProjection; }
 
         /// <summary>
         /// 1体x1メッシュ分を描画キューへ積む (Model::Draw() から呼ばれる)
         /// </summary>
-        void Submit(uint32_t modelIndex, uint32_t meshIndex, uint32_t textureHandle, const ModelInstanceData& data);
+        static void Submit(uint32_t modelIndex, uint32_t meshIndex, uint32_t textureHandle, const ModelInstanceData& data);
 
         /// <summary>
         /// 積まれたものを通常描画する (EndFrame内、3Dシーンパス中に呼ぶこと)
         /// </summary>
-        void Draw();
+        static void Draw();
 
         /// <summary>
         /// 積まれたものをシャドウマップへ描画する (EndFrame内、シャドウパス中に呼ぶこと)
         /// </summary>
-        void DrawShadow();
+        static void DrawShadow();
 
     private:
+        static ModelManager* GetInstance();
+
         ModelManager() = default;
         ~ModelManager() = default;
         ModelManager(const ModelManager&) = delete;
