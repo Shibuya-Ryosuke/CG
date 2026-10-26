@@ -35,7 +35,8 @@ namespace AL4_1 {
 		void Finalize();
 
 		// --- 表示の切り替え（Gameのフェーズに合わせて呼ぶ） ---
-		void SetHpVisible(bool visible) { isHpVisible_ = visible; }
+		// HPバーとゲージを出す・消す（イージングでフェードする。途中で切り替えても今の濃さから続く）
+		void SetHpVisible(bool visible);
 		// クリアの文字とクリアタイムを出す（それぞれの delay だけ遅れてフェードイン）
 		void ShowClearResult(float clearTime);
 		void ShowFailedText();
@@ -214,6 +215,7 @@ namespace AL4_1 {
 
 		void RegisterHpBar(HpBar& bar);
 		void RegisterText(Text& text);
+		void UpdateHpFade();
 		void UpdateHpBar(HpBar& bar, float ratio);
 		void UpdateGauge(float ratio);
 		void UpdateText(Text& text);
@@ -237,5 +239,11 @@ namespace AL4_1 {
 
 		// HPバーを出すか
 		bool isHpVisible_ = false;
+		// HPバーとゲージのフェード（出すときは EaseOutCubic、消すときは EaseInCubic）
+		float hpFadeInTime_ = 0.5f;
+		float hpFadeOutTime_ = 0.6f;
+		float hpAlpha_ = 0.0f;		// 今の濃さ
+		float hpFadeFrom_ = 0.0f;	// フェードを始めたときの濃さ
+		float hpFadeTimer_ = 0.0f;
 	};
 }

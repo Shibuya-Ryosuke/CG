@@ -39,11 +39,13 @@ namespace AL4_1 {
 	void BulletManager::Draw(RyoEngine::Camera& camera) {
 		model_.Draw(camera);
 
+#ifdef _DEBUG
 		// デバッグ：反射弾の判定を水色で表示
 		for (auto& bullet : bullets_) {
 			if (bullet.IsDead() || !bullet.IsReflected()) continue;
 			PrimitiveRenderer::DrawOBB(bullet.GetOBB(), { 0.3f,1.0f,1.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 		}
+#endif
 	}
 
 	void BulletManager::Clear() {

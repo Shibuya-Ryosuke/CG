@@ -149,6 +149,7 @@ namespace AL4_1 {
 		model_->TransferMatrix(camera);
 		model_->Draw();
 
+#ifdef _DEBUG
 		// デバッグ：近接攻撃の判定（予備動作中はオレンジ、攻撃中は赤）
 		if (state_ == State::Attack && attackType_ == AttackType::Melee) {
 			if (meleePhase_ == MeleePhase::Windup) {
@@ -157,6 +158,7 @@ namespace AL4_1 {
 				PrimitiveRenderer::DrawOBB(meleeObb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 			}
 		}
+#endif
 	}
 
 	void Boss::OnDamage(float damage) {

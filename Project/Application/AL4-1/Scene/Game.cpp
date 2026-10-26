@@ -125,10 +125,11 @@ namespace AL4_1 {
 
 		bulletManager_.Draw(camera);
 
+#ifdef _DEBUG
 		if (boss_.IsCollidable()) {
 			PrimitiveRenderer::DrawOBB(boss_.GetOBB(), { 0.0f,1.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 		}
-
+#endif
 		// UI
 		gameUI_.Draw();
 	}
@@ -225,6 +226,8 @@ namespace AL4_1 {
 			player_.SetControllable(false);
 			bulletManager_.Clear();
 			followCamera_.SetFocus(boss_.GetCenter());
+			// 撃破アニメーションが始まったらHPバーとゲージを消していく
+			gameUI_.SetHpVisible(false);
 			break;
 
 		case Phase::ClearResult:
@@ -232,7 +235,7 @@ namespace AL4_1 {
 			// プレイヤーをこちらに向かせて、横に情報を出せるようにズームする
 			player_.SetFaceCamera(true);
 			followCamera_.SetZoomFocus(&player_.GetPosition());
-			// HPバーは残したまま、クリアの文字 → クリアタイム → メニューの順に出す
+			// クリアの文字 → クリアタイム → メニューの順に出す（HPバーとゲージは撃破時に消している）
 			gameUI_.ShowClearResult(clearTime_);
 			menuSelection_ = 0;
 			gameUI_.ShowMenu(true);
@@ -242,7 +245,8 @@ namespace AL4_1 {
 		case Phase::GameOver:
 		{
 			boss_.SetCanAct(false);
-			// HPバーは残したまま失敗の文字を出す
+			// 致命傷を受けたのでHPバーとゲージを消していき、失敗の文字を出す
+			gameUI_.SetHpVisible(false);
 			gameUI_.ShowFailedText();
 			// 被弾・パリィの演出が途中で止まったままにならないように戻す
 			SetTimeScale(1.0f);
@@ -251,6 +255,7 @@ namespace AL4_1 {
 			ppInstance->SetChromaticAberrationStrength(0.0f);
 			ppInstance->SetNoiseEnabled(true);
 			ppInstance->SetBlurEnabled(true);
+			ppInstance->SetGlitchEnabled(true);
 			break;
 		}
 
@@ -361,6 +366,7 @@ namespace AL4_1 {
 		ppInstance->SetBlurStrength(0.0f);
 		ppInstance->SetChromaticAberrationEnabled(false);
 		ppInstance->SetChromaticAberrationStrength(0.0f);
+		ppInstance->SetGlitchEnabled(false);
 		// 時間も
 		SetTimeScale(1.0f);
 	}

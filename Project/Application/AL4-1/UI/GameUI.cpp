@@ -29,6 +29,8 @@ namespace AL4_1 {
 
 	void GameUI::RegisterInParamEditor() {
 		ParamEditor::BeginGroup("GameUI");
+		ParamEditor::RegisterValue("hpFadeInTime", &hpFadeInTime_, 0.01f, 0.0f, 5.0f);
+		ParamEditor::RegisterValue("hpFadeOutTime", &hpFadeOutTime_, 0.01f, 0.0f, 5.0f);
 		RegisterHpBar(playerHp_);
 		RegisterHpBar(bossHp_);
 		RegisterText(clearText_);
@@ -107,7 +109,7 @@ namespace AL4_1 {
 			auto sprite = make_unique<Sprite>();
 			sprite->Initialize(GameImage::GetImage(image), { 0.0f,0.0f }, anchor);
 			return sprite;
-		};
+			};
 
 		// HPバーは左端を基準にする（fillは左端固定で縮む）
 		playerHp_.frame = create(GameImage::Image::PlayerHpFrame, Anchor::Left);
@@ -144,6 +146,7 @@ namespace AL4_1 {
 	}
 
 	void GameUI::Update(float playerHpRatio, float bossHpRatio, float gaugeRatio) {
+		UpdateHpFade();
 		UpdateHpBar(playerHp_, playerHpRatio);
 		UpdateHpBar(bossHp_, bossHpRatio);
 		UpdateGauge(gaugeRatio);
@@ -158,6 +161,23 @@ namespace AL4_1 {
 		if (timer < delay) return 0.0f;
 		if (fadeTime <= 0.0f) return 1.0f;
 		return clamp((timer - delay) / fadeTime, 0.0f, 1.0f);
+	}
+
+	void GameUI::SetHpVisible(bool visible) {
+		if (visible == isHpVisible_) return;
+		isHpVisible_ = visible;
+		// 今の濃さからフェードし直す（途中で切り替わってもパッと飛ばない）
+		hpFadeFrom_ = hpAlpha_;
+		hpFadeTimer_ = 0.0f;
+	}
+
+	void GameUI::UpdateHpFade() {
+		// スローの影響を受けないように実時間で進める
+		hpFadeTimer_ += GetDeltaTime();
+		const float duration = isHpVisible_ ? hpFadeInTime_ : hpFadeOutTime_;
+		const float t = duration <= 0.0f ? 1.0f : clamp(hpFadeTimer_ / duration, 0.0f, 1.0f);
+		// 出るときは最初に速く、消えるときは最後にすっと消える
+		hpAlpha_ = isHpVisible_ ? EaseOutCubic(t, hpFadeFrom_, 1.0f) : EaseInCubic(t, hpFadeFrom_, 0.0f);
 	}
 
 	void GameUI::UpdateHpBar(HpBar& bar, float ratio) {
@@ -193,7 +213,11 @@ namespace AL4_1 {
 
 		bar.ghost->SetTranslate(fillPos);
 		bar.ghost->SetScale({ fillScale.x * bar.ghostRatio, fillScale.y });
-		bar.ghost->SetColor(bar.ghostColor);
+		// フェードの濃さを掛け合わせる
+		bar.ghost->SetColor({ bar.ghostColor.x, bar.ghostColor.y, bar.ghostColor.z, bar.ghostColor.w * hpAlpha_ });
+		bar.frame->SetColor({ 1.0f,1.0f,1.0f,hpAlpha_ });
+		bar.fill->SetColor({ 1.0f,1.0f,1.0f,hpAlpha_ });
+		bar.label->SetColor({ 1.0f,1.0f,1.0f,hpAlpha_ });
 
 		bar.fill->SetTranslate(fillPos);
 		bar.fill->SetScale({ fillScale.x * bar.ratio, fillScale.y });
@@ -234,6 +258,8 @@ namespace AL4_1 {
 		} else {
 			gauge_.timer = 0.0f;
 		}
+		// HPバーと一緒にフェードする
+		color.w *= hpAlpha_;
 
 		const Vector2& s = gauge_.scale;
 		gauge_.frame->SetTranslate(gauge_.position);
@@ -345,7 +371,8 @@ namespace AL4_1 {
 	}
 
 	void GameUI::Draw() {
-		if (isHpVisible_) {
+		// 消えていく途中も描く（完全に消えたら描かない）
+		if (hpAlpha_ > 0.0f) {
 			DrawHpBar(playerHp_);
 			DrawHpBar(bossHp_);
 			// ゲージ（空のときは中身を描かない）
@@ -396,7 +423,7 @@ namespace AL4_1 {
 				sprite->Finalize();
 				sprite.reset();
 			}
-		};
+			};
 		for (HpBar* bar : { &playerHp_, &bossHp_ }) {
 			finalize(bar->frame);
 			finalize(bar->ghost);
@@ -448,6 +475,9 @@ namespace AL4_1 {
 
 	void GameUI::Reset() {
 		isHpVisible_ = false;
+		hpAlpha_ = 0.0f;
+		hpFadeFrom_ = 0.0f;
+		hpFadeTimer_ = 0.0f;
 		ResetHpBar(playerHp_);
 		ResetHpBar(bossHp_);
 		gauge_.ratio = 0.0f;

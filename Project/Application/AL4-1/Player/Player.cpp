@@ -163,11 +163,13 @@ namespace AL4_1 {
 
 		// 描画
 		model_->Draw();
+#ifdef _DEBUG
 		PrimitiveRenderer::DrawOBB(obb_, { 0.0f,1.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 		// デバッグ：攻撃中は攻撃（パリィ）判定を赤で表示
 		if (isAttacking_) {
 			PrimitiveRenderer::DrawOBB(attackObb_, { 1.0f,0.0f,0.0f,1.0f }, PrimitiveDrawMode::Wireframe);
 		}
+#endif
 	}
 
 	void Player::OnDamage(float damage) {

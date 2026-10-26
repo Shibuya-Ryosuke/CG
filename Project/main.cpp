@@ -11,7 +11,7 @@ using namespace RyoEngine;
 
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
     // エンジン初期化
-    RyoEngine::Initialize(L"Application");
+    RyoEngine::Initialize(L"パリパリパリィ");
 
     std::unique_ptr<IGame> game = std::make_unique<AL4_1::AL4_1>();
     game->Initialize();
