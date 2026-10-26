@@ -17,7 +17,6 @@ namespace AL4_1 {
 
 		title_.Initialize();
 		game_.Initialize();
-		result_.Initialize();
 
 		// 背景（ロードした個数で作り、プレイヤーのスポーン位置を基準に並べる）
 		background_.Initialize(game_.GetPlayerPosition());
@@ -66,10 +65,6 @@ namespace AL4_1 {
 			break;
 
 		case Scene::Result:
-			result_.Update();
-			if (result_.IsFinished()) {
-				RequestChangeScene(Scene::Title);
-			}
 			break;
 
 		default:
@@ -116,7 +111,6 @@ namespace AL4_1 {
 			break;
 
 		case Scene::Result:
-			result_.Draw();
 			break;
 
 		default:
@@ -161,12 +155,12 @@ namespace AL4_1 {
 		case Scene::Title:
 			title_.Start();
 			game_.ResetPostEffects();
+			game_.ResetPlayer();
 			break;
 		case Scene::Game:
 			game_.Start();
 			break;
 		case Scene::Result:
-			result_.Start();
 			break;
 		default:
 			break;

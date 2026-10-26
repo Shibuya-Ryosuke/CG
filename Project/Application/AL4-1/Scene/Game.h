@@ -57,6 +57,7 @@ namespace AL4_1 {
 		// ゲームオーバー演出などで変えたポストエフェクトを元に戻す
 		void ResetPostEffects();
 
+		void ResetPlayer();
 	private:
 		void SpawnFromMap();
 

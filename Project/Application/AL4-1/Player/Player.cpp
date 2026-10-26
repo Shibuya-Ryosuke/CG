@@ -14,9 +14,9 @@ namespace AL4_1 {
 		GPUParticleManager::GetInstance()->RegisterFlag("isParryTrigger", &isParryTrigger_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerAttacking", &isAttacking_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerInvincible", &isInvincible_);
-		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge1", &isCharge1_);
-		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge2", &isCharge2_);
-		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerChargeMax", &isChargeMax_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge1", &isFirstCharge_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge2", &isSecondCharge_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerChargeMax", &isMaxCharge_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerFullParry", &isFullParryTrigger_);
 	}
 	Player::~Player() {
@@ -248,9 +248,9 @@ namespace AL4_1 {
 		invincibleDuration_ = 0.0f;
 		gauge_ = 0.0f;
 		gaugeTimer_ = 0.0f;
-		isCharge1_ = false;
-		isCharge2_ = false;
-		isChargeMax_ = false;
+		isFirstCharge_ = false;
+		isSecondCharge_ = false;
+		isMaxCharge_ = false;
 		isFullParryTrigger_ = false;
 
 		if (model_) model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
@@ -489,15 +489,15 @@ namespace AL4_1 {
 		const float ratio = GetGaugeRatio();
 
 		// パーティクルの段階（エミッターを重ねて、溜まるほどパリパリが増えるようにする）
-		isCharge1_ = ratio >= 1.0f / 3.0f;
-		isCharge2_ = ratio >= 2.0f / 3.0f;
-		isChargeMax_ = IsGaugeMax();
+		isFirstCharge_ = ratio >= 1.0f / 3.0f;
+		isSecondCharge_ = ratio >= 2.0f / 3.0f;
+		isMaxCharge_ = IsGaugeMax();
 
 		// 溜まるほど強く光る（ゲージ0で0、満タンで chargeEmissiveIntensity_）
 		// 満タンのときは最大を超えないように下へ脈打つ（スローの影響を受けないように実時間）
 		gaugeTimer_ += GetDeltaTime();
 		float intensity = chargeEmissiveIntensity_ * ratio;
-		if (isChargeMax_) {
+		if (isMaxCharge_) {
 			const float wave = 0.5f + 0.5f * std::sin(gaugeTimer_ * maxPulseSpeed_ * 2.0f * std::numbers::pi_v<float>);
 			intensity *= 1.0f - maxPulseAmount_ * wave;
 		}

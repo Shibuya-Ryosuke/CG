@@ -129,6 +129,15 @@ namespace RyoEngine {
         HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
         assert(SUCCEEDED(hr));
 
+        // WIC_FLAGS_FORCE_SRGBが効かずUNORMのまま読み込まれる画像があるため(B8G8R8A8_UNORM等)、
+        // 読み込み後にフォーマットを明示的にsRGB版へ上書きする。ピクセルデータ自体は変更しない。
+        // これをしないとサンプリング時にsRGBデコードされず、SRGBのRTVでエンコードだけされて色が白っぽくなる。
+        DXGI_FORMAT srgbFormat = DirectX::MakeSRGB(image.GetMetadata().format);
+        if (srgbFormat != image.GetMetadata().format) {
+            [[maybe_unused]] bool isOverridden = image.OverrideFormat(srgbFormat);
+            assert(isOverridden);
+        }
+
         DirectX::ScratchImage mipImages{};
         mipImages = std::move(image);
 

@@ -301,13 +301,12 @@ namespace AL4_1 {
 		// 少しアップを続けてから、プレイヤーのズーム（クリア結果）へ
 		if (phaseTimer_ >= defeatHoldTime_) {
 			ResetPostEffects();
+			ResetPlayer();
 			ChangePhase(Phase::ClearResult);
 		}
 	}
 
 	void Game::UpdateClearResult() {
-		// ポストエフェクトも発光も邪魔なので消す
-		ResetPostEffects();
 		player_.SetIntensity(0.0f);
 		UpdateMenu();
 	}
@@ -369,6 +368,12 @@ namespace AL4_1 {
 		ppInstance->SetGlitchEnabled(false);
 		// 時間も
 		SetTimeScale(1.0f);
+	}
+
+	void Game::ResetPlayer() {
+		player_.FullHp();
+		player_.InvincibeleDisabled();
+		player_.ChargeDisabled();
 	}
 
 	void Game::CheckAllCollisions() {

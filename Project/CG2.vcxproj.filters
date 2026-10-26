@@ -325,9 +325,6 @@
     <ClCompile Include="Application\AL4-1\Bullet\BulletManager.cpp">
       <Filter>Application\AL4-1\Bullet</Filter>
     </ClCompile>
-    <ClCompile Include="Application\AL4-1\Scene\Result.cpp">
-      <Filter>Application\AL4-1\Scene</Filter>
-    </ClCompile>
     <ClCompile Include="Application\AL4-1\Background\Background.cpp">
       <Filter>Application\AL4-1\Background</Filter>
     </ClCompile>
@@ -569,9 +566,6 @@
     </ClInclude>
     <ClInclude Include="Application\AL4-1\Bullet\BulletManager.h">
       <Filter>Application\AL4-1\Bullet</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\AL4-1\Scene\Result.h">
-      <Filter>Application\AL4-1\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Application\AL4-1\Background\Background.h">
       <Filter>Application\AL4-1\Background</Filter>

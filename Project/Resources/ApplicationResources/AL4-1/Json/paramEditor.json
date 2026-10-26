@@ -178,10 +178,10 @@
             "count": 8,
             "emissiveColor": [
                 0.0,
-                0.0015859431587159634,
-                0.05392158031463623
+                0.003460266860201955,
+                0.11764705181121826
             ],
-            "emissiveIntensity": 0.09000000357627869,
+            "emissiveIntensity": 0.18000000715255737,
             "isRandomRotate": false,
             "loopHalfWidth": 60.0,
             "rotateSpeed": [
@@ -334,8 +334,8 @@
                 1.5
             ],
             "translate": [
-                13.83320426940918,
-                11.875768661499023,
+                4.0,
+                15.212305068969727,
                 0.0
             ]
         }
@@ -520,7 +520,7 @@
         },
         "PlayerHp": {
             "fillOffset": [
-                14.5,
+                18.5,
                 1.0
             ],
             "fillScale": [
@@ -595,7 +595,7 @@
                 0.6000000238418579,
                 1.0
             ],
-            "damage": 3.0,
+            "damage": 4.5,
             "halfSize": [
                 2.009999990463257,
                 2.0,
@@ -635,10 +635,10 @@
             "damagePenalty": 0.0,
             "fullParryDamage": 30.0,
             "fullParryDuration": 0.800000011920929,
-            "fullParryHoldTime": 0.5,
+            "fullParryHoldTime": 0.4000000059604645,
             "fullParryMaxChromatic": 0.6000000238418579,
             "fullParryPeakTime": 0.30000001192092896,
-            "fullParrySlowScale": 0.0010000000474974513,
+            "fullParrySlowScale": 0.00800000037997961,
             "max": 100.0,
             "maxPulseAmount": 0.5,
             "maxPulseSpeed": 3.0,
@@ -684,8 +684,8 @@
                 1.0
             ],
             "translate": [
-                15.240596771240234,
-                9.436362266540527,
+                11.652658462524414,
+                7.511868476867676,
                 0.0
             ]
         },

@@ -27,7 +27,6 @@
     <ClCompile Include="Application\AL4-1\MapChipField\MapChipField.cpp" />
     <ClCompile Include="Application\AL4-1\Player\Player.cpp" />
     <ClCompile Include="Application\AL4-1\Scene\Game.cpp" />
-    <ClCompile Include="Application\AL4-1\Scene\Result.cpp" />
     <ClCompile Include="Application\AL4-1\Scene\SceneManager.cpp" />
     <ClCompile Include="Application\AL4-1\Scene\Title.cpp" />
     <ClCompile Include="Application\AL4-1\UI\GameUI.cpp" />
@@ -167,7 +166,6 @@
     <ClInclude Include="Application\AL4-1\MapChipField\MapChipField.h" />
     <ClInclude Include="Application\AL4-1\Player\Player.h" />
     <ClInclude Include="Application\AL4-1\Scene\Game.h" />
-    <ClInclude Include="Application\AL4-1\Scene\Result.h" />
     <ClInclude Include="Application\AL4-1\Scene\SceneManager.h" />
     <ClInclude Include="Application\AL4-1\Scene\Title.h" />
     <ClInclude Include="Application\AL4-1\UI\GameUI.h" />

@@ -70,6 +70,15 @@ namespace AL4_1 {
 
 		// クリア時に光ってると見にくいのでgameから消せるように
 		void SetIntensity(float intensity) { model_->SetEmissive({ 0.0f,0.0f,0.0f }, intensity); }
+		// クリア時にパーティクルが出てしまうためgameから消せるように
+		void InvincibeleDisabled() { isInvincible_ = false; }
+		void ChargeDisabled() {
+			isFirstCharge_ = false;
+			isSecondCharge_ = false;
+			isMaxCharge_ = false;
+			gauge_ = 0.0f;
+		}
+		void FullHp() { hp_ = maxHp_; }
 	private:
 		void RegisterInParamEditor();
 		void Jump();
@@ -233,9 +242,9 @@ namespace AL4_1 {
 		float maxPulseAmount_ = 0.3f;		// 最大の強さから下げる割合（0.3なら 1.5 → 1.05 の間で揺れる）
 		float gaugeTimer_ = 0.0f;
 		// パーティクル用の段階フラグ（1/3以上・2/3以上・満タン）。エミッターを重ねて、溜まるほどパリパリが増える
-		bool isCharge1_ = false;
-		bool isCharge2_ = false;
-		bool isChargeMax_ = false;
+		bool isFirstCharge_ = false;
+		bool isSecondCharge_ = false;
+		bool isMaxCharge_ = false;
 		// フルパリィしたフレームだけtrue（パーティクルの発生フラグ用。次のUpdateの冒頭で戻す）
 		bool isFullParryTrigger_ = false;
 		// フルパリィの演出（通常のパリィ・カウンターより強く・遅く）
