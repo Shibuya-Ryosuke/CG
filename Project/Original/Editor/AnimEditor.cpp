@@ -832,7 +832,7 @@ namespace RyoEngine {
 			bool hasKeyInCurrentFrame = false;
 			int mode = window.currentTransformMode;
 
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1,1,0,1));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
 			bool isOpen = ImGui::TreeNodeEx("現在のキーフレーム情報", ImGuiTreeNodeFlags_DefaultOpen);
 			ImGui::PopStyleColor();
 
@@ -1305,7 +1305,7 @@ namespace RyoEngine {
 
 			//ImGui::Text("Window ID: %d", window.id);
 			//ImGui::Separator();
-			
+
 			ImGui::Spacing();
 			ImGui::Separator();
 			ImGui::Spacing();
@@ -1616,7 +1616,7 @@ namespace RyoEngine {
 					x = uf[x];
 				}
 				return x;
-			};
+				};
 			auto unite = [&](int32_t a, int32_t b) {
 				int32_t ra = find(a);
 				int32_t rb = find(b);
@@ -1624,7 +1624,7 @@ namespace RyoEngine {
 				// ★グループの識別を安定させるため、IDが小さい方を根にする
 				if (ra < rb) uf[rb] = ra;
 				else uf[ra] = rb;
-			};
+				};
 
 			for (auto& w : impl->m_SubWindows) {
 				if (w->triggerSourceWindowId == -1) continue;
@@ -1932,12 +1932,10 @@ namespace RyoEngine {
 	//  AnimEdit クラス本体の実装
 	// =========================================================================
 	AnimEditor::AnimEditor() {
-		m_pImpl = new Impl();
+		m_pImpl = std::make_unique<Impl>();
 	}
 
-	AnimEditor::~AnimEditor() {
-		delete m_pImpl;
-	}
+	AnimEditor::~AnimEditor() = default;
 
 	void AnimEditor::Initialize() {}
 
@@ -1952,7 +1950,7 @@ namespace RyoEngine {
 
 	void AnimEditor::Update() {
 		AnimEditor& instance = GetInstance();
-		Impl* impl = instance.m_pImpl;
+		Impl* impl = instance.m_pImpl.get();
 
 		// ★変更：deltaTimeの取得元を分離。
 		// デバッグビルドはこれまで通りImGuiのIOから取る。
@@ -2030,7 +2028,7 @@ namespace RyoEngine {
 #ifdef _DEBUG
 	void AnimEditor::WindowManager() {
 		AnimEditor& instance = GetInstance();
-		Impl* impl = instance.m_pImpl;
+		Impl* impl = instance.m_pImpl.get();
 
 		// ★追加：新規作成の対象種別（Model / Camera）を選ぶUI用の一時状態。
 		// コピー元選択(copySourceIdx)と同様、保存不要なUI状態としてstatic localで持つ。
@@ -2302,7 +2300,7 @@ namespace RyoEngine {
 
 	void AnimEditor::SaveSettings(const char* filePath) {
 		AnimEditor& instance = GetInstance();
-		Impl* impl = instance.m_pImpl;
+		Impl* impl = instance.m_pImpl.get();
 		std::filesystem::path p(filePath);
 		if (p.has_parent_path()) { std::filesystem::create_directories(p.parent_path()); }
 
@@ -2386,113 +2384,131 @@ namespace RyoEngine {
 	}
 
 	void AnimEditor::LoadSettings(const char* filePath) {
-	std::ifstream file(filePath);
-	if (!file.is_open()) return;
-	json j_root;
-	try { file >> j_root; }
-	catch (...) { return; }
+		std::ifstream file(filePath);
+		if (!file.is_open()) return;
+		json j_root;
+		try { file >> j_root; }
+		catch (...) { return; }
 
-	AnimEditor& instance = GetInstance();
-	Impl* impl = instance.m_pImpl;
-	impl->m_SubWindows.clear();
-	impl->m_SelectedWindowIdx = -1;
+		AnimEditor& instance = GetInstance();
+		Impl* impl = instance.m_pImpl.get();
+		impl->m_SubWindows.clear();
+		impl->m_SelectedWindowIdx = -1;
 
-	// ★追加：「他アニメーション終了」トリガーのグループ名を復元
-	impl->m_AnimEndGroupNames.clear();
-	if (j_root.contains("anim_end_groups") && j_root["anim_end_groups"].is_array()) {
-		for (const auto& g : j_root["anim_end_groups"]) {
-			if (g.contains("canonical_id") && g.contains("name")) {
-				impl->m_AnimEndGroupNames[g["canonical_id"].get<int32_t>()] = g["name"].get<std::string>();
+		// ★追加：「他アニメーション終了」トリガーのグループ名を復元
+		impl->m_AnimEndGroupNames.clear();
+		if (j_root.contains("anim_end_groups") && j_root["anim_end_groups"].is_array()) {
+			for (const auto& g : j_root["anim_end_groups"]) {
+				if (g.contains("canonical_id") && g.contains("name")) {
+					impl->m_AnimEndGroupNames[g["canonical_id"].get<int32_t>()] = g["name"].get<std::string>();
+				}
 			}
 		}
-	}
 
-	// ★変更：Model 側の animEditID は「1モデルにつき1つ」しか保持できず、
-	// 同じモデルを複数ウィンドウで参照するケースでは正しく復元できないため廃止。
-	// 各ウィンドウが保存している target_model_name を使って、後段で直接モデルを引き直す。
+		// ★変更：Model 側の animEditID は「1モデルにつき1つ」しか保持できず、
+		// 同じモデルを複数ウィンドウで参照するケースでは正しく復元できないため廃止。
+		// 各ウィンドウが保存している target_model_name を使って、後段で直接モデルを引き直す。
 
-	int32_t maxWindowId = 0;
+		int32_t maxWindowId = 0;
 
-	json j_windows = j_root.is_array() ? j_root : j_root.value("windows", json::array());
+		json j_windows = j_root.is_array() ? j_root : j_root.value("windows", json::array());
 
-	if (j_windows.is_array()) {
-		for (const auto& item : j_windows) {
-			if (item.contains("id") && item.contains("name")) {
-				// ⭕ unique_ptr として新しくインスタンスを生成
-				auto w = std::make_unique<Impl::WindowData>();
-				w->id = item["id"].get<int32_t>();
-				w->name = item["name"].get<std::string>();
-				w->is_open = false;
-				w->maxFrame = item.value("max_frame", 60);
-				w->currentFrame = 0;
-				w->insertX = item.value("insert_x", true);
-				w->insertY = item.value("insert_y", true);
-				w->insertZ = item.value("insert_z", true);
-				w->currentTransformMode = item.value("current_transform_mode", 0);
+		if (j_windows.is_array()) {
+			for (const auto& item : j_windows) {
+				if (item.contains("id") && item.contains("name")) {
+					// ⭕ unique_ptr として新しくインスタンスを生成
+					auto w = std::make_unique<Impl::WindowData>();
+					w->id = item["id"].get<int32_t>();
+					w->name = item["name"].get<std::string>();
+					w->is_open = false;
+					w->maxFrame = item.value("max_frame", 60);
+					w->currentFrame = 0;
+					w->insertX = item.value("insert_x", true);
+					w->insertY = item.value("insert_y", true);
+					w->insertZ = item.value("insert_z", true);
+					w->currentTransformMode = item.value("current_transform_mode", 0);
 
-				w->triggerFlagName = item.value("trigger_flag_name", "None");
-				w->triggerCondition = item.value("trigger_condition", true);
-				w->lastTriggerState = false;
+					w->triggerFlagName = item.value("trigger_flag_name", "None");
+					w->triggerCondition = item.value("trigger_condition", true);
+					w->lastTriggerState = false;
 
-				w->triggerSourceWindowId = item.value("trigger_source_window_id", -1);
-				w->justEnded = false;
+					w->triggerSourceWindowId = item.value("trigger_source_window_id", -1);
+					w->justEnded = false;
 
-				w->isLoop = item.value("is_loop", true);
-				w->maxLoopCount = item.value("max_loop_count", 1);
-				w->currentLoopCount = 0;
+					w->isLoop = item.value("is_loop", true);
+					w->maxLoopCount = item.value("max_loop_count", 1);
+					w->currentLoopCount = 0;
 
-				w->keepFlagName = item.value("keep_flag_name", "None");
-				w->keepCondition = item.value("keep_condition", true);
+					w->keepFlagName = item.value("keep_flag_name", "None");
+					w->keepCondition = item.value("keep_condition", true);
 
-				w->isGameSyncMode = item.value("isGameSyncMode", false);
+					w->isGameSyncMode = item.value("isGameSyncMode", false);
 #ifndef _DEBUG
-				// ★追加：リリースビルドにはエディタUIが無く、編集モードで動かす意味が無いため、
-				// 保存内容に関わらず必ずゲーム同期モードで読み込む。
-				w->isGameSyncMode = true;
+					// ★追加：リリースビルドにはエディタUIが無く、編集モードで動かす意味が無いため、
+					// 保存内容に関わらず必ずゲーム同期モードで読み込む。
+					w->isGameSyncMode = true;
 #endif
 
-				if (w->id > maxWindowId) {
-					maxWindowId = w->id;
-				}
-
-				// ★変更：モデル名で直接引き直す。これなら同じモデルを対象にした
-				// ウィンドウが複数あっても、それぞれが正しく再リンクできる。
-				w->targetModelName = item.value("target_model_name", "");
-				w->currentSelectModel = nullptr;
-				for (auto& pair : impl->m_pTargetModels) {
-					if (pair.first == w->targetModelName && pair.second != nullptr) {
-						w->currentSelectModel = pair.second;
-						break;
+					if (w->id > maxWindowId) {
+						maxWindowId = w->id;
 					}
-				}
 
-				// ★追加：Model/Cameraのどちらを対象にしていたか、およびカメラの再リンク
-				w->targetType = static_cast<Impl::WindowData::TargetType>(item.value("target_type", 0));
-				w->targetCameraName = item.value("target_camera_name", "");
-				w->currentSelectCamera = nullptr;
-				for (auto& pair : impl->m_pTargetCameras) {
-					if (pair.first == w->targetCameraName && pair.second != nullptr) {
-						w->currentSelectCamera = pair.second;
-						break;
+					// ★変更：モデル名で直接引き直す。これなら同じモデルを対象にした
+					// ウィンドウが複数あっても、それぞれが正しく再リンクできる。
+					w->targetModelName = item.value("target_model_name", "");
+					w->currentSelectModel = nullptr;
+					for (auto& pair : impl->m_pTargetModels) {
+						if (pair.first == w->targetModelName && pair.second != nullptr) {
+							w->currentSelectModel = pair.second;
+							break;
+						}
 					}
-				}
 
-				// データのクリア
-				for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
-					for (size_t i = 0; i < static_cast<size_t>(Impl::AxisGroup::MaxGroups); ++i) {
-						w->groupedKeyFrames[m][i].clear();
+					// ★追加：Model/Cameraのどちらを対象にしていたか、およびカメラの再リンク
+					w->targetType = static_cast<Impl::WindowData::TargetType>(item.value("target_type", 0));
+					w->targetCameraName = item.value("target_camera_name", "");
+					w->currentSelectCamera = nullptr;
+					for (auto& pair : impl->m_pTargetCameras) {
+						if (pair.first == w->targetCameraName && pair.second != nullptr) {
+							w->currentSelectCamera = pair.second;
+							break;
+						}
 					}
-				}
 
-				if (item.contains("grouped_keyframes_srt") && item["grouped_keyframes_srt"].is_array()) {
-					auto modes_arr = item["grouped_keyframes_srt"];
-					size_t max_m = std::min(modes_arr.size(), static_cast<size_t>(Impl::TransformMode::MaxModes));
+					// データのクリア
+					for (size_t m = 0; m < static_cast<size_t>(Impl::TransformMode::MaxModes); ++m) {
+						for (size_t i = 0; i < static_cast<size_t>(Impl::AxisGroup::MaxGroups); ++i) {
+							w->groupedKeyFrames[m][i].clear();
+						}
+					}
 
-					for (size_t m = 0; m < max_m; ++m) {
-						if (!modes_arr[m].is_array()) continue;
-						auto groups_arr = modes_arr[m];
+					if (item.contains("grouped_keyframes_srt") && item["grouped_keyframes_srt"].is_array()) {
+						auto modes_arr = item["grouped_keyframes_srt"];
+						size_t max_m = std::min(modes_arr.size(), static_cast<size_t>(Impl::TransformMode::MaxModes));
+
+						for (size_t m = 0; m < max_m; ++m) {
+							if (!modes_arr[m].is_array()) continue;
+							auto groups_arr = modes_arr[m];
+							size_t max_g = std::min(groups_arr.size(), static_cast<size_t>(Impl::AxisGroup::MaxGroups));
+
+							for (size_t i = 0; i < max_g; ++i) {
+								if (groups_arr[i].is_array()) {
+									for (const auto& k_item : groups_arr[i]) {
+										Impl::KeyFrame k;
+										k.frame = k_item.value("frame", 0);
+										k.value.x = k_item.value("val_x", 0.0f);
+										k.value.y = k_item.value("val_y", 0.0f);
+										k.value.z = k_item.value("val_z", 0.0f);
+										k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
+										k.group = static_cast<Impl::AxisGroup>(i);
+										w->groupedKeyFrames[m][i].push_back(k);
+									}
+								}
+							}
+						}
+					} else if (item.contains("grouped_keyframes") && item["grouped_keyframes"].is_array()) {
+						auto groups_arr = item["grouped_keyframes"];
 						size_t max_g = std::min(groups_arr.size(), static_cast<size_t>(Impl::AxisGroup::MaxGroups));
-
 						for (size_t i = 0; i < max_g; ++i) {
 							if (groups_arr[i].is_array()) {
 								for (const auto& k_item : groups_arr[i]) {
@@ -2503,53 +2519,35 @@ namespace RyoEngine {
 									k.value.z = k_item.value("val_z", 0.0f);
 									k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
 									k.group = static_cast<Impl::AxisGroup>(i);
-									w->groupedKeyFrames[m][i].push_back(k);
+									w->groupedKeyFrames[0][i].push_back(k);
 								}
 							}
 						}
 					}
-				} else if (item.contains("grouped_keyframes") && item["grouped_keyframes"].is_array()) {
-					auto groups_arr = item["grouped_keyframes"];
-					size_t max_g = std::min(groups_arr.size(), static_cast<size_t>(Impl::AxisGroup::MaxGroups));
-					for (size_t i = 0; i < max_g; ++i) {
-						if (groups_arr[i].is_array()) {
-							for (const auto& k_item : groups_arr[i]) {
-								Impl::KeyFrame k;
-								k.frame = k_item.value("frame", 0);
-								k.value.x = k_item.value("val_x", 0.0f);
-								k.value.y = k_item.value("val_y", 0.0f);
-								k.value.z = k_item.value("val_z", 0.0f);
-								k.easing = static_cast<EasingType>(k_item.value("easing", static_cast<int32_t>(EasingType::Lerp)));
-								k.group = static_cast<Impl::AxisGroup>(i);
-								w->groupedKeyFrames[0][i].push_back(k);
-							}
-						}
-					}
-				}
 
-				// 所有権を vector に移動
-				impl->m_SubWindows.push_back(std::move(w));
+					// 所有権を vector に移動
+					impl->m_SubWindows.push_back(std::move(w));
+				}
 			}
-		}
 
 #ifdef _DEBUG
-		// ⭕ 所有権移動後に正しい生ポインタ（.get()）をデリゲートに設定する（エディタUI専用）
-		for (auto& w : impl->m_SubWindows) {
-			w->delegate.m_pOwnerWindow = w.get();
-			w->delegate.m_pImpl = impl;
-		}
+			// ⭕ 所有権移動後に正しい生ポインタ（.get()）をデリゲートに設定する（エディタUI専用）
+			for (auto& w : impl->m_SubWindows) {
+				w->delegate.m_pOwnerWindow = w.get();
+				w->delegate.m_pImpl = impl;
+			}
 #endif // _DEBUG
+		}
+
+		Logger::LogSuccess("[Animation Editor] Load Successed.");
 	}
 
-	Logger::LogSuccess("[Animation Editor] Load Successed.");
-}
-
 #ifdef _DEBUG
-    // いつかモデルたちのSRTをデータ上に書き出す時が来たら、
-    // 0フレーム時のSRTをいじれるようにする
-    // 現在は読み取り専用
+	// いつかモデルたちのSRTをデータ上に書き出す時が来たら、
+	// 0フレーム時のSRTをいじれるようにする
+	// 現在は読み取り専用
 	void AnimEditor::ModelOperate() {
-		Impl* impl = GetInstance().m_pImpl;
+		Impl* impl = GetInstance().m_pImpl.get();
 
 		ImGui::Spacing();
 		if (ImGui::TreeNodeEx("登録済モデル (現在は読み取り専用)")) {

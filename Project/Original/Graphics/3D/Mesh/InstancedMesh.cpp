@@ -13,8 +13,8 @@ namespace RyoEngine {
             return it->second;
         }
 
-        // shared_ptrのコンストラクタはprivateなので、ここではnewを直接使う
-        std::shared_ptr<InstancedMesh> mesh(new InstancedMesh());
+       
+        std::shared_ptr<InstancedMesh> mesh = std::make_shared<InstancedMesh>(PassKey{});
         mesh->LoadFromFile(filePath);
         cache_[filePath] = mesh;
         return mesh;

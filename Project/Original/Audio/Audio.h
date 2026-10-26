@@ -5,12 +5,11 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <memory>
 
 namespace RyoEngine {
 	class Audio {
 	public:
-		static void DestroyInstance();
-
 		/// <summary>
 		/// 初期化
 		/// </summary>
@@ -111,7 +110,7 @@ namespace RyoEngine {
 		// 再生中のSEボイス1つ分
 		struct PlayingSE {
 			IXAudio2SourceVoice* pSourceVoice = nullptr;
-			SEVoiceCallback* pCallback = nullptr;
+			std::unique_ptr<SEVoiceCallback> pCallback;
 		};
 
 		Audio() = default;
@@ -125,8 +124,6 @@ namespace RyoEngine {
 
 		// 再生完了済みのSEボイスを破棄する
 		void CleanupFinishedSE();
-
-		static Audio* instance;
 
 		Microsoft::WRL::ComPtr<IXAudio2> xAudio2;
 		IXAudio2MasteringVoice* masterVoice = nullptr;

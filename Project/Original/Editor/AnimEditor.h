@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <memory>
 
 namespace RyoEngine {
 
@@ -55,6 +56,6 @@ namespace RyoEngine {
 		~AnimEditor();
 
 		struct Impl;
-		Impl* m_pImpl = nullptr;
+		std::unique_ptr<Impl> m_pImpl;
 	};
 }

@@ -32,11 +32,11 @@ namespace RyoEngine {
         DirectXCommon* dxCommon_ = nullptr;
         ShaderCompiler* shaderCompiler_ = nullptr;
         TextureManager* textureManager_ = nullptr;
-       
+
         ModelCommon* modelCommon_ = nullptr;
         SpriteCommon* spriteCommon_ = nullptr;
         //ReflectCommon* reflectCommon_ = nullptr;
-        Font* fontOutputer_ = nullptr;
+        std::unique_ptr<Font> fontOutputer_;
         Audio* audio_ = nullptr;
     }
 
@@ -104,7 +104,7 @@ namespace RyoEngine {
         );
 
         // フォント
-        fontOutputer_ = new Font();
+        fontOutputer_ = std::make_unique<Font>();
         fontOutputer_->Initialize("Resources/EngineResources/Debugfont/debugfont.fnt", "Resources/EngineResources/Debugfont/debugfont.png");
 
         TimeManager::Initialize();
@@ -119,15 +119,13 @@ namespace RyoEngine {
         Logger::Log("\n\n\n* Game Finish *\n\n");
 
         CameraManager::Finalize();
-        
+
         fontOutputer_->Finalize();
-        delete fontOutputer_;
-        fontOutputer_ = nullptr;
+        fontOutputer_.reset();
 
         ImGuiManager::Finalize();
 
         audio_->Finalize();
-        Audio::DestroyInstance();
 
         //reflectCommon_->Finalize();
         spriteCommon_->Finalize();
@@ -375,7 +373,7 @@ namespace RyoEngine {
     ModelCommon* GetModelCommon() { return modelCommon_; }
     SpriteCommon* GetSpriteCommon() { return spriteCommon_; }
     //ReflectCommon* GetReflectCommon() { return reflectCommon_; }
-    Font* GetFontOutputter() { return fontOutputer_; }
+    Font* GetFontOutputter() { return fontOutputer_.get(); }
 
 
     float GetDeltaTime() { return TimeManager::GetDeltaTime(); }

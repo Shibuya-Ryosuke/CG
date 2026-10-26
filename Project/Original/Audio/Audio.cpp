@@ -7,21 +7,10 @@
 #include <cassert>
 
 namespace RyoEngine {
-	// インスタンス初期化
-	Audio* Audio::instance = nullptr;
-
 	Audio* Audio::GetInstance() {
-		if (instance == nullptr) {
-			instance = new Audio();
-		}
-		return instance;
-	}
-
-	void Audio::DestroyInstance() {
-		if (instance) {
-			delete instance;
-			instance = nullptr;
-		}
+		// 関数内staticで生成(初回呼び出し時に1度だけ作られ、プログラム終了時に自動で破棄される)
+		static Audio instance;
+		return &instance;
 	}
 
 	void Audio::Initialize() {
@@ -65,7 +54,6 @@ namespace RyoEngine {
 			if (playing.pSourceVoice) {
 				playing.pSourceVoice->DestroyVoice();
 			}
-			delete playing.pCallback;
 		}
 		inst->playingSEs.clear();
 		inst->seDatas.clear();
@@ -88,7 +76,6 @@ namespace RyoEngine {
 		for (auto it = playingSEs.begin(); it != playingSEs.end(); ) {
 			if (it->pCallback->isFinished.load()) {
 				it->pSourceVoice->DestroyVoice();
-				delete it->pCallback;
 				it = playingSEs.erase(it);
 			} else {
 				++it;
@@ -261,14 +248,14 @@ namespace RyoEngine {
 
 		// 呼ぶたびに新しいSourceVoiceを作成するため、同じSEを重ねて再生できる
 		PlayingSE playing;
-		playing.pCallback = new SEVoiceCallback();
+		playing.pCallback = std::make_unique<SEVoiceCallback>();
 
 		hr = inst->xAudio2->CreateSourceVoice(
 			&playing.pSourceVoice,
 			&sound.wfex,
 			0,
 			XAUDIO2_DEFAULT_FREQ_RATIO,
-			playing.pCallback);
+			playing.pCallback.get());
 		assert(SUCCEEDED(hr));
 
 		// 音量設定
@@ -286,7 +273,7 @@ namespace RyoEngine {
 		hr = playing.pSourceVoice->Start();
 		assert(SUCCEEDED(hr));
 
-		inst->playingSEs.push_back(playing);
+		inst->playingSEs.push_back(std::move(playing));
 	}
 
 	void Audio::StopBGM(uint32_t handle) {

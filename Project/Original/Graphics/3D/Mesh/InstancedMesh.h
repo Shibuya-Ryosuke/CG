@@ -28,6 +28,14 @@ namespace RyoEngine {
         uint32_t GetTextureHandle() const { return textureHandle_; }
 
     private:
+        // make_shared用の鍵。privateなので外部からは作れない
+        struct PassKey { explicit PassKey() = default; };
+
+    public:
+        // make_shared用のコンストラクタ。PassKeyを作れるのはこのクラス内だけなので、実質privateと同じ
+        explicit InstancedMesh(PassKey) {}
+
+    private:
         InstancedMesh() = default;
         void LoadFromFile(const std::string& filePath);
 
