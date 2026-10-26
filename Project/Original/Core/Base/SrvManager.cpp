@@ -24,7 +24,7 @@ namespace RyoEngine {
 
         instance->nextIndex_ = 0;
         instance->freeList_.clear();
-#ifdef _DEBUG
+#ifdef NRELEASE
         instance->inUse_.assign(kMaxSRVCount, false);
 #endif
         Logger::LogSuccess("SrvManager : Initialized\n");
@@ -39,7 +39,7 @@ namespace RyoEngine {
         }
         instance->freeList_.clear();
         instance->nextIndex_ = 0;
-#ifdef _DEBUG
+#ifdef NRELEASE
         instance->inUse_.clear();
 #endif
         instance->descriptorHeap_.Reset();
@@ -58,7 +58,7 @@ namespace RyoEngine {
             assert(instance->nextIndex_ < kMaxSRVCount && "SRVヒープが満杯。kMaxSRVCountを増やすこと");
             index = instance->nextIndex_++;
         }
-#ifdef _DEBUG
+#ifdef NRELEASE
         instance->inUse_[index] = true;
 #endif
         return index;
@@ -68,7 +68,7 @@ namespace RyoEngine {
         SrvManager* instance = GetInstance();
 
         assert(index < instance->nextIndex_);
-#ifdef _DEBUG
+#ifdef NRELEASE
         assert(instance->inUse_[index] && "確保されていない(または解放済みの)スロットをFreeしようとした");
         instance->inUse_[index] = false;
 #endif

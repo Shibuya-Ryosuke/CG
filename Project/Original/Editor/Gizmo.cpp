@@ -1,6 +1,6 @@
 #include "Gizmo.h"
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 #include "../Externals/imgui/imgui.h"
 #include "../Externals/imgui/imgui_internal.h"
 #include "../Externals/imgui/ImGuizmo.h"

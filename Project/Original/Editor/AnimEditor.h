@@ -36,7 +36,7 @@ namespace RyoEngine {
 
 		// ★以下はエディタUI専用（ImGuiに依存）。デバッグビルドでのみ実体を持つ。
 		// リリースビルドでは何もしない関数として扱われる。
-#ifdef _DEBUG
+#ifdef NRELEASE
 		static void WindowManager();
 		static void DrawUI();
 		static void ModelOperate();

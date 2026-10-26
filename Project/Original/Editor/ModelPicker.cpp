@@ -1,6 +1,6 @@
 #include "ModelPicker.h"
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 #include <vector>
 #include <cmath>
 #include <algorithm>

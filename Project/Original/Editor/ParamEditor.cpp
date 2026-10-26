@@ -269,7 +269,7 @@ namespace RyoEngine {
     // --- 内部処理：ImGui描画 ---
 
     void ParamEditor::DrawImGuiInternal(const char* windowName) {
-#ifdef _DEBUG
+#ifdef NRELEASE
         ImGui::Begin(windowName);
 
         // --- フォルダパス・ファイル名の設定エリア ---
@@ -348,7 +348,7 @@ namespace RyoEngine {
     }
 
     void ParamEditor::DrawEntries(std::list<ParamEntry>& entries) {
-#ifdef _DEBUG
+#ifdef NRELEASE
         for (auto& e : entries) {
             ImGui::PushID(&e);
 

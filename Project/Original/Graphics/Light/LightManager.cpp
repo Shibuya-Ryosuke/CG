@@ -343,7 +343,7 @@ namespace RyoEngine {
     }
 
     void LightManager::DrawImGui() {
-#ifdef _DEBUG
+#ifdef NRELEASE
         auto instance = GetInstance();
 
         ImGui::Begin("LightManager");

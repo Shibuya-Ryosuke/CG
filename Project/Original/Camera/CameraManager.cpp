@@ -6,7 +6,7 @@
 #include <map>
 #include <vector>
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 #include <imgui.h>
 #endif
 
@@ -53,7 +53,7 @@ namespace RyoEngine {
 
         // その場で「今描画に使うべきカメラ」を判断する
         Camera& DecideActive() {
-#ifdef _DEBUG
+#ifdef NRELEASE
             if (debugCamera.GetIsAvailable()) {
                 return debugCamera;
             }
@@ -82,7 +82,7 @@ namespace RyoEngine {
         // デバッグカメラ初期化
         debugCamera.Initialize();
         // デバッグ時操作有効、それ以外では無効
-#ifdef _DEBUG
+#ifdef NRELEASE
         debugCamera.SetAvailable(true);
 #else
         debugCamera.SetAvailable(false);
@@ -245,7 +245,7 @@ namespace RyoEngine {
     }
 
     void CameraManager::DrawImGui() {
-#ifdef _DEBUG
+#ifdef NRELEASE
         ImGui::Begin("CameraManager");
 
         // --- 現在の状態 ---

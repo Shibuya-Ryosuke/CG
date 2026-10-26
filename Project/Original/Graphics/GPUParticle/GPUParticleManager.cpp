@@ -2,7 +2,7 @@
 #include "../../Core/Base/Logger.h"
 #include "../../Camera/CameraManager.h"
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 #include <imgui.h>
 #endif
 
@@ -17,7 +17,7 @@
 namespace RyoEngine {
 
     namespace {
-#ifdef _DEBUG
+#ifdef NRELEASE
         // 登録済みキーの一覧から1つ選ぶコンボ。選択が変わったらtrueを返す
         template <typename Map>
         bool DrawKeyCombo(const char* label, std::string& selectedKey, const Map& registry) {
@@ -60,7 +60,7 @@ namespace RyoEngine {
         GPUParticleManager* instance = GetInstance();
 
         Logger::Log("GPUParticleManager : Initializing...\n");
-#ifdef _DEBUG
+#ifdef NRELEASE
         strcpy_s(instance->folderPathBuffer_, sizeof(instance->folderPathBuffer_), instance->folderPath_.c_str());
 #endif
         Logger::LogSuccess("GPUParticleManager : Initialized\n");
@@ -128,7 +128,7 @@ namespace RyoEngine {
 
         auto managed = std::make_unique<ManagedEmitter>();
         managed->config = config;
-#ifdef _DEBUG
+#ifdef NRELEASE
         strcpy_s(managed->meshPathBuffer, sizeof(managed->meshPathBuffer), config.meshPath.c_str());
         strcpy_s(managed->texturePathBuffer, sizeof(managed->texturePathBuffer), config.texturePath.c_str());
 #endif
@@ -305,7 +305,7 @@ namespace RyoEngine {
         if (!instance->folderPath_.empty() && instance->folderPath_.back() != '/') {
             instance->folderPath_ += '/';
         }
-#ifdef _DEBUG
+#ifdef NRELEASE
         // ImGui用の入力バッファも同期する
         strcpy_s(instance->folderPathBuffer_, sizeof(instance->folderPathBuffer_), instance->folderPath_.c_str());
 #endif
@@ -422,7 +422,7 @@ namespace RyoEngine {
         GPUParticleManager* instance = GetInstance();
 
         std::string fullPath = GetFullFilePath();
-#ifdef _DEBUG
+#ifdef NRELEASE
         if (std::filesystem::exists(fullPath)) {
             instance->showOverwriteModal_ = true;
         } else {
@@ -478,7 +478,7 @@ namespace RyoEngine {
     void GPUParticleManager::DrawImGui() {
         GPUParticleManager* instance = GetInstance();
 
-#ifdef _DEBUG
+#ifdef NRELEASE
         ImGui::Begin("GPUParticleManager");
 
         // --- 保存・読込エリア ---

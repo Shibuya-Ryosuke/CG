@@ -2,7 +2,7 @@
 #include <RyoEngine.h>
 #include <cassert>
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 #include <imgui.h>
 #endif
 
@@ -65,7 +65,7 @@ namespace RyoEngine {
             inst.currentScene_->Initialize();
         }
 
-#ifdef _DEBUG
+#ifdef NRELEASE
         if (Input::TriggerKey(inst.reloadKey_)) {
             ReloadScene();
         }
@@ -115,7 +115,7 @@ namespace RyoEngine {
     }
 
     void SceneManager::DrawImGui() {
-#ifdef _DEBUG
+#ifdef NRELEASE
         ImGui::Begin("SceneManager");
 
         ImGui::Text("現在のシーン : %s", currentSceneName_.empty() ? "(なし)" : currentSceneName_.c_str());

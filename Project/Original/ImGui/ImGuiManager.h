@@ -10,7 +10,7 @@ namespace RyoEngine {
 
     class ImGuiManager {
     public:
-#ifdef _DEBUG
+#ifdef NRELEASE
         // SrvManager::Initialize()より後に呼ぶこと(フォント用のSRVスロットをSrvManagerから確保するため)
         static void Initialize(HWND hwnd, ID3D12Device* device, int bufferCount, DXGI_FORMAT rtvFormat);
         // SrvManager::Finalize()より前に呼ぶこと

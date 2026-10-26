@@ -190,7 +190,7 @@ namespace RyoEngine {
     }
 
     void ShadowMap::DrawImGui() {
-#ifdef _DEBUG
+#ifdef NRELEASE
         ShadowMap* instance = GetInstance();
 
         ImGui::Begin("Shadow");

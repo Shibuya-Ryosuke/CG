@@ -5,7 +5,7 @@
 #pragma comment(lib, "d3d12.lib")
 
 // ImGui使いますよー
-#ifdef USE_IMGUI
+#ifdef NRELEASE
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
 #include <imgui_impl_win32.h>
@@ -15,7 +15,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 namespace RyoEngine {
 
 	LRESULT WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-        #ifdef USE_IMGUI
+        #ifdef NRELEASE
 		if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
 			return true;
 		}

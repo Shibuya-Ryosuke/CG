@@ -247,7 +247,7 @@ namespace RyoEngine {
 	void DirectXCommon::PreDraw() {
 		DirectXCommon* instance = GetInstance();
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 		// --- [Debug時] ゲーム用テクスチャへ描画 ---
 		D3D12_RESOURCE_BARRIER gameTexBarrier{};
 		gameTexBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -306,7 +306,7 @@ namespace RyoEngine {
 
 		uint32_t backBufferIndex = instance->swapChain_->GetCurrentBackBufferIndex();
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 		// --- [Debug時] ゲーム用テクスチャからスワップチェーンへ切り替えてImGuiを描画 ---
 		D3D12_RESOURCE_BARRIER gameTexBarrier{};
 		gameTexBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;

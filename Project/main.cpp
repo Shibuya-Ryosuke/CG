@@ -1,6 +1,6 @@
 #include <RyoEngine.h>
 #include <Test/Test.h>
-#ifdef _DEBUG
+#ifdef NRELEASE
 #include <ImGui/ImGuiAllInclude.h>
 #endif
 

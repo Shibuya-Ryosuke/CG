@@ -67,7 +67,7 @@ namespace RyoEngine {
 
         uint32_t nextIndex_ = 0;          // まだ一度も使っていない先頭のスロット
         std::vector<uint32_t> freeList_;  // 返却されたスロット
-#ifdef _DEBUG
+#ifdef NRELEASE
         std::vector<bool> inUse_;         // 二重解放・未確保スロットへのアクセス検出用
 #endif
     };

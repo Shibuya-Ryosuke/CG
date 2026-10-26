@@ -2,7 +2,7 @@
 #include "../Core/Base/SrvManager.h"
 #include "../../Core/Base/Logger.h"
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 
 #include "ImGuiAllInclude.h"
 

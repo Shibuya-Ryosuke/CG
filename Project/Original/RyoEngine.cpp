@@ -11,7 +11,7 @@
 #pragma comment(lib, "dxguid.lib")
 
 namespace RyoEngine {
-#ifdef _DEBUG
+#ifdef NRELEASE
     namespace {
         Vector2 viewSize_{ 720.0f, 405.0f };
         bool onTheGameView = false;
@@ -164,7 +164,7 @@ namespace RyoEngine {
 
         TimeManager::NewFrame();
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 
         static float logTimer = 0.0f;
         logTimer += TimeManager::GetDeltaTime();       // 毎フレームの経過時間を足していく

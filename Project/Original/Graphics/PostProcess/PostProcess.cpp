@@ -523,7 +523,7 @@ namespace RyoEngine {
     void PostProcess::DrawImGui() {
         PostProcess* instance = GetInstance();
 
-#ifdef _DEBUG
+#ifdef NRELEASE
         ImGui::Begin("PostProcess");
         ImGui::SliderFloat("露出", &instance->exposure_, 0.0f, 5.0f);
         ImGui::Checkbox("ACES トーンマッピング", &instance->acesEnabled_);

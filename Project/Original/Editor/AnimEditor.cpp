@@ -18,7 +18,7 @@ using json = nlohmann::json;
 // ★変更：エディタUI(ImGui)に依存する部分だけをデバッグビルドに限定する。
 // トリガー判定・SRT適用・セーブ/ロード・モデル/フラグ登録などの「実行時コア機能」は
 // リリースビルドでもそのまま動作する（このインクルードだけデバッグ限定にする）。
-#ifdef _DEBUG
+#ifdef NRELEASE
 #include "../ImGui/ImGuiAllInclude.h"
 #endif
 
@@ -101,7 +101,7 @@ namespace RyoEngine {
 
 		// --- ImSequencer と ImCurveEdit を統合したデリゲートクラス ---
 		// ★エディタUI専用（ImSequencer/ImCurveEditはImGui前提のライブラリのため）。
-#ifdef _DEBUG
+#ifdef NRELEASE
 		struct WindowDelegate : public ImSequencer::SequenceInterface, public ImCurveEdit::Delegate {
 			Impl* m_pImpl = nullptr;
 			WindowData* m_pOwnerWindow = nullptr;
@@ -191,7 +191,7 @@ namespace RyoEngine {
 			// 区間をどんな曲線で結ぶかを決めるのに使う。
 			RyoEngine::EasingType GetEasing(size_t curveIndex, int pointIndex) const override;
 		};
-#endif // _DEBUG
+#endif // NRELEASE
 
 		struct WindowData {
 			// ウィンドウのID、名前
@@ -332,7 +332,7 @@ namespace RyoEngine {
 
 			// ★エディタUI専用メンバ。ImGui/ImSequencer/ImCurveEditに依存するため、
 			// リリースビルドでは持たない（実行時のトリガー/SRT適用ロジックは一切これらを使わない）。
-#ifdef _DEBUG
+#ifdef NRELEASE
 			// デリゲートの実体
 			WindowDelegate delegate;
 
@@ -341,7 +341,7 @@ namespace RyoEngine {
 			// これらを渡さず static のままにすると、全ウィンドウで操作が同期してしまう。
 			ImSequencer::SequencerState sequencerState;
 			ImCurveEdit::EditState curveEditState;
-#endif // _DEBUG
+#endif // NRELEASE
 		};
 
 		// 新規作成で作られたウィンドウたちの情報を格納する可変長配列
@@ -614,7 +614,7 @@ namespace RyoEngine {
 		// =========================================================================
 		//  UI / アニメーション処理関数（エディタUI専用、ImGuiに依存）
 		// =========================================================================
-#ifdef _DEBUG
+#ifdef NRELEASE
 		// タイムラインの描画
 		static void DrawTimeline(WindowData& window) {
 			ImGuiIO& io = ImGui::GetIO();
@@ -956,7 +956,7 @@ namespace RyoEngine {
 			}
 			ImGui::EndChild();
 		}
-#endif // _DEBUG
+#endif // NRELEASE
 
 		// 二つのキーフレームの間を補間させる（コア機能：SRT適用ロジックが使うため常にコンパイルする）
 		static float EvaluateAxisNew(int32_t currentFrame, const WindowData& window, int mode, int axisIndex, float defaultVal) {
@@ -1154,7 +1154,7 @@ namespace RyoEngine {
 		}
 
 		// 新規作成で作られたウィンドウの描画（エディタUI専用）
-#ifdef _DEBUG
+#ifdef NRELEASE
 		static void DrawSubWindow(WindowData& window, size_t index, Impl* impl) {
 			std::string window_title = "インスペクタ: " + window.name + "##" + std::to_string(window.id);
 
@@ -1756,11 +1756,11 @@ namespace RyoEngine {
 				ImGui::TreePop();
 			}
 		}
-#endif // _DEBUG
+#endif // NRELEASE
 	};
 
 	// --- 構造体の外側での WindowDelegate のメンバ関数定義（エディタUI専用） ---
-#ifdef _DEBUG
+#ifdef NRELEASE
 	size_t AnimEditor::Impl::WindowDelegate::GetPointCount(size_t curveIndex) {
 		// ⭕ m_pOwnerWindowのチェックに修正
 		if (!m_pOwnerWindow) return 0;
@@ -1925,7 +1925,7 @@ namespace RyoEngine {
 		const auto& targetRef = refs[pointIndex];
 		return window.groupedKeyFrames[mode][static_cast<size_t>(targetRef.group)][targetRef.index].easing;
 	}
-#endif // _DEBUG
+#endif // NRELEASE
 
 
 	// =========================================================================
@@ -1955,7 +1955,7 @@ namespace RyoEngine {
 		// ★変更：deltaTimeの取得元を分離。
 		// デバッグビルドはこれまで通りImGuiのIOから取る。
 		// リリースビルドはImGuiコンテキストに依存しないよう、自前のクロックで計測する。
-#ifdef _DEBUG
+#ifdef NRELEASE
 		float deltaTime = ImGui::GetIO().DeltaTime;
 #else
 		static auto s_lastUpdateTime = std::chrono::steady_clock::now();
@@ -1973,7 +1973,7 @@ namespace RyoEngine {
 
 		for (size_t i = 0; i < impl->m_SubWindows.size(); i++) {
 			auto& window = impl->m_SubWindows[i]; // window は std::unique_ptr<WindowData>& になります
-#ifdef _DEBUG
+#ifdef NRELEASE
 			window->delegate.m_pOwnerWindow = window.get(); // .get() で生ポインタを取得
 #endif
 
@@ -2001,7 +2001,7 @@ namespace RyoEngine {
 		}
 
 		// ★ここから下はエディタUI（ImGui）専用。リリースビルドには一切含まれない。
-#ifdef _DEBUG
+#ifdef NRELEASE
 		ImGui::Begin("Animation Editor");
 		{
 			WindowManager();
@@ -2022,10 +2022,10 @@ namespace RyoEngine {
 				ImGui::PopID();
 			}
 		}
-#endif // _DEBUG
+#endif // NRELEASE
 	}
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 	void AnimEditor::WindowManager() {
 		AnimEditor& instance = GetInstance();
 		Impl* impl = instance.m_pImpl.get();
@@ -2296,7 +2296,7 @@ namespace RyoEngine {
 	}
 
 	void AnimEditor::DrawUI() {}
-#endif // _DEBUG
+#endif // NRELEASE
 
 	void AnimEditor::SaveSettings(const char* filePath) {
 		AnimEditor& instance = GetInstance();
@@ -2443,7 +2443,7 @@ namespace RyoEngine {
 					w->keepCondition = item.value("keep_condition", true);
 
 					w->isGameSyncMode = item.value("isGameSyncMode", false);
-#ifndef _DEBUG
+#ifndef NRELEASE
 					// ★追加：リリースビルドにはエディタUIが無く、編集モードで動かす意味が無いため、
 					// 保存内容に関わらず必ずゲーム同期モードで読み込む。
 					w->isGameSyncMode = true;
@@ -2530,19 +2530,19 @@ namespace RyoEngine {
 				}
 			}
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 			// ⭕ 所有権移動後に正しい生ポインタ（.get()）をデリゲートに設定する（エディタUI専用）
 			for (auto& w : impl->m_SubWindows) {
 				w->delegate.m_pOwnerWindow = w.get();
 				w->delegate.m_pImpl = impl;
 			}
-#endif // _DEBUG
+#endif // NRELEASE
 		}
 
 		Logger::LogSuccess("[Animation Editor] Load Successed.");
 	}
 
-#ifdef _DEBUG
+#ifdef NRELEASE
 	// いつかモデルたちのSRTをデータ上に書き出す時が来たら、
 	// 0フレーム時のSRTをいじれるようにする
 	// 現在は読み取り専用
@@ -2690,7 +2690,7 @@ namespace RyoEngine {
 			ImGui::TreePop();
 		}
 	}
-#endif // _DEBUG
+#endif // NRELEASE
 
 	void AnimEditor::SetTargetModel(Model* model, const std::string& name) {
 		if (model == nullptr) {

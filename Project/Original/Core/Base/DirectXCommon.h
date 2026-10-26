@@ -63,7 +63,7 @@ namespace RyoEngine {
 		// PostProcess::Composite()が、HDR合成後の結果をgameRenderTargetResource_へ
 		// 書き戻す際にOMSetRenderTargetsで使うためのRTV CPUハンドル
 		static D3D12_CPU_DESCRIPTOR_HANDLE GetGameRenderTargetRTVHandle() {
-#ifdef _DEBUG
+#ifdef NRELEASE
 			// Debug時: ImGui表示用のゲームテクスチャのRTVを返す
 			return GetInstance()->gameRtvHeap_->GetCPUDescriptorHandleForHeapStart();
 #else
