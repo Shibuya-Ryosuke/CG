@@ -86,8 +86,8 @@ namespace RyoEngine {
         // 正投影行列
         Matrix4x4 projectionMatrix = MakeOrthographicMatrix(
             0.0f, 0.0f,
-            (float)DirectXCommon::GetBackBufferWidth(),
-            (float)DirectXCommon::GetBackBufferHeight(),
+            (float)DirectXCommon::GetGameWidth(),
+            (float)DirectXCommon::GetGameHeight(),
             0.0f, 100.0f
         );
 

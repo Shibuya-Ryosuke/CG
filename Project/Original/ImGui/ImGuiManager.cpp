@@ -5,6 +5,8 @@
 #ifdef NRELEASE
 
 #include "ImGuiAllInclude.h"
+#include <imgui_internal.h> // DockBuilder(初期配置の作成)用
+#include <filesystem>
 
 
 namespace RyoEngine {
@@ -37,6 +39,9 @@ namespace RyoEngine {
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+        // 保存済みのドッキング配置(imgui.ini)が無ければ、最初のフレームで初期配置を作る
+        instance->needDefaultLayout_ = (io.IniFilename != nullptr) && !std::filesystem::exists(io.IniFilename);
+
         ImFontConfig config;
         config.MergeMode = false;
 
@@ -45,7 +50,7 @@ namespace RyoEngine {
         ImVec4* colors = ImGui::GetStyle().Colors;
         colors[ImGuiCol_Text] = ImVec4(0.90f, 0.90f, 0.90f, 1.00f);
         colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
-        colors[ImGuiCol_WindowBg] = ImVec4(0.04f, 0.04f, 0.06f, 0.85f);
+        colors[ImGuiCol_WindowBg] = ImVec4(0.02f, 0.02f, 0.03f, 1.00f);
         colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
         colors[ImGuiCol_PopupBg] = ImVec4(0.11f, 0.11f, 0.14f, 0.92f);
         colors[ImGuiCol_Border] = ImVec4(0.50f, 0.50f, 0.50f, 0.50f);
@@ -53,34 +58,34 @@ namespace RyoEngine {
         colors[ImGuiCol_FrameBg] = ImVec4(0.43f, 0.43f, 0.43f, 0.39f);
         colors[ImGuiCol_FrameBgHovered] = ImVec4(0.47f, 0.47f, 0.69f, 0.40f);
         colors[ImGuiCol_FrameBgActive] = ImVec4(0.42f, 0.41f, 0.64f, 0.69f);
-        colors[ImGuiCol_TitleBg] = ImVec4(0.27f, 0.27f, 0.54f, 0.83f);
-        colors[ImGuiCol_TitleBgActive] = ImVec4(0.32f, 0.32f, 0.63f, 0.87f);
-        colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.40f, 0.40f, 0.80f, 0.20f);
-        colors[ImGuiCol_MenuBarBg] = ImVec4(0.40f, 0.40f, 0.55f, 0.80f);
-        colors[ImGuiCol_ScrollbarBg] = ImVec4(0.20f, 0.25f, 0.30f, 0.60f);
-        colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.40f, 0.40f, 0.80f, 0.30f);
+        colors[ImGuiCol_TitleBg] = ImVec4(1.00f, 0.56f, 1.00f, 0.03f);
+        colors[ImGuiCol_TitleBgActive] = ImVec4(0.12f, 0.00f, 0.04f, 1.00f);
+        colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.20f, 0.00f, 0.08f, 1.00f);
+        colors[ImGuiCol_MenuBarBg] = ImVec4(0.89f, 0.62f, 1.00f, 0.17f);
+        colors[ImGuiCol_ScrollbarBg] = ImVec4(0.29f, 0.29f, 0.31f, 0.19f);
+        colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.20f, 0.40f, 0.59f, 0.28f);
         colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.40f, 0.40f, 0.80f, 0.40f);
         colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.41f, 0.39f, 0.80f, 0.60f);
-        colors[ImGuiCol_CheckMark] = ImVec4(0.00f, 1.00f, 0.85f, 0.50f);
+        colors[ImGuiCol_CheckMark] = ImVec4(1.00f, 0.56f, 0.11f, 1.00f);
         colors[ImGuiCol_SliderGrab] = ImVec4(1.00f, 1.00f, 1.00f, 0.30f);
         colors[ImGuiCol_SliderGrabActive] = ImVec4(0.41f, 0.39f, 0.80f, 0.60f);
-        colors[ImGuiCol_Button] = ImVec4(0.35f, 0.40f, 0.61f, 0.62f);
+        colors[ImGuiCol_Button] = ImVec4(0.11f, 0.39f, 0.64f, 0.14f);
         colors[ImGuiCol_ButtonHovered] = ImVec4(0.40f, 0.48f, 0.71f, 0.79f);
         colors[ImGuiCol_ButtonActive] = ImVec4(0.46f, 0.54f, 0.80f, 1.00f);
-        colors[ImGuiCol_Header] = ImVec4(0.40f, 0.40f, 0.90f, 0.45f);
-        colors[ImGuiCol_HeaderHovered] = ImVec4(0.45f, 0.45f, 0.90f, 0.80f);
-        colors[ImGuiCol_HeaderActive] = ImVec4(0.53f, 0.53f, 0.87f, 0.80f);
+        colors[ImGuiCol_Header] = ImVec4(0.00f, 0.37f, 0.39f, 0.15f);
+        colors[ImGuiCol_HeaderHovered] = ImVec4(0.44f, 0.65f, 0.48f, 0.56f);
+        colors[ImGuiCol_HeaderActive] = ImVec4(0.25f, 0.42f, 0.37f, 0.18f);
         colors[ImGuiCol_Separator] = ImVec4(0.50f, 0.50f, 0.50f, 0.60f);
         colors[ImGuiCol_SeparatorHovered] = ImVec4(0.60f, 0.60f, 0.70f, 1.00f);
         colors[ImGuiCol_SeparatorActive] = ImVec4(0.70f, 0.70f, 0.90f, 1.00f);
         colors[ImGuiCol_ResizeGrip] = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
         colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.78f, 0.82f, 1.00f, 0.60f);
         colors[ImGuiCol_ResizeGripActive] = ImVec4(0.78f, 0.82f, 1.00f, 0.90f);
-        colors[ImGuiCol_Tab] = ImVec4(0.34f, 0.34f, 0.68f, 0.79f);
-        colors[ImGuiCol_TabHovered] = ImVec4(0.45f, 0.45f, 0.90f, 0.80f);
-        colors[ImGuiCol_TabActive] = ImVec4(0.40f, 0.40f, 0.73f, 0.84f);
-        colors[ImGuiCol_TabUnfocused] = ImVec4(0.28f, 0.28f, 0.57f, 0.82f);
-        colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.35f, 0.35f, 0.65f, 0.84f);
+        colors[ImGuiCol_Tab] = ImVec4(0.20f, 0.17f, 0.16f, 1.00f);
+        colors[ImGuiCol_TabHovered] = ImVec4(1.00f, 0.96f, 0.29f, 0.48f);
+        colors[ImGuiCol_TabActive] = ImVec4(1.00f, 0.46f, 0.02f, 0.38f);
+        colors[ImGuiCol_TabUnfocused] = ImVec4(0.00f, 0.16f, 0.09f, 0.24f);
+        colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.00f, 0.25f, 0.20f, 0.84f);
         colors[ImGuiCol_DockingPreview] = ImVec4(0.40f, 0.40f, 0.90f, 0.31f);
         colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
         colors[ImGuiCol_PlotLines] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
@@ -106,6 +111,10 @@ namespace RyoEngine {
 
 
 
+
+
+
+
         ImFont* font = io.Fonts->AddFontFromFileTTF(ttcPath, 13.0f, &config, io.Fonts->GetGlyphRangesJapanese());
         if (font == nullptr) {
             std::string errorMsg = "Cannot load the ttc file.\nPath searched for: " + std::string(ttcPath);
@@ -118,8 +127,49 @@ namespace RyoEngine {
         ImGui_ImplDX12_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-        ImGui::DockSpaceOverViewport();
+        ImGuiID dockspaceId = ImGui::DockSpaceOverViewport();
+        ImGuiManager* instance = GetInstance();
+        if (instance->needDefaultLayout_) {
+            instance->needDefaultLayout_ = false;
+            BuildDefaultLayout(dockspaceId);
+        }
         ImGuizmo::BeginFrame();
+    }
+
+    void ImGuiManager::BuildDefaultLayout(uint32_t dockspaceId) {
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+        ImGui::DockBuilderRemoveNode(dockspaceId);
+        ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(dockspaceId, viewport->WorkSize);
+
+        // 右(25%) → 残りを下(25%)に分割し、真ん中をGame Viewにする。右はさらに上下に分ける
+        ImGuiID center = dockspaceId;
+        ImGuiID right = ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.25f, nullptr, &center);
+        ImGuiID bottom = ImGui::DockBuilderSplitNode(center, ImGuiDir_Down, 0.25f, nullptr, &center);
+        ImGuiID rightBottom = ImGui::DockBuilderSplitNode(right, ImGuiDir_Down, 0.5f, nullptr, &right);
+
+        ImGui::DockBuilderDockWindow("Game View", center);
+
+        // 右上：選択・配置まわり
+        ImGui::DockBuilderDockWindow("Gizmo", right);
+        ImGui::DockBuilderDockWindow("Model Layout", right);
+        ImGui::DockBuilderDockWindow("CameraManager", right);
+        ImGui::DockBuilderDockWindow("SceneManager", right);
+        ImGui::DockBuilderDockWindow("Parameter Editor", right);
+
+        // 右下：描画の設定まわり
+        ImGui::DockBuilderDockWindow("LightManager", rightBottom);
+        ImGui::DockBuilderDockWindow("Shadow", rightBottom);
+        ImGui::DockBuilderDockWindow("PostProcess", rightBottom);
+        ImGui::DockBuilderDockWindow("GPUParticleManager", rightBottom);
+        ImGui::DockBuilderDockWindow("Animation Editor", rightBottom);
+
+        // 下：ログ・パフォーマンス
+        ImGui::DockBuilderDockWindow("Log Console", bottom);
+        ImGui::DockBuilderDockWindow("Performance", bottom);
+
+        ImGui::DockBuilderFinish(dockspaceId);
     }
 
     void ImGuiManager::EndFrame(ID3D12GraphicsCommandList* commandList) {

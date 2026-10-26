@@ -53,7 +53,7 @@ namespace RyoEngine {
         static void SetCamera(const Camera& camera);
 
         /// <summary>
-        /// 2D用のスクリーンサイズを設定する(省略時は1280x720)。
+        /// 2D用のスクリーンサイズを設定する(省略時はゲーム画面の解像度)。
         /// </summary>
         static void SetScreenSize(float width, float height);
 

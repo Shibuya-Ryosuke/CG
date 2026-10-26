@@ -94,13 +94,6 @@ namespace RyoEngine {
     /// <param name="scale"></param>
     void SetTimeScale(float scale);
 
-    /// <summary>
-    /// ImGuiのゲーム画面サイズセット
-    /// (リリースでは処理なし関数に変化)
-    /// </summary>
-    /// <param name="viewSize">ゲーム画面サイズ(初期値 960*540)</param>
-    void SetImGuiViewSize(Vector2 viewSize);
-
     bool GetOnTheGameView();
 
     inline void SetCameraForPrimitive(const Camera& camera) {

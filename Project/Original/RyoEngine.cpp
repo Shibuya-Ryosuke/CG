@@ -13,17 +13,12 @@
 namespace RyoEngine {
 #ifdef NRELEASE
     namespace {
-        Vector2 viewSize_{ 720.0f, 405.0f };
         bool onTheGameView = false;
-    }
-    void SetImGuiViewSize(Vector2 viewSize) {
-        viewSize_ = viewSize;
     }
     bool GetOnTheGameView() {
         return onTheGameView;
     }
 #else
-    void SetImGuiViewSize(Vector2 viewSize) {};
     bool GetOnTheGameView() { return true; };
 #endif
     // 匿名名前空間：この cpp ファイルの中からしかアクセスできない領域
@@ -152,6 +147,9 @@ namespace RyoEngine {
     }
 
     void NewFrame() {
+        // ウィンドウのサイズが変わっていたら、スワップチェーンを作り直す(前フレームのGPU処理は完了済み)
+        DirectXCommon::ResizeSwapChainIfNeeded();
+
         PrimitiveRenderer::NewFrame();
         ModelCommon::CommandsClear();
         SpriteCommon::CommandsClear();
@@ -180,9 +178,20 @@ namespace RyoEngine {
         CameraManager::UpdateDebugCamera();
 
         // ゲーム画面
-        ImGui::Begin("Game View");
+        ImGui::Begin("Game View", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
         D3D12_GPU_DESCRIPTOR_HANDLE gameTexHandle = DirectXCommon::GetGameTextureGPUHandle();
-        ImVec2 viewSize{ viewSize_.x,viewSize_.y };
+        // ウィンドウの空き領域に、ゲーム画面の比率(16:9)を保ったまま最大の大きさで中央に表示する
+        // (ドッキングでGame Viewが狭くなっても、ゲーム画面が切れたり隠れたりしないようにするため)
+        const ImVec2 avail = ImGui::GetContentRegionAvail();
+        const float gameAspect = static_cast<float>(DirectXCommon::GetGameWidth()) / static_cast<float>(DirectXCommon::GetGameHeight());
+        ImVec2 viewSize{ avail.x, avail.x / gameAspect };
+        if (viewSize.y > avail.y) {
+            viewSize = { avail.y * gameAspect, avail.y };
+        }
+        viewSize.x = (std::max)(viewSize.x, 1.0f);
+        viewSize.y = (std::max)(viewSize.y, 1.0f);
+        const ImVec2 cursor = ImGui::GetCursorPos();
+        ImGui::SetCursorPos({ cursor.x + (std::max)((avail.x - viewSize.x) * 0.5f, 0.0f), cursor.y + (std::max)((avail.y - viewSize.y) * 0.5f, 0.0f) });
         ImGui::Image(reinterpret_cast<ImTextureID>(gameTexHandle.ptr), viewSize);
         // ギズモの描画範囲 = ゲーム画面の画像範囲
         Gizmo::SetViewRect(ImGui::GetItemRectMin().x, ImGui::GetItemRectMin().y,

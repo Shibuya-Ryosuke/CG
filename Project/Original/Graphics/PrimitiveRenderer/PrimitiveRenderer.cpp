@@ -15,8 +15,8 @@ namespace RyoEngine {
 
     namespace {
         constexpr uint32_t kMaxVerticesPerGroup = 16384; // 1グループ(線3D/面3D/線2D/面2D)あたりの最大頂点数
-        constexpr float kDefaultScreenWidth = 1280.0f;
-        constexpr float kDefaultScreenHeight = 720.0f;
+        constexpr float kDefaultScreenWidth = 1920.0f;
+        constexpr float kDefaultScreenHeight = 1080.0f;
     }
 
     // ---- static メンバの実体 ----
@@ -64,7 +64,8 @@ namespace RyoEngine {
         vpResource2D_->Map(0, nullptr, reinterpret_cast<void**>(&vpData2D_));
         *vpData2D_ = MakeIdentity4x4();
 
-        SetScreenSize(kDefaultScreenWidth, kDefaultScreenHeight);
+        // 2Dの座標系はゲーム画面の解像度に合わせる(スプライト/フォントと同じ基準)
+        SetScreenSize(static_cast<float>(DirectXCommon::GetGameWidth()), static_cast<float>(DirectXCommon::GetGameHeight()));
 
         // --- ルートシグネチャ & PSO ---
         CreateRootSignature();

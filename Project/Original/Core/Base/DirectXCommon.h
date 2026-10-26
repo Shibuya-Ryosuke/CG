@@ -13,7 +13,9 @@ namespace RyoEngine {
 		/// <summary>
 		/// DirectX初期化
 		/// </summary>
-		static void Initialize(int32_t width = 1280, int32_t height = 720);
+		/// <param name="width">ゲーム画面の解像度(横)。UI座標の基準になる</param>
+		/// <param name="height">ゲーム画面の解像度(縦)</param>
+		static void Initialize(int32_t width = 1920, int32_t height = 1080);
 
 		/// <summary>
 		/// 解放
@@ -31,6 +33,12 @@ namespace RyoEngine {
 		static void PostDraw();
 
 		static void CreateGameRenderTarget();
+
+		/// <summary>
+		/// ウィンドウのサイズが変わっていたら、スワップチェーンをその大きさに作り直す(Debug/Developmentのみ)。
+		/// ゲーム画面の解像度は変わらない。フレームの最初(GPUの処理が終わっている時)に呼ぶこと。
+		/// </summary>
+		static void ResizeSwapChainIfNeeded();
 
 		static void WaitForFence();
 		// ディスクリプタヒープの生成
@@ -50,8 +58,12 @@ namespace RyoEngine {
 		static D3D12_CPU_DESCRIPTOR_HANDLE GetDSVHandle() {
 			return GetInstance()->dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 		}
-		static int32_t GetBackBufferWidth() { return GetInstance()->backBufferWidth_; }
-		static int32_t GetBackBufferHeight() { return GetInstance()->backBufferHeight_; }
+		// ゲーム画面の解像度(3D描画・ポストプロセス・スプライト/フォントの座標の基準)
+		static int32_t GetGameWidth() { return GetInstance()->gameWidth_; }
+		static int32_t GetGameHeight() { return GetInstance()->gameHeight_; }
+		// スワップチェーン(実際にウィンドウへ出す絵)の大きさ。Debug/Developmentではウィンドウに追従する
+		static int32_t GetSwapChainWidth() { return GetInstance()->swapChainWidth_; }
+		static int32_t GetSwapChainHeight() { return GetInstance()->swapChainHeight_; }
 		static uint32_t GetBackBufferCount() { return 2; }
 		static DXGI_FORMAT GetBackBufferFormat() { return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; }
 
@@ -104,8 +116,12 @@ namespace RyoEngine {
 		HANDLE fenceEvent_ = nullptr;
 
 		// 画面サイズ保持
-		int32_t backBufferWidth_ = 0;
-		int32_t backBufferHeight_ = 0;
+		// ゲーム画面の解像度(Debug/Releaseで共通。UI配置がズレないようにするため)
+		int32_t gameWidth_ = 0;
+		int32_t gameHeight_ = 0;
+		// スワップチェーンの大きさ(Debug/Development:ウィンドウのクライアント領域 / Release:ゲーム解像度)
+		int32_t swapChainWidth_ = 0;
+		int32_t swapChainHeight_ = 0;
 
 		// DSV用ディスクリプタヒープ
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap_;

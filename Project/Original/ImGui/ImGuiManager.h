@@ -34,5 +34,10 @@ namespace RyoEngine {
         ImGuiManager& operator=(const ImGuiManager&) = delete;
 
         uint32_t fontSrvIndex_ = 0;  // フォントテクスチャ用にSrvManagerから確保したスロット
+
+        // imgui.iniが無いとき(初回起動・iniを消したとき)、最初のフレームで初期配置を作る
+        bool needDefaultLayout_ = false;
+        // Game Viewを中央、各パネルを右と下にドッキングした初期配置を作る (dockspaceIdはImGuiID)
+        static void BuildDefaultLayout(uint32_t dockspaceId);
     };
 }

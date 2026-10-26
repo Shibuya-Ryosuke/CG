@@ -6,6 +6,7 @@
 #include "SrvManager.h"
 #include <format>
 #include <cassert>
+#include <algorithm>
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -21,8 +22,17 @@ namespace RyoEngine {
 
 		Logger::Log("DxCommon : Initializing...\n");
 
-		instance->backBufferWidth_ = width;
-		instance->backBufferHeight_ = height;
+		instance->gameWidth_ = width;
+		instance->gameHeight_ = height;
+#ifdef NRELEASE
+		// エディタではImGuiごとウィンドウいっぱいに描くので、スワップチェーンはウィンドウの大きさに合わせる
+		instance->swapChainWidth_ = (std::max)(WinApp::GetClientWidth(), 1);
+		instance->swapChainHeight_ = (std::max)(WinApp::GetClientHeight(), 1);
+#else
+		// Releaseはゲーム画面を直接描くので、スワップチェーン = ゲーム解像度(モニターとの差はDXGIが引き伸ばす)
+		instance->swapChainWidth_ = width;
+		instance->swapChainHeight_ = height;
+#endif
 
 		HRESULT hr = S_OK;
 
@@ -128,8 +138,8 @@ namespace RyoEngine {
 		// スワップチェーンを生成する
 		instance->swapChain_ = nullptr;
 		DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
-		swapChainDesc.Width = static_cast<UINT>(instance->backBufferWidth_);    // 画面の幅。ウィンドウのクライアント領域を同じものにしておく
-		swapChainDesc.Height = static_cast<UINT>(instance->backBufferHeight_);  // 画面の高さ。ウィンドウのクライアント領域を同じものにしておく
+		swapChainDesc.Width = static_cast<UINT>(instance->swapChainWidth_);    // 画面の幅。ウィンドウのクライアント領域を同じものにしておく
+		swapChainDesc.Height = static_cast<UINT>(instance->swapChainHeight_);  // 画面の高さ。ウィンドウのクライアント領域を同じものにしておく
 		swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 色の形式
 		swapChainDesc.SampleDesc.Count = 1; // マルチサンプルしない
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // 描画のターゲットとして利用する
@@ -139,6 +149,9 @@ namespace RyoEngine {
 		hr = instance->dxgiFactory_->CreateSwapChainForHwnd(instance->commandQueue_.Get(), WinApp::GetHwnd(), &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(instance->swapChain_.GetAddressOf()));
 		// スワップチェーンが生成できなかったので起動できない
 		assert(SUCCEEDED(hr));
+
+		// Alt+EnterでDXGIが勝手に排他フルスクリーンへ切り替えないようにする
+		instance->dxgiFactory_->MakeWindowAssociation(WinApp::GetHwnd(), DXGI_MWA_NO_ALT_ENTER);
 
 
 		// ディスクリプタヒープ生成
@@ -283,8 +296,8 @@ namespace RyoEngine {
 
 		// ビューポートとシザー矩形の設定
 		D3D12_VIEWPORT viewport{};
-		viewport.Width = static_cast<float>(instance->backBufferWidth_);
-		viewport.Height = static_cast<float>(instance->backBufferHeight_);
+		viewport.Width = static_cast<float>(instance->gameWidth_);
+		viewport.Height = static_cast<float>(instance->gameHeight_);
 		viewport.TopLeftX = 0;
 		viewport.TopLeftY = 0;
 		viewport.MinDepth = 0.0f;
@@ -292,9 +305,9 @@ namespace RyoEngine {
 
 		D3D12_RECT scissorRect{};
 		scissorRect.left = 0;
-		scissorRect.right = instance->backBufferWidth_;
+		scissorRect.right = instance->gameWidth_;
 		scissorRect.top = 0;
-		scissorRect.bottom = instance->backBufferHeight_;
+		scissorRect.bottom = instance->gameHeight_;
 
 		instance->commandList_->RSSetViewports(1, &viewport);
 		instance->commandList_->RSSetScissorRects(1, &scissorRect);
@@ -378,8 +391,8 @@ namespace RyoEngine {
 
 		// 1. レンダーターゲットとして使えるテクスチャリソースの設定
 		D3D12_RESOURCE_DESC texDesc{};
-		texDesc.Width = instance->backBufferWidth_;
-		texDesc.Height = instance->backBufferHeight_;
+		texDesc.Width = instance->gameWidth_;
+		texDesc.Height = instance->gameHeight_;
 		texDesc.MipLevels = 1;
 		texDesc.DepthOrArraySize = 1;
 		texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // ImGuiで扱いやすいフォーマット
@@ -422,6 +435,47 @@ namespace RyoEngine {
 		SrvManager::CreateSRVForTexture2D(instance->gameTextureSrvIndex_, instance->gameRenderTargetResource_.Get(), texDesc.Format, 1);
 
 		Logger::LogSuccess("* Created *\n");
+	}
+
+	void DirectXCommon::ResizeSwapChainIfNeeded() {
+#ifdef NRELEASE
+		DirectXCommon* instance = GetInstance();
+
+		const int32_t width = WinApp::GetClientWidth();
+		const int32_t height = WinApp::GetClientHeight();
+		// 変わっていない・最小化中(0x0)なら何もしない
+		if (width <= 0 || height <= 0 ||
+			(width == instance->swapChainWidth_ && height == instance->swapChainHeight_)) {
+			return;
+		}
+
+		// GPUがバックバッファを使い終わるのを待ってから作り直す
+		WaitForFence();
+
+		// ResizeBuffersの前に、バックバッファへの参照をすべて手放す必要がある
+		for (uint32_t i = 0; i < 2; ++i) {
+			instance->swapChainResources_[i].Reset();
+		}
+
+		HRESULT hr = instance->swapChain_->ResizeBuffers(2, static_cast<UINT>(width), static_cast<UINT>(height), DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+		assert(SUCCEEDED(hr));
+		instance->swapChainWidth_ = width;
+		instance->swapChainHeight_ = height;
+
+		// 新しいバックバッファを取り直して、同じヒープの位置にRTVを作り直す
+		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
+		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		const uint32_t descriptorSizeRTV = instance->device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		for (uint32_t i = 0; i < 2; ++i) {
+			hr = instance->swapChain_->GetBuffer(i, IID_PPV_ARGS(&instance->swapChainResources_[i]));
+			assert(SUCCEEDED(hr));
+			instance->device_->CreateRenderTargetView(instance->swapChainResources_[i].Get(), &rtvDesc,
+				GetCPUDescriptorHandle(instance->rtvHeap_, descriptorSizeRTV, i));
+		}
+
+		Logger::Log(std::format("DxCommon : SwapChain resized -> {} x {}\n", width, height));
+#endif
 	}
 
 	void DirectXCommon::WaitForFence() {
@@ -495,8 +549,8 @@ namespace RyoEngine {
 	void DirectXCommon::CreateDepthStencilView() {
 		// 生成するResourceの設定
 		D3D12_RESOURCE_DESC resourceDesc{};
-		resourceDesc.Width = backBufferWidth_;  // Textureの幅
-		resourceDesc.Height = backBufferHeight_;  // Textureの高さ
+		resourceDesc.Width = gameWidth_;  // Textureの幅(深度バッファはゲーム画面と同じ解像度)
+		resourceDesc.Height = gameHeight_;  // Textureの高さ
 		resourceDesc.MipLevels = 1;  // mipmapの数
 		resourceDesc.DepthOrArraySize = 1;  // 奥行き or 配列Textureの数
 		resourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;  // DepthStencilとして利用可能なフォーマット

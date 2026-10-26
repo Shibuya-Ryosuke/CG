@@ -76,8 +76,8 @@ namespace RyoEngine {
         auto device = DirectXCommon::GetDevice();
 
         D3D12_RESOURCE_DESC resourceDesc{};
-        resourceDesc.Width = static_cast<UINT>(DirectXCommon::GetBackBufferWidth());
-        resourceDesc.Height = static_cast<UINT>(DirectXCommon::GetBackBufferHeight());
+        resourceDesc.Width = static_cast<UINT>(DirectXCommon::GetGameWidth());
+        resourceDesc.Height = static_cast<UINT>(DirectXCommon::GetGameHeight());
         resourceDesc.MipLevels = 1;
         resourceDesc.DepthOrArraySize = 1;
         resourceDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -207,8 +207,8 @@ namespace RyoEngine {
     void PostProcess::CreateBloomLevels() {
         auto device = DirectXCommon::GetDevice();
 
-        uint32_t width = static_cast<uint32_t>(DirectXCommon::GetBackBufferWidth());
-        uint32_t height = static_cast<uint32_t>(DirectXCommon::GetBackBufferHeight());
+        uint32_t width = static_cast<uint32_t>(DirectXCommon::GetGameWidth());
+        uint32_t height = static_cast<uint32_t>(DirectXCommon::GetGameHeight());
 
         bloomLevels_.clear();
         bloomLevels_.reserve(kBloomLevelCount);
@@ -501,17 +501,17 @@ namespace RyoEngine {
         commandList->OMSetRenderTargets(1, &gameRtvHandle, false, nullptr);
 
         // NOTE: RenderBloom()内でビューポート/シザーをブルーム用の縮小解像度に変更しているため、
-        //       ここでバックバッファサイズへ明示的に戻す必要がある
+        //       ここでゲーム画面の解像度へ明示的に戻す必要がある
         D3D12_VIEWPORT viewport{};
-        viewport.Width = static_cast<float>(DirectXCommon::GetBackBufferWidth());
-        viewport.Height = static_cast<float>(DirectXCommon::GetBackBufferHeight());
+        viewport.Width = static_cast<float>(DirectXCommon::GetGameWidth());
+        viewport.Height = static_cast<float>(DirectXCommon::GetGameHeight());
         viewport.MinDepth = 0.0f;
         viewport.MaxDepth = 1.0f;
         commandList->RSSetViewports(1, &viewport);
 
         D3D12_RECT scissorRect{};
-        scissorRect.right = static_cast<LONG>(DirectXCommon::GetBackBufferWidth());
-        scissorRect.bottom = static_cast<LONG>(DirectXCommon::GetBackBufferHeight());
+        scissorRect.right = static_cast<LONG>(DirectXCommon::GetGameWidth());
+        scissorRect.bottom = static_cast<LONG>(DirectXCommon::GetGameHeight());
         commandList->RSSetScissorRects(1, &scissorRect);
 
         commandList->SetPipelineState(instance->compositePipelineState_.Get());

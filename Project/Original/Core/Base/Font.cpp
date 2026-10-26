@@ -104,8 +104,8 @@ namespace RyoEngine {
         // WVP行列には正投影行列（Orthographic）をあらかじめ入れておきます。
         *wvpData_ = MakeOrthographicMatrix(
             0.0f, 0.0f,
-            (float)DirectXCommon::GetBackBufferWidth(),
-            (float)DirectXCommon::GetBackBufferHeight(),
+            (float)DirectXCommon::GetGameWidth(),
+            (float)DirectXCommon::GetGameHeight(),
             0.0f, 100.0f
         );
     }
@@ -244,8 +244,8 @@ namespace RyoEngine {
         if (charCount > 0) {
             *wvpData_ = MakeOrthographicMatrix(
                 0.0f, 0.0f,
-                (float)DirectXCommon::GetBackBufferWidth(),
-                (float)DirectXCommon::GetBackBufferHeight(),
+                (float)DirectXCommon::GetGameWidth(),
+                (float)DirectXCommon::GetGameHeight(),
                 0.0f, 100.0f
             );
             materialData_->uvTransform = MakeIdentity4x4();

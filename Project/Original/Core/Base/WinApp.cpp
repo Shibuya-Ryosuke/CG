@@ -28,6 +28,14 @@ namespace RyoEngine {
 			// OSに対して、アプリの終了を伝える
 			PostQuitMessage(0);
 			return 0;
+			// ウィンドウのサイズが変わった(最大化・ドラッグでのサイズ変更など)
+		case WM_SIZE:
+			// 最小化中はクライアント領域が0x0になるので、最後の大きさのままにしておく
+			if (wparam != SIZE_MINIMIZED) {
+				GetInstance()->clientWidth_ = static_cast<int32_t>(LOWORD(lparam));
+				GetInstance()->clientHeight_ = static_cast<int32_t>(HIWORD(lparam));
+			}
+			break;
 		}
 
 		// 標準のメッセージ処理を行う
@@ -58,16 +66,32 @@ namespace RyoEngine {
 		// ウィンドウサイズを表す構造体にクライアント領域を入れる
 		RECT wrc = { 0,0,width,height };
 
+#ifdef NRELEASE
+		// エディタ用：枠付き・サイズ変更可能なウィンドウ(このあと最大化で表示する)
+		const DWORD windowStyle = WS_OVERLAPPEDWINDOW;
 		// クライアント領域をもとに実際のサイズにwrcを変更してもらう
-		AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
+		AdjustWindowRect(&wrc, windowStyle, false);
+		const int windowX = CW_USEDEFAULT;   // 表示位置はWindowsに任せる
+		const int windowY = CW_USEDEFAULT;
+#else
+		// Release：枠なしでメインモニター全体を覆う(ボーダーレスフルスクリーン)
+		// スワップチェーンはゲーム解像度のまま作り、モニターとの大きさの差はDXGIに引き伸ばしてもらう
+		const DWORD windowStyle = WS_POPUP;
+		MONITORINFO monitorInfo{};
+		monitorInfo.cbSize = sizeof(monitorInfo);
+		GetMonitorInfo(MonitorFromPoint({ 0, 0 }, MONITOR_DEFAULTTOPRIMARY), &monitorInfo);
+		wrc = monitorInfo.rcMonitor;
+		const int windowX = wrc.left;
+		const int windowY = wrc.top;
+#endif
 
 		// ウィンドウの生成
 		instance->hwnd_ = CreateWindow(
 			instance->wc_.lpszClassName,        // 利用するクラス名
 			title,                   // タイトルバーの文字
-			WS_OVERLAPPEDWINDOW,     // よく見るウィンドウスタイル
-			CW_USEDEFAULT,           // 表示X座標(Windowsに任せる)
-			CW_USEDEFAULT,           // 表示Y座標(WindowsOSに任せる)
+			windowStyle,             // ウィンドウスタイル(Debug/Development:枠付き / Release:枠なし)
+			windowX,                 // 表示X座標
+			windowY,                 // 表示Y座標
 			wrc.right - wrc.left,    // ウィンドウ横幅
 			wrc.bottom - wrc.top,    // ウィンドウ縦幅
 			nullptr,                 // 親ウィンドウハンドル
@@ -92,8 +116,18 @@ namespace RyoEngine {
 			return;
 		}
 
-		// ウィンドウを表示する
+		// ウィンドウを表示する(Debug/Developmentはエディタとして使いやすいよう最大化する)
+#ifdef NRELEASE
+		ShowWindow(instance->hwnd_, SW_MAXIMIZE);
+#else
 		ShowWindow(instance->hwnd_, SW_SHOW);
+#endif
+
+		// 表示後の実際のクライアント領域を記録しておく(以降はWM_SIZEで追従する)
+		RECT clientRect{};
+		GetClientRect(instance->hwnd_, &clientRect);
+		instance->clientWidth_ = static_cast<int32_t>(clientRect.right - clientRect.left);
+		instance->clientHeight_ = static_cast<int32_t>(clientRect.bottom - clientRect.top);
 		Logger::LogSuccess("WinApp : Initialized\n");
 	}
 

@@ -30,7 +30,7 @@ namespace RyoEngine {
 		assert(SUCCEEDED(result));
 		// 排他制御レベルセット
 		result = instance->keyboard_->SetCooperativeLevel(
-			hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
+			hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
 		assert(SUCCEEDED(result));
 
 
