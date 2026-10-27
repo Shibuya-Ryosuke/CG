@@ -24,12 +24,30 @@ namespace AL4_1 {
 			// --- タイトル ---
 			TitleLogo,
 			PressSpace,
+			PressButton,
 			// --- クリア・ゲームオーバー ---
 			TextClearTime,
 			MenuRetry,
 			MenuTitle,
+			// --- 操作方法 ---
+			Keyboard_Move,
+			Keyboard_Jump,
+			keyboard_Attack,
+			Pad_Move,
+			Pad_Jump,
+			Pad_Attack,
+			Pad_Diagram,
 			// --- 数字（Num0～Num9 の並びは変えないこと。Num0 + 数字 で取り出す） ---
-			Num0, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9,
+			Num0,
+			Num1,
+			Num2,
+			Num3,
+			Num4,
+			Num5,
+			Num6,
+			Num7,
+			Num8,
+			Num9,
 			NumDot,
 			NumS,
 			// --- ゲージ ---
