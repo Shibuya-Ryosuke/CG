@@ -39,6 +39,8 @@ namespace AL4_1 {
 		// フェードインが終わったときの処理
 		void OnFadeInFinished();
 		void RegisterInParamEditor();
+		// ゲーム中のBGMの音量（フェードに、Game が持つ倍率を掛ける。クリアのBGMもここで流す）
+		void UpdateGameBGM();
 		// フェードの濃さに合わせたBGMの音量（真っ黒で0、透明で bgmVolume_）
 		float GetFadeBGMVolume() const { return bgmVolume_ * (1.0f - fade_.GetAlpha()); }
 

@@ -58,6 +58,16 @@ namespace AL4_1 {
 		void ResetPostEffects();
 
 		void ResetPlayer();
+
+		// ---- BGM（音量そのものは SceneManager が決める。ここでは倍率だけ持つ） ----
+		// ゲームのBGMの倍率（撃破・ゲームオーバーで0まで下げる）
+		float GetGameBGMRate() const { return gameBGMRate_; }
+		// クリアのBGMの倍率（流し始めてから0→1に上げる）
+		float GetClearBGMRate() const { return clearBGMRate_; }
+		// クリアのBGMを流し始めるフレームだけ true
+		bool IsClearBGMStartTrigger() const { return isClearBGMStartTrigger_; }
+		// クリアのBGMを流しているか
+		bool IsClearBGMPlaying() const { return isClearBGMPlaying_; }
 	private:
 		void SpawnFromMap();
 
@@ -76,6 +86,14 @@ namespace AL4_1 {
 		void UpdateGameOver();
 
 		void RegisterInParamEditor();
+
+		// ---- BGM ----
+		// ゲームのBGMを下げ始める
+		void StartGameBGMFadeOut();
+		// BGMの倍率を進める（クリアのSEが鳴った後にクリアのBGMを流す）
+		void UpdateBGM();
+		// BGMの倍率を最初の状態に戻す
+		void ResetBGM();
 
 		// ---- 振動（小・中・大） ----
 		struct Vibration {
@@ -137,6 +155,20 @@ namespace AL4_1 {
 		float gameOverTime_ = 1.5f;
 		float gameOverMaxNoise_ = 0.8f;
 		float gameOverMaxBlur_ = 0.02f;
+
+		// BGM（倍率は SceneManager の音量に掛ける）
+		float gameBGMRate_ = 1.0f;
+		float clearBGMRate_ = 0.0f;
+		bool isGameBGMFadingOut_ = false;	// ゲームのBGMを下げている途中か
+		float gameBGMFadeTimer_ = 0.0f;
+		bool isWaitingClearBGM_ = false;	// クリアのSEが鳴って、クリアのBGMを待っているか
+		float clearBGMWaitTimer_ = 0.0f;
+		bool isClearBGMStartTrigger_ = false;
+		bool isClearBGMPlaying_ = false;
+		float clearBGMFadeTimer_ = 0.0f;
+		float bgmFadeOutTime_ = 0.8f;		// ゲームのBGMを0まで下げる時間
+		float clearBGMDelay_ = 1.5f;		// クリアのSEが鳴ってから、クリアのBGMを流すまでの時間
+		float clearBGMFadeInTime_ = 1.0f;	// クリアのBGMを上げきるまでの時間
 
 		// 振動
 		Vibration vibrationSmall_{ 0.15f, 0.35f, 0.08f };	// 攻撃・跳ね返した弾がボスに当たった

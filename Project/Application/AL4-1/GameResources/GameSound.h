@@ -66,7 +66,7 @@ namespace AL4_1 {
 			seHandles[static_cast<uint32_t>(SE::Player_Land)] = RyoEngine::LoadSE(playerSePath + "player_land.wav");
 			seHandles[static_cast<uint32_t>(SE::Player_TakeDamage)] = RyoEngine::LoadSE(playerSePath + "player_takeDamage.wav");
 			// --- ボス ---
-			seHandles[static_cast<uint32_t>(SE::Boss_Shot)] = RyoEngine::LoadSE(bossSePath + "boss_shot.wav");
+			seHandles[static_cast<uint32_t>(SE::Boss_Shot)] = RyoEngine::LoadSE(bossSePath + "boss_shot2.wav");
 			seHandles[static_cast<uint32_t>(SE::Boss_MeleeCharge)] =RyoEngine:: LoadSE(bossSePath + "boss_meleeCharge.wav");
 			seHandles[static_cast<uint32_t>(SE::Boss_MeleeBurst)] = RyoEngine::LoadSE(bossSePath + "boss_meleeBurst.wav");
 			seHandles[static_cast<uint32_t>(SE::Boss_Stun)] = RyoEngine::LoadSE(bossSePath + "boss_stun.wav");

@@ -82,6 +82,8 @@ namespace AL4_1 {
 					0.0f };
 				velocity_ = SteerXY(velocity_, toTarget, ToRad(reflectTurnRate_) * dt, reflectSpeed_);
 			}
+			// 色（毎フレーム入れ直して、ParamEditorで変えたらすぐ反映されるようにする）
+			owner_->SetInstanceColor(handle_, param_.reflectColor);
 		} else if (homingTimer_ > 0.0f && homingTarget_) {
 			// ボスの追尾弾：一定時間だけプレイヤーへ曲がる
 			homingTimer_ -= dt;
@@ -118,6 +120,9 @@ namespace AL4_1 {
 		const float s = param_.reflectScale;
 		transform_.scale = { s, s, s };
 		obb_.size = { param_.halfSize.x * s, param_.halfSize.y * s, param_.halfSize.z * s };
+
+		// はね返した弾の色にする（使い回すときは Fire() で元の色に戻る）
+		owner_->SetInstanceColor(handle_, param_.reflectColor);
 	}
 
 	void Bullet::OnCollision() {
@@ -147,6 +152,7 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("turnRate", &param_.reflectTurnRate, 1.0f, 0.0f, 2000.0f);
 		ParamEditor::RegisterValue("turnAccel", &param_.reflectTurnAccel, 1.0f, 0.0f, 5000.0f);
 		ParamEditor::RegisterValue("scale", &param_.reflectScale, 0.01f, 0.1f, 5.0f);
+		ParamEditor::RegisterColor("color", &param_.reflectColor);
 		ParamEditor::EndGroup();
 	}
 }

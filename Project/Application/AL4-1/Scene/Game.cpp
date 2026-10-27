@@ -90,10 +90,15 @@ namespace AL4_1 {
 		// クリア・失敗の文字が出た瞬間に音を鳴らす
 		if (gameUI_.IsClearTextAppeared()) {
 			GameSound::PlaySE(GameSound::SE::Clear);
+			// SEが鳴ってから、少し待ってクリアのBGMを流す
+			isWaitingClearBGM_ = true;
+			clearBGMWaitTimer_ = 0.0f;
 		}
 		if (gameUI_.IsFailedTextAppeared()) {
 			GameSound::PlaySE(GameSound::SE::Failed);
 		}
+		// BGMの倍率（SEが聞こえるようにゲームのBGMを下げる・クリアのBGMを上げる）
+		UpdateBGM();
 
 		// 当たり判定走査（戦闘中だけ）
 		if (phase_ == Phase::Battle) {
@@ -172,6 +177,8 @@ namespace AL4_1 {
 		isRequestTitle_ = false;
 		isRequestRetry_ = false;
 		fullParryBullet_ = nullptr;
+		// BGMの倍率を戻す（クリアのBGMは SceneManager が止める）
+		ResetBGM();
 		// 前のゲームの振動を残さない
 		Input::StopVibration();
 		// フェードインが終わるまでは Wait で待つ
@@ -194,6 +201,9 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("gameOverTime", &gameOverTime_, 0.01f, 0.01f, 10.0f);
 		ParamEditor::RegisterValue("gameOverMaxNoise", &gameOverMaxNoise_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("gameOverMaxBlur", &gameOverMaxBlur_, 0.0005f, 0.0f, 0.1f);
+		ParamEditor::RegisterValue("bgmFadeOutTime", &bgmFadeOutTime_, 0.01f, 0.01f, 10.0f);
+		ParamEditor::RegisterValue("clearBGMDelay", &clearBGMDelay_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("clearBGMFadeInTime", &clearBGMFadeInTime_, 0.01f, 0.01f, 10.0f);
 		ParamEditor::EndGroup();
 
 		ParamEditor::BeginGroup("Vibration");
@@ -253,6 +263,8 @@ namespace AL4_1 {
 			followCamera_.SetFocus(boss_.GetCenter());
 			// 撃破アニメーションが始まったらHPバーとゲージを消していく
 			gameUI_.SetHpVisible(false);
+			// クリアのSEが聞こえるように、ゲームのBGMを下げていく
+			StartGameBGMFadeOut();
 			break;
 
 		case Phase::ClearResult:
@@ -277,6 +289,8 @@ namespace AL4_1 {
 			// 致命傷を受けたのでHPバーとゲージを消していき、失敗の文字を出す
 			gameUI_.SetHpVisible(false);
 			gameUI_.ShowFailedText();
+			// 失敗のSEが聞こえるように、ゲームのBGMを0まで下げていく
+			StartGameBGMFadeOut();
 			// 被弾・パリィの演出が途中で止まったままにならないように戻す
 			SetTimeScale(1.0f);
 			auto ppInstance = PostProcess::GetInstance();
@@ -396,6 +410,60 @@ namespace AL4_1 {
 			}
 			GameSound::PlaySE(GameSound::SE::Decide);
 		}
+	}
+
+	//==================================================
+	// BGM
+	//==================================================
+
+	void Game::StartGameBGMFadeOut() {
+		if (isGameBGMFadingOut_) { return; }
+		isGameBGMFadingOut_ = true;
+		gameBGMFadeTimer_ = 0.0f;
+	}
+
+	void Game::UpdateBGM() {
+		// 流し始めの合図は1フレームだけ
+		isClearBGMStartTrigger_ = false;
+		// パリィのスローに引っぱられないよう実時間で進める
+		const float dt = GetDeltaTime();
+
+		// ゲームのBGMを0まで下げる
+		if (isGameBGMFadingOut_) {
+			gameBGMFadeTimer_ += dt;
+			const float t = std::clamp(gameBGMFadeTimer_ / std::max(bgmFadeOutTime_, 0.01f), 0.0f, 1.0f);
+			gameBGMRate_ = EaseInOutCubic(t, 1.0f, 0.0f);
+		}
+
+		// クリアのSEが鳴ってから、少し待ってクリアのBGMを流し始める
+		if (isWaitingClearBGM_) {
+			clearBGMWaitTimer_ += dt;
+			if (clearBGMWaitTimer_ >= clearBGMDelay_) {
+				isWaitingClearBGM_ = false;
+				isClearBGMStartTrigger_ = true;
+				isClearBGMPlaying_ = true;
+				clearBGMFadeTimer_ = 0.0f;
+			}
+		}
+
+		// クリアのBGMを上げていく
+		if (isClearBGMPlaying_) {
+			clearBGMFadeTimer_ += dt;
+			const float t = std::clamp(clearBGMFadeTimer_ / std::max(clearBGMFadeInTime_, 0.01f), 0.0f, 1.0f);
+			clearBGMRate_ = EaseInOutCubic(t, 0.0f, 1.0f);
+		}
+	}
+
+	void Game::ResetBGM() {
+		gameBGMRate_ = 1.0f;
+		clearBGMRate_ = 0.0f;
+		isGameBGMFadingOut_ = false;
+		gameBGMFadeTimer_ = 0.0f;
+		isWaitingClearBGM_ = false;
+		clearBGMWaitTimer_ = 0.0f;
+		isClearBGMStartTrigger_ = false;
+		isClearBGMPlaying_ = false;
+		clearBGMFadeTimer_ = 0.0f;
 	}
 
 	void Game::ResetPostEffects() {

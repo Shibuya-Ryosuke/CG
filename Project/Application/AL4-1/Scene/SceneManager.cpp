@@ -85,7 +85,11 @@ namespace AL4_1 {
 		}
 
 		// BGMの音量をフェードに合わせる（暗くなるほど小さく、明るくなるほど大きく）
-		GameSound::SetBGMVolume(currentBGM_, GetFadeBGMVolume());
+		if (scene_ == Scene::Game) {
+			UpdateGameBGM();
+		} else {
+			GameSound::SetBGMVolume(currentBGM_, GetFadeBGMVolume());
+		}
 	}
 
 	void SceneManager::Draw(RyoEngine::Camera& debugCamera) {
@@ -130,6 +134,20 @@ namespace AL4_1 {
 		// ゲームはフェードインが終わってからボス登場演出を始める
 		if (scene_ == Scene::Game) {
 			game_.BeginIntro();
+		}
+	}
+
+	void SceneManager::UpdateGameBGM() {
+		// クリアのSEが鳴り終わるころに、クリアのBGMを最初から流す（音量は0から上がっていく）
+		if (game_.IsClearBGMStartTrigger()) {
+			GameSound::StopBGM(GameSound::BGM::Clear);
+			GameSound::PlayBGM(GameSound::BGM::Clear, 0.0f);
+		}
+		// 撃破・ゲームオーバーで下げた分を掛ける
+		GameSound::SetBGMVolume(GameSound::BGM::Game, GetFadeBGMVolume() * game_.GetGameBGMRate());
+		// クリアのBGMは流しているときだけ
+		if (game_.IsClearBGMPlaying()) {
+			GameSound::SetBGMVolume(GameSound::BGM::Clear, GetFadeBGMVolume() * game_.GetClearBGMRate());
 		}
 	}
 

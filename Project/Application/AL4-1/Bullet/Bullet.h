@@ -51,16 +51,17 @@ namespace AL4_1 {
 			float reflectTurnRate = 180.0f;
 			float reflectTurnAccel = 720.0f;
 			float reflectScale = 1.5f;
+			RyoEngine::Vector4 reflectColor = { 0.4f, 0.9f, 1.0f, 1.0f };	// はね返した弾の色（水色）
 		};
 		inline static Param param_{};
 
 		RyoEngine::Transform transform_{
-			.scale={1.0f,1.0f,1.0f}
+			.scale = {1.0f,1.0f,1.0f}
 		};
 		RyoEngine::Vector3 velocity_{};
 		RyoEngine::OBB obb_{
 			.orientations = { {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f}, {0.0f,0.0f,1.0f} },
-			.size={1.0f,1.0f,1.0f}
+			.size = {1.0f,1.0f,1.0f}
 		};
 
 		RyoEngine::InstancedModel* owner_ = nullptr;

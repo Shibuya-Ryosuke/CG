@@ -334,8 +334,8 @@
                 1.5
             ],
             "translate": [
-                33.41413116455078,
-                14.766070365905762,
+                4.0,
+                10.717622756958008,
                 0.0
             ]
         }
@@ -351,6 +351,12 @@
     },
     "BulletReflect": {
         "accel": 60.0,
+        "color": [
+            0.46568626165390015,
+            1.0,
+            0.9528546333312988,
+            1.0
+        ],
         "damage": 5.0,
         "lifeTime": 5.0,
         "maxSpeed": 40.0,
@@ -384,6 +390,9 @@
         "menuStickThreshold": 0.5
     },
     "GameFlow": {
+        "bgmFadeOutTime": 0.800000011920929,
+        "clearBGMDelay": 1.5,
+        "clearBGMFadeInTime": 1.0,
         "defeatHoldTime": 1.0,
         "defeatReturnTime": 1.2000000476837158,
         "gameOverMaxBlur": 0.019999999552965164,
@@ -747,8 +756,8 @@
                 1.0
             ],
             "translate": [
-                8.0,
-                3.0,
+                28.657527923583984,
+                11.0,
                 0.0
             ]
         },

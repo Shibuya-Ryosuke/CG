@@ -110,7 +110,7 @@ namespace AL4_1 {
 			// 着地
 			if (hit.bottom) {
 				velocity_.y = 0.0f;
-				GameSound::PlaySE(GameSound::SE::Player_Land);
+				//GameSound::PlaySE(GameSound::SE::Player_Land);
 			}
 			// 天井に頭をぶつけた
 			if (hit.top && velocity_.y > 0.0f) {
@@ -243,11 +243,11 @@ namespace AL4_1 {
 			effectMaxChromatic_ = fullParryMaxChromatic_;
 			effectSlowScale_ = fullParrySlowScale_;
 			effectHoldTime_ = fullParryEffectHoldTime_;
-			GameSound::PlaySE(GameSound::SE::Player_FullParry);
+			GameSound::PlaySE(GameSound::SE::Player_FullParry,0.25f);
 		} else {
 			// ゲージを溜める（近接のカウンターの方が多く溜まる）
 			gauge_ = min(maxGauge_, gauge_ + (isCounter ? counterGaugeGain_ : parryGaugeGain_));
-			GameSound::PlaySE(GameSound::SE::Player_Parry);
+			GameSound::PlaySE(GameSound::SE::Player_Parry,0.2f);
 			// ここに来るのは満タンでなかったときだけなので、満タンになったら「満タンになった瞬間」
 			if (IsGaugeMax()) {
 				isGaugeMaxTrigger_ = true;

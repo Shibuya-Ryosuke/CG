@@ -500,7 +500,7 @@ namespace AL4_1 {
 
 	Bullet* Boss::FireBullet(const RyoEngine::Vector3& velocity) {
 		if (!bulletManager_) { return nullptr; }
-		GameSound::PlaySE(GameSound::SE::Boss_Shot);
+		GameSound::PlaySE(GameSound::SE::Boss_Shot,0.1f);
 		return bulletManager_->Fire(transform_.translate, velocity);
 	}
 
