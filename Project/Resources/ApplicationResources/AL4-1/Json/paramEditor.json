@@ -334,8 +334,8 @@
                 1.5
             ],
             "translate": [
-                4.0,
-                15.212305068969727,
+                33.41413116455078,
+                14.766070365905762,
                 0.0
             ]
         }
@@ -380,7 +380,8 @@
         "zoomOffsetY": 1.2000000476837158
     },
     "Game": {
-        "maxBulletCount": 128
+        "maxBulletCount": 128,
+        "menuStickThreshold": 0.5
     },
     "GameFlow": {
         "defeatHoldTime": 1.0,
@@ -446,6 +447,67 @@
             "scale": [
                 0.800000011920929,
                 0.800000011920929
+            ]
+        },
+        "Controls": {
+            "debugDevice": 0,
+            "debugForceVisible": false,
+            "diagramPosition": [
+                888.0,
+                649.0
+            ],
+            "diagramScale": [
+                0.30000001192092896,
+                0.30000001192092896
+            ],
+            "isDiagramEnabled": false,
+            "keyAttackPosition": [
+                1027.0,
+                695.0
+            ],
+            "keyAttackScale": [
+                0.4000000059604645,
+                0.4000000059604645
+            ],
+            "keyJumpPosition": [
+                1028.0,
+                655.0
+            ],
+            "keyJumpScale": [
+                0.4000000059604645,
+                0.4000000059604645
+            ],
+            "keyMovePosition": [
+                1029.0,
+                617.0
+            ],
+            "keyMoveScale": [
+                0.4000000059604645,
+                0.4000000059604645
+            ],
+            "padAttackPosition": [
+                1016.0,
+                695.0
+            ],
+            "padAttackScale": [
+                0.3499999940395355,
+                0.3499999940395355
+            ],
+            "padJumpPosition": [
+                1015.0,
+                657.0
+            ],
+            "padJumpScale": [
+                0.3499999940395355,
+                0.3499999940395355
+            ],
+            "padMovePosition": [
+                1016.0,
+                612.0
+            ],
+            "padMoveScale": [
+                0.3499999940395355,
+                0.3499999940395355
             ]
         },
         "FailedDim": {
@@ -672,6 +734,7 @@
         "maxFallSpeed": 60.0,
         "maxHp": 100.0,
         "moveSpeed": 12.0,
+        "padStickDeadZone": 0.30000001192092896,
         "transform": {
             "rotate": [
                 0.0,
@@ -684,14 +747,15 @@
                 1.0
             ],
             "translate": [
-                11.652658462524414,
-                7.511868476867676,
+                8.0,
+                3.0,
                 0.0
             ]
         },
         "turnDelay": 0.10000000149011612
     },
     "SceneManager": {
+        "bgmVolume": 0.10000000149011612,
         "fadeInTime": 0.5,
         "fadeOutTime": 0.5
     },
@@ -708,6 +772,7 @@
             16.799999237060547,
             -35.0
         ],
+        "debugDevice": 0,
         "flickerInterval": 1.600000023841858,
         "flickerMinAlpha": 0.5,
         "flickerOffset": 6.0,
@@ -720,6 +785,14 @@
             0.8500000238418579,
             0.8500000238418579
         ],
+        "pressButtonPosition": [
+            640.0,
+            540.0
+        ],
+        "pressButtonScale": [
+            0.699999988079071,
+            0.699999988079071
+        ],
         "pressSpacePosition": [
             640.0,
             540.0
@@ -728,5 +801,22 @@
             0.699999988079071,
             0.699999988079071
         ]
+    },
+    "Vibration": {
+        "Large": {
+            "duration": 0.5,
+            "high": 0.800000011920929,
+            "low": 1.0
+        },
+        "Medium": {
+            "duration": 0.25,
+            "high": 0.5,
+            "low": 0.5
+        },
+        "Small": {
+            "duration": 0.07999999821186066,
+            "high": 0.3499999940395355,
+            "low": 0.15000000596046448
+        }
     }
 }

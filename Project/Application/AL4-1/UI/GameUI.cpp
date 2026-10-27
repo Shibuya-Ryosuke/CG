@@ -64,6 +64,27 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("fadeTime", &time_.fadeTime, 0.01f, 0.0f, 5.0f);
 		ParamEditor::EndGroup();
 
+		ParamEditor::BeginGroup("Controls");
+		ParamEditor::RegisterFlag("isDiagramEnabled", &controls_.isDiagramEnabled);
+		ParamEditor::RegisterFlag("debugForceVisible", &controls_.debugForceVisible);
+		ParamEditor::RegisterValue("debugDevice", &controls_.debugDevice, 1.0f, 0, 3);
+		{
+			const char* rowNames[kControlRows] = { "Move", "Jump", "Attack" };
+			for (size_t i = 0; i < kControlRows; ++i) {
+				const std::string row = rowNames[i];
+				ParamEditor::RegisterValue(("key" + row + "Position").c_str(), &controls_.keyPositions[i], 1.0f, -2000.0f, 4000.0f);
+				ParamEditor::RegisterValue(("key" + row + "Scale").c_str(), &controls_.keyScales[i], 0.01f, 0.0f, 10.0f);
+			}
+			for (size_t i = 0; i < kControlRows; ++i) {
+				const std::string row = rowNames[i];
+				ParamEditor::RegisterValue(("pad" + row + "Position").c_str(), &controls_.padPositions[i], 1.0f, -2000.0f, 4000.0f);
+				ParamEditor::RegisterValue(("pad" + row + "Scale").c_str(), &controls_.padScales[i], 0.01f, 0.0f, 10.0f);
+			}
+		}
+		ParamEditor::RegisterValue("diagramPosition", &controls_.diagramPosition, 1.0f, -2000.0f, 4000.0f);
+		ParamEditor::RegisterValue("diagramScale", &controls_.diagramScale, 0.01f, 0.0f, 10.0f);
+		ParamEditor::EndGroup();
+
 		ParamEditor::BeginGroup("Menu");
 		ParamEditor::RegisterValue("clearPosition", &menu_.clearPosition, 1.0f, -2000.0f, 4000.0f);
 		ParamEditor::RegisterValue("failedPosition", &menu_.failedPosition, 1.0f, -2000.0f, 4000.0f);
@@ -142,6 +163,15 @@ namespace AL4_1 {
 		menu_.items[static_cast<size_t>(MenuItem::Retry)] = create(GameImage::Image::MenuRetry, Anchor::Left);
 		menu_.items[static_cast<size_t>(MenuItem::Title)] = create(GameImage::Image::MenuTitle, Anchor::Left);
 
+		// 操作方法（左端を基準にそろえる）
+		controls_.keyRows[0] = create(GameImage::Image::Keyboard_Move, Anchor::Left);
+		controls_.keyRows[1] = create(GameImage::Image::Keyboard_Jump, Anchor::Left);
+		controls_.keyRows[2] = create(GameImage::Image::keyboard_Attack, Anchor::Left);
+		controls_.padRows[0] = create(GameImage::Image::Pad_Move, Anchor::Left);
+		controls_.padRows[1] = create(GameImage::Image::Pad_Jump, Anchor::Left);
+		controls_.padRows[2] = create(GameImage::Image::Pad_Attack, Anchor::Left);
+		controls_.diagram = create(GameImage::Image::Pad_Diagram, Anchor::Left);
+
 		Reset();
 	}
 
@@ -155,6 +185,7 @@ namespace AL4_1 {
 		UpdateDim();
 		UpdateTime();
 		UpdateMenu();
+		UpdateControls();
 	}
 
 	float GameUI::FadeAlpha(float timer, float delay, float fadeTime) {
@@ -378,6 +409,53 @@ namespace AL4_1 {
 		}
 	}
 
+	void GameUI::UpdateControls() {
+		if (!controls_.diagram) return;
+
+		// HPバーと一緒にフェードする（デバッグで常に表示もできる）
+		float alpha = hpAlpha_;
+#ifdef _DEBUG
+		if (controls_.debugForceVisible) { alpha = 1.0f; }
+#endif
+		auto apply = [alpha](Sprite* sprite, const Vector2& position, const Vector2& scale) {
+			sprite->SetTranslate(position);
+			sprite->SetScale(scale);
+			sprite->SetColor({ 1.0f,1.0f,1.0f,alpha });
+			sprite->TransferMatrix();
+			};
+		for (size_t i = 0; i < kControlRows; ++i) {
+			apply(controls_.keyRows[i].get(), controls_.keyPositions[i], controls_.keyScales[i]);
+			apply(controls_.padRows[i].get(), controls_.padPositions[i], controls_.padScales[i]);
+		}
+		apply(controls_.diagram.get(), controls_.diagramPosition, controls_.diagramScale);
+	}
+
+	void GameUI::DrawControls() {
+		if (!controls_.diagram) return;
+
+		// 表示するか（通常はHPバーが見えている間だけ）
+		bool isVisible = hpAlpha_ > 0.0f;
+		// どのデバイスの説明を出すか（最後に触ったデバイス）
+		int32_t mode = Input::GetDeviceType() == Input::DeviceType::Gamepad ? 2 : 1;
+#ifdef _DEBUG
+		if (controls_.debugForceVisible) { isVisible = true; }
+		if (controls_.debugDevice != 0) { mode = controls_.debugDevice; }
+#endif
+		if (!isVisible) return;
+
+		const bool showKey = mode == 1 || mode == 3;
+		const bool showPad = mode == 2 || mode == 3;
+		// ゲームパッドは、図を使うときは3行の代わりに図を出す（全部表示のときは両方）
+		const bool showPadRows = showPad && (!controls_.isDiagramEnabled || mode == 3);
+		const bool showDiagram = showPad && controls_.isDiagramEnabled;
+
+		for (size_t i = 0; i < kControlRows; ++i) {
+			if (showKey) controls_.keyRows[i]->Draw();
+			if (showPadRows) controls_.padRows[i]->Draw();
+		}
+		if (showDiagram) controls_.diagram->Draw();
+	}
+
 	void GameUI::Draw() {
 		// 消えていく途中も描く（完全に消えたら描かない）
 		if (hpAlpha_ > 0.0f) {
@@ -391,6 +469,8 @@ namespace AL4_1 {
 				}
 			}
 		}
+		// 操作方法（HPバーと同じタイミングで出す）
+		DrawControls();
 		// ゲームオーバー時の黒（HPなどのUIの上、文字の下）
 		if (failedDim_.isVisible && failedDim_.sprite) {
 			failedDim_.sprite->Draw();
@@ -450,6 +530,11 @@ namespace AL4_1 {
 		for (auto& item : menu_.items) {
 			finalize(item);
 		}
+		for (size_t i = 0; i < kControlRows; ++i) {
+			finalize(controls_.keyRows[i]);
+			finalize(controls_.padRows[i]);
+		}
+		finalize(controls_.diagram);
 	}
 
 	void GameUI::ShowClearResult(float clearTime) {

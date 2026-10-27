@@ -1,11 +1,19 @@
 #include "Input.h"
 #include "../../Core/Base/Logger.h"
 #include <cassert>
+#include <algorithm>
 
 namespace RyoEngine {
 	Input* Input::GetInstance() {
 		static Input instance;
 		return &instance;
+	}
+
+	Input::~Input() {
+		// 終了時に振動が残らないように止める
+		if (isVibrating_) {
+			ApplyVibration(0.0f, 0.0f);
+		}
 	}
 
 	void Input::Initialize(HINSTANCE hInstance, HWND hwnd) {
@@ -121,5 +129,53 @@ namespace RyoEngine {
 		if (instance->mouseState_.lX != 0 || instance->mouseState_.lY != 0 || instance->mouseState_.lZ != 0) {
 			instance->deviceType_ = DeviceType::Keyboard;
 		}
+
+		// ----- 振動 -----
+		// 時間が過ぎたら止める（コントローラーが外れたときも止めた扱いにする）
+		if (instance->isVibrating_) {
+			if (!instance->isConnected_ || std::chrono::steady_clock::now() >= instance->vibrationEndTime_) {
+				StopVibration();
+			}
+		}
+	}
+
+	void Input::Vibrate(float low, float high, float duration) {
+		Input* instance = GetInstance();
+		if (!instance->isConnected_) return;
+
+		low = std::clamp(low, 0.0f, 1.0f);
+		high = std::clamp(high, 0.0f, 1.0f);
+		const auto now = std::chrono::steady_clock::now();
+		const auto endTime = now + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+			std::chrono::duration<float>((std::max)(duration, 0.0f)));
+
+		// 振動中なら、強い方・長い方で上書きする（小さい振動で大きい振動が途切れないように）
+		if (instance->isVibrating_ && now < instance->vibrationEndTime_) {
+			low = (std::max)(low, instance->vibrationLow_);
+			high = (std::max)(high, instance->vibrationHigh_);
+			instance->vibrationEndTime_ = (std::max)(endTime, instance->vibrationEndTime_);
+		} else {
+			instance->vibrationEndTime_ = endTime;
+		}
+		instance->vibrationLow_ = low;
+		instance->vibrationHigh_ = high;
+		instance->isVibrating_ = true;
+		instance->ApplyVibration(low, high);
+	}
+
+	void Input::StopVibration() {
+		Input* instance = GetInstance();
+		instance->isVibrating_ = false;
+		instance->vibrationLow_ = 0.0f;
+		instance->vibrationHigh_ = 0.0f;
+		instance->ApplyVibration(0.0f, 0.0f);
+	}
+
+	void Input::ApplyVibration(float low, float high) {
+		XINPUT_VIBRATION vibration{};
+		vibration.wLeftMotorSpeed = static_cast<WORD>(low * 65535.0f);
+		vibration.wRightMotorSpeed = static_cast<WORD>(high * 65535.0f);
+		// つながっていないときは失敗するだけなので、戻り値は見ない
+		XInputSetState(0, &vibration);
 	}
 }

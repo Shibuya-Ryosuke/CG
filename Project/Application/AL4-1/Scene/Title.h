@@ -60,5 +60,12 @@ namespace AL4_1 {
 		float blinkSpeed_ = 1.2f;		// 1秒あたりの点滅の回数
 		float blinkMinAlpha_ = 0.25f;	// 一番薄いときのアルファ
 		float timer_ = 0.0f;
+
+		// --- PRESS BUTTON（ゲームパッドのとき。点滅はPRESS SPACEと同じ） ---
+		std::unique_ptr<RyoEngine::Sprite> pressButton_ = nullptr;
+		RyoEngine::Vector2 pressButtonPosition_ = { 640.0f,540.0f };
+		RyoEngine::Vector2 pressButtonScale_ = { 0.7f,0.7f };
+		// デバッグ用（_DEBUG のときだけ効く）。0:自動 1:キーボード 2:ゲームパッド 3:両方表示
+		int32_t debugDevice_ = 0;
 	};
 }

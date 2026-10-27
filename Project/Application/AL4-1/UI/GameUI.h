@@ -187,6 +187,36 @@ namespace AL4_1 {
 			std::string text;			// 表示する文字列（例 "12.34s"）
 		};
 
+		// 操作方法（キーボード / ゲームパッドで出し分ける。HPバーと一緒にフェードする）
+		static constexpr size_t kControlRows = 3;	// 移動・ジャンプ・攻撃
+		struct Controls {
+			Controls() = default;
+			// コピー禁止（ユニークポインタを持つので）
+			Controls(const Controls&) = delete;
+			Controls& operator=(const Controls&) = delete;
+			// ムーブは許可
+			Controls(Controls&&) noexcept = default;
+			Controls& operator=(Controls&&) noexcept = default;
+
+			std::array<std::unique_ptr<RyoEngine::Sprite>, kControlRows> keyRows{};	// キーボード（移動・ジャンプ・攻撃）
+			std::array<std::unique_ptr<RyoEngine::Sprite>, kControlRows> padRows{};	// ゲームパッド（移動・ジャンプ・攻撃）
+			std::unique_ptr<RyoEngine::Sprite> diagram = nullptr;					// ゲームパッドの図
+
+			// 位置（左端・高さは中央）と大きさ
+			std::array<RyoEngine::Vector2, kControlRows> keyPositions{ { {30.0f,580.0f},{30.0f,630.0f},{30.0f,680.0f} } };
+			std::array<RyoEngine::Vector2, kControlRows> keyScales{ { {0.45f,0.45f},{0.45f,0.45f},{0.45f,0.45f} } };
+			std::array<RyoEngine::Vector2, kControlRows> padPositions{ { {30.0f,570.0f},{30.0f,630.0f},{30.0f,680.0f} } };
+			std::array<RyoEngine::Vector2, kControlRows> padScales{ { {0.45f,0.45f},{0.45f,0.45f},{0.45f,0.45f} } };
+			RyoEngine::Vector2 diagramPosition = { 20.0f,620.0f };
+			RyoEngine::Vector2 diagramScale = { 0.3f,0.3f };
+
+			// ゲームパッドのとき、3行の代わりに図を出すか
+			bool isDiagramEnabled = true;
+			// --- デバッグ用（_DEBUG のときだけ効く） ---
+			bool debugForceVisible = false;	// 戦闘中以外でも表示する（配置用）
+			int32_t debugDevice = 0;		// 0:自動 1:キーボード 2:ゲームパッド 3:全部同時に表示
+		};
+
 		// メニュー（リトライ / タイトルへ）
 		struct Menu {
 			Menu() = default;
@@ -227,6 +257,8 @@ namespace AL4_1 {
 		void UpdateTime();
 		void UpdateDim();
 		void UpdateMenu();
+		void UpdateControls();
+		void DrawControls();
 		void DrawHpBar(HpBar& bar);
 		void ResetHpBar(HpBar& bar);
 		// delay 後に fadeTime かけて 0 → 1
@@ -241,6 +273,7 @@ namespace AL4_1 {
 		Dim failedDim_{};
 		TimeDisplay time_{};
 		Menu menu_{};
+		Controls controls_{};
 
 		// HPバーを出すか
 		bool isHpVisible_ = false;

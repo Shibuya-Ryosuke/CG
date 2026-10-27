@@ -172,6 +172,8 @@ namespace AL4_1 {
 		isRequestTitle_ = false;
 		isRequestRetry_ = false;
 		fullParryBullet_ = nullptr;
+		// 前のゲームの振動を残さない
+		Input::StopVibration();
 		// フェードインが終わるまでは Wait で待つ
 		ChangePhase(Phase::Wait);
 		// 登場演出はボスのアップから始まるので、ボスの位置へ瞬間移動
@@ -181,6 +183,7 @@ namespace AL4_1 {
 	void Game::RegisterInParamEditor() {
 		ParamEditor::BeginGroup("Game");
 		ParamEditor::RegisterValue("maxBulletCount", &maxBulletCount_, 1.0f, 1, 1000);
+		ParamEditor::RegisterValue("menuStickThreshold", &menuStickThreshold_, 0.01f, 0.1f, 1.0f);
 		ParamEditor::EndGroup();
 
 		ParamEditor::BeginGroup("GameFlow");
@@ -191,6 +194,20 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("gameOverTime", &gameOverTime_, 0.01f, 0.01f, 10.0f);
 		ParamEditor::RegisterValue("gameOverMaxNoise", &gameOverMaxNoise_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("gameOverMaxBlur", &gameOverMaxBlur_, 0.0005f, 0.0f, 0.1f);
+		ParamEditor::EndGroup();
+
+		ParamEditor::BeginGroup("Vibration");
+		RegisterVibration("Small", vibrationSmall_);
+		RegisterVibration("Medium", vibrationMedium_);
+		RegisterVibration("Large", vibrationLarge_);
+		ParamEditor::EndGroup();
+	}
+
+	void Game::RegisterVibration(const char* name, Vibration& vibration) {
+		ParamEditor::BeginGroup(name);
+		ParamEditor::RegisterValue("low", &vibration.low, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("high", &vibration.high, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("duration", &vibration.duration, 0.01f, 0.0f, 3.0f);
 		ParamEditor::EndGroup();
 	}
 
@@ -245,6 +262,8 @@ namespace AL4_1 {
 			followCamera_.SetZoomFocus(&player_.GetPosition());
 			// クリアの文字 → クリアタイム → メニューの順に出す（HPバーとゲージは撃破時に消している）
 			gameUI_.ShowClearResult(clearTime_);
+			// 振動を残さない
+			Input::StopVibration();
 			menuSelection_ = 0;
 			gameUI_.ShowMenu(true);
 			gameUI_.SetMenuSelection(menuSelection_);
@@ -253,6 +272,8 @@ namespace AL4_1 {
 		case Phase::GameOver:
 		{
 			boss_.SetCanAct(false);
+			// 振動を残さない
+			Input::StopVibration();
 			// 致命傷を受けたのでHPバーとゲージを消していき、失敗の文字を出す
 			gameUI_.SetHpVisible(false);
 			gameUI_.ShowFailedText();
@@ -339,21 +360,34 @@ namespace AL4_1 {
 	}
 
 	void Game::UpdateMenu() {
+		// Lスティックは倒した瞬間だけ反応させる（前フレームの状態はメニューが出る前から更新しておく）
+		const float stickY = Input::GetLeftStickY();
+		const bool isStickUp = stickY > menuStickThreshold_;
+		const bool isStickDown = stickY < -menuStickThreshold_;
+		const bool stickUpTrigger = isStickUp && !isMenuStickUp_;
+		const bool stickDownTrigger = isStickDown && !isMenuStickDown_;
+		isMenuStickUp_ = isStickUp;
+		isMenuStickDown_ = isStickDown;
+
 		// フェード中と、メニューが出きるまでは受け付けない
 		if (!isInputEnabled_ || !gameUI_.IsMenuReady()) { return; }
 
 		const int32_t count = static_cast<int32_t>(GameUI::MenuItem::Count);
-		if (Input::TriggerKey(DIK_W) || Input::TriggerKey(DIK_UP)) {
+		// ゲームパッドは十字キーの上下かLスティック
+		const bool padUp = Input::GetJoystickTrigger(XINPUT_GAMEPAD_DPAD_UP) || stickUpTrigger;
+		const bool padDown = Input::GetJoystickTrigger(XINPUT_GAMEPAD_DPAD_DOWN) || stickDownTrigger;
+		if (Input::TriggerKey(DIK_W) || Input::TriggerKey(DIK_UP) || padUp) {
 			menuSelection_ = (menuSelection_ + count - 1) % count;
 			GameSound::PlaySE(GameSound::SE(GameSound::SE::Cursor));
 		}
-		if (Input::TriggerKey(DIK_S) || Input::TriggerKey(DIK_DOWN)) {
+		if (Input::TriggerKey(DIK_S) || Input::TriggerKey(DIK_DOWN) || padDown) {
 			menuSelection_ = (menuSelection_ + 1) % count;
 			GameSound::PlaySE(GameSound::SE(GameSound::SE::Cursor));
 		}
 		gameUI_.SetMenuSelection(menuSelection_);
 
-		if (Input::TriggerKey(DIK_SPACE)) {
+		// 決定（ゲームパッドはA）
+		if (Input::TriggerKey(DIK_SPACE) || Input::GetJoystickTrigger(XINPUT_GAMEPAD_A)) {
 			if (menuSelection_ == static_cast<int32_t>(GameUI::MenuItem::Retry)) {
 				// リトライはフェードを挟むので、SceneManager に Start() し直してもらう
 				isRequestRetry_ = true;
@@ -410,6 +444,8 @@ namespace AL4_1 {
 					const bool isFullParryBullet = &bullet == fullParryBullet_;
 					const float damage = bullet.GetDamage() + (isFullParryBullet ? player_.GetFullParryDamage() : 0.0f);
 					boss_.OnDamage(damage);
+					// ボスに当たった手応え（小）
+					Vibrate(vibrationSmall_);
 					if (isFullParryBullet) {
 						boss_.StartShock();
 						fullParryBullet_ = nullptr;
@@ -427,13 +463,23 @@ namespace AL4_1 {
 					fullParryBullet_ = &bullet;
 					// フルパリィの瞬間はプレイヤーへ素早く寄る
 					followCamera_.StartPunchZoom(&player_.GetPosition());
+					// フルパリィ（大）
+					Vibrate(vibrationLarge_);
+				} else {
+					// 弾のパリィ（中）
+					Vibrate(vibrationMedium_);
 				}
 				continue;
 			}
 
 			// プレイヤーと弾の判定
 			if (IsCollision(playerOBB, bullet.GetOBB())) {
+				const float hpBefore = player_.GetHP();
 				player_.OnDamage(bullet.GetDamage());
+				// 実際にダメージが入ったときだけ（無敵中は震えない）
+				if (player_.GetHP() < hpBefore) {
+					Vibrate(vibrationMedium_);
+				}
 				bullet.OnCollision();
 			}
 		}
@@ -450,10 +496,19 @@ namespace AL4_1 {
 					boss_.StartShock();
 					// フルパリィの瞬間はプレイヤーへ素早く寄る
 					followCamera_.StartPunchZoom(&player_.GetPosition());
+					// フルパリィ（大）
+					Vibrate(vibrationLarge_);
 				}
+				// 近接のパリィ（大）
+				Vibrate(vibrationLarge_);
 				player_.SetAttackHitDone();
 			} else if (!boss_.IsMeleeHitDone() && IsCollision(playerOBB, meleeOBB)) {
+				const float hpBefore = player_.GetHP();
 				player_.OnDamage(boss_.GetMeleeDamage());
+				// 実際にダメージが入ったときだけ（無敵中は震えない）
+				if (player_.GetHP() < hpBefore) {
+					Vibrate(vibrationMedium_);
+				}
 				boss_.SetMeleeHitDone();
 			}
 		}
@@ -462,6 +517,8 @@ namespace AL4_1 {
 		if (player_.IsAttackActive() && !player_.IsAttackHitDone() && boss_.IsCollidable() &&
 			IsCollision(player_.GetAttackOBB(), boss_.GetOBB())) {
 			boss_.OnDamage(player_.GetAttackDamage());
+			// ボスに当たった手応え（小）
+			Vibrate(vibrationSmall_);
 			player_.SetAttackHitDone();
 		}
 	}

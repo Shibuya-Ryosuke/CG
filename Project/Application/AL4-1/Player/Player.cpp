@@ -56,6 +56,16 @@ namespace AL4_1 {
 		if (Input::PushKey(DIK_A)) {
 			moveX -= 1.0f;
 		}
+		// ゲームパッド（キーボードの入力が無いときだけ。Lスティックか十字キー）
+		if (moveX == 0.0f) {
+			const float stickX = Input::GetLeftStickX();
+			if (stickX > padStickDeadZone_ || Input::GetJoystickButton(XINPUT_GAMEPAD_DPAD_RIGHT)) {
+				moveX += 1.0f;
+			}
+			if (stickX < -padStickDeadZone_ || Input::GetJoystickButton(XINPUT_GAMEPAD_DPAD_LEFT)) {
+				moveX -= 1.0f;
+			}
+		}
 		// 演出中は操作できない
 		if (!isControllable_) {
 			moveX = 0.0f;
@@ -297,6 +307,7 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("facingLeftYaw", &facingLeftYaw_, 1.0f, -360.0f, 360.0f);
 		ParamEditor::RegisterValue("turnDelay", &turnDelay_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("faceCameraYaw", &faceCameraYaw_, 1.0f, -360.0f, 360.0f);
+		ParamEditor::RegisterValue("padStickDeadZone", &padStickDeadZone_, 0.01f, 0.0f, 1.0f);
 
 		ParamEditor::BeginGroup("Emissive");
 		ParamEditor::RegisterValue("intensity", &emissiveIntensity_, 0.01f);
@@ -366,7 +377,7 @@ namespace AL4_1 {
 
 	void Player::Jump() {
 		// 接地状態のみ判断
-		if (onGround_ && Input::TriggerKey(DIK_W)) {
+		if (onGround_ && (Input::TriggerKey(DIK_W) || Input::GetJoystickTrigger(XINPUT_GAMEPAD_A))) {
 			velocity_.y = jumpPower_;
 			onGround_ = false;
 			GameSound::PlaySE(GameSound::SE::Player_Jump);
@@ -454,7 +465,7 @@ namespace AL4_1 {
 		} else if (attackCooldownTimer_ > 0.0f) {
 			// クールタイム中
 			attackCooldownTimer_ -= dt;
-		} else if (isControllable_ && Input::TriggerKey(DIK_SPACE)) {
+		} else if (isControllable_ && (Input::TriggerKey(DIK_SPACE) || Input::GetJoystickTrigger(XINPUT_GAMEPAD_X))) {
 			Attack();
 		}
 

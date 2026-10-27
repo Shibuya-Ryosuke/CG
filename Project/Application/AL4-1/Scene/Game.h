@@ -74,8 +74,17 @@ namespace AL4_1 {
 		// メニューの操作（W/Sで選んでSpaceで決定）。クリア時とゲームオーバー時で共通
 		void UpdateMenu();
 		void UpdateGameOver();
-		
+
 		void RegisterInParamEditor();
+
+		// ---- 振動（小・中・大） ----
+		struct Vibration {
+			float low = 0.0f;		// 左の重いモーター（0～1）
+			float high = 0.0f;		// 右の軽いモーター（0～1）
+			float duration = 0.0f;	// 秒（実時間）
+		};
+		void Vibrate(const Vibration& vibration) { RyoEngine::Input::Vibrate(vibration.low, vibration.high, vibration.duration); }
+		void RegisterVibration(const char* name, Vibration& vibration);
 	private:
 		// マップ
 		MapChipField mapChipField_{};
@@ -110,6 +119,10 @@ namespace AL4_1 {
 		const Bullet* fullParryBullet_ = nullptr;
 		// キー入力を受け付けるか
 		bool isInputEnabled_ = true;
+		// メニューをLスティックで動かすとき、倒した瞬間だけ反応させるための前フレームの状態
+		bool isMenuStickUp_ = false;
+		bool isMenuStickDown_ = false;
+		float menuStickThreshold_ = 0.5f;	// これ以上倒したら「倒した」とみなす
 
 		// 登場演出
 		// ボスが降りきってからアップを続ける時間 → プレイヤーへ戻るのを待つ時間
@@ -124,5 +137,10 @@ namespace AL4_1 {
 		float gameOverTime_ = 1.5f;
 		float gameOverMaxNoise_ = 0.8f;
 		float gameOverMaxBlur_ = 0.02f;
+
+		// 振動
+		Vibration vibrationSmall_{ 0.15f, 0.35f, 0.08f };	// 攻撃・跳ね返した弾がボスに当たった
+		Vibration vibrationMedium_{ 0.5f, 0.5f, 0.25f };	// プレイヤーが被弾した
+		Vibration vibrationLarge_{ 1.0f, 0.8f, 0.5f };		// フルパリィした
 	};
 }

@@ -17,6 +17,8 @@ namespace AL4_1 {
 		logo_->Initialize(GameImage::GetImage(GameImage::Image::TitleLogo), logoPosition_, Anchor::Center);
 		pressSpace_ = make_unique<Sprite>();
 		pressSpace_->Initialize(GameImage::GetImage(GameImage::Image::PressSpace), pressSpacePosition_, Anchor::Center);
+		pressButton_ = make_unique<Sprite>();
+		pressButton_->Initialize(GameImage::GetImage(GameImage::Image::PressButton), pressButtonPosition_, Anchor::Center);
 
 		RegisterInParamEditor();
 	}
@@ -35,6 +37,9 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("pressSpaceScale", &pressSpaceScale_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("blinkSpeed", &blinkSpeed_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("blinkMinAlpha", &blinkMinAlpha_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::RegisterValue("pressButtonPosition", &pressButtonPosition_, 1.0f, -2000.0f, 4000.0f);
+		ParamEditor::RegisterValue("pressButtonScale", &pressButtonScale_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("debugDevice", &debugDevice_, 1.0f, 0, 3);
 		ParamEditor::EndGroup();
 	}
 
@@ -78,9 +83,17 @@ namespace AL4_1 {
 			pressSpace_->SetColor({ 1.0f,1.0f,1.0f,pressAlpha });
 			pressSpace_->TransferMatrix();
 		}
+		if (pressButton_) {
+			pressButton_->SetTranslate(pressButtonPosition_);
+			pressButton_->SetScale(pressButtonScale_);
+			pressButton_->SetColor({ 1.0f,1.0f,1.0f,pressAlpha });
+			pressButton_->TransferMatrix();
+		}
 
 		// Spaceでゲームへ
-		if (isInputEnabled_ && Input::TriggerKey(DIK_SPACE)) {
+		// （ゲームパッドはAかSTART）
+		const bool isPadDecide = Input::GetJoystickTrigger(XINPUT_GAMEPAD_A) || Input::GetJoystickTrigger(XINPUT_GAMEPAD_START);
+		if (isInputEnabled_ && (Input::TriggerKey(DIK_SPACE) || isPadDecide)) {
 			isFinished_ = true;
 			GameSound::PlaySE(GameSound::SE::Decide);
 		}
@@ -88,7 +101,14 @@ namespace AL4_1 {
 
 	void Title::Draw() {
 		if (logo_) logo_->Draw();
-		if (pressSpace_) pressSpace_->Draw();
+
+		// 最後に触ったデバイスで出し分ける
+		int32_t mode = Input::GetDeviceType() == Input::DeviceType::Gamepad ? 2 : 1;
+#ifdef _DEBUG
+		if (debugDevice_ != 0) { mode = debugDevice_; }
+#endif
+		if ((mode == 1 || mode == 3) && pressSpace_) pressSpace_->Draw();
+		if ((mode == 2 || mode == 3) && pressButton_) pressButton_->Draw();
 	}
 
 	void Title::Finalize() {
@@ -99,6 +119,10 @@ namespace AL4_1 {
 		if (pressSpace_) {
 			pressSpace_->Finalize();
 			pressSpace_.reset();
+		}
+		if (pressButton_) {
+			pressButton_->Finalize();
+			pressButton_.reset();
 		}
 	}
 }

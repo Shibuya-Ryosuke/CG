@@ -135,6 +135,8 @@ namespace AL4_1 {
 		bool isDead_ = false;
 		// 操作を受け付けるか
 		bool isControllable_ = true;
+		// ゲームパッドのLスティックをこれ以上倒したら移動する
+		float padStickDeadZone_ = 0.3f;
 
 		// --- ジャンプ関係 ---
 		// 接地判定

@@ -5,6 +5,7 @@
 #include <wrl.h>
 #include <Xinput.h>
 #include <cmath>
+#include <chrono>
 
 #include "../Base/WinApp.h"
 #include "../../Core/Math/Math.h"
@@ -14,16 +15,16 @@
 #pragma comment(lib,"xinput.lib")
 
 namespace RyoEngine {
-	class Input {
-	public:
+    class Input {
+    public:
         enum class DeviceType {
             Keyboard,
             Gamepad,
         };
 
-		static void Initialize(HINSTANCE hInstance, HWND hwnd);
+        static void Initialize(HINSTANCE hInstance, HWND hwnd);
 
-		static void Update();
+        static void Update();
 
         // --- キーボード ---
         static bool PushKey(BYTE keyNumber) {
@@ -112,28 +113,49 @@ namespace RyoEngine {
             return GetInstance()->deviceType_;
         }
 
-	private:
-		Input() = default;
-		~Input() = default;
-		Input(const Input&) = delete;
-		Input& operator=(const Input&) = delete;
+        // --- コントローラー (振動) ---
+        /// <summary>
+        /// 振動させる。時間は実時間で計るので、スロー中でも長さは変わらない。
+        /// 振動中に呼ばれたら、強い方の値と長い方の終了時刻で上書きする
+        /// </summary>
+        /// <param name="low">左の重いモーターの強さ（0～1）</param>
+        /// <param name="high">右の軽いモーターの強さ（0～1）</param>
+        /// <param name="duration">振動させる時間（秒）</param>
+        static void Vibrate(float low, float high, float duration);
+        // 振動を止める
+        static void StopVibration();
 
-		static Input* GetInstance();
+    private:
+        Input() = default;
+        // 終了時にモーターが回りっぱなしにならないよう止める
+        ~Input();
+        Input(const Input&) = delete;
+        Input& operator=(const Input&) = delete;
 
-		Microsoft::WRL::ComPtr<IDirectInput8> directInput_;
+        static Input* GetInstance();
 
-		Microsoft::WRL::ComPtr<IDirectInputDevice8> keyboard_;
-		BYTE keys_[256] = {};
-		BYTE preKeys_[256] = {};
+        Microsoft::WRL::ComPtr<IDirectInput8> directInput_;
 
-		Microsoft::WRL::ComPtr<IDirectInputDevice8> mouse_;
-		DIMOUSESTATE mouseState_ = {};
+        Microsoft::WRL::ComPtr<IDirectInputDevice8> keyboard_;
+        BYTE keys_[256] = {};
+        BYTE preKeys_[256] = {};
+
+        Microsoft::WRL::ComPtr<IDirectInputDevice8> mouse_;
+        DIMOUSESTATE mouseState_ = {};
         DIMOUSESTATE preMouseState_ = {};
 
-		XINPUT_STATE joyState_ = {};
-		XINPUT_STATE joyStatePrevious_ = {};
-		bool isConnected_ = false;
+        XINPUT_STATE joyState_ = {};
+        XINPUT_STATE joyStatePrevious_ = {};
+        bool isConnected_ = false;
 
         DeviceType deviceType_ = DeviceType::Keyboard;
-	};
+
+        // 振動
+        bool isVibrating_ = false;
+        float vibrationLow_ = 0.0f;
+        float vibrationHigh_ = 0.0f;
+        std::chrono::steady_clock::time_point vibrationEndTime_{};
+        // モーターに強さを送る（0～1）
+        void ApplyVibration(float low, float high);
+    };
 }

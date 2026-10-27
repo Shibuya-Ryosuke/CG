@@ -92,6 +92,16 @@ namespace AL4_1 {
 			Load(Image::MenuTitle, textDirectory + "menu_title.png");
 			Load(Image::TitleLogo, textDirectory + "title_logo.png");
 			Load(Image::PressSpace, textDirectory + "press_space.png");
+			Load(Image::PressButton, textDirectory + "press_button.png");
+
+			// --- 操作方法（キーボード・ゲームパッド） ---
+			Load(Image::Keyboard_Move, textDirectory + "controls_move.png");
+			Load(Image::Keyboard_Jump, textDirectory + "controls_jump.png");
+			Load(Image::keyboard_Attack, textDirectory + "controls_attack.png");
+			Load(Image::Pad_Move, textDirectory + "controls_pad_move.png");
+			Load(Image::Pad_Jump, textDirectory + "controls_pad_jump.png");
+			Load(Image::Pad_Attack, textDirectory + "controls_pad_attack.png");
+			Load(Image::Pad_Diagram, textDirectory + "controls_pad_diagram.png");
 
 			// --- 数字（全部同じ大きさの画像） ---
 			for (uint32_t i = 0; i < 10; ++i) {

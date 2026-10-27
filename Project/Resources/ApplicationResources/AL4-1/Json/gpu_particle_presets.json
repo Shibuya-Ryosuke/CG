@@ -1,5 +1,73 @@
 {
     "emitters": {
+        "bossTakeDamage": {
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "billboard": true,
+            "blendMode": "Additive",
+            "color": [
+                0.19838503003120422,
+                0.0,
+                0.843137264251709,
+                1.0
+            ],
+            "conditionFlagKey": "isBossHit",
+            "continuousWhileTrue": true,
+            "emitCount": 200,
+            "emitInterval": 0.0,
+            "fixedRotation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "gravity": 0.0,
+            "lifeTime": 0.30000001192092896,
+            "maxParticleCount": 500,
+            "meshPath": "Resources/ApplicationResources/AL4-1/Particle/quad.obj",
+            "positionOffsetRandomMax": [
+                1.1299999952316284,
+                0.9300000071525574,
+                2.059999942779541
+            ],
+            "positionOffsetRandomMin": [
+                -0.8100000023841858,
+                -0.7300000190734863,
+                2.049999952316284
+            ],
+            "rotationRandomMax": [
+                0.0,
+                0.0,
+                6.2831854820251465
+            ],
+            "rotationRandomMin": [
+                0.0,
+                0.0,
+                -4.800000190734863
+            ],
+            "scale": 0.20000000298023224,
+            "texturePath": "Resources/ApplicationResources/AL4-1/Particle/shard.png",
+            "trackedPositionKey": "bossPos",
+            "useRandomRotation": true,
+            "useRandomVelocity": true,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityRandomMax": [
+                12.260000228881836,
+                11.90999984741211,
+                2.4200000762939453
+            ],
+            "velocityRandomMin": [
+                -12.130000114440918,
+                -12.739999771118164,
+                -2.2200000286102295
+            ]
+        },
         "parry": {
             "basePosition": [
                 0.0,
