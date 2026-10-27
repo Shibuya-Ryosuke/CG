@@ -67,5 +67,10 @@ namespace AL4_1 {
 		RyoEngine::Vector2 pressButtonScale_ = { 0.7f,0.7f };
 		// デバッグ用（_DEBUG のときだけ効く）。0:自動 1:キーボード 2:ゲームパッド 3:両方表示
 		int32_t debugDevice_ = 0;
+
+		// --- コントローラー対応（点滅させず、いつも表示する） ---
+		std::unique_ptr<RyoEngine::Sprite> controllerSupport_ = nullptr;
+		RyoEngine::Vector2 controllerSupportPosition_ = { 1120.0f,670.0f };
+		RyoEngine::Vector2 controllerSupportScale_ = { 0.4f,0.4f };
 	};
 }

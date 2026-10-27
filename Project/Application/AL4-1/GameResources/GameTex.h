@@ -25,6 +25,7 @@ namespace AL4_1 {
 			TitleLogo,
 			PressSpace,
 			PressButton,
+			TextControllerSupport,
 			// --- クリア・ゲームオーバー ---
 			TextClearTime,
 			MenuRetry,
@@ -93,6 +94,7 @@ namespace AL4_1 {
 			Load(Image::TitleLogo, textDirectory + "title_logo.png");
 			Load(Image::PressSpace, textDirectory + "press_space.png");
 			Load(Image::PressButton, textDirectory + "press_button.png");
+			Load(Image::TextControllerSupport, textDirectory + "text_controller_support.png");
 
 			// --- 操作方法（キーボード・ゲームパッド） ---
 			Load(Image::Keyboard_Move, textDirectory + "controls_move.png");

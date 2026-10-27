@@ -19,6 +19,8 @@ namespace AL4_1 {
 		pressSpace_->Initialize(GameImage::GetImage(GameImage::Image::PressSpace), pressSpacePosition_, Anchor::Center);
 		pressButton_ = make_unique<Sprite>();
 		pressButton_->Initialize(GameImage::GetImage(GameImage::Image::PressButton), pressButtonPosition_, Anchor::Center);
+		controllerSupport_ = make_unique<Sprite>();
+		controllerSupport_->Initialize(GameImage::GetImage(GameImage::Image::TextControllerSupport), controllerSupportPosition_, Anchor::Center);
 
 		RegisterInParamEditor();
 	}
@@ -40,6 +42,8 @@ namespace AL4_1 {
 		ParamEditor::RegisterValue("pressButtonPosition", &pressButtonPosition_, 1.0f, -2000.0f, 4000.0f);
 		ParamEditor::RegisterValue("pressButtonScale", &pressButtonScale_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("debugDevice", &debugDevice_, 1.0f, 0, 3);
+		ParamEditor::RegisterValue("controllerSupportPosition", &controllerSupportPosition_, 1.0f, -2000.0f, 4000.0f);
+		ParamEditor::RegisterValue("controllerSupportScale", &controllerSupportScale_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::EndGroup();
 	}
 
@@ -89,6 +93,12 @@ namespace AL4_1 {
 			pressButton_->SetColor({ 1.0f,1.0f,1.0f,pressAlpha });
 			pressButton_->TransferMatrix();
 		}
+		// --- コントローラー対応：点滅させずにそのまま出す ---
+		if (controllerSupport_) {
+			controllerSupport_->SetTranslate(controllerSupportPosition_);
+			controllerSupport_->SetScale(controllerSupportScale_);
+			controllerSupport_->TransferMatrix();
+		}
 
 		// Spaceでゲームへ
 		// （ゲームパッドはAかSTART）
@@ -109,6 +119,8 @@ namespace AL4_1 {
 #endif
 		if ((mode == 1 || mode == 3) && pressSpace_) pressSpace_->Draw();
 		if ((mode == 2 || mode == 3) && pressButton_) pressButton_->Draw();
+		// コントローラー対応（デバイスに関係なくいつも出す）
+		if (controllerSupport_) controllerSupport_->Draw();
 	}
 
 	void Title::Finalize() {
@@ -123,6 +135,10 @@ namespace AL4_1 {
 		if (pressButton_) {
 			pressButton_->Finalize();
 			pressButton_.reset();
+		}
+		if (controllerSupport_) {
+			controllerSupport_->Finalize();
+			controllerSupport_.reset();
 		}
 	}
 }

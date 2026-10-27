@@ -772,6 +772,14 @@
             16.799999237060547,
             -35.0
         ],
+        "controllerSupportPosition": [
+            1100.0,
+            685.0
+        ],
+        "controllerSupportScale": [
+            0.3499999940395355,
+            0.3499999940395355
+        ],
         "debugDevice": 0,
         "flickerInterval": 1.600000023841858,
         "flickerMinAlpha": 0.5,
