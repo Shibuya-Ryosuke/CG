@@ -275,10 +275,18 @@ namespace AL4_1 {
 	void GameUI::UpdateText(Text& text) {
 		if (!text.sprite) return;
 
+		// 1フレームだけの合図を戻す
+		text.isAppearTrigger = false;
+
 		float alpha = 0.0f;
 		if (text.isVisible) {
 			text.timer += GetDeltaTime();
 			alpha = FadeAlpha(text.timer, text.delay, text.fadeTime);
+			// delay が過ぎて出始めた瞬間だけ合図を立てる
+			if (!text.hasAppeared && text.timer >= text.delay) {
+				text.hasAppeared = true;
+				text.isAppearTrigger = true;
+			}
 		}
 		text.sprite->SetTranslate(text.position);
 		text.sprite->SetScale(text.scale);
@@ -447,6 +455,7 @@ namespace AL4_1 {
 	void GameUI::ShowClearResult(float clearTime) {
 		clearText_.isVisible = true;
 		clearText_.timer = 0.0f;
+		clearText_.hasAppeared = false;
 
 		// 小数点以下2桁 + s（999.99s まで）
 		char buffer[16]{};
@@ -459,6 +468,7 @@ namespace AL4_1 {
 	void GameUI::ShowFailedText() {
 		failedText_.isVisible = true;
 		failedText_.timer = 0.0f;
+		failedText_.hasAppeared = false;
 		// 文字と一緒に黒を敷く
 		failedDim_.isVisible = true;
 		failedDim_.timer = 0.0f;
@@ -485,8 +495,12 @@ namespace AL4_1 {
 		gauge_.timer = 0.0f;
 		clearText_.isVisible = false;
 		clearText_.timer = 0.0f;
+		clearText_.hasAppeared = false;
+		clearText_.isAppearTrigger = false;
 		failedText_.isVisible = false;
 		failedText_.timer = 0.0f;
+		failedText_.hasAppeared = false;
+		failedText_.isAppearTrigger = false;
 		failedDim_.isVisible = false;
 		failedDim_.timer = 0.0f;
 		time_.isVisible = false;

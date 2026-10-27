@@ -249,6 +249,8 @@ namespace AL4_1 {
 		bool isMaxCharge_ = false;
 		// フルパリィしたフレームだけtrue（パーティクルの発生フラグ用。次のUpdateの冒頭で戻す）
 		bool isFullParryTrigger_ = false;
+		// ゲージが満タンになったフレームだけtrue（パーティクルの発生フラグ用。次のUpdateの冒頭で戻す）
+		bool isGaugeMaxTrigger_ = false;
 		// フルパリィの演出（通常のパリィ・カウンターより強く・遅く）
 		float fullParryEffectDuration_ = 1.2f;
 		float fullParryEffectPeakTime_ = 0.3f;

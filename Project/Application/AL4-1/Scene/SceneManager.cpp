@@ -83,6 +83,9 @@ namespace AL4_1 {
 			isChanging_ = false;
 			OnFadeInFinished();
 		}
+
+		// BGMの音量をフェードに合わせる（暗くなるほど小さく、明るくなるほど大きく）
+		GameSound::SetBGMVolume(currentBGM_, GetFadeBGMVolume());
 	}
 
 	void SceneManager::Draw(RyoEngine::Camera& debugCamera) {
@@ -90,7 +93,7 @@ namespace AL4_1 {
 		Camera& camera = GetActiveCamera(scene_ == Scene::Title ? title_.GetCamera() : debugCamera);
 
 		GPUParticleManager::GetInstance()->Draw(camera);
-		
+
 		// 背景の装飾（どのシーンでも、シーンの描画より先に描く）
 		background_.Draw(camera);
 		switch (scene_) {
@@ -134,6 +137,7 @@ namespace AL4_1 {
 		ParamEditor::BeginGroup("SceneManager");
 		ParamEditor::RegisterValue("fadeOutTime", &fadeOutTime_, 0.01f, 0.0f, 3.0f);
 		ParamEditor::RegisterValue("fadeInTime", &fadeInTime_, 0.01f, 0.0f, 3.0f);
+		ParamEditor::RegisterValue("bgmVolume", &bgmVolume_, 0.005f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 	}
 
@@ -144,7 +148,9 @@ namespace AL4_1 {
 		case Scene::Title:
 			GameSound::StopBGM(GameSound::BGM::Game);
 			GameSound::StopBGM(GameSound::BGM::Clear);
-			GameSound::PlayBGM(GameSound::BGM::Title);
+			// フェードに合わせた音量で流し始める（切り替えは真っ黒のときなので、ほぼ0から上がっていく）
+			currentBGM_ = GameSound::BGM::Title;
+			GameSound::PlayBGM(currentBGM_, GetFadeBGMVolume());
 			title_.Start();
 			game_.ResetPostEffects();
 			game_.ResetPlayer();
@@ -152,7 +158,10 @@ namespace AL4_1 {
 		case Scene::Game:
 			GameSound::StopBGM(GameSound::BGM::Title);
 			GameSound::StopBGM(GameSound::BGM::Clear);
-			GameSound::PlayBGM(GameSound::BGM::Game);
+			// リトライ（Game → Game）で同じBGMが重ならないよう、いったん止めて最初から流す
+			GameSound::StopBGM(GameSound::BGM::Game);
+			currentBGM_ = GameSound::BGM::Game;
+			GameSound::PlayBGM(currentBGM_, GetFadeBGMVolume());
 			game_.Start();
 			break;
 		default:

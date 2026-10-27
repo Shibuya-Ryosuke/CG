@@ -87,6 +87,13 @@ namespace AL4_1 {
 
 		// UI（HPの割合を渡す）
 		gameUI_.Update(player_.GetHP() / player_.GetMaxHP(), boss_.GetHP() / boss_.GetMaxHP(), player_.GetGaugeRatio());
+		// クリア・失敗の文字が出た瞬間に音を鳴らす
+		if (gameUI_.IsClearTextAppeared()) {
+			GameSound::PlaySE(GameSound::SE::Clear);
+		}
+		if (gameUI_.IsFailedTextAppeared()) {
+			GameSound::PlaySE(GameSound::SE::Failed);
+		}
 
 		// 当たり判定走査（戦闘中だけ）
 		if (phase_ == Phase::Battle) {

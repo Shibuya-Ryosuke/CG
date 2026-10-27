@@ -49,6 +49,9 @@ namespace AL4_1 {
 		bool IsMenuReady() const { return menu_.isVisible && menu_.timer >= menu_.delay + menu_.fadeTime; }
 		// 全部隠して、ゲージを満タンに戻す（登場演出・リトライ用）
 		void Reset();
+		// クリア・失敗の文字が出始めたフレームだけ true（delay の後、フェードインが始まった瞬間）
+		bool IsClearTextAppeared() const { return clearText_.isAppearTrigger; }
+		bool IsFailedTextAppeared() const { return failedText_.isAppearTrigger; }
 
 	private:
 		// HPバー1本分（frame → 遅れゲージ → fill → label の順に描く）
@@ -132,6 +135,8 @@ namespace AL4_1 {
 
 			bool isVisible = false;
 			float timer = 0.0f;
+			bool hasAppeared = false;		// もう出始めたか
+			bool isAppearTrigger = false;	// 出始めたフレームだけ true（音を鳴らす合図）
 		};
 
 		// ゲームオーバー時に、文字の後ろ・HPなどのUIの上に敷く黒（文字を見やすくする）

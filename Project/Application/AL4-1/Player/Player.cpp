@@ -19,6 +19,7 @@ namespace AL4_1 {
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerCharge2", &isSecondCharge_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerChargeMax", &isMaxCharge_);
 		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerFullParry", &isFullParryTrigger_);
+		GPUParticleManager::GetInstance()->RegisterFlag("isPlayerGaugeMax", &isGaugeMaxTrigger_);
 	}
 	Player::~Player() {
 		GPUParticleManager::GetInstance()->UnregisterPosition("playerPos");
@@ -31,6 +32,7 @@ namespace AL4_1 {
 		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerCharge2");
 		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerChargeMax");
 		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerFullParry");
+		GPUParticleManager::GetInstance()->UnregisterFlag("isPlayerGaugeMax");
 	}
 
 	void Player::Initialize() {
@@ -44,6 +46,7 @@ namespace AL4_1 {
 		// 1フレームだけのフラグを戻す（前フレームで立てた分は、このフレームの頭でパーティクルが読み終わっている）
 		isParryTrigger_ = false;
 		isFullParryTrigger_ = false;
+		isGaugeMaxTrigger_ = false;
 
 		// 移動
 		float moveX = 0.0f;
@@ -235,6 +238,11 @@ namespace AL4_1 {
 			// ゲージを溜める（近接のカウンターの方が多く溜まる）
 			gauge_ = min(maxGauge_, gauge_ + (isCounter ? counterGaugeGain_ : parryGaugeGain_));
 			GameSound::PlaySE(GameSound::SE::Player_Parry);
+			// ここに来るのは満タンでなかったときだけなので、満タンになったら「満タンになった瞬間」
+			if (IsGaugeMax()) {
+				isGaugeMaxTrigger_ = true;
+				GameSound::PlaySE(GameSound::SE::Player_GaugeMax);
+			}
 		}
 
 		PostProcess::GetInstance()->SetChromaticAberrationEnabled(true);
@@ -265,6 +273,7 @@ namespace AL4_1 {
 		isSecondCharge_ = false;
 		isMaxCharge_ = false;
 		isFullParryTrigger_ = false;
+		isGaugeMaxTrigger_ = false;
 
 		if (model_) model_->SetColor({ 1.0f,1.0f,1.0f,1.0f });
 		auto ppInstance = PostProcess::GetInstance();

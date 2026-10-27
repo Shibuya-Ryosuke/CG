@@ -4,6 +4,7 @@
 #include "Game.h"
 #include "../Fade/Fade.h"
 #include "../Background/Background.h"
+#include "../GameResources/GameSound.h"
 
 namespace AL4_1 {
 	enum class Scene : int32_t {
@@ -38,6 +39,8 @@ namespace AL4_1 {
 		// フェードインが終わったときの処理
 		void OnFadeInFinished();
 		void RegisterInParamEditor();
+		// フェードの濃さに合わせたBGMの音量（真っ黒で0、透明で bgmVolume_）
+		float GetFadeBGMVolume() const { return bgmVolume_ * (1.0f - fade_.GetAlpha()); }
 
 	private:
 		// 現在シーン
@@ -60,5 +63,9 @@ namespace AL4_1 {
 		// フェードにかける秒数
 		float fadeOutTime_ = 0.5f;
 		float fadeInTime_ = 0.5f;
+
+		// --- BGM（フェードの進み具合に合わせて音量を上げ下げする） ---
+		GameSound::BGM currentBGM_ = GameSound::BGM::Title;	// 今流しているBGM
+		float bgmVolume_ = 0.1f;	// フェードしていないときの音量
 	};
 }

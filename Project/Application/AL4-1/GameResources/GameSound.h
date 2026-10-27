@@ -90,7 +90,7 @@ namespace AL4_1 {
 		}
 
 		/// <summary>
-		/// BGMの音量を変更する（1.0が等倍）
+		/// BGMの音量を変更する
 		/// </summary>
 		static void SetBGMVolume(BGM bgm, float volume) {
 			uint32_t handle = bgmHandles[static_cast<uint32_t>(bgm)];
