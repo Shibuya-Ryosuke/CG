@@ -41,11 +41,9 @@ namespace AL4_1 {
 		void RegisterInParamEditor();
 
 	private:
-		std::unique_ptr<RyoEngine::Model> ground_ = nullptr;
-		std::unique_ptr<RyoEngine::Model> sky_ = nullptr;
-
+		// 現在シーン
 		Scene scene_ = Scene::Game;
-
+		// 各シーン
 		Title title_{};
 		Game game_{};
 
@@ -56,7 +54,7 @@ namespace AL4_1 {
 		Fade fade_{};
 		// フェードアウトが終わったら切り替える先
 		Scene nextScene_ = Scene::Title;
-		// 切り替えの途中か（フェードアウト～フェードインが終わるまで）
+		// 切り替え途中か（フェード中）
 		bool isChanging_ = false;
 		// フェードインの終わりを待っているか
 		bool isWaitingFadeIn_ = false;

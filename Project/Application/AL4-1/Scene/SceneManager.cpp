@@ -30,9 +30,6 @@ namespace AL4_1 {
 		fade_.StartFadeIn(fadeInTime_);
 		isChanging_ = true;
 		isWaitingFadeIn_ = true;
-
-		ground_ = Model::Create("Resources/ApplicationResources/AL4-1/ground.obj");
-		sky_ = Model::Create("Resources/ApplicationResources/AL4-1/SkyDome/skydome.obj");
 	}
 
 	void SceneManager::Update() {
@@ -95,10 +92,7 @@ namespace AL4_1 {
 		Camera& camera = GetActiveCamera(scene_ == Scene::Title ? title_.GetCamera() : debugCamera);
 
 		GPUParticleManager::GetInstance()->Draw(camera);
-		ground_->TransferMatrix(camera);
-		sky_->TransferMatrix(camera);
-		//ground_->Draw();
-		sky_->Draw();
+		
 		// 背景の装飾（どのシーンでも、シーンの描画より先に描く）
 		background_.Draw(camera);
 		switch (scene_) {
