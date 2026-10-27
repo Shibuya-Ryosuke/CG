@@ -1,4 +1,5 @@
 #include "Boss.h"
+#include "../../GameResources/GameSound.h"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -174,6 +175,7 @@ namespace AL4_1 {
 			hp_ = 0.0f;
 			ChangeState(State::Destroy);
 		}
+		GameSound::PlaySE(GameSound::SE::Boss_TakeDamage);
 	}
 
 	void Boss::StartShock() {
@@ -190,6 +192,7 @@ namespace AL4_1 {
 			meleePhase_ = MeleePhase::None;
 			ChangeState(State::Stun);
 		}
+		GameSound::PlaySE(GameSound::SE::Boss_Stun);
 	}
 
 	void Boss::OnCountered() {
@@ -434,6 +437,7 @@ namespace AL4_1 {
 			meleeDir_ = aim.x >= transform_.translate.x ? 1.0f : -1.0f;
 			meleePhase_ = MeleePhase::Windup;
 			meleeHitDone_ = false;
+			GameSound::PlaySE(GameSound::SE::Boss_MeleeCharge);
 		}
 	}
 
@@ -485,6 +489,7 @@ namespace AL4_1 {
 			if (meleePhase_ != MeleePhase::Active) {
 				meleeBurstTimer_ = meleeBurstReturnTime_;
 				transform_.scale = { baseScale_.x * meleeBurstScale_, baseScale_.y * meleeBurstScale_, baseScale_.z * meleeBurstScale_ };
+				GameSound::PlaySE(GameSound::SE::Boss_MeleeBurst);
 			}
 			meleePhase_ = MeleePhase::Active;
 		} else {
@@ -495,6 +500,7 @@ namespace AL4_1 {
 
 	Bullet* Boss::FireBullet(const RyoEngine::Vector3& velocity) {
 		if (!bulletManager_) { return nullptr; }
+		GameSound::PlaySE(GameSound::SE::Boss_Shot);
 		return bulletManager_->Fire(transform_.translate, velocity);
 	}
 

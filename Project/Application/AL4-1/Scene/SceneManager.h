@@ -9,7 +9,6 @@ namespace AL4_1 {
 	enum class Scene : int32_t {
 		Title,
 		Game,
-		Result,
 		Count,
 	};
 

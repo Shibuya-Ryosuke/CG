@@ -8,14 +8,29 @@ namespace AL4_1 {
 		enum class BGM : uint32_t {
 			Title,
 			Game,
+			Clear,
+
 			Count
 		};
 
 		// SEの種類
 		enum class SE : uint32_t {
-			System,
-			// Cancel,
-			// Decision, など
+			Cursor,
+			Decide,
+			Clear,
+			Failed,
+			Player_Attack,
+			Player_GaugeMax,
+			Player_Parry,
+			Player_FullParry,
+			Player_Jump,
+			Player_Land,
+			Player_TakeDamage,
+			Boss_Shot,
+			Boss_MeleeCharge,
+			Boss_MeleeBurst,
+			Boss_Stun,
+			Boss_TakeDamage,
 
 			Count
 		};
@@ -24,15 +39,38 @@ namespace AL4_1 {
 		/// ゲーム起動時やシーン移行時に1度だけ呼び出して全音声を一括ロードする
 		/// </summary>
 		static void Initialize() {
-			// --- BGMのロード ---
-			// bgmHandles[static_cast<uint32_t>(BGM::Title)] = RyoEngine::Audio::LoadBGM("Resources/ApplicationResources/Sound/BGM/title.mp3");
-			// bgmHandles[static_cast<uint32_t>(BGM::Game)] = RyoEngine::Audio::LoadBGM("Resources/ApplicationResources/Sound/BGM/game.mp3"); など
+			// 共通パス
+			const std::string commonPath = "AL4-1/Sound/";
+			const std::string bgmPath = commonPath + "BGM/";
+			const std::string sePath = commonPath + "SE/";
 
+			// BGM
+			bgmHandles[static_cast<uint32_t>(BGM::Title)] = RyoEngine::LoadBGM(bgmPath + "title.mp3");
+			bgmHandles[static_cast<uint32_t>(BGM::Game)] = RyoEngine::LoadBGM(bgmPath + "game.mp3");
+			bgmHandles[static_cast<uint32_t>(BGM::Clear)] = RyoEngine::LoadBGM(bgmPath + "clear.mp3");
 
-			// --- SEのロード (System) ---
-			// seHandles[static_cast<uint32_t>(SE::Cancel)] = RyoEngine::Audio::LoadSE("Resources/ApplicationResources/Sound/SE/System/cancel.mp3");
-			// seHandles[static_cast<uint32_t>(SE::Decision)] = RyoEngine::Audio::LoadSE("Resources/ApplicationResources/Sound/SE/System/decision.mp3"); など
-
+			// SE
+			const std::string playerSePath = sePath + "Player/";
+			const std::string bossSePath = sePath + "Boss/";
+			// --- UI・進行 ---
+			seHandles[static_cast<uint32_t>(SE::Cursor)] = RyoEngine::LoadSE(sePath + "cursor.wav");
+			seHandles[static_cast<uint32_t>(SE::Decide)] = RyoEngine::LoadSE(sePath + "decide.wav");
+			seHandles[static_cast<uint32_t>(SE::Clear)] = RyoEngine::LoadSE(sePath + "clear.wav");
+			seHandles[static_cast<uint32_t>(SE::Failed)] = RyoEngine::LoadSE(sePath + "failed.wav");
+			// --- プレイヤー ---
+			seHandles[static_cast<uint32_t>(SE::Player_Attack)] = RyoEngine::LoadSE(playerSePath + "player_attack.wav");
+			seHandles[static_cast<uint32_t>(SE::Player_GaugeMax)] = RyoEngine::LoadSE(playerSePath + "player_gaugeMax.wav");
+			seHandles[static_cast<uint32_t>(SE::Player_Parry)] = RyoEngine::LoadSE(playerSePath + "player_parry.wav");
+			seHandles[static_cast<uint32_t>(SE::Player_FullParry)] = RyoEngine::LoadSE(playerSePath + "player_fullParry.wav");
+			seHandles[static_cast<uint32_t>(SE::Player_Jump)] = RyoEngine::LoadSE(playerSePath + "player_jump.wav");
+			seHandles[static_cast<uint32_t>(SE::Player_Land)] = RyoEngine::LoadSE(playerSePath + "player_land.wav");
+			seHandles[static_cast<uint32_t>(SE::Player_TakeDamage)] = RyoEngine::LoadSE(playerSePath + "player_takeDamage.wav");
+			// --- ボス ---
+			seHandles[static_cast<uint32_t>(SE::Boss_Shot)] = RyoEngine::LoadSE(bossSePath + "boss_shot.wav");
+			seHandles[static_cast<uint32_t>(SE::Boss_MeleeCharge)] =RyoEngine:: LoadSE(bossSePath + "boss_meleeCharge.wav");
+			seHandles[static_cast<uint32_t>(SE::Boss_MeleeBurst)] = RyoEngine::LoadSE(bossSePath + "boss_meleeBurst.wav");
+			seHandles[static_cast<uint32_t>(SE::Boss_Stun)] = RyoEngine::LoadSE(bossSePath + "boss_stun.wav");
+			seHandles[static_cast<uint32_t>(SE::Boss_TakeDamage)] = RyoEngine::LoadSE(bossSePath + "boss_takeDamage.wav");
 		}
 
 		/// <summary>

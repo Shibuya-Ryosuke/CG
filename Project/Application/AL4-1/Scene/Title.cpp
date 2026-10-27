@@ -1,5 +1,6 @@
 #include "Title.h"
 #include "../GameResources/GameTex.h"
+#include "../GameResources/GameSound.h"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -81,6 +82,7 @@ namespace AL4_1 {
 		// Spaceでゲームへ
 		if (isInputEnabled_ && Input::TriggerKey(DIK_SPACE)) {
 			isFinished_ = true;
+			GameSound::PlaySE(GameSound::SE::Decide);
 		}
 	}
 

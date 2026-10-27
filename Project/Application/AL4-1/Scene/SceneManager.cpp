@@ -1,5 +1,6 @@
 #include "SceneManager.h"
 #include "../GameResources/GameTex.h"
+#include "../GameResources/GameSound.h"
 
 using namespace RyoEngine;
 using namespace std;
@@ -61,9 +62,6 @@ namespace AL4_1 {
 			}
 			break;
 
-		case Scene::Result:
-			break;
-
 		default:
 			break;
 		}
@@ -102,9 +100,6 @@ namespace AL4_1 {
 
 		case Scene::Game:
 			game_.Draw(camera);
-			break;
-
-		case Scene::Result:
 			break;
 
 		default:
@@ -147,14 +142,18 @@ namespace AL4_1 {
 
 		switch (scene_) {
 		case Scene::Title:
+			GameSound::StopBGM(GameSound::BGM::Game);
+			GameSound::StopBGM(GameSound::BGM::Clear);
+			GameSound::PlayBGM(GameSound::BGM::Title);
 			title_.Start();
 			game_.ResetPostEffects();
 			game_.ResetPlayer();
 			break;
 		case Scene::Game:
+			GameSound::StopBGM(GameSound::BGM::Title);
+			GameSound::StopBGM(GameSound::BGM::Clear);
+			GameSound::PlayBGM(GameSound::BGM::Game);
 			game_.Start();
-			break;
-		case Scene::Result:
 			break;
 		default:
 			break;

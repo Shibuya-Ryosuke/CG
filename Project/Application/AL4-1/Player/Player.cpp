@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "../GameResources/GameSound.h"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -93,8 +94,15 @@ namespace AL4_1 {
 			MapHit hit;
 			transform_.translate = map_->MoveAndCollide(transform_.translate, delta, halfSize_, hit);
 
-			if (hit.bottom) velocity_.y = 0.0f;                    // 着地
-			if (hit.top && velocity_.y > 0.0f) velocity_.y = 0.0f; // 天井に頭をぶつけた
+			// 着地
+			if (hit.bottom) {
+				velocity_.y = 0.0f;
+				GameSound::PlaySE(GameSound::SE::Player_Land);
+			}
+			// 天井に頭をぶつけた
+			if (hit.top && velocity_.y > 0.0f) {
+				velocity_.y = 0.0f;
+			}
 			onGround_ = hit.bottom;
 		} else {
 			// マップ未設定のときは従来どおり y=0 を地面にする
@@ -194,6 +202,8 @@ namespace AL4_1 {
 		damageTakenDuration_ = maxDamageTakenDuration_;
 		// ポストエフェクトオン
 		PostProcess::GetInstance()->SetBlurEnabled(true);
+
+		GameSound::PlaySE(GameSound::SE::Player_TakeDamage);
 	}
 
 	bool Player::OnParrySuccess(bool isCounter) {
@@ -210,6 +220,7 @@ namespace AL4_1 {
 		effectSlowScale_ = isCounter ? counterSlowScale_ : parrySlowScale_;
 		effectHoldTime_ = 0.0f;
 
+		// フルパリィが可能かでif
 		if (isFullParry) {
 			gauge_ = 0.0f;
 			isFullParryTrigger_ = true;
@@ -219,9 +230,11 @@ namespace AL4_1 {
 			effectMaxChromatic_ = fullParryMaxChromatic_;
 			effectSlowScale_ = fullParrySlowScale_;
 			effectHoldTime_ = fullParryEffectHoldTime_;
+			GameSound::PlaySE(GameSound::SE::Player_FullParry);
 		} else {
 			// ゲージを溜める（近接のカウンターの方が多く溜まる）
 			gauge_ = min(maxGauge_, gauge_ + (isCounter ? counterGaugeGain_ : parryGaugeGain_));
+			GameSound::PlaySE(GameSound::SE::Player_Parry);
 		}
 
 		PostProcess::GetInstance()->SetChromaticAberrationEnabled(true);
@@ -347,6 +360,7 @@ namespace AL4_1 {
 		if (onGround_ && Input::TriggerKey(DIK_W)) {
 			velocity_.y = jumpPower_;
 			onGround_ = false;
+			GameSound::PlaySE(GameSound::SE::Player_Jump);
 		}
 	}
 
@@ -354,6 +368,7 @@ namespace AL4_1 {
 		isAttacking_ = true;
 		isAttackHitDone_ = false;
 		attackTimer_ = attackActiveTime_;
+		GameSound::PlaySE(GameSound::SE::Player_Attack);
 	}
 
 	void Player::HpEffectUpdate() {

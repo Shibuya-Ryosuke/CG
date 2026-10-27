@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "../GameResources/GameTex.h"
+#include "../GameResources/GameSound.h"
 #include <algorithm>
 
 using namespace RyoEngine;
@@ -335,11 +336,13 @@ namespace AL4_1 {
 		if (!isInputEnabled_ || !gameUI_.IsMenuReady()) { return; }
 
 		const int32_t count = static_cast<int32_t>(GameUI::MenuItem::Count);
-		if (Input::TriggerKey(DIK_W)) {
+		if (Input::TriggerKey(DIK_W) || Input::TriggerKey(DIK_UP)) {
 			menuSelection_ = (menuSelection_ + count - 1) % count;
+			GameSound::PlaySE(GameSound::SE(GameSound::SE::Cursor));
 		}
-		if (Input::TriggerKey(DIK_S)) {
+		if (Input::TriggerKey(DIK_S) || Input::TriggerKey(DIK_DOWN)) {
 			menuSelection_ = (menuSelection_ + 1) % count;
+			GameSound::PlaySE(GameSound::SE(GameSound::SE::Cursor));
 		}
 		gameUI_.SetMenuSelection(menuSelection_);
 
@@ -350,6 +353,7 @@ namespace AL4_1 {
 			} else {
 				isRequestTitle_ = true;
 			}
+			GameSound::PlaySE(GameSound::SE::Decide);
 		}
 	}
 
@@ -371,9 +375,8 @@ namespace AL4_1 {
 	}
 
 	void Game::ResetPlayer() {
-		player_.FullHp();
+		player_.ResetStatus();
 		player_.InvincibeleDisabled();
-		player_.ChargeDisabled();
 	}
 
 	void Game::CheckAllCollisions() {

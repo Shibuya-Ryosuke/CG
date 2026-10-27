@@ -21,28 +21,29 @@ namespace AL4_1 {
 
 		// 判定を取るマップを渡す（Gameが所有）
 		void SetMap(const MapChipField* map) { map_ = map; }
-		// 足元の位置（カメラの追従などに使う）
+		// 足元の位置取得
 		const RyoEngine::Vector3& GetPosition() const { return transform_.translate; }
 
-		// 当たり判定の大きさ（幅,高さ,奥行き）を設定する。モデルの大きさとは無関係に変更できる
+		// 当たり判定の大きさをセット
 		void SetCollideSize(const RyoEngine::Vector3& size) {
 			halfSize_ = { size.x * 0.5f, size.y * 0.5f, size.z * 0.5f };
 		}
-		// 足元の位置を設定（スポーン用）
+		// 足元の位置をセット
 		void SetPosition(const RyoEngine::Vector3& feet) { transform_.translate = feet; }
 
-
+		// 被ダメージ
 		void OnDamage(float damage);
+
 		const RyoEngine::OBB GetOBB()const { return obb_; }
 		float GetHP() const { return hp_; }
 		float GetMaxHP() const { return maxHp_; }
 		bool IsDead() const { return isDead_; }
 
-		// --- 攻撃（パリィを兼ねる） ---
-		// 攻撃判定が出ているか（この間はパリィも受け付ける）
+		// 攻撃判定は有効か（パリィも同期）
 		bool IsAttackActive() const { return isAttacking_; }
-		// 攻撃判定（パリィ判定も兼ねる）
+		// 攻撃判定に使うOBBの取得
 		const RyoEngine::OBB& GetAttackOBB() const { return attackObb_; }
+		// 与ダメージの取得
 		float GetAttackDamage() const { return attackDamage_; }
 
 		bool IsAttackHitDone() const { return isAttackHitDone_; }
@@ -58,9 +59,10 @@ namespace AL4_1 {
 		// --- ゲージ（パリィで溜まり、満タンでパリィするとフルパリィ） ---
 		float GetGaugeRatio() const { return maxGauge_ > 0.0f ? gauge_ / maxGauge_ : 0.0f; }
 		bool IsGaugeMax() const { return gauge_ >= maxGauge_; }
-		// フルパリィでボスに与える追加ダメージ
+		// フルパリィでボスに与える追加ダメージの取得
 		float GetFullParryDamage() const { return fullParryDamage_; }
 
+		// statusリセット
 		void ResetStatus();
 
 		// 操作を受け付けるか
@@ -111,7 +113,7 @@ namespace AL4_1 {
 		// 体の当たり判定の半分のサイズ
 		RyoEngine::Vector3 halfSize_ = { 0.8f,1.0f,0.8f };
 
-		// 速度（単位：ワールド座標/秒。1マス=2.0）
+		// 速度
 		RyoEngine::Vector3 velocity_ = { 0.0f,0.0f,0.0f };
 		float moveSpeed_ = 12.0f;
 		// 向いている方向（+1:右 -1:左）。最後に入力した方向
@@ -135,11 +137,11 @@ namespace AL4_1 {
 		bool isControllable_ = true;
 
 		// --- ジャンプ関係 ---
-		// 接地判定（マップとの判定結果で毎フレーム更新される）
+		// 接地判定
 		bool onGround_ = false;
-		// 初速（ワールド座標/秒）
+		// 初速
 		float jumpPower_ = 28.0f;
-		// 重力（ワールド座標/秒^2）
+		// 重力
 		float gravity_ = 80.0f;
 		// 落下速度の上限
 		float maxFallSpeed_ = 60.0f;
@@ -188,7 +190,7 @@ namespace AL4_1 {
 		// --- サマーソルト（攻撃中の1回転。見た目だけで判定は回さない） ---
 		float spinEasePower_ = 2.0f;
 		float spinDirection_ = 1.0f;
-		// 回転の軌跡パーティクルの発生位置（体の中心から回転に合わせて円を描く）
+		// 回転の軌跡パーティクルの発生位置（体の中心から伸ばし、回転に合わせて円を描く）
 		RyoEngine::Vector3 spinTrailPos_ = { 0.0f,0.0f,0.0f };
 		// 体の中心から軌跡までの距離（足先あたりが通るくらい）
 		float spinTrailRadius_ = 1.0f;
@@ -199,7 +201,7 @@ namespace AL4_1 {
 		// --- パリィ成功時の演出（色収差＋スロー） ---
 		// エフェクトを出すか
 		bool isParryEffect_ = false;
-		// パリィが成功したフレームだけtrue（パーティクルの発生フラグ用。次のUpdateの冒頭で戻す）
+		// パリィが成功したフレームだけtrue
 		bool isParryTrigger_ = false;
 		// 経過時間
 		float parryEffectTimer_ = 0.0f;
@@ -239,7 +241,7 @@ namespace AL4_1 {
 		float chargeEmissiveIntensity_ = 1.5f;
 		// 満タンのときは脈打つ（最大の強さを超えないよう、下へ揺らす）
 		float maxPulseSpeed_ = 3.0f;		// 1秒あたりの回数
-		float maxPulseAmount_ = 0.3f;		// 最大の強さから下げる割合（0.3なら 1.5 → 1.05 の間で揺れる）
+		float maxPulseAmount_ = 0.3f;		// 最大の強さから下げる割合
 		float gaugeTimer_ = 0.0f;
 		// パーティクル用の段階フラグ（1/3以上・2/3以上・満タン）。エミッターを重ねて、溜まるほどパリパリが増える
 		bool isFirstCharge_ = false;
@@ -250,7 +252,7 @@ namespace AL4_1 {
 		// フルパリィの演出（通常のパリィ・カウンターより強く・遅く）
 		float fullParryEffectDuration_ = 1.2f;
 		float fullParryEffectPeakTime_ = 0.3f;
-		float fullParryEffectHoldTime_ = 0.4f;	// 一番遅い状態を保つ時間（duration に含まれる）
+		float fullParryEffectHoldTime_ = 0.4f;
 		float fullParryMaxChromatic_ = 0.6f;
 		float fullParrySlowScale_ = 0.03f;
 	};
