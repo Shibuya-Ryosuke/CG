@@ -229,6 +229,9 @@
     <ClCompile Include="Original\Test\TestSceneFactory.cpp">
       <Filter>Engine\Test</Filter>
     </ClCompile>
+    <ClCompile Include="Original\Core\Math\WorldTransform.cpp">
+      <Filter>Engine\Core\Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Test\TestPlayer.h">
@@ -398,6 +401,9 @@
     </ClInclude>
     <ClInclude Include="Original\Test\TestSceneFactory.h">
       <Filter>Engine\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Core\Math\WorldTransform.h">
+      <Filter>Engine\Core\Math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

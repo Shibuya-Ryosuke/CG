@@ -154,6 +154,7 @@ namespace RyoEngine {
         ModelCommon::CommandsClear();
         SpriteCommon::CommandsClear();
         ModelManager::NewFrame();
+        WorldTransform::NewFrame();
         GPUParticleCommon::CommandsClear();
 
         Input::Update();

@@ -14,6 +14,7 @@
 #include "Core/Base/IGame.h"
 #include "Core/Easing/Easing.h"
 #include "Core/Math/Math.h"
+#include "Core/Math/WorldTransform.h"
 #include "Core/Math/Collision.h"
 #include "Core/Math/BlendMode.h"
 #include "Core/Input/Input.h"

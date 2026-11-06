@@ -209,7 +209,12 @@ namespace RyoEngine {
         // ---- 2. 選択中のModelにギズモ ----
         if (selected_) {
             Transform t = selected_->GetTransform();
-            if (Gizmo::Edit(t, view_, proj_, 0)) {
+            // 親がいる場合、GetTransform()は親から見た値なので、親の行列を渡してワールドの位置にギズモを出す
+            const WorldTransform* parent = selected_->GetParent();
+            const bool edited = parent
+                ? Gizmo::EditLocal(t, parent->GetWorldMatrix(), view_, proj_, 0)
+                : Gizmo::Edit(t, view_, proj_, 0);
+            if (edited) {
                 selected_->ApplyEditedTransform(t);
             }
         }

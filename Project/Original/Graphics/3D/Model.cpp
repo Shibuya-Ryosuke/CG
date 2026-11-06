@@ -9,10 +9,6 @@ namespace RyoEngine {
 
     namespace {
         constexpr float kDegToRad = 3.14159265358979323846f / 180.0f;
-
-        Vector3 DegToRad(const Vector3& deg) {
-            return { deg.x * kDegToRad, deg.y * kDegToRad, deg.z * kDegToRad };
-        }
     }
 
     Model::~Model() {
@@ -30,7 +26,7 @@ namespace RyoEngine {
 
     void Model::ApplyEditedTransform(const Transform& transform) {
         layoutEdited_ = true;
-        transform_ = transform;
+        worldTransform_.SetLocal(transform);
         if (onTransformEdited_) {
             onTransformEdited_(transform);
         }
@@ -105,14 +101,19 @@ namespace RyoEngine {
             layoutApplied_ = true;
             Transform saved{};
             if (ModelLayout::TryGetSaved(layoutSlot_.key, saved)) {
-                transform_ = saved;
+                worldTransform_.SetLocal(saved);
             }
         }
 
-        worldMatrix_ = MakeAffineMatrix(transform_.scale, DegToRad(transform_.rotate), transform_.translate);
-
         // 視錐台判定はカメラ確定後のDraw()で行うので、ここでは指定だけ覚えておく
         frustumCulling_ = frustumCulling;
+
+        UpdateWorld();
+    }
+
+    void Model::UpdateWorld() {
+        // 親がいれば「ローカル × 親のワールド行列」。親がこのフレームで未計算なら先に計算される
+        worldTransform_.UpdateMatrix();
 
         const ModelManager::ModelAsset* asset = ModelManager::GetAsset(modelIndex_);
         if (!asset) {
@@ -121,12 +122,14 @@ namespace RyoEngine {
         }
 
         // フラスタムカリング用の球。非一様スケールでも安全なよう一番大きい成分で球を拡大する
-        float maxScale = transform_.scale.x;
-        if (transform_.scale.y > maxScale) maxScale = transform_.scale.y;
-        if (transform_.scale.z > maxScale) maxScale = transform_.scale.z;
+        // (親のスケールも反映するため、ローカルのSRTではなくワールド行列から取り出したスケールを使う)
+        const Vector3 worldScale = worldTransform_.GetWorldScale();
+        float maxScale = worldScale.x;
+        if (worldScale.y > maxScale) maxScale = worldScale.y;
+        if (worldScale.z > maxScale) maxScale = worldScale.z;
 
         // 球の計算はクリック選択のため常に行う
-        pickCenter_ = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
+        pickCenter_ = worldTransform_.GetWorldPosition();
         pickRadius_ = asset->boundingRadius * maxScale;
     }
 
@@ -135,6 +138,12 @@ namespace RyoEngine {
         if (!asset) {
             isVisible_ = false;
             return;
+        }
+
+        // 親がいる場合、TransferMatrix の後に親が動かされているかもしれないので、親の最新の行列で計算し直す
+        // (Update で 子のTransferMatrix → 親の移動・TransferMatrix の順になっていても、1フレーム遅れないように)
+        if (worldTransform_.GetParent()) {
+            UpdateWorld();
         }
 
         // フラスタムカリング。CameraManager::UpdateAll()で確定済みの描画カメラで判定する
@@ -161,7 +170,7 @@ namespace RyoEngine {
             const ModelManager::MeshAsset& meshAsset = asset->meshes[i];
 
             ModelInstanceData data;
-            data.world = worldMatrix_;
+            data.world = worldTransform_.GetWorldMatrix();
             data.color = state.color;
             data.emissive = { state.emissiveColor.x, state.emissiveColor.y, state.emissiveColor.z, state.emissiveIntensity };
 

@@ -157,6 +157,73 @@ namespace RyoEngine {
         }
         return changed;
     }
+
+    bool Gizmo::EditLocal(Transform& local, const Matrix4x4& parentWorld, const Matrix4x4& view, const Matrix4x4& proj, int id) {
+        if (!viewValid_) {
+            return false; // Game Viewが見えていない (折りたたみ/非表示)
+        }
+        ImGuiWindow* window = ImGui::FindWindowByName("Game View");
+        if (!window) {
+            return false;
+        }
+
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetDrawlist(window->DrawList);
+        ImGuizmo::SetRect(viewMin_[0], viewMin_[1], viewMax_[0] - viewMin_[0], viewMax_[1] - viewMin_[1]);
+        ImGui::PushID(id);
+
+        // ローカルのSRT -> ローカル行列 (Edit と同じく ImGuizmo の回転順で組み立てる)
+        float t[3] = { local.translate.x, local.translate.y, local.translate.z };
+        float r[3] = { local.rotate.x, local.rotate.y, local.rotate.z };
+        float s[3] = { local.scale.x, local.scale.y, local.scale.z };
+        Matrix4x4 localMatrix{};
+        ImGuizmo::RecomposeMatrixFromComponents(t, r, s, &localMatrix.m[0][0]);
+
+        // ギズモは親を含めたワールドの位置・向きに出す (行ベクトル規約: world = local * parent)
+        Matrix4x4 worldMatrix = localMatrix * parentWorld;
+
+        const ImGuizmo::OPERATION op = ToImGuizmo(operation_);
+        const ImGuizmo::MODE mode = (useLocal_ || operation_ == Operation::Scale) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
+
+        float snap[3] = { 0, 0, 0 };
+        const float* snapPtr = nullptr;
+        if (useSnap_) {
+            const float v = operation_ == Operation::Translate ? snapTranslate_
+                : operation_ == Operation::Rotate ? snapRotate_ : snapScale_;
+            snap[0] = snap[1] = snap[2] = v;
+            snapPtr = snap;
+        }
+
+        const bool changed = ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], op, mode, &worldMatrix.m[0][0], nullptr, snapPtr);
+
+        const bool usingOrOver = ImGuizmo::IsUsing() || ImGuizmo::IsOver();
+        ImGui::PopID();
+
+        if (usingOrOver) {
+            busy_ = true;
+        }
+
+        if (changed) {
+            // 動かしたワールド行列を、親の逆行列でローカル行列へ戻す (local = world * parent^-1)
+            Matrix4x4 newLocal = worldMatrix * Inverse(parentWorld);
+
+            // 操作した種類の値だけを書き戻す (他の値が分解の誤差で動かないように)
+            float nt[3], nr[3], ns[3];
+            ImGuizmo::DecomposeMatrixToComponents(&newLocal.m[0][0], nt, nr, ns);
+            switch (operation_) {
+            case Operation::Translate:
+                local.translate = { newLocal.m[3][0], newLocal.m[3][1], newLocal.m[3][2] };
+                break;
+            case Operation::Rotate:
+                local.rotate = { nr[0], nr[1], nr[2] };
+                break;
+            case Operation::Scale:
+                local.scale = { ns[0], ns[1], ns[2] };
+                break;
+            }
+        }
+        return changed;
+    }
 }
 
 #else // Release: 何もしない
@@ -167,6 +234,7 @@ namespace RyoEngine {
     void Gizmo::DrawToolbar() {}
     bool Gizmo::Edit(Transform&, const Camera&, int) { return false; }
     bool Gizmo::Edit(Transform&, const Matrix4x4&, const Matrix4x4&, int) { return false; }
+    bool Gizmo::EditLocal(Transform&, const Matrix4x4&, const Matrix4x4&, const Matrix4x4&, int) { return false; }
     bool Gizmo::GetViewRect(float&, float&, float&, float&) { return false; }
     bool Gizmo::IsBusy() { return false; }
     void Gizmo::SetOperation(Operation) {}

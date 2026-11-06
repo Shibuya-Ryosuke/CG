@@ -32,6 +32,13 @@ namespace RyoEngine {
         static bool Edit(Transform& transform, const Camera& camera, int id = 0);
         /// <summary>カメラ行列を直接渡す版 (ModelPickerなど、Cameraオブジェクトを持たない所から使う)</summary>
         static bool Edit(Transform& transform, const Matrix4x4& view, const Matrix4x4& proj, int id = 0);
+        /// <summary>
+        /// 親がいる Transform(ローカル値) を編集する版。ギズモは親を含めたワールドの位置・向きに出し、
+        /// 動かした結果を親の逆行列でローカル値に戻して書き戻す。値が変わったら true。
+        /// </summary>
+        /// <param name="local">親から見たSRT (回転は度数法)</param>
+        /// <param name="parentWorld">親のワールド行列</param>
+        static bool EditLocal(Transform& local, const Matrix4x4& parentWorld, const Matrix4x4& view, const Matrix4x4& proj, int id = 0);
 
         /// <summary>Game Viewのゲーム画面の矩形 (ImGui/クライアント座標)。見えていなければ false</summary>
         static bool GetViewRect(float& minX, float& minY, float& maxX, float& maxY);

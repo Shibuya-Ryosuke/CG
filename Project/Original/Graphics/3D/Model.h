@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -6,6 +7,7 @@
 #include <vector>
 #include "../../Core/Math/Math.h"
 #include "../../Core/Math/Transform.h"
+#include "../../Core/Math/WorldTransform.h"
 #include "../../Core/Math/Geometry.h"
 #include "../../Camera/Camera.h"
 #include "ModelManager.h"
@@ -97,17 +99,17 @@ namespace RyoEngine {
         /// <summary>視錐台の中にいるか (Draw()で判定されるので、Draw()より後に参照すること)</summary>
         bool IsVisible() const { return isVisible_; }
 
-        Transform& GetTransform() { return transform_; }
-        const Vector3& GetScale() const { return transform_.scale; }
+        Transform& GetTransform() { return worldTransform_.GetLocal(); }
+        const Vector3& GetScale() const { return worldTransform_.GetLocal().scale; }
         /// <summary>回転(度数法)</summary>
-        const Vector3& GetRotate() const { return transform_.rotate; }
-        const Vector3& GetTranslate() const { return transform_.translate; }
+        const Vector3& GetRotate() const { return worldTransform_.GetLocal().rotate; }
+        const Vector3& GetTranslate() const { return worldTransform_.GetLocal().translate; }
 
-        const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
-        Vector3 GetWorldPos() const { return { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] }; }
-        Vector3 GetOrientationX() const { return Normalize({ worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] }); }
-        Vector3 GetOrientationY() const { return Normalize({ worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] }); }
-        Vector3 GetOrientationZ() const { return Normalize({ worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] }); }
+        const Matrix4x4& GetWorldMatrix() const { return worldTransform_.GetWorldMatrix(); }
+        Vector3 GetWorldPos() const { return worldTransform_.GetWorldPosition(); }
+        Vector3 GetOrientationX() const { const Matrix4x4& m = worldTransform_.GetWorldMatrix(); return Normalize({ m.m[0][0], m.m[0][1], m.m[0][2] }); }
+        Vector3 GetOrientationY() const { const Matrix4x4& m = worldTransform_.GetWorldMatrix(); return Normalize({ m.m[1][0], m.m[1][1], m.m[1][2] }); }
+        Vector3 GetOrientationZ() const { const Matrix4x4& m = worldTransform_.GetWorldMatrix(); return Normalize({ m.m[2][0], m.m[2][1], m.m[2][2] }); }
 
         // meshIndex省略時は0番目
         uint32_t GetTxHandle(size_t meshIndex = 0) const { return meshes_[meshIndex].textureHandle; }
@@ -127,15 +129,33 @@ namespace RyoEngine {
         int32_t GetMeshIndexByName(const std::string& materialName) const;
 
         // ---------------- Setter: Transform ----------------
-        void SetTransform(const Transform& transform) { transform_ = transform; }
-        void SetScale(const Vector3& scale) { transform_.scale = scale; }
+        void SetTransform(const Transform& transform) { worldTransform_.SetLocal(transform); }
+        void SetScale(const Vector3& scale) { worldTransform_.GetLocal().scale = scale; }
         /// <summary>回転(度数法)</summary>
-        void SetRotate(const Vector3& rotateDeg) { transform_.rotate = rotateDeg; }
-        void SetRotateY(float rotateYDeg) { transform_.rotate.y = rotateYDeg; }
-        void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
-        void SetTranslateX(float x) { transform_.translate.x = x; }
-        void SetTranslateY(float y) { transform_.translate.y = y; }
-        void SetTranslateZ(float z) { transform_.translate.z = z; }
+        void SetRotate(const Vector3& rotateDeg) { worldTransform_.GetLocal().rotate = rotateDeg; }
+        void SetRotateY(float rotateYDeg) { worldTransform_.GetLocal().rotate.y = rotateYDeg; }
+        void SetTranslate(const Vector3& translate) { worldTransform_.GetLocal().translate = translate; }
+        void SetTranslateX(float x) { worldTransform_.GetLocal().translate.x = x; }
+        void SetTranslateY(float y) { worldTransform_.GetLocal().translate.y = y; }
+        void SetTranslateZ(float z) { worldTransform_.GetLocal().translate.z = z; }
+
+        // ---------------- 親子 ----------------
+        /// <summary>
+        /// 親を設定する (nullptrで解除)。親子にすると、GetTransform() の値は「親から見た値」になり、
+        /// 親を動かす・回す・拡縮すると、この Model もついてくる。
+        /// 親が先に破棄された場合は自動で解除される。
+        /// </summary>
+        void SetParent(Model* parent) { worldTransform_.SetParent(parent ? &parent->worldTransform_ : nullptr); }
+        /// <summary>
+        /// 見た目と関係ない基準点(WorldTransform単体)を親にする版。
+        /// その WorldTransform を動かしたら、動かした後に UpdateMatrix() を呼ぶこと
+        /// </summary>
+        void SetParent(WorldTransform* parent) { worldTransform_.SetParent(parent); }
+        /// <summary>親子解除 (SetParent(nullptr) で呼べるようにするため)</summary>
+        void SetParent(std::nullptr_t) { worldTransform_.SetParent(nullptr); }
+        WorldTransform* GetParent() const { return worldTransform_.GetParent(); }
+        WorldTransform& GetWorldTransform() { return worldTransform_; }
+        const WorldTransform& GetWorldTransform() const { return worldTransform_; }
 
         // ---------------- Setter: 見た目 (meshIndex が負なら全メッシュ) ----------------
         /// <summary>テクスチャ。0を渡すと初期値(map_Kd or white1x1)へ戻る</summary>
@@ -178,6 +198,9 @@ namespace RyoEngine {
             Vector2 uvTranslate = { 0.0f, 0.0f };
         };
 
+        // ワールド行列とバウンディング球を計算し直す (TransferMatrix と、親がいるときは Draw からも呼ぶ)
+        void UpdateWorld();
+
         // meshIndex<0 なら全メッシュ、それ以外なら指定メッシュにfuncを適用
         template <typename Func>
         void ForEachMesh(int32_t meshIndex, Func&& func) {
@@ -189,10 +212,9 @@ namespace RyoEngine {
         }
 
         uint32_t modelIndex_ = ModelManager::kInvalidModelIndex;
-        Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+        WorldTransform worldTransform_; // ローカルのSRT・親子・ワールド行列 (GetTransform()はローカルのSRTを返す)
         std::vector<MeshState> meshes_;
 
-        Matrix4x4 worldMatrix_ = MakeIdentity4x4();
         bool isVisible_ = true;
         bool frustumCulling_ = true; // TransferMatrixで指定された値。判定自体はDraw()で行う
 
