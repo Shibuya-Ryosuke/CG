@@ -41,11 +41,6 @@ namespace RyoEngine {
         /// </summary>
         static void Composite();
 
-        /// <summary>
-        /// 露出・ACES・ブルームのON/OFFや数値を切り替えるImGuiパネルを描画する。
-        /// </summary>
-        static void DrawImGui();
-
         // --- 外部から直接切り替えたい場合用 ---
         static void SetACESEnabled(bool enabled) { GetInstance()->acesEnabled_ = enabled; }
         static bool IsACESEnabled() { return GetInstance()->acesEnabled_; }

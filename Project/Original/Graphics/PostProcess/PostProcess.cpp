@@ -4,7 +4,6 @@
 #include "../../Core/Base/ShaderCompiler.h"
 #include "../../Core/Base/SrvManager.h"
 #include "../../Graphics/2D/TextureManager.h"
-#include "../../Externals/imgui/imgui.h"
 #include <cassert>
 #include <algorithm>
 
@@ -518,56 +517,5 @@ namespace RyoEngine {
         commandList->SetGraphicsRootDescriptorTable(0, TextureManager::GetGPUHandle(instance->sceneColorTextureHandle_));
 
         commandList->DrawInstanced(3, 1, 0, 0);
-    }
-
-    void PostProcess::DrawImGui() {
-        PostProcess* instance = GetInstance();
-
-#ifdef NRELEASE
-        ImGui::Begin("PostProcess");
-        ImGui::SliderFloat("露出", &instance->exposure_, 0.0f, 5.0f);
-        ImGui::Checkbox("ACES トーンマッピング", &instance->acesEnabled_);
-        if (!instance->acesEnabled_) {
-            ImGui::TextDisabled("(OFF時は露出後の値を単純にクリップします)");
-        }
-        ImGui::Separator();
-        ImGui::Checkbox("Bloom", &instance->bloomEnabled_);
-        if (instance->bloomEnabled_) {
-            ImGui::SliderFloat("Bloom対象となる境界値", &instance->bloomThreshold_, 0.0f, 10.0f);
-            ImGui::SliderFloat("Bloomの強さ", &instance->bloomIntensity_, 0.0f, 10.0f);
-        }
-        ImGui::Separator();
-        ImGui::Checkbox("色収差(Chromatic Aberration)", &instance->chromaticAberrationEnabled_);
-        if (instance->chromaticAberrationEnabled_) {
-            ImGui::SliderFloat("色収差の強さ", &instance->chromaticAberrationStrength_, 0.0f, 0.05f);
-        }
-        ImGui::Separator();
-        ImGui::Checkbox("ブラー(簡易版)", &instance->blurEnabled_);
-        if (instance->blurEnabled_) {
-            ImGui::SliderFloat("ブラーの強さ", &instance->blurStrength_, 0.0f, 0.02f);
-            ImGui::TextDisabled("(3x3の簡易ボックスブラー。強くかけるとバンディングが出やすい)");
-        }
-        ImGui::Separator();
-        ImGui::Checkbox("ノイズ(グレイン)", &instance->noiseEnabled_);
-        if (instance->noiseEnabled_) {
-            ImGui::SliderFloat("ノイズの強さ", &instance->noiseIntensity_, 0.0f, 0.5f);
-        }
-        ImGui::Separator();
-        ImGui::Checkbox("グリッチ", &instance->glitchEnabled_);
-        if (instance->glitchEnabled_) {
-            ImGui::SliderFloat("グリッチの強さ", &instance->glitchIntensity_, 0.0f, 0.3f);
-        }
-        ImGui::Separator();
-        ImGui::Checkbox("ゆがみ(Distortion)", &instance->distortionEnabled_);
-        if (instance->distortionEnabled_) {
-            ImGui::SliderFloat("ゆがみの強さ", &instance->distortionStrength_, 0.0f, 0.05f);
-        }
-        ImGui::Separator();
-        ImGui::Checkbox("白黒化(Grayscale)", &instance->grayscaleEnabled_);
-        if (instance->grayscaleEnabled_) {
-            ImGui::SliderFloat("白黒の度合い", &instance->grayscaleIntensity_, 0.0f, 1.0f);
-        }
-        ImGui::End();
-#endif
     }
 }

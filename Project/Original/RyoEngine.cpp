@@ -212,8 +212,6 @@ namespace RyoEngine {
         ShadowMap::DrawImGui();
         // ギズモ操作モード(W/E/R・ローカル/ワールド・スナップ)
         Gizmo::DrawToolbar();
-        // ポストプロセス(HDR/ブルームのON-OFF)
-        PostProcess::DrawImGui();
         // GPUパーティクル
         GPUParticleManager::DrawImGui();
         // カメラ(一覧・切り替え)
