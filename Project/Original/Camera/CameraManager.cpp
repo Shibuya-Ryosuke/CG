@@ -256,9 +256,6 @@ namespace RyoEngine {
         ImGui::Text("ゲームカメラ : %s", activeName.c_str());
         ImGui::Text("描画カメラ   : %s", debugCamera.GetIsAvailable() ? "DebugCamera" : activeName.c_str());
         ImGui::Text("Pushの履歴   : %zu", activeStack.size());
-        if (ImGui::Button("Pop")) {
-            PopActive();
-        }
 
         ImGui::Separator();
 
@@ -273,10 +270,6 @@ namespace RyoEngine {
             if (ImGui::TreeNode("camera", "%s%s [%u]", isActive ? "* " : "  ", DisplayName(slot).c_str(), index)) {
                 if (ImGui::Button("SetActive")) {
                     SetActive(index);
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Push")) {
-                    PushActive(index);
                 }
 
                 bool enabled = camera->IsActive();
