@@ -91,6 +91,9 @@
     <Filter Include="Engine\Scene">
       <UniqueIdentifier>{b2750279-a958-4662-97d7-9afa08f7d6f5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Core\Asset">
+      <UniqueIdentifier>{aedd5725-5b1d-41da-bfbc-4323a6850b6e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -231,6 +234,9 @@
     </ClCompile>
     <ClCompile Include="Original\Core\Math\WorldTransform.cpp">
       <Filter>Engine\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Core\Asset\AssetRegistry.cpp">
+      <Filter>Engine\Core\Asset</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -404,6 +410,9 @@
     </ClInclude>
     <ClInclude Include="Original\Core\Math\WorldTransform.h">
       <Filter>Engine\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Core\Asset\AssetRegistry.h">
+      <Filter>Engine\Core\Asset</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

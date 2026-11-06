@@ -47,6 +47,7 @@ namespace RyoEngine {
 
         /// <summary>
         /// ファイルパスからの作成 (内部で LoadObj を呼ぶ。同じパスは読み込み1回のみ)
+        /// 名前(拡張子なしのファイル名。重複時は "フォルダ名/ファイル名")でも指定できる
         /// </summary>
         static std::unique_ptr<Model> Create(const std::string& filePath, uint32_t textureIndex = 0);
 

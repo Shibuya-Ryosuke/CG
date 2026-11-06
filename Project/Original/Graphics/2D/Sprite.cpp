@@ -3,6 +3,7 @@
 #include "../../Core/Base/Logger.h"
 #include "SpriteCommon.h"
 #include "../../Graphics/2D/TextureManager.h"
+#include "../../Core/Asset/AssetRegistry.h"
 
 namespace RyoEngine {
     namespace {
@@ -50,7 +51,9 @@ namespace RyoEngine {
     }
 
     void Sprite::Initialize(const std::string& filePath, Vector2 position, Anchor anchor) {
-        Initialize(TextureManager::Load(filePath), position, anchor);
+        // パスでも名前でもよい。見つからなければ white1x1
+        const std::string fullPath = AssetRegistry::Resolve(AssetRegistry::Type::Texture, filePath);
+        Initialize(fullPath.empty() ? TextureManager::GetWhiteTex() : TextureManager::Load(fullPath), position, anchor);
     }
 
     void Sprite::Finalize() {
@@ -134,7 +137,8 @@ namespace RyoEngine {
     }
 
     void Sprite::SetTex(const std::string& filePath) {
-        SetTex(TextureManager::Load(filePath));
+        const std::string fullPath = AssetRegistry::Resolve(AssetRegistry::Type::Texture, filePath);
+        SetTex(fullPath.empty() ? TextureManager::GetWhiteTex() : TextureManager::Load(fullPath));
     }
 
     void Sprite::SetTextureRect(uint32_t startX, uint32_t startY, uint32_t endX, uint32_t endY, bool resizeSprite) {

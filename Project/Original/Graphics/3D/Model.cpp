@@ -3,6 +3,7 @@
 #include "../../Core/Math/Collision.h"
 #include "../../Editor/ModelPicker.h"
 #include "../../Camera/CameraManager.h"
+#include "../../Core/Asset/AssetRegistry.h"
 #include <cassert>
 
 namespace RyoEngine {
@@ -48,7 +49,9 @@ namespace RyoEngine {
     }
 
     void Model::SetModel(const std::string& filePath, uint32_t textureIndex) {
-        SetModel(ModelManager::LoadObj(filePath), textureIndex);
+        // パスでも名前でもよい。見つからなければ無効なindex (描画されないだけで落ちない)
+        const std::string fullPath = AssetRegistry::Resolve(AssetRegistry::Type::Model, filePath);
+        SetModel(fullPath.empty() ? ModelManager::kInvalidModelIndex : ModelManager::LoadObj(fullPath), textureIndex);
     }
 
     void Model::SetModel(uint32_t modelIndex, uint32_t textureIndex) {
@@ -236,7 +239,9 @@ namespace RyoEngine {
     }
 
     void Model::SetTex(const std::string& filePath, int32_t meshIndex) {
-        SetTex(TextureManager::Load(filePath), meshIndex);
+        // パスでも名前でもよい。見つからなければ white1x1
+        const std::string fullPath = AssetRegistry::Resolve(AssetRegistry::Type::Texture, filePath);
+        SetTex(fullPath.empty() ? TextureManager::GetWhiteTex() : TextureManager::Load(fullPath), meshIndex);
     }
 
     void Model::SetColor(const Vector4& color, int32_t meshIndex) {

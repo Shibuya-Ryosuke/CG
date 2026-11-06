@@ -43,6 +43,9 @@ namespace RyoEngine {
         // 入力関係初期化
         Input::Initialize(WinApp::GetHInstance(), WinApp::GetHwnd());
 
+        // アセットフォルダの走査 (名前で呼べるようにする。読み込みはまだしない)
+        AssetRegistry::Initialize("Resources/ApplicationResources/");
+
         // テクスチャマネージャーの初期化
         TextureManager::Initialize();
 
@@ -332,22 +335,37 @@ namespace RyoEngine {
     }
 
     uint32_t LoadObj(const std::string& filePath) {
-        std::string fullPath = "Resources/ApplicationResources/" + filePath;
+        // パス("Models/enemy/enemy.obj")でも名前("enemy")でもよい。見つからなければ無効なindex
+        std::string fullPath = AssetRegistry::Resolve(AssetRegistry::Type::Model, filePath);
+        if (fullPath.empty()) {
+            return ModelManager::kInvalidModelIndex;
+        }
         return ModelManager::LoadObj(fullPath);
     }
 
     uint32_t LoadTex(const std::string& filePath, bool isSRGB) {
-        std::string fullPath = "Resources/ApplicationResources/" + filePath;
+        // 見つからなければ white1x1
+        std::string fullPath = AssetRegistry::Resolve(AssetRegistry::Type::Texture, filePath);
+        if (fullPath.empty()) {
+            return TextureManager::GetWhiteTex();
+        }
         return TextureManager::Load(fullPath, isSRGB);
     }
 
     uint32_t LoadBGM(const std::string& filePath) {
-        std::string fullPath = "Resources/ApplicationResources/" + filePath;
+        // 見つからなければ無効なハンドル (Playしても何も起きない)
+        std::string fullPath = AssetRegistry::Resolve(AssetRegistry::Type::Sound, filePath);
+        if (fullPath.empty()) {
+            return Audio::kInvalidHandle;
+        }
         return Audio::LoadBGM(fullPath);
     }
 
     uint32_t LoadSE(const std::string& filePath) {
-        std::string fullPath = "Resources/ApplicationResources/" + filePath;
+        std::string fullPath = AssetRegistry::Resolve(AssetRegistry::Type::Sound, filePath);
+        if (fullPath.empty()) {
+            return Audio::kInvalidHandle;
+        }
         return Audio::LoadSE(fullPath);
     }
 

@@ -6,10 +6,14 @@
 #include <cstdint>
 #include <string>
 #include <memory>
+#include <unordered_map>
 
 namespace RyoEngine {
 	class Audio {
 	public:
+		/// <summary>名前が見つからなかったときなどに返る無効なハンドル (Play等に渡しても何も起きない)</summary>
+		static constexpr uint32_t kInvalidHandle = 0xFFFFFFFFu;
+
 		/// <summary>
 		/// 初期化
 		/// </summary>
@@ -66,6 +70,15 @@ namespace RyoEngine {
 		/// <param name="handle">LoadBGMで取得したハンドル</param>
 		/// <param name="volume">音量(1.0が等倍)</param>
 		static void SetBGMVolume(uint32_t handle, float volume);
+
+		// ---------------- 名前で呼ぶ版 ----------------
+		// name: アセットの名前 (拡張子なしのファイル名。重複時は "フォルダ名/ファイル名")。パスでもよい
+		// 初めて呼んだときに読み込み、2回目以降は読み込み済みのものを使う。見つからなければ何もしない
+
+		static void PlayBGM(const std::string& name, float volume, bool loop = true);
+		static void PlaySE(const std::string& name, float volume);
+		static void StopBGM(const std::string& name);
+		static void SetBGMVolume(const std::string& name, float volume);
 
 	private:
 		static Audio* GetInstance();
@@ -141,5 +154,9 @@ namespace RyoEngine {
 		std::vector<BGMData> bgmDatas;
 		std::vector<SoundData> seDatas;
 		std::vector<PlayingSE> playingSEs;
+
+		// 同じファイルを2回読み込まないためのキャッシュ (ファイルパス → ハンドル)
+		std::unordered_map<std::string, uint32_t> bgmPathToHandle;
+		std::unordered_map<std::string, uint32_t> sePathToHandle;
 	};
 }

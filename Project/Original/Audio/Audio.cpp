@@ -1,5 +1,6 @@
 #include "Audio.h"
 #include "../../Core/Base/Logger.h"
+#include "../Core/Asset/AssetRegistry.h"
 #include <mfapi.h>
 #include <mfidl.h>  // これがないとエラーになる
 #include <mfreadwrite.h>
@@ -160,19 +161,33 @@ namespace RyoEngine {
 	uint32_t Audio::LoadBGM(const std::string& filename) {
 		Audio* inst = GetInstance();
 
+		// 読み込み済みなら、そのハンドルを返す
+		if (auto it = inst->bgmPathToHandle.find(filename); it != inst->bgmPathToHandle.end()) {
+			return it->second;
+		}
+
 		BGMData data;
 		data.sound = LoadWaveFile(filename);
 		inst->bgmDatas.push_back(std::move(data));
 
-		return static_cast<uint32_t>(inst->bgmDatas.size() - 1);
+		const uint32_t handle = static_cast<uint32_t>(inst->bgmDatas.size() - 1);
+		inst->bgmPathToHandle[filename] = handle;
+		return handle;
 	}
 
 	uint32_t Audio::LoadSE(const std::string& filename) {
 		Audio* inst = GetInstance();
 
+		// 読み込み済みなら、そのハンドルを返す
+		if (auto it = inst->sePathToHandle.find(filename); it != inst->sePathToHandle.end()) {
+			return it->second;
+		}
+
 		inst->seDatas.push_back(LoadWaveFile(filename));
 
-		return static_cast<uint32_t>(inst->seDatas.size() - 1);
+		const uint32_t handle = static_cast<uint32_t>(inst->seDatas.size() - 1);
+		inst->sePathToHandle[filename] = handle;
+		return handle;
 	}
 
 	void Audio::PlayBGM(uint32_t handle, float volume, bool loop) {
@@ -288,5 +303,40 @@ namespace RyoEngine {
 			data.pSourceVoice->Stop();
 			data.pSourceVoice->FlushSourceBuffers();
 		}
+	}
+
+	// ------------------------------------------------------------------
+	// 名前で呼ぶ版
+	// ------------------------------------------------------------------
+	void Audio::PlayBGM(const std::string& name, float volume, bool loop) {
+		const std::string path = AssetRegistry::Resolve(AssetRegistry::Type::Sound, name);
+		if (path.empty()) {
+			return;
+		}
+		PlayBGM(LoadBGM(path), volume, loop);
+	}
+
+	void Audio::PlaySE(const std::string& name, float volume) {
+		const std::string path = AssetRegistry::Resolve(AssetRegistry::Type::Sound, name);
+		if (path.empty()) {
+			return;
+		}
+		PlaySE(LoadSE(path), volume);
+	}
+
+	void Audio::StopBGM(const std::string& name) {
+		const std::string path = AssetRegistry::Resolve(AssetRegistry::Type::Sound, name);
+		if (path.empty()) {
+			return;
+		}
+		StopBGM(LoadBGM(path));
+	}
+
+	void Audio::SetBGMVolume(const std::string& name, float volume) {
+		const std::string path = AssetRegistry::Resolve(AssetRegistry::Type::Sound, name);
+		if (path.empty()) {
+			return;
+		}
+		SetBGMVolume(LoadBGM(path), volume);
 	}
 }

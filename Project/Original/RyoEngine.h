@@ -15,6 +15,7 @@
 #include "Core/Easing/Easing.h"
 #include "Core/Math/Math.h"
 #include "Core/Math/WorldTransform.h"
+#include "Core/Asset/AssetRegistry.h"
 #include "Core/Math/Collision.h"
 #include "Core/Math/BlendMode.h"
 #include "Core/Input/Input.h"
@@ -110,6 +111,7 @@ namespace RyoEngine {
 
     /// <summary>
     /// 画像の読み込み
+    /// 名前(拡張子なしのファイル名。重複時は "フォルダ名/ファイル名")でも指定できる。見つからなければ white1x1
     /// </summary>
     /// <param name="filePath">Resources/ApplicationResources/　の後のパスを記述</param>
     /// <param name="isSRGB">true:色のテクスチャ / false:法線マップなど色ではないデータ(リニアのまま読む)</param>
@@ -118,6 +120,7 @@ namespace RyoEngine {
     
     /// <summary>
     /// BGMの読み込み
+    /// 名前でも指定できる。何回呼んでも読み込みは1回だけ。見つからなければ Audio::kInvalidHandle
     /// </summary>
     /// <param name="filePath">Resources/ApplicationResources/　の後のパスを記述</param>
     /// <returns></returns>
@@ -125,6 +128,7 @@ namespace RyoEngine {
 
     /// <summary>
     /// SEの読み込み
+    /// 名前でも指定できる。何回呼んでも読み込みは1回だけ。見つからなければ Audio::kInvalidHandle
     /// </summary>
     /// <param name="filePath">Resources/ApplicationResources/　の後のパスを記述</param>
     /// <returns></returns>

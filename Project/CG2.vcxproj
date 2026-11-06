@@ -17,6 +17,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Original\Camera\CameraManager.cpp" />
+    <ClCompile Include="Original\Core\Asset\AssetRegistry.cpp" />
     <ClCompile Include="Original\Core\Base\SrvManager.cpp" />
     <ClCompile Include="Original\Core\Math\WorldTransform.cpp" />
     <ClCompile Include="Original\Editor\Gizmo.cpp" />
@@ -65,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Camera\CameraManager.h" />
+    <ClInclude Include="Original\Core\Asset\AssetRegistry.h" />
     <ClInclude Include="Original\Core\Base\SrvManager.h" />
     <ClInclude Include="Original\Core\Math\WorldTransform.h" />
     <ClInclude Include="Original\Editor\Gizmo.h" />
