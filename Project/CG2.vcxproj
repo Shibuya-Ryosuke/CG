@@ -16,129 +16,129 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Original\Camera\CameraManager.cpp" />
-    <ClCompile Include="Original\Core\Asset\AssetRegistry.cpp" />
-    <ClCompile Include="Original\Core\Base\BindingRegistry.cpp" />
-    <ClCompile Include="Original\Core\Base\SrvManager.cpp" />
-    <ClCompile Include="Original\Core\Math\WorldTransform.cpp" />
-    <ClCompile Include="Original\Editor\Gizmo.cpp" />
-    <ClCompile Include="Original\Editor\ModelLayout.cpp" />
-    <ClCompile Include="Original\Editor\ModelPicker.cpp" />
-    <ClCompile Include="Original\Framework\Framework.cpp" />
-    <ClCompile Include="Original\Graphics\2D\Sprite.cpp" />
-    <ClCompile Include="Original\Graphics\2D\SpriteCommon.cpp" />
-    <ClCompile Include="Original\Graphics\3D\InstancedModelCommon.cpp" />
-    <ClCompile Include="Original\Graphics\3D\Mesh\InstancedMesh.cpp" />
-    <ClCompile Include="Original\Graphics\3D\Model.cpp" />
-    <ClCompile Include="Original\Graphics\3D\ModelCommon.cpp" />
-    <ClCompile Include="Original\Audio\Audio.cpp" />
-    <ClCompile Include="Original\Core\Base\DirectXCommon.cpp" />
-    <ClCompile Include="Original\Core\Base\Font.cpp" />
-    <ClCompile Include="Original\Core\Base\Logger.cpp" />
-    <ClCompile Include="Original\Core\Base\TimeManager.cpp" />
-    <ClCompile Include="Original\Core\Base\WinApp.cpp" />
-    <ClCompile Include="Original\Camera\Camera.cpp" />
-    <ClCompile Include="Original\Camera\DebugCamera.cpp" />
-    <ClCompile Include="Original\Core\Easing\Easing.cpp" />
-    <ClCompile Include="Original\Editor\AnimEditor.cpp" />
-    <ClCompile Include="Original\Editor\ParamEditor.cpp" />
-    <ClCompile Include="Original\Graphics\3D\ModelManager.cpp" />
-    <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleCommon.cpp" />
-    <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleEmitter.cpp" />
-    <ClCompile Include="Original\Graphics\2D\TextureManager.cpp" />
-    <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleManager.cpp" />
-    <ClCompile Include="Original\Graphics\PostProcess\PostEffectManager.cpp" />
-    <ClCompile Include="Original\Graphics\Shader\ShaderCompiler.cpp" />
-    <ClCompile Include="Original\Graphics\Shader\ShaderManager.cpp" />
-    <ClCompile Include="Original\ImGui\ImGuiManager.cpp" />
-    <ClCompile Include="Original\Core\Input\Input.cpp" />
-    <ClCompile Include="Original\Graphics\Light\LightManager.cpp" />
-    <ClCompile Include="Original\Core\Loader\ModelLoader.cpp" />
-    <ClCompile Include="Original\Core\Math\Collision.cpp" />
-    <ClCompile Include="Original\Graphics\3D\Mesh\Mesh.cpp" />
-    <ClCompile Include="Original\Graphics\PostProcess\PostProcess.cpp" />
-    <ClCompile Include="Original\Graphics\PrimitiveRenderer\PrimitiveRenderer.cpp" />
-    <ClCompile Include="Original\Object\CollisionManager.cpp" />
-    <ClCompile Include="Original\Object\GameObject.cpp" />
-    <ClCompile Include="Original\Object\GameObjectManager.cpp" />
-    <ClCompile Include="Original\RyoEngine.cpp" />
-    <ClCompile Include="Original\Graphics\Shadow\ShadowMap.cpp" />
-    <ClCompile Include="Original\Scene\SceneManager.cpp" />
-    <ClCompile Include="Original\Test\Test.cpp" />
-    <ClCompile Include="Original\Test\TestBullet.cpp" />
-    <ClCompile Include="Original\Test\TestEnemy.cpp" />
-    <ClCompile Include="Original\Test\TestPlayer.cpp" />
-    <ClCompile Include="Original\Test\TestScene.cpp" />
-    <ClCompile Include="Original\Test\TestSceneFactory.cpp" />
+    <ClCompile Include="Engine\Camera\CameraManager.cpp" />
+    <ClCompile Include="Engine\Core\Asset\AssetRegistry.cpp" />
+    <ClCompile Include="Engine\Core\Base\BindingRegistry.cpp" />
+    <ClCompile Include="Engine\Core\Base\SrvManager.cpp" />
+    <ClCompile Include="Engine\Core\Math\WorldTransform.cpp" />
+    <ClCompile Include="Engine\Editor\Gizmo.cpp" />
+    <ClCompile Include="Engine\Editor\ModelLayout.cpp" />
+    <ClCompile Include="Engine\Editor\ModelPicker.cpp" />
+    <ClCompile Include="Engine\Framework\Framework.cpp" />
+    <ClCompile Include="Engine\Graphics\2D\Sprite.cpp" />
+    <ClCompile Include="Engine\Graphics\2D\SpriteCommon.cpp" />
+    <ClCompile Include="Engine\Graphics\3D\InstancedModelCommon.cpp" />
+    <ClCompile Include="Engine\Graphics\3D\Mesh\InstancedMesh.cpp" />
+    <ClCompile Include="Engine\Graphics\3D\Model.cpp" />
+    <ClCompile Include="Engine\Graphics\3D\ModelCommon.cpp" />
+    <ClCompile Include="Engine\Audio\Audio.cpp" />
+    <ClCompile Include="Engine\Core\Base\DirectXCommon.cpp" />
+    <ClCompile Include="Engine\Core\Base\Font.cpp" />
+    <ClCompile Include="Engine\Core\Base\Logger.cpp" />
+    <ClCompile Include="Engine\Core\Base\TimeManager.cpp" />
+    <ClCompile Include="Engine\Core\Base\WinApp.cpp" />
+    <ClCompile Include="Engine\Camera\Camera.cpp" />
+    <ClCompile Include="Engine\Camera\DebugCamera.cpp" />
+    <ClCompile Include="Engine\Core\Easing\Easing.cpp" />
+    <ClCompile Include="Engine\Editor\AnimEditor.cpp" />
+    <ClCompile Include="Engine\Editor\ParamEditor.cpp" />
+    <ClCompile Include="Engine\Graphics\3D\ModelManager.cpp" />
+    <ClCompile Include="Engine\Graphics\GPUParticle\GPUParticleCommon.cpp" />
+    <ClCompile Include="Engine\Graphics\GPUParticle\GPUParticleEmitter.cpp" />
+    <ClCompile Include="Engine\Graphics\2D\TextureManager.cpp" />
+    <ClCompile Include="Engine\Graphics\GPUParticle\GPUParticleManager.cpp" />
+    <ClCompile Include="Engine\Graphics\PostProcess\PostEffectManager.cpp" />
+    <ClCompile Include="Engine\Graphics\Shader\ShaderCompiler.cpp" />
+    <ClCompile Include="Engine\Graphics\Shader\ShaderManager.cpp" />
+    <ClCompile Include="Engine\ImGui\ImGuiManager.cpp" />
+    <ClCompile Include="Engine\Core\Input\Input.cpp" />
+    <ClCompile Include="Engine\Graphics\Light\LightManager.cpp" />
+    <ClCompile Include="Engine\Core\Loader\ModelLoader.cpp" />
+    <ClCompile Include="Engine\Core\Math\Collision.cpp" />
+    <ClCompile Include="Engine\Graphics\3D\Mesh\Mesh.cpp" />
+    <ClCompile Include="Engine\Graphics\PostProcess\PostProcess.cpp" />
+    <ClCompile Include="Engine\Graphics\PrimitiveRenderer\PrimitiveRenderer.cpp" />
+    <ClCompile Include="Engine\Object\CollisionManager.cpp" />
+    <ClCompile Include="Engine\Object\GameObject.cpp" />
+    <ClCompile Include="Engine\Object\GameObjectManager.cpp" />
+    <ClCompile Include="Engine\RyoEngine.cpp" />
+    <ClCompile Include="Engine\Graphics\Shadow\ShadowMap.cpp" />
+    <ClCompile Include="Engine\Scene\SceneManager.cpp" />
+    <ClCompile Include="Engine\Test\Test.cpp" />
+    <ClCompile Include="Engine\Test\TestBullet.cpp" />
+    <ClCompile Include="Engine\Test\TestEnemy.cpp" />
+    <ClCompile Include="Engine\Test\TestPlayer.cpp" />
+    <ClCompile Include="Engine\Test\TestScene.cpp" />
+    <ClCompile Include="Engine\Test\TestSceneFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Original\Camera\CameraManager.h" />
-    <ClInclude Include="Original\Core\Asset\AssetRegistry.h" />
-    <ClInclude Include="Original\Core\Base\BindingRegistry.h" />
-    <ClInclude Include="Original\Core\Base\SrvManager.h" />
-    <ClInclude Include="Original\Core\Math\WorldTransform.h" />
-    <ClInclude Include="Original\Editor\Gizmo.h" />
-    <ClInclude Include="Original\Editor\ModelLayout.h" />
-    <ClInclude Include="Original\Editor\ModelPicker.h" />
-    <ClInclude Include="Original\Framework\Framework.h" />
-    <ClInclude Include="Original\Graphics\2D\Sprite.h" />
-    <ClInclude Include="Original\Graphics\2D\SpriteCommon.h" />
-    <ClInclude Include="Original\Graphics\3D\InstancedModelCommon.h" />
-    <ClInclude Include="Original\Graphics\3D\Mesh\InstancedMesh.h" />
-    <ClInclude Include="Original\Graphics\3D\Model.h" />
-    <ClInclude Include="Original\Graphics\3D\ModelCommon.h" />
-    <ClInclude Include="Original\Audio\Audio.h" />
-    <ClInclude Include="Original\Core\Base\DirectXCommon.h" />
-    <ClInclude Include="Original\Core\Base\Font.h" />
-    <ClInclude Include="Original\Core\Base\IGame.h" />
-    <ClInclude Include="Original\Core\Base\Logger.h" />
-    <ClInclude Include="Original\Core\Base\TimeManager.h" />
-    <ClInclude Include="Original\Core\Base\WinApp.h" />
-    <ClInclude Include="Original\Camera\Camera.h" />
-    <ClInclude Include="Original\Camera\DebugCamera.h" />
-    <ClInclude Include="Original\Core\Easing\Easing.h" />
-    <ClInclude Include="Original\Editor\AnimEditor.h" />
-    <ClInclude Include="Original\Editor\ParamEditor.h" />
-    <ClInclude Include="Original\Graphics\3D\ModelManager.h" />
-    <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleCommon.h" />
-    <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleEmitter.h" />
-    <ClInclude Include="Original\Graphics\2D\TextureManager.h" />
-    <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleManager.h" />
-    <ClInclude Include="Original\Graphics\PostProcess\PostEffectManager.h" />
-    <ClInclude Include="Original\Graphics\Shader\ShaderCompiler.h" />
-    <ClInclude Include="Original\Graphics\Shader\ShaderManager.h" />
-    <ClInclude Include="Original\ImGui\ImGuiAllInclude.h" />
-    <ClInclude Include="Original\ImGui\ImGuiManager.h" />
-    <ClInclude Include="Original\Core\Input\Input.h" />
-    <ClInclude Include="Original\Graphics\Light\Light.h" />
-    <ClInclude Include="Original\Graphics\Light\LightManager.h" />
-    <ClInclude Include="Original\Core\Loader\ModelLoader.h" />
-    <ClInclude Include="Original\Core\Math\BlendMode.h" />
-    <ClInclude Include="Original\Core\Math\Collision.h" />
-    <ClInclude Include="Original\Core\Math\Math.h" />
-    <ClInclude Include="Original\Core\Math\Matrix.h" />
-    <ClInclude Include="Original\Core\Math\Geometry.h" />
-    <ClInclude Include="Original\Core\Math\Transform.h" />
-    <ClInclude Include="Original\Core\Math\Vector.h" />
-    <ClInclude Include="Original\Graphics\3D\Mesh\Mesh.h" />
-    <ClInclude Include="Original\Graphics\PostProcess\PostProcess.h" />
-    <ClInclude Include="Original\Graphics\PrimitiveRenderer\PrimitiveRenderer.h" />
-    <ClInclude Include="Original\Object\Collider.h" />
-    <ClInclude Include="Original\Object\CollisionManager.h" />
-    <ClInclude Include="Original\Object\GameObject.h" />
-    <ClInclude Include="Original\Object\GameObjectManager.h" />
-    <ClInclude Include="Original\RyoEngine.h" />
-    <ClInclude Include="Original\Graphics\Shadow\ShadowMap.h" />
-    <ClInclude Include="Original\Scene\AbstractSceneFactory.h" />
-    <ClInclude Include="Original\Scene\BaseScene.h" />
-    <ClInclude Include="Original\Scene\SceneManager.h" />
-    <ClInclude Include="Original\Test\Test.h" />
-    <ClInclude Include="Original\Test\TestBullet.h" />
-    <ClInclude Include="Original\Test\TestEnemy.h" />
-    <ClInclude Include="Original\Test\TestLayer.h" />
-    <ClInclude Include="Original\Test\TestPlayer.h" />
-    <ClInclude Include="Original\Test\TestScene.h" />
-    <ClInclude Include="Original\Test\TestSceneFactory.h" />
+    <ClInclude Include="Engine\Camera\CameraManager.h" />
+    <ClInclude Include="Engine\Core\Asset\AssetRegistry.h" />
+    <ClInclude Include="Engine\Core\Base\BindingRegistry.h" />
+    <ClInclude Include="Engine\Core\Base\SrvManager.h" />
+    <ClInclude Include="Engine\Core\Math\WorldTransform.h" />
+    <ClInclude Include="Engine\Editor\Gizmo.h" />
+    <ClInclude Include="Engine\Editor\ModelLayout.h" />
+    <ClInclude Include="Engine\Editor\ModelPicker.h" />
+    <ClInclude Include="Engine\Framework\Framework.h" />
+    <ClInclude Include="Engine\Graphics\2D\Sprite.h" />
+    <ClInclude Include="Engine\Graphics\2D\SpriteCommon.h" />
+    <ClInclude Include="Engine\Graphics\3D\InstancedModelCommon.h" />
+    <ClInclude Include="Engine\Graphics\3D\Mesh\InstancedMesh.h" />
+    <ClInclude Include="Engine\Graphics\3D\Model.h" />
+    <ClInclude Include="Engine\Graphics\3D\ModelCommon.h" />
+    <ClInclude Include="Engine\Audio\Audio.h" />
+    <ClInclude Include="Engine\Core\Base\DirectXCommon.h" />
+    <ClInclude Include="Engine\Core\Base\Font.h" />
+    <ClInclude Include="Engine\Core\Base\IGame.h" />
+    <ClInclude Include="Engine\Core\Base\Logger.h" />
+    <ClInclude Include="Engine\Core\Base\TimeManager.h" />
+    <ClInclude Include="Engine\Core\Base\WinApp.h" />
+    <ClInclude Include="Engine\Camera\Camera.h" />
+    <ClInclude Include="Engine\Camera\DebugCamera.h" />
+    <ClInclude Include="Engine\Core\Easing\Easing.h" />
+    <ClInclude Include="Engine\Editor\AnimEditor.h" />
+    <ClInclude Include="Engine\Editor\ParamEditor.h" />
+    <ClInclude Include="Engine\Graphics\3D\ModelManager.h" />
+    <ClInclude Include="Engine\Graphics\GPUParticle\GPUParticleCommon.h" />
+    <ClInclude Include="Engine\Graphics\GPUParticle\GPUParticleEmitter.h" />
+    <ClInclude Include="Engine\Graphics\2D\TextureManager.h" />
+    <ClInclude Include="Engine\Graphics\GPUParticle\GPUParticleManager.h" />
+    <ClInclude Include="Engine\Graphics\PostProcess\PostEffectManager.h" />
+    <ClInclude Include="Engine\Graphics\Shader\ShaderCompiler.h" />
+    <ClInclude Include="Engine\Graphics\Shader\ShaderManager.h" />
+    <ClInclude Include="Engine\ImGui\ImGuiAllInclude.h" />
+    <ClInclude Include="Engine\ImGui\ImGuiManager.h" />
+    <ClInclude Include="Engine\Core\Input\Input.h" />
+    <ClInclude Include="Engine\Graphics\Light\Light.h" />
+    <ClInclude Include="Engine\Graphics\Light\LightManager.h" />
+    <ClInclude Include="Engine\Core\Loader\ModelLoader.h" />
+    <ClInclude Include="Engine\Core\Math\BlendMode.h" />
+    <ClInclude Include="Engine\Core\Math\Collision.h" />
+    <ClInclude Include="Engine\Core\Math\Math.h" />
+    <ClInclude Include="Engine\Core\Math\Matrix.h" />
+    <ClInclude Include="Engine\Core\Math\Geometry.h" />
+    <ClInclude Include="Engine\Core\Math\Transform.h" />
+    <ClInclude Include="Engine\Core\Math\Vector.h" />
+    <ClInclude Include="Engine\Graphics\3D\Mesh\Mesh.h" />
+    <ClInclude Include="Engine\Graphics\PostProcess\PostProcess.h" />
+    <ClInclude Include="Engine\Graphics\PrimitiveRenderer\PrimitiveRenderer.h" />
+    <ClInclude Include="Engine\Object\Collider.h" />
+    <ClInclude Include="Engine\Object\CollisionManager.h" />
+    <ClInclude Include="Engine\Object\GameObject.h" />
+    <ClInclude Include="Engine\Object\GameObjectManager.h" />
+    <ClInclude Include="Engine\RyoEngine.h" />
+    <ClInclude Include="Engine\Graphics\Shadow\ShadowMap.h" />
+    <ClInclude Include="Engine\Scene\AbstractSceneFactory.h" />
+    <ClInclude Include="Engine\Scene\BaseScene.h" />
+    <ClInclude Include="Engine\Scene\SceneManager.h" />
+    <ClInclude Include="Engine\Test\Test.h" />
+    <ClInclude Include="Engine\Test\TestBullet.h" />
+    <ClInclude Include="Engine\Test\TestEnemy.h" />
+    <ClInclude Include="Engine\Test\TestLayer.h" />
+    <ClInclude Include="Engine\Test\TestPlayer.h" />
+    <ClInclude Include="Engine\Test\TestScene.h" />
+    <ClInclude Include="Engine\Test\TestSceneFactory.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\EngineResources\HLSL\Model\DefaultSurface.hlsli">
@@ -318,7 +318,7 @@
     <ProjectReference Include="externals\imgui\imgui.vcxproj">
       <Project>{c36be18a-a14a-49da-b53f-c380ae71b282}</Project>
     </ProjectReference>
-    <ProjectReference Include="Original\Externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
+    <ProjectReference Include="Engine\Externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
       <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
     </ProjectReference>
   </ItemGroup>
@@ -366,21 +366,21 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ExternalIncludePath>$(ProjectDir)Original\Externals\assimp\include;$(ProjectDir)Original\Externals\imgui;$(ProjectDir)Original\Externals\nlohmann;$(ProjectDir)Original\Externals\DirectXTex;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(ProjectDir)Engine\Externals\assimp\include;$(ProjectDir)Engine\Externals\imgui;$(ProjectDir)Engine\Externals\nlohmann;$(ProjectDir)Engine\Externals\DirectXTex;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <IntDir>$(SolutionDir)..\Generated\Obj\$(ProjectName)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)..\Generated\Outputs\$(Configuration)\</OutDir>
     <IncludePath>$(SolutionDir)DirectXTex;$(SolutionDir)imgui;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ExternalIncludePath>$(ProjectDir)Original\Externals\assimp\include;$(ProjectDir)Original\Externals\imgui;$(ProjectDir)Original\Externals\nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(ProjectDir)Engine\Externals\assimp\include;$(ProjectDir)Engine\Externals\imgui;$(ProjectDir)Engine\Externals\nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\Generated\Outputs\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\Generated\Obj\$(ProjectName)\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)DirectXTex;$(SolutionDir)imgui;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
-    <ExternalIncludePath>$(ProjectDir)Original\Externals\assimp\include;$(ProjectDir)Original\Externals\imgui;$(ProjectDir)Original\Externals\nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(ProjectDir)Engine\Externals\assimp\include;$(ProjectDir)Engine\Externals\imgui;$(ProjectDir)Engine\Externals\nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(SolutionDir)..\Generated\Outputs\Release\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\Generated\Outputs\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\Generated\Obj\$(ProjectName)\$(Configuration)\</IntDir>
@@ -400,14 +400,14 @@
       <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191;4582;4774;5262;4061</DisableSpecificWarnings>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
-      <AdditionalIncludeDirectories>$(SolutionDir)externals\imgui;$(ProjectDir)Original;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)externals\imgui;$(ProjectDir)Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <AdditionalDependencies>DirectXTex.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies);imgui.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Generated\Outputs\$(Configuration)\;$(ProjectDir)Original\Externals\assimp\lib\Debug;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\Generated\Outputs\$(Configuration)\;$(ProjectDir)Engine\Externals\assimp\lib\Debug;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -433,12 +433,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <Optimization>MaxSpeed</Optimization>
       <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191;4582;</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(SolutionDir)externals\imgui;$(ProjectDir)Original;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)externals\imgui;$(ProjectDir)Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Generated\Outputs\$(Configuration)\;$(ProjectDir)Original\Externals\assimp\lib\Release;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\Generated\Outputs\$(Configuration)\;$(ProjectDir)Engine\Externals\assimp\lib\Release;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
@@ -466,13 +466,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <Optimization>Disabled</Optimization>
       <DisableSpecificWarnings>5045;4514;4464;4820;5219;4365;5039;4710;4191;4582;</DisableSpecificWarnings>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)externals\imgui;$(ProjectDir)Original;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)externals\imgui;$(ProjectDir)Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration />
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Generated\Outputs\$(Configuration)\;$(ProjectDir)Original\Externals\assimp\lib\Release;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\Generated\Outputs\$(Configuration)\;$(ProjectDir)Engine\Externals\assimp\lib\Release;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies);imgui.lib</AdditionalDependencies>
     </Link>
     <Manifest>
