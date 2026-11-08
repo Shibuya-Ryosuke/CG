@@ -10,33 +10,24 @@ namespace Test {
 	}
 
 	void TestBullet::Initialize() {
-		// 当たった相手が見分ける用
 		SetTag("PlayerBullet");
-		GetTransform().GetLocal().scale = { scale_,scale_,scale_ };
-		GetTransform().GetLocal().rotate = { 0.0f,0.0f,0.0f };
+		GetTransform().GetLocal().scale = { scale_, scale_, scale_ };
 
 		model_ = Model::Create("Resources/EngineResources/Test/TR.obj");
-		// 弾は大量に出るので、クリック選択の対象から外す
-		model_->SetPickable(false);
+		model_->SetPickable(false); // 大量に出るので、クリック選択の対象から外す
 		model_->SetParent(&GetTransform());
 
-		// 当たり判定 (球。TR.obj の大きさに合わせている)
-		// 自分はプレイヤーの弾、敵と当たりたい
+		// 当たり判定: 球。自分は PlayerBullet、Enemy と当たる
 		AddSphereCollider(1.0f, kLayerPlayerBullet, kLayerEnemy, { 0.0f, 1.19f, 0.0f });
 	}
 
 	void TestBullet::Update() {
-		if (timer_ > 0.0f) {
-			timer_ -= GetDeltaTime();
-			if (timer_ <= 0.0f) {
-				// フレームの最後に消える (Modelも一緒に破棄されて描画から外れる)
-				Destroy();
-				return;
-			}
+		timer_ -= GetDeltaTime();
+		if (timer_ <= 0.0f) {
+			Destroy(); // フレームの最後に消える (Model も一緒に消える)
+			return;
 		}
 		GetTransform().GetLocal().translate += velocity_ * GetDeltaTime();
-
-		// 行列の確定 (カメラ不要。カリングはDraw()で行われる)
 		model_->TransferMatrix();
 	}
 
@@ -45,9 +36,8 @@ namespace Test {
 	}
 
 	void TestBullet::OnCollisionEnter(GameObject* other) {
-		// mask で敵とだけ当たるようにしているので、ここに来たら消える
+		// mask で Enemy とだけ当たるので、ここに来たら消える
 		(void)other;
 		Destroy();
 	}
-
 }

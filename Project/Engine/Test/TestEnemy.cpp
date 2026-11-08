@@ -17,15 +17,14 @@ namespace Test {
 		model_->SetParent(&GetTransform());
 		model_->SetColor(color_);
 
-		// 当たり判定 (球。bunny.obj の大きさに合わせている。GameObject のスケールも自動で掛かる)
-		// 自分は敵、プレイヤーとプレイヤーの弾に当たりたい
+		// 当たり判定: 球。自分は Enemy、Player と PlayerBullet に当たる
 		AddSphereCollider(0.9f, kLayerEnemy, kLayerPlayer | kLayerPlayerBullet, { -0.15f, 0.83f, 0.07f });
 	}
 
 	void TestEnemy::Update() {
 		GetTransform().GetLocal().rotate.y += rotateSpeed_ * GetDeltaTime();
 
-		// 弾が当たった直後だけ白く光る
+		// 被弾直後だけ白く光る
 		if (flashTimer_ > 0.0f) {
 			flashTimer_ -= GetDeltaTime();
 			model_->SetEmissive({ 1.0f, 1.0f, 1.0f }, 1.0f);
@@ -33,7 +32,6 @@ namespace Test {
 			model_->SetEmissive({ 0.0f, 0.0f, 0.0f }, 0.0f);
 		}
 
-		// 行列の確定 (カメラ不要。カリングはDraw()で行われる)
 		model_->TransferMatrix();
 	}
 
@@ -46,10 +44,8 @@ namespace Test {
 			return;
 		}
 		flashTimer_ = flashTime_;
-		--hp_;
-		if (hp_ <= 0) {
+		if (--hp_ <= 0) {
 			Destroy();
 		}
 	}
-
 }

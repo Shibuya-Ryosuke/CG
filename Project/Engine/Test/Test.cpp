@@ -4,20 +4,23 @@
 using namespace RyoEngine;
 
 namespace Test {
-	void Test::Test::Initialize() {
-		ParamEditor::SetFolderPath("Resources/EngineResources/Test/Json/");
-		LightManager::SetFolderPath("Resources/EngineResources/Test/Json/");
-		GPUParticleManager::SetFolderPath("Resources/EngineResources/Test/Json/");
+	void Test::Initialize() {
+		// ImGui で調整した値の保存先を設定して、読み込む
+		const std::string jsonFolder = "Resources/EngineResources/Test/Json/";
+		ParamEditor::SetFolderPath(jsonFolder);
+		LightManager::SetFolderPath(jsonFolder);
+		GPUParticleManager::SetFolderPath(jsonFolder);
 		ParamEditor::Load();
 		LightManager::Load();
 		GPUParticleManager::Load();
 
-		// シーン工場をセットして、最初のシーンを予約する(次のSceneManager::Update()で生成・初期化される)
+		// シーン工場を渡して、最初のシーンを予約する (次の SceneManager::Update で作られる)
 		SceneManager::SetSceneFactory(std::make_unique<TestSceneFactory>());
 		SceneManager::ChangeScene("TEST");
 	}
+
 	void Test::Finalize() {
-		// このゲームで作ったカメラを破棄する(CameraManagerは静的クラスなので、残さないように)
+		// このアプリで作ったカメラを消す (CameraManager は静的クラスなので残さない)
 		CameraManager::Clear();
 	}
 }
