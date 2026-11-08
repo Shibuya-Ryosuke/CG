@@ -100,11 +100,17 @@ namespace RyoEngine {
         // カメラマネージャー(デバッグカメラの初期化・操作可否の設定もこの中で行う)
         CameraManager::Initialize();
 
+        // ゲームオブジェクト (Update / Draw は SceneManager が自動で呼ぶ)
+        GameObjectManager::Initialize();
+
         Logger::Log("\n\n\n* Game Start * \n\n");
     }
 
     void Finalize() {
         Logger::Log("\n\n\n* Game Finish *\n\n");
+
+        // ゲームオブジェクトはモデルなどを持っているので、それらより先に消す
+        GameObjectManager::Finalize();
 
         CameraManager::Finalize();
 
@@ -293,14 +299,13 @@ namespace RyoEngine {
         ModelManager::DrawShadow();
         ShadowMap::EndShadowPass();
 
-        // 即時描画
-        PrimitiveRenderer::Flush();
-
         // 3d描画
         Begin3dDraw();
         ModelCommon::Draw();
         ModelManager::Draw();
         GPUParticleCommon::Draw();
+        // 即時描画 (線・球などのデバッグ表示。3Dを全部描いた後に描く)
+        PrimitiveRenderer::Flush();
 
         // HDR→LDR合成 (トーンマッピングのON/OFFはここで反映される)
         PostProcess::EndScenePass();
@@ -396,4 +401,4 @@ namespace RyoEngine {
     float GetScaleTime() { return TimeManager::GetScaleTime(); }
     float GetTimeScale() { return TimeManager::GetScale(); }
     void SetTimeScale(float scale) { return TimeManager::SetScale(scale); }
-}
+}

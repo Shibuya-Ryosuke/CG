@@ -57,11 +57,15 @@
     <ClCompile Include="Original\Graphics\3D\Mesh\Mesh.cpp" />
     <ClCompile Include="Original\Graphics\PostProcess\PostProcess.cpp" />
     <ClCompile Include="Original\Graphics\PrimitiveRenderer\PrimitiveRenderer.cpp" />
+    <ClCompile Include="Original\Object\CollisionManager.cpp" />
+    <ClCompile Include="Original\Object\GameObject.cpp" />
+    <ClCompile Include="Original\Object\GameObjectManager.cpp" />
     <ClCompile Include="Original\RyoEngine.cpp" />
     <ClCompile Include="Original\Graphics\Shadow\ShadowMap.cpp" />
     <ClCompile Include="Original\Scene\SceneManager.cpp" />
     <ClCompile Include="Original\Test\Test.cpp" />
     <ClCompile Include="Original\Test\TestBullet.cpp" />
+    <ClCompile Include="Original\Test\TestEnemy.cpp" />
     <ClCompile Include="Original\Test\TestPlayer.cpp" />
     <ClCompile Include="Original\Test\TestScene.cpp" />
     <ClCompile Include="Original\Test\TestSceneFactory.cpp" />
@@ -117,6 +121,10 @@
     <ClInclude Include="Original\Graphics\3D\Mesh\Mesh.h" />
     <ClInclude Include="Original\Graphics\PostProcess\PostProcess.h" />
     <ClInclude Include="Original\Graphics\PrimitiveRenderer\PrimitiveRenderer.h" />
+    <ClInclude Include="Original\Object\Collider.h" />
+    <ClInclude Include="Original\Object\CollisionManager.h" />
+    <ClInclude Include="Original\Object\GameObject.h" />
+    <ClInclude Include="Original\Object\GameObjectManager.h" />
     <ClInclude Include="Original\RyoEngine.h" />
     <ClInclude Include="Original\Graphics\Shadow\ShadowMap.h" />
     <ClInclude Include="Original\Scene\AbstractSceneFactory.h" />
@@ -124,6 +132,8 @@
     <ClInclude Include="Original\Scene\SceneManager.h" />
     <ClInclude Include="Original\Test\Test.h" />
     <ClInclude Include="Original\Test\TestBullet.h" />
+    <ClInclude Include="Original\Test\TestEnemy.h" />
+    <ClInclude Include="Original\Test\TestLayer.h" />
     <ClInclude Include="Original\Test\TestPlayer.h" />
     <ClInclude Include="Original\Test\TestScene.h" />
     <ClInclude Include="Original\Test\TestSceneFactory.h" />

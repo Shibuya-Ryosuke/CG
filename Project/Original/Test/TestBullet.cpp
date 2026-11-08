@@ -1,48 +1,53 @@
 #include "TestBullet.h"
+#include "TestLayer.h"
 
 using namespace RyoEngine;
 
 namespace Test {
-	void TestBullet::Initialize(uint32_t modelIndex, const RyoEngine::Vector3& position) {
-		model_ = Model::Create(modelIndex);
+	TestBullet::TestBullet(const Vector3& position, const Vector3& velocity, float lifeTime)
+		: velocity_(velocity), timer_(lifeTime) {
+		GetTransform().GetLocal().translate = position;
+	}
+
+	void TestBullet::Initialize() {
+		// 当たった相手が見分ける用
+		SetTag("PlayerBullet");
+		GetTransform().GetLocal().scale = { scale_,scale_,scale_ };
+		GetTransform().GetLocal().rotate = { 0.0f,0.0f,0.0f };
+
+		model_ = Model::Create("Resources/EngineResources/Test/TR.obj");
 		// 弾は大量に出るので、クリック選択の対象から外す
 		model_->SetPickable(false);
-		model_->SetScale({ 1.0f,1.0f,1.0f });
-		model_->SetRotate({ 0.0f,0.0f,0.0f });
-		model_->SetTranslate(position);
+		model_->SetParent(&GetTransform());
 
-		isDead_ = false;
-		timer_ = 10.0f;
+		// 当たり判定 (球。TR.obj の大きさに合わせている)
+		// 自分はプレイヤーの弾、敵と当たりたい
+		AddSphereCollider(1.0f, kLayerPlayerBullet, kLayerEnemy, { 0.0f, 1.19f, 0.0f });
 	}
 
 	void TestBullet::Update() {
-		if (isDead_ || !model_) {
-			return;
-		}
 		if (timer_ > 0.0f) {
 			timer_ -= GetDeltaTime();
 			if (timer_ <= 0.0f) {
-				ResolveDead();
+				// フレームの最後に消える (Modelも一緒に破棄されて描画から外れる)
+				Destroy();
 				return;
 			}
 		}
-		// 動かす場合は model_->GetTransform().translate += velocity_ * GetDeltaTime(); など
+		GetTransform().GetLocal().translate += velocity_ * GetDeltaTime();
 
 		// 行列の確定 (カメラ不要。カリングはDraw()で行われる)
 		model_->TransferMatrix();
 	}
 
 	void TestBullet::Draw() {
-		if (isDead_ || !model_) {
-			return;
-		}
 		model_->Draw();
 	}
 
-	void TestBullet::ResolveDead() {
-		// Modelを破棄するだけで描画からも外れる (InstancedModelのRemoveInstanceは不要)
-		model_.reset();
-		isDead_ = true;
+	void TestBullet::OnCollisionEnter(GameObject* other) {
+		// mask で敵とだけ当たるようにしているので、ここに来たら消える
+		(void)other;
+		Destroy();
 	}
 
 }

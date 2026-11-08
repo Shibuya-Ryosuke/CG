@@ -72,6 +72,10 @@ namespace RyoEngine {
         inst.DrawImGui();
 #endif
 
+        // ゲームオブジェクト (全員の Update → 当たり判定 → 消す) を、シーンより先に更新する。
+        // シーンの Update では、全員が動いて当たり判定も済んだ後の状態を見られる
+        GameObjectManager::Update();
+
         if (inst.currentScene_) {
             inst.currentScene_->Update();
         }
@@ -79,6 +83,8 @@ namespace RyoEngine {
 
     void SceneManager::Draw() {
         auto& inst = GetInstance();
+        // ゲームオブジェクトを描いてから、シーン (UIなど) を描く
+        GameObjectManager::Draw();
         if (inst.currentScene_) {
             inst.currentScene_->Draw();
         }
@@ -110,10 +116,15 @@ namespace RyoEngine {
         PostEffectManager::Clear();
 
         currentScene_->Finalize();
+        // ゲームオブジェクトもシーンごとに作り直す (シーンのFinalizeで使う可能性があるので、その後に消す)
+        GameObjectManager::Clear();
         currentScene_.reset();
 
         // カメラはシーンのFinalizeで使う可能性があるので、破棄後に解除する
         CameraManager::Clear();
+
+        // ParamEditor の登録が全部消えたので、エンジンの項目(当たり判定の表示など)を登録し直す
+        GameObjectManager::RegisterDebugParams();
     }
 
     void SceneManager::DrawImGui() {

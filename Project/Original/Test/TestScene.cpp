@@ -13,11 +13,10 @@ namespace Test {
 
 		// テクスチャ初期化
 		flower.Initialize("Resources/EngineResources/Test/flower.png");
-		// 弾用モデルを1回だけ読み込む (modelIndex を全弾で共有)
-		bulletModelIndex_ = ModelManager::LoadObj("Resources/EngineResources/Test/TR.obj");
-
-		// プレイヤー初期化（自分自身のポインタを渡して、弾を発射できるようにする）
-		player_.Initialize(this);
+		// プレイヤー作成 (GameObjectManager が持つ。Update / Draw はエンジンが自動で呼ぶ)
+		player_ = GameObjectManager::Create<TestPlayer>();
+		// 敵を並べる (弾を3発当てると消える)
+		SpawnEnemies();
 
 		// カスタムシェーダー (地面用。使うかどうかは ParamEditor で切り替える)
 		groundScrollShader_ = ShaderManager::Load("Resources/EngineResources/Test/Shaders/UVScroll.hlsl");
@@ -61,7 +60,7 @@ namespace Test {
 
 		// gpuパーティクルマネージャーに登録
 		GPUParticleManager::RegisterFlag("test emit", &particleEmit_);
-		GPUParticleManager::RegisterPosition("tracked pos", &player_.GetTranslate());
+		GPUParticleManager::RegisterPosition("tracked pos", &player_->GetTranslate());
 
 		// ↓ パーティクルのobjファイルパス
 		// Resources/EngineResources/Test/Particle/quad.obj
@@ -107,22 +106,12 @@ namespace Test {
 		flower.TransferMatrix();
 
 		//fireEmitter_.Update(GetDeltaTime());
-		// プレイヤー更新
-		player_.Update();
+		// プレイヤー・弾・敵の更新と当たり判定は GameObjectManager が先に済ませている
 
-		// すべての弾の更新
-		for (auto& bullet : bullets_) {
-			bullet->Update();
+		// 敵を全部倒したら R で置き直す
+		if (Input::TriggerKey(DIK_R) && GameObjectManager::FindAllByTag("Enemy").empty()) {
+			SpawnEnemies();
 		}
-
-		// 寿命などで死亡した弾を削除 (isDead_ が true のものを除去)
-		bullets_.erase(
-			std::remove_if(bullets_.begin(), bullets_.end(),
-				[](const std::unique_ptr<TestBullet>& bullet) {
-					return bullet->IsDead(); // 削除条件
-				}),
-			bullets_.end()
-		);
 
 		// 地面と空の行列の確定 (カメラ不要。カリングはDraw()で行われる)
 		ground_->TransferMatrix();
@@ -130,7 +119,7 @@ namespace Test {
 
 		// --- カメラ ---
 		// 追従カメラはプレイヤーが動いた後に位置を合わせる(遅れないように)
-		CameraManager::GetCamera(mainCam_)->SetTranslate(player_.GetTranslate() + followOffset_);
+		CameraManager::GetCamera(mainCam_)->SetTranslate(player_->GetTranslate() + followOffset_);
 
 		// gpuパーティクル
 		GPUParticleManager::Update(GetScaleTime());
@@ -140,23 +129,17 @@ namespace Test {
 		// 描画 (カメラはEndUpdateで確定済みの描画カメラが自動で使われる)
 		ground_->Draw();
 		sky_->Draw();
-		player_.Draw();
+		// プレイヤー・弾・敵の描画は GameObjectManager が自動で行う
 
 		flower.Draw();
-		// 弾の描画提出 (同じモデル・テクスチャは自動でまとめて描画される)
-		for (auto& bullet : bullets_) {
-			bullet->Draw();
-		}
-
-		//fireEmitter_.Draw(GetDebugCamera());
 
 		// gpuパーティクル
 		GPUParticleManager::Draw();
 	}
 
-	void TestScene::SpawnBullet(const Vector3& position) {
-		auto bullet = std::make_unique<TestBullet>();
-		bullet->Initialize(bulletModelIndex_, position);
-		bullets_.push_back(std::move(bullet));
+	void TestScene::SpawnEnemies() {
+		for (const Vector3& position : enemyPositions_) {
+			GameObjectManager::Create<TestEnemy>(position);
+		}
 	}
 }

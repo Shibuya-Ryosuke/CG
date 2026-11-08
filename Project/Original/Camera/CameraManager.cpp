@@ -2,6 +2,7 @@
 #include "../Core/Base/Logger.h"
 #include "../Graphics/3D/ModelManager.h"
 #include "../Editor/ModelPicker.h"
+#include "../Graphics/PrimitiveRenderer/PrimitiveRenderer.h"
 #include <algorithm>
 #include <map>
 #include <vector>
@@ -66,6 +67,8 @@ namespace RyoEngine {
             renderCamera = &DecideActive();
             ModelManager::SetViewProjection(renderCamera->GetViewProjectionMatrix());
             ModelManager::SetCameraPosition(renderCamera->GetWorldPosition());
+            // 線や球のデバッグ表示 (当たり判定の表示など) も、同じ描画カメラで描く
+            PrimitiveRenderer::SetCamera(*renderCamera);
             ModelPicker::SetCamera(*renderCamera);
         }
     }

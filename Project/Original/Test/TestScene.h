@@ -1,7 +1,7 @@
 #pragma once
 #include <RyoEngine.h>
 #include "TestPlayer.h"
-#include "TestBullet.h"
+#include "TestEnemy.h"
 #include <vector>
 #include <memory>
 
@@ -18,10 +18,10 @@ namespace Test {
 		void Update() override;
 		void Draw() override;
 
-		// プレイヤーから呼ばれる弾の発射口
-		void SpawnBullet(const RyoEngine::Vector3& position);
-
 	private:
+		// 敵を並べる (最初と、全部倒した後に R キーを押したとき)
+		void SpawnEnemies();
+
 		//RyoEngine::GPUParticleEmitter fireEmitter_;
 
 		// 地面と空
@@ -40,12 +40,12 @@ namespace Test {
 		RyoEngine::Vector4 color_ = { 1.0f,1.0f,1.0f,1.0f };
 		RyoEngine::Anchor anchor_ = RyoEngine::Anchor::Center;
 
-		// プレイヤー
-		TestPlayer player_;
-
-		// --- 弾の管理 (描画は同じモデルなら自動で1回のDrawInstancedにまとまる) ---
-		uint32_t bulletModelIndex_ = 0;
-		std::vector<std::unique_ptr<TestBullet>> bullets_;
+		// プレイヤー (持ち主は GameObjectManager。シーンが切り替わると自動で消える)
+		TestPlayer* player_ = nullptr;
+		// 敵を置く位置 (プレイヤーの前に並べる)
+		std::vector<RyoEngine::Vector3> enemyPositions_ = {
+			{ -8.0f, 5.0f, 20.0f }, { 0.0f, 5.0f, 25.0f }, { 8.0f, 5.0f, 20.0f },
+		};
 
 		// --- カメラ (CameraManagerのインデックス) ---
 		uint32_t mainCam_ = RyoEngine::CameraManager::kInvalidIndex; // プレイヤー追従

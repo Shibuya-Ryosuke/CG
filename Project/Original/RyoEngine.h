@@ -31,6 +31,9 @@
 #include "Graphics/Shadow/ShadowMap.h"
 #include "Graphics/PostProcess/PostProcess.h"
 #include "Graphics/PostProcess/PostEffectManager.h"
+#include "Object/GameObject.h"
+#include "Object/GameObjectManager.h"
+#include "Object/CollisionManager.h"
 #include "Graphics/PrimitiveRenderer/PrimitiveRenderer.h"
 #include "Graphics/GPUParticle/GPUParticleCommon.h"
 #include "Graphics/GPUParticle/GPUParticleEmitter.h"
@@ -146,4 +149,4 @@ namespace RyoEngine {
     }
 
     void Change2DBlendMode(BlendMode blendMode);
-}
+}

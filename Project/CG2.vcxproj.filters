@@ -97,6 +97,9 @@
     <Filter Include="Engine\Graphics\Shader">
       <UniqueIdentifier>{ca76dd66-c9b5-4343-b78e-5f9e148af6cb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Object">
+      <UniqueIdentifier>{fc8b7b1a-a47e-468a-97c9-477267c67454}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -246,6 +249,18 @@
     </ClCompile>
     <ClCompile Include="Original\Graphics\PostProcess\PostEffectManager.cpp">
       <Filter>Engine\Graphics\PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Object\CollisionManager.cpp">
+      <Filter>Engine\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Object\GameObject.cpp">
+      <Filter>Engine\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Object\GameObjectManager.cpp">
+      <Filter>Engine\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Test\TestEnemy.cpp">
+      <Filter>Engine\Test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -428,6 +443,24 @@
     </ClInclude>
     <ClInclude Include="Original\Graphics\PostProcess\PostEffectManager.h">
       <Filter>Engine\Graphics\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Object\Collider.h">
+      <Filter>Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Object\CollisionManager.h">
+      <Filter>Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Object\GameObject.h">
+      <Filter>Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Object\GameObjectManager.h">
+      <Filter>Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Test\TestEnemy.h">
+      <Filter>Engine\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Test\TestLayer.h">
+      <Filter>Engine\Test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

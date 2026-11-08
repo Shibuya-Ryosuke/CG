@@ -160,7 +160,7 @@ namespace RyoEngine {
         baseDesc.BlendState = blendDesc;
         baseDesc.RasterizerState = rasterizerDesc;
         baseDesc.NumRenderTargets = 1;
-        baseDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        baseDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT; // PostProcessのHDRシーンバッファに合わせる
         baseDesc.SampleDesc.Count = 1;
         baseDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
         baseDesc.DepthStencilState = depthStencilDesc;
@@ -247,7 +247,9 @@ namespace RyoEngine {
         D3D12_GPU_VIRTUAL_ADDRESS vp3DAddress = vpResource3D_->GetGPUVirtualAddress();
         D3D12_GPU_VIRTUAL_ADDRESS vp2DAddress = vpResource2D_->GetGPUVirtualAddress();
 
-        ModelCommon::SetDrawCommands(
+        // ModelCommon には預けず、その場でコマンドリストに積む。
+        // (3D描画の一番最後に Flush を呼ぶ。先に描くと、深度を書かない天球などに上から塗りつぶされるため)
+        const auto drawCommands =
             [vbBase, vp3DAddress, vp2DAddress,
             countLine3D, countTri3D, countLine2D, countTri2D]() {
                 auto commandList = DirectXCommon::GetCommandList();
@@ -256,6 +258,7 @@ namespace RyoEngine {
                 //       1度セットしてから drawCommands_ を順に実行する。
                 //       PrimitiveRenderer は別のRootSignature(b0=ViewProjectionのみ)を使うので、
                 //       ここで明示的に自分のRootSignatureに切り替える。
+                //       (今は直接積んでいるが、直前は ModelManager などの別のRootSignatureなので、切り替えは必要)
                 commandList->SetGraphicsRootSignature(rootSignature_.Get());
 
                 auto DrawGroup = [&](ID3D12PipelineState* pso, D3D_PRIMITIVE_TOPOLOGY topology,
@@ -278,7 +281,8 @@ namespace RyoEngine {
                 DrawGroup(trianglePSO_.Get(), D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, vp3DAddress, offsetTri3D, countTri3D);
                 DrawGroup(linePSO_.Get(), D3D_PRIMITIVE_TOPOLOGY_LINELIST, vp2DAddress, offsetLine2D, countLine2D);
                 DrawGroup(trianglePSO_.Get(), D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, vp2DAddress, offsetTri2D, countTri2D);
-            });
+            };
+        drawCommands();
     }
 
     // ============================================================
