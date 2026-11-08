@@ -262,6 +262,9 @@
     <ClCompile Include="Original\Test\TestEnemy.cpp">
       <Filter>Engine\Test</Filter>
     </ClCompile>
+    <ClCompile Include="Original\Core\Base\BindingRegistry.cpp">
+      <Filter>Engine\Core\Base</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Original\Test\TestPlayer.h">
@@ -461,6 +464,9 @@
     </ClInclude>
     <ClInclude Include="Original\Test\TestLayer.h">
       <Filter>Engine\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Core\Base\BindingRegistry.h">
+      <Filter>Engine\Core\Base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

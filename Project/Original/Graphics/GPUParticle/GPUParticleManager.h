@@ -10,7 +10,7 @@ namespace RyoEngine {
 
     // 1つのEmitterぶんの設定値。ImGuiでの編集対象であり、Save/Loadの対象でもある。
     struct GPUParticleEmitterConfig {
-        std::string meshPath;
+        std::string meshPath;    // 空ならデフォルトのモデル(四角。GPUParticleManagerが持つ)を使う
         std::string texturePath; // 空なら、meshPath(obj/mtl)本来のテクスチャを使う
 
         uint32_t maxParticleCount = 500;
@@ -42,6 +42,7 @@ namespace RyoEngine {
         // conditionFlagKey(マネージャーに登録されたフラグのキー)が空または未登録なら、
         // TriggerEmit()で明示的に発生させる運用のみになる。
         std::string conditionFlagKey;
+        bool emitWhenTrue = true;        // true:フラグがtrueのときに発生 / false:フラグがfalseのときに発生
         bool continuousWhileTrue = true; // true:フラグが立っている間ずっと発生させ続ける / false:立ち上がった瞬間だけ1回
         float emitInterval = 0.1f;       // continuousWhileTrue時、何秒おきに発生させるか(0なら毎フレーム)
     };
@@ -64,6 +65,9 @@ namespace RyoEngine {
         /// </summary>
         static bool CreateEmitter(const std::string& name, const GPUParticleEmitterConfig& config);
         static void DestroyEmitter(const std::string& name);
+
+        // ※ 座標・フラグの登録は BindingRegistry に移した (ライトと共通)。
+        //    以下の Register/Unregister/ClearRegistrations は、既存コードのために残している (中で BindingRegistry を呼ぶだけ)
 
         /// <summary>
         /// 追従対象の座標をキー名で登録する(コード側から呼ぶ)。Emitter名とは無関係。
@@ -137,6 +141,8 @@ namespace RyoEngine {
             // Enter/フォーカス外れで確定するまではこちらに溜めておく)
             char meshPathBuffer[256] = {};
             char texturePathBuffer[256] = {};
+            // ImGuiの「モデル」コンボで「カスタム」を選んでいるか (パスを入力するまではデフォルトのまま)
+            bool useCustomMesh = false;
         };
 
         // 1体ぶん、configの内容でEmitterを(再)生成する。パス変更時の再読み込みにも使う
@@ -144,19 +150,16 @@ namespace RyoEngine {
         // 1体ぶん、configの設定(固定/乱数の速度・座標オフセット等)に従って実際にEmit()を1回呼ぶ
         void EmitOnce(ManagedEmitter& managed);
 
-        // キーから登録済みのポインタを引く。空キー・未登録ならnullptr
-        const Vector3* FindPosition(const std::string& key) const;
-        const bool* FindFlag(const std::string& key) const;
-
         std::unordered_map<std::string, std::unique_ptr<ManagedEmitter>> emitters_;
 
-        // --- マネージャー全体の登録先(キー名 → コード側の変数へのポインタ) ---
-        // ImGuiのコンボで名前順に並べたいのでstd::mapを使っている
-        std::map<std::string, const Vector3*> positions_;
-        std::map<std::string, const bool*> flags_;
+        // --- デフォルトのモデル (meshPathが空のEmitterが使う) ---
+        std::string defaultMeshPath_ = "Resources/EngineResources/Particle/quad.obj";
+        // 以前のデフォルトの置き場所。古いJSONでこのパスが書かれていたら、デフォルト扱いにする
+        std::string oldDefaultMeshPath_ = "Resources/EngineResources/Test/Particle/quad.obj";
 
         // --- 新規作成フォーム用の一時入力 ---
         char newNameBuffer_[64] = {};
+        bool newUseCustomMesh_ = false; // false:デフォルトのモデル / true:objパスを入力する
         char newMeshPathBuffer_[256] = {};
         char newTexturePathBuffer_[256] = {};
         int newMaxParticleCount_ = 500;

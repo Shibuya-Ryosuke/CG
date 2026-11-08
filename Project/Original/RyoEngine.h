@@ -6,6 +6,7 @@
 #include "Core/Base/Logger.h"
 #include "Core/Base/Font.h"
 #include "Core/Base/TimeManager.h"
+#include "Core/Base/BindingRegistry.h"
 #include "Graphics/2D/TextureManager.h"
 #include "Core/Loader/ModelLoader.h"
 #include "Framework/Framework.h"

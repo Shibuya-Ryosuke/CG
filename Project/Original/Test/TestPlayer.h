@@ -18,6 +18,8 @@ namespace Test {
 		void Initialize() override;
 		void Update() override;
 		void Draw() override;
+		// 消えるとき (BindingRegistry の登録を解除する)
+		void Finalize() override;
 
 		// 敵に触れた / 離れた (触れている数を数える)
 		void OnCollisionEnter(RyoEngine::GameObject* other) override;

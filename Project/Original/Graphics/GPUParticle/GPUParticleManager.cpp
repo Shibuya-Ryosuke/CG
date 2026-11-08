@@ -1,6 +1,7 @@
 #include "GPUParticleManager.h"
 #include "../../Core/Base/Logger.h"
 #include "../../Camera/CameraManager.h"
+#include "../../Core/Base/BindingRegistry.h"
 
 #ifdef NRELEASE
 #include <imgui.h>
@@ -15,39 +16,6 @@
 #include <json.hpp>
 
 namespace RyoEngine {
-
-    namespace {
-#ifdef NRELEASE
-        // 登録済みキーの一覧から1つ選ぶコンボ。選択が変わったらtrueを返す
-        template <typename Map>
-        bool DrawKeyCombo(const char* label, std::string& selectedKey, const Map& registry) {
-            std::string preview = selectedKey.empty() ? "(なし)" : selectedKey;
-            if (!selectedKey.empty() && registry.find(selectedKey) == registry.end()) {
-                preview += " (未登録)";
-            }
-
-            bool changed = false;
-            if (ImGui::BeginCombo(label, preview.c_str())) {
-                if (ImGui::Selectable("(なし)", selectedKey.empty())) {
-                    selectedKey.clear();
-                    changed = true;
-                }
-                for (const auto& [key, ptr] : registry) {
-                    bool selected = (key == selectedKey);
-                    if (ImGui::Selectable(key.c_str(), selected)) {
-                        selectedKey = key;
-                        changed = true;
-                    }
-                    if (selected) {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            return changed;
-        }
-#endif
-    }
 
     const std::string GPUParticleManager::kFileName = "gpu_particle_presets.json";
 
@@ -74,8 +42,6 @@ namespace RyoEngine {
             managed->emitter.Finalize();
         }
         instance->emitters_.clear();
-        instance->positions_.clear();
-        instance->flags_.clear();
         Logger::LogSuccess("GPUParticleManager : Finalized\n");
     }
 
@@ -84,7 +50,9 @@ namespace RyoEngine {
         //       GPUParticleEmitterは内部バッファを作り直す必要があるため、一旦Finalize()してから
         //       Initialize()し直す(初回生成時もFinalize()は安全な空振りになる)。
         managed.emitter.Finalize();
-        managed.emitter.Initialize(managed.config.meshPath, managed.config.maxParticleCount,
+        // meshPathが空ならデフォルトのモデル(四角)を使う
+        const std::string& meshPath = managed.config.meshPath.empty() ? defaultMeshPath_ : managed.config.meshPath;
+        managed.emitter.Initialize(meshPath, managed.config.maxParticleCount,
             managed.config.billboard, managed.config.blendMode);
         managed.emitter.SetGravity(managed.config.gravity);
         managed.emitter.SetTexture(managed.config.texturePath);
@@ -93,7 +61,7 @@ namespace RyoEngine {
     void GPUParticleManager::EmitOnce(ManagedEmitter& managed) {
         const GPUParticleEmitterConfig& config = managed.config;
 
-        const Vector3* tracked = FindPosition(config.trackedPositionKey);
+        const Vector3* tracked = BindingRegistry::FindPosition(config.trackedPositionKey);
         Vector3 basePosition = tracked ? *tracked : config.basePosition;
         Vector3 positionOffset = {
             RandomFloat(config.positionOffsetRandomMin.x, config.positionOffsetRandomMax.x),
@@ -132,6 +100,7 @@ namespace RyoEngine {
         strcpy_s(managed->meshPathBuffer, sizeof(managed->meshPathBuffer), config.meshPath.c_str());
         strcpy_s(managed->texturePathBuffer, sizeof(managed->texturePathBuffer), config.texturePath.c_str());
 #endif
+        managed->useCustomMesh = !config.meshPath.empty();
 
         instance->ApplyConfig(*managed);
 
@@ -151,66 +120,23 @@ namespace RyoEngine {
     }
 
     void GPUParticleManager::RegisterPosition(const std::string& key, const Vector3* pos) {
-        GPUParticleManager* instance = GetInstance();
-
-        if (key.empty()) {
-            Logger::Log("[GPUParticleManager] RegisterPosition: キーが空です\n");
-            return;
-        }
-        if (pos == nullptr) {
-            instance->positions_.erase(key);
-            return;
-        }
-        instance->positions_[key] = pos;
+        BindingRegistry::RegisterPosition(key, pos);
     }
 
     void GPUParticleManager::UnregisterPosition(const std::string& key) {
-        GPUParticleManager* instance = GetInstance();
-
-        instance->positions_.erase(key);
+        BindingRegistry::UnregisterPosition(key);
     }
 
     void GPUParticleManager::RegisterFlag(const std::string& key, const bool* flag) {
-        GPUParticleManager* instance = GetInstance();
-
-        if (key.empty()) {
-            Logger::Log("[GPUParticleManager] RegisterFlag: キーが空です\n");
-            return;
-        }
-        if (flag == nullptr) {
-            instance->flags_.erase(key);
-            return;
-        }
-        instance->flags_[key] = flag;
+        BindingRegistry::RegisterFlag(key, flag);
     }
 
     void GPUParticleManager::UnregisterFlag(const std::string& key) {
-        GPUParticleManager* instance = GetInstance();
-
-        instance->flags_.erase(key);
+        BindingRegistry::UnregisterFlag(key);
     }
 
     void GPUParticleManager::ClearRegistrations() {
-        GPUParticleManager* instance = GetInstance();
-
-        instance->positions_.clear();
-        instance->flags_.clear();
-    }
-
-    const Vector3* GPUParticleManager::FindPosition(const std::string& key) const {
-        if (key.empty()) {
-            return nullptr;
-        }
-        auto it = positions_.find(key);
-        return it != positions_.end() ? it->second : nullptr;
-    }
-
-    const bool* GPUParticleManager::FindFlag(const std::string& key) const {
-        if (key.empty()) {
-            return nullptr;
-        }
-        auto it = flags_.find(key);
-        return it != flags_.end() ? it->second : nullptr;
+        BindingRegistry::Clear();
     }
 
     void GPUParticleManager::SetTrackedPositionKey(const std::string& emitterName, const std::string& key) {
@@ -251,17 +177,18 @@ namespace RyoEngine {
         for (auto& [name, managed] : instance->emitters_) {
             bool shouldEmit = false;
 
-            const bool* flag = instance->FindFlag(managed->config.conditionFlagKey);
+            const bool* flag = BindingRegistry::FindFlag(managed->config.conditionFlagKey);
 
             // 参照先が変わった(キー変更・登録・解除があった)フレームは、
             // 偽の「立ち上がり」を検出しないよう、現在値で前回状態を合わせ直す
             if (flag != managed->lastFlagPtr) {
                 managed->lastFlagPtr = flag; // 比較にしか使わない(参照はしない)
-                managed->previousFlagState = flag ? *flag : false;
+                managed->previousFlagState = flag ? (*flag == managed->config.emitWhenTrue) : false;
             }
 
             if (flag != nullptr) {
-                bool current = *flag;
+                // 「発生する条件」を満たしているか (trueのときに発生 / falseのときに発生 を選べる)
+                bool current = (*flag == managed->config.emitWhenTrue);
 
                 if (managed->config.continuousWhileTrue) {
                     if (current) {
@@ -358,6 +285,7 @@ namespace RyoEngine {
             j["positionOffsetRandomMax"] = ToJson(c.positionOffsetRandomMax);
 
             j["conditionFlagKey"] = c.conditionFlagKey;
+            j["emitWhenTrue"] = c.emitWhenTrue;
             j["continuousWhileTrue"] = c.continuousWhileTrue;
             j["emitInterval"] = c.emitInterval;
             return j;
@@ -392,6 +320,7 @@ namespace RyoEngine {
             c.positionOffsetRandomMax = ReadVector3(j, "positionOffsetRandomMax", def.positionOffsetRandomMax);
 
             c.conditionFlagKey = j.value("conditionFlagKey", def.conditionFlagKey);
+            c.emitWhenTrue = j.value("emitWhenTrue", def.emitWhenTrue);
             c.continuousWhileTrue = j.value("continuousWhileTrue", def.continuousWhileTrue);
             c.emitInterval = j.value("emitInterval", def.emitInterval);
             return c;
@@ -468,7 +397,12 @@ namespace RyoEngine {
         }
         instance->emitters_.clear();
 
-        for (const auto& [name, config] : loaded) {
+        for (auto& [name, config] : loaded) {
+            // デフォルトのモデル(四角)のパスが書かれていたら、空(=デフォルト)にそろえる
+            // (古いJSONや、デフォルトの置き場所を移した場合にも読めるようにするため)
+            if (config.meshPath == instance->defaultMeshPath_ || config.meshPath == instance->oldDefaultMeshPath_) {
+                config.meshPath.clear();
+            }
             CreateEmitter(name, config);
         }
 
@@ -504,10 +438,19 @@ namespace RyoEngine {
 
         ImGui::Separator();
 
+        // モデルの選び方 (0:デフォルトのモデル(四角) / 1:objパスを入力する)
+        const char* meshModeNames[] = { "デフォルト(四角)", "カスタム" };
+
         // --- 新規作成フォーム ---
         if (ImGui::CollapsingHeader("新規Emitter作成")) {
             ImGui::InputText("名前", instance->newNameBuffer_, sizeof(instance->newNameBuffer_));
-            ImGui::InputText("objパス", instance->newMeshPathBuffer_, sizeof(instance->newMeshPathBuffer_));
+            int newMeshMode = instance->newUseCustomMesh_ ? 1 : 0;
+            if (ImGui::Combo("モデル", &newMeshMode, meshModeNames, IM_ARRAYSIZE(meshModeNames))) {
+                instance->newUseCustomMesh_ = (newMeshMode == 1);
+            }
+            if (instance->newUseCustomMesh_) {
+                ImGui::InputText("objパス", instance->newMeshPathBuffer_, sizeof(instance->newMeshPathBuffer_));
+            }
             ImGui::InputText("テクスチャパス(空可)", instance->newTexturePathBuffer_, sizeof(instance->newTexturePathBuffer_));
             ImGui::InputInt("最大数", &instance->newMaxParticleCount_);
             if (instance->newMaxParticleCount_ < 1) {
@@ -516,13 +459,15 @@ namespace RyoEngine {
 
             if (ImGui::Button("作成")) {
                 GPUParticleEmitterConfig config{};
-                config.meshPath = instance->newMeshPathBuffer_;
+                // デフォルトを選んでいるときは空(=デフォルトのモデル)
+                config.meshPath = instance->newUseCustomMesh_ ? instance->newMeshPathBuffer_ : "";
                 config.texturePath = instance->newTexturePathBuffer_;
                 config.maxParticleCount = static_cast<uint32_t>(instance->newMaxParticleCount_);
 
                 if (CreateEmitter(instance->newNameBuffer_, config)) {
                     instance->newNameBuffer_[0] = '\0';
                     instance->newMeshPathBuffer_[0] = '\0';
+                    instance->newUseCustomMesh_ = false;
                     instance->newTexturePathBuffer_[0] = '\0';
                     instance->newMaxParticleCount_ = 500;
                 }
@@ -539,11 +484,24 @@ namespace RyoEngine {
                 GPUParticleEmitterConfig& config = managed->config;
                 bool needReapply = false;
 
-                // objパス (Enter/フォーカス外れで確定)
-                bool meshEnter = ImGui::InputText("objパス", managed->meshPathBuffer, sizeof(managed->meshPathBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
-                if (meshEnter || ImGui::IsItemDeactivatedAfterEdit()) {
-                    config.meshPath = managed->meshPathBuffer;
+                // モデル (デフォルト / カスタム)
+                int meshMode = managed->useCustomMesh ? 1 : 0;
+                if (ImGui::Combo("モデル", &meshMode, meshModeNames, IM_ARRAYSIZE(meshModeNames))) {
+                    managed->useCustomMesh = (meshMode == 1);
+                    // デフォルトなら空にする。カスタムなら、前に入力してあったパスがあればそれを使う
+                    config.meshPath = managed->useCustomMesh ? managed->meshPathBuffer : "";
                     needReapply = true;
+                }
+                if (managed->useCustomMesh) {
+                    // objパス (Enter/フォーカス外れで確定)
+                    bool meshEnter = ImGui::InputText("objパス", managed->meshPathBuffer, sizeof(managed->meshPathBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
+                    if (meshEnter || ImGui::IsItemDeactivatedAfterEdit()) {
+                        config.meshPath = managed->meshPathBuffer;
+                        needReapply = true;
+                    }
+                    if (config.meshPath.empty()) {
+                        ImGui::TextDisabled("パスを入力するまでは、デフォルトのモデルを使います");
+                    }
                 }
 
                 // テクスチャパス (こちらはメッシュと違って再生成不要。即座に反映できる)
@@ -597,8 +555,8 @@ namespace RyoEngine {
 
                 ImGui::Separator();
                 ImGui::Text("発生位置");
-                DrawKeyCombo("追従する座標", config.trackedPositionKey, instance->positions_);
-                if (const Vector3* tracked = instance->FindPosition(config.trackedPositionKey)) {
+                BindingRegistry::DrawPositionCombo("追従する座標", config.trackedPositionKey);
+                if (const Vector3* tracked = BindingRegistry::FindPosition(config.trackedPositionKey)) {
                     ImGui::Text("追従中の座標: (%.2f, %.2f, %.2f)", tracked->x, tracked->y, tracked->z);
                 } else {
                     ImGui::DragFloat3("基準座標", &config.basePosition.x, 0.1f);
@@ -608,13 +566,21 @@ namespace RyoEngine {
 
                 ImGui::Separator();
                 ImGui::Text("発生条件");
-                DrawKeyCombo("条件フラグ", config.conditionFlagKey, instance->flags_);
-                if (const bool* flag = instance->FindFlag(config.conditionFlagKey)) {
+                BindingRegistry::DrawFlagCombo("条件フラグ", config.conditionFlagKey);
+                if (const bool* flag = BindingRegistry::FindFlag(config.conditionFlagKey)) {
                     ImGui::Text("現在の値: %s", *flag ? "true" : "false");
                 } else {
                     ImGui::TextDisabled("条件フラグ未選択(「今すぐ1個発生」での手動発生のみ)");
                 }
-                ImGui::Checkbox("フラグが立っている間ずっと発生", &config.continuousWhileTrue);
+                // フラグが true のときに発生させるか、false のときに発生させるか
+                const char* whenNames[] = { "trueのとき", "falseのとき" };
+                int whenIndex = config.emitWhenTrue ? 0 : 1;
+                if (ImGui::Combo("発生する条件", &whenIndex, whenNames, IM_ARRAYSIZE(whenNames))) {
+                    config.emitWhenTrue = (whenIndex == 0);
+                    // 切り替えた瞬間に「条件を満たした」と誤って1回出ないよう、次のUpdateで前回状態を合わせ直させる
+                    managed->lastFlagPtr = nullptr;
+                }
+                ImGui::Checkbox("条件を満たしている間ずっと発生", &config.continuousWhileTrue);
                 if (config.continuousWhileTrue) {
                     ImGui::DragFloat("発生間隔(秒)", &config.emitInterval, 0.01f, 0.0f, 10.0f);
                 }

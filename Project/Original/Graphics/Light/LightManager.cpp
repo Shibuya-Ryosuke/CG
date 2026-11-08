@@ -1,6 +1,7 @@
 #include "LightManager.h"
 #include "../../Core/Base/DirectXCommon.h"
 #include "../../Core/Base/Logger.h"
+#include "../../Core/Base/BindingRegistry.h"
 #include <string>
 #include <filesystem>
 #include <fstream>
@@ -92,8 +93,23 @@ namespace RyoEngine {
 
         for (uint32_t i = 0; i < count; ++i) {
             // 設定値(lights_)は壊さず、GPUへ渡すコピーだけ加工する
-            Light gpuLight = instance->lights_[i].light;
-            if (!instance->lights_[i].enabled) {
+            const LightEntry& entry = instance->lights_[i];
+            Light gpuLight = entry.light;
+
+            // 登録された座標に追従する (未登録なら設定値の座標のまま)
+            if (const Vector3* tracked = BindingRegistry::FindPosition(entry.positionKey)) {
+                gpuLight.position = *tracked + entry.positionOffset;
+            }
+
+            // 点灯判定
+            // ・フラグを使わない: 「点灯」の設定で決める
+            // ・フラグを使う    : フラグが条件どおりのときだけ点灯 (「点灯」の設定は見ない)。フラグが未登録なら消灯
+            bool lit = entry.enabled;
+            if (entry.useFlag) {
+                const bool* flag = BindingRegistry::FindFlag(entry.flagKey);
+                lit = (flag != nullptr) && (*flag == entry.lightWhenTrue);
+            }
+            if (!lit) {
                 gpuLight.intensity = 0.0f;
             }
             instance->lightMappedData_[i] = gpuLight;
@@ -177,6 +193,21 @@ namespace RyoEngine {
         if (auto* e = FindEntry(name)) e->light.range = range;
     }
 
+    void LightManager::SetLightPositionKey(const std::string& name, const std::string& key, const Vector3& offset) {
+        if (auto* e = FindEntry(name)) {
+            e->positionKey = key;
+            e->positionOffset = offset;
+        }
+    }
+
+    void LightManager::SetLightFlagKey(const std::string& name, const std::string& key, bool lightWhenTrue) {
+        if (auto* e = FindEntry(name)) {
+            e->useFlag = !key.empty();
+            e->flagKey = key;
+            e->lightWhenTrue = lightWhenTrue;
+        }
+    }
+
     // ============================================================
     // 保存・読み込み
     // ============================================================
@@ -216,6 +247,12 @@ namespace RyoEngine {
             nlohmann::json jLight = entry.light;
             jLight["name"] = entry.name;
             jLight["enabled"] = entry.enabled;
+            // 登録された座標・フラグとのつながり
+            jLight["positionKey"] = entry.positionKey;
+            jLight["positionOffset"] = nlohmann::json::array({ entry.positionOffset.x, entry.positionOffset.y, entry.positionOffset.z });
+            jLight["useFlag"] = entry.useFlag;
+            jLight["flagKey"] = entry.flagKey;
+            jLight["lightWhenTrue"] = entry.lightWhenTrue;
             lightsArray.push_back(jLight);
         }
         root["lights"] = lightsArray;
@@ -271,6 +308,14 @@ namespace RyoEngine {
                 // 古いJSON（name/enabled無し）でも読めるようにデフォルト値を用意する
                 entry.name = jLight.value("name", std::string());
                 entry.enabled = jLight.value("enabled", true);
+                // 登録された座標・フラグとのつながり (古いJSONに無くても読めるようにする)
+                entry.positionKey = jLight.value("positionKey", std::string());
+                if (auto it = jLight.find("positionOffset"); it != jLight.end() && it->is_array() && it->size() >= 3) {
+                    entry.positionOffset = { (*it)[0].get<float>(), (*it)[1].get<float>(), (*it)[2].get<float>() };
+                }
+                entry.useFlag = jLight.value("useFlag", false);
+                entry.flagKey = jLight.value("flagKey", std::string());
+                entry.lightWhenTrue = jLight.value("lightWhenTrue", true);
 
                 // 名前が空なら連番で補い、重複していれば自動で別名にする
                 std::string requested = entry.name;
@@ -432,7 +477,23 @@ namespace RyoEngine {
                     ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "名前が重複しています（先頭のライトにしか効きません）");
                 }
 
-                ImGui::Checkbox("点灯", &entry.enabled);
+                // フラグで点灯を切り替える (チェックを付けたときだけフラグを見る。そのときは「点灯」は使わないので出さない)
+                ImGui::Checkbox("フラグで点灯を切り替える", &entry.useFlag);
+                if (!entry.useFlag) {
+                    ImGui::Checkbox("点灯", &entry.enabled);
+                } else {
+                    BindingRegistry::DrawFlagCombo("点灯フラグ", entry.flagKey);
+                    const char* whenNames[] = { "trueのとき点灯", "falseのとき点灯" };
+                    int whenIndex = entry.lightWhenTrue ? 0 : 1;
+                    if (ImGui::Combo("点灯する条件", &whenIndex, whenNames, IM_ARRAYSIZE(whenNames))) {
+                        entry.lightWhenTrue = (whenIndex == 0);
+                    }
+                    if (const bool* flag = BindingRegistry::FindFlag(entry.flagKey)) {
+                        ImGui::Text("フラグの値: %s", *flag ? "true" : "false");
+                    } else {
+                        ImGui::TextDisabled("フラグ未選択・未登録 (消灯します)");
+                    }
+                }
 
                 int typeIndex = static_cast<int>(light.type);
                 if (ImGui::Combo("種類", &typeIndex, typeNames, IM_ARRAYSIZE(typeNames))) {
@@ -448,7 +509,14 @@ namespace RyoEngine {
                     }
                 }
                 if (light.type == LightType::Point || light.type == LightType::Spot || light.type == LightType::Area) {
-                    ImGui::DragFloat3("座標", &light.position.x, 0.1f);
+                    // 追従する座標 (登録されていればそこへ自動で動く。未登録・なしなら下の「座標」を使う)
+                    BindingRegistry::DrawPositionCombo("追従する座標", entry.positionKey);
+                    if (const Vector3* tracked = BindingRegistry::FindPosition(entry.positionKey)) {
+                        ImGui::Text("追従中の座標: (%.2f, %.2f, %.2f)", tracked->x, tracked->y, tracked->z);
+                        ImGui::DragFloat3("追従のずれ", &entry.positionOffset.x, 0.1f);
+                    } else {
+                        ImGui::DragFloat3("座標", &light.position.x, 0.1f);
+                    }
                     ImGui::SliderFloat("範囲", &light.range, 0.0f, 100.0f);
                 }
                 if (light.type == LightType::Spot) {

@@ -59,8 +59,9 @@ namespace Test {
 
 
 		// gpuパーティクルマネージャーに登録
-		GPUParticleManager::RegisterFlag("test emit", &particleEmit_);
-		GPUParticleManager::RegisterPosition("tracked pos", &player_->GetTranslate());
+		// (登録先は BindingRegistry。パーティクルとライトの両方の ImGui から選べる)
+		BindingRegistry::RegisterFlag("test emit", &particleEmit_);
+		BindingRegistry::RegisterPosition("tracked pos", &player_->GetTranslate());
 
 		// ↓ パーティクルのobjファイルパス
 		// Resources/EngineResources/Test/Particle/quad.obj
@@ -133,6 +134,7 @@ namespace Test {
 
 		flower.Draw();
 
+		
 		// gpuパーティクル
 		GPUParticleManager::Draw();
 	}

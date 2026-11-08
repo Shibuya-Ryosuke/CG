@@ -26,7 +26,7 @@ namespace Test {
 		// 自分はプレイヤー、敵と当たりたい
 		AddOBBCollider({ 0.81f, 0.81f, 0.62f }, kLayerPlayer, kLayerEnemy, { -0.15f, 0.83f, 0.07f });
 
-
+		
 		// パラメータ操作の登録
 		ParamEditor::BeginGroup("bunny");
 		ParamEditor::RegisterColor("color", &color_);
@@ -36,6 +36,11 @@ namespace Test {
 		ParamEditor::RegisterColor("color", &emissiveColor_);
 		ParamEditor::EndGroup();
 		ParamEditor::EndGroup(); // BeginGroupの数だけEndGroupを呼ぶ
+
+		// 座標と、ライトの点灯フラグを登録する (ライト・パーティクルの ImGui で選べるようになる)
+		// ライトの追従・点灯はここでは書かない。LightManager の ImGui で「追従する座標」「点灯フラグ」を選ぶ
+		BindingRegistry::RegisterPosition("player pos", &GetTransform().GetLocal().translate);
+		BindingRegistry::RegisterFlag("player light", &isIllumination_);
 
 		ParamEditor::BeginGroup("TestPlayer");
 		ParamEditor::RegisterValue("弾の発射間隔", &fireInterval_, 0.01f, 0.01f, 2.0f);
@@ -88,11 +93,6 @@ namespace Test {
 			bunny_->SetEmissive(emissiveColor_, emissiveIntensity_);
 		}
 
-		// ライト追従
-		LightManager::SetLightPosition("bunnyLight", translate);
-		// ライト点灯フラグ
-		LightManager::SetLightEnabled("bunnyLight", isIllumination_);
-
 		// 行列の確定 (カメラ不要。カリングはDraw()で行われる)
 		bunny_->TransferMatrix();
 	}
@@ -100,6 +100,12 @@ namespace Test {
 	void TestPlayer::Draw() {
 		// 描画
 		bunny_->Draw();
+	}
+
+	void TestPlayer::Finalize() {
+		// 消えた後に読みにこられないよう、登録を解除する
+		BindingRegistry::Unregister("player pos");
+		BindingRegistry::Unregister("player light");
 	}
 
 	void TestPlayer::OnCollisionEnter(GameObject* other) {

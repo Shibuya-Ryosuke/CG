@@ -18,6 +18,16 @@ namespace RyoEngine {
         std::string name;      // コードから引くための名前（重複不可）
         Light       light;     // GPUに渡す本体（設定値）
         bool        enabled = true; // falseのときGPUへ渡すコピーだけintensity=0にする（設定値は壊さない）
+
+        // --- 登録された座標・フラグとのつながり (BindingRegistry のキー。ImGuiで選んで保存する) ---
+        // 追従する座標のキー。登録されていれば、GPUへ渡す座標が「その座標 + positionOffset」になる (light.position は壊さない)
+        std::string positionKey;
+        Vector3     positionOffset = { 0.0f, 0.0f, 0.0f };
+        // フラグで点灯を切り替えるか。true のときだけ flagKey のフラグを見る
+        bool        useFlag = false;
+        std::string flagKey;
+        // true:フラグがtrueのとき点灯 / false:フラグがfalseのとき点灯 (enabled がオフなら、フラグに関係なく消灯)
+        bool        lightWhenTrue = true;
     };
 
     class LightManager {
@@ -50,6 +60,11 @@ namespace RyoEngine {
         static void SetLightColor(const std::string& name, const Vector4& color);
         static void SetLightIntensity(const std::string& name, float intensity);
         static void SetLightRange(const std::string& name, float range);
+
+        // 追従する座標・点灯フラグのキー (BindingRegistry に登録したもの) をコードから指定する。
+        // ImGuiで選ぶのが基本だが、コードから固定したい場合に使う (空文字で解除)
+        static void SetLightPositionKey(const std::string& name, const std::string& key, const Vector3& offset = { 0.0f, 0.0f, 0.0f });
+        static void SetLightFlagKey(const std::string& name, const std::string& key, bool lightWhenTrue = true);
 
         // 存在確認（警告ログなし）
         static bool HasLight(const std::string& name);
@@ -204,4 +219,4 @@ namespace RyoEngine {
         // フォルダパス変更時の一時バッファ
         char folderPathBuffer_[256] = {};
     };
-}
+}

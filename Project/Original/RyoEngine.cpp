@@ -290,6 +290,9 @@ namespace RyoEngine {
     void EndFrame() {
         ParamEditor::DrawImGuiWindow();
 
+        // ライトをGPUへ送る (登録された座標・フラグの、このフレームの最新の値を反映する)
+        LightManager::Update();
+
         // GPUパーティクルのシミュレーション(Dispatch)：RTV/DSVに依存しないので一番早く実行する
         GPUParticleCommon::Dispatch();
 
