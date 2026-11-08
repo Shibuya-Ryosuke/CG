@@ -119,6 +119,9 @@ namespace RyoEngine {
         float GetEmissiveIntensity(size_t meshIndex = 0) const { return meshes_[meshIndex].emissiveIntensity; }
         bool GetEnableLighting(size_t meshIndex = 0) const { return meshes_[meshIndex].enableLighting; }
         ShadingMode GetLambert(size_t meshIndex = 0) const { return meshes_[meshIndex].shadingMode; }
+        BlendMode GetBlendMode(size_t meshIndex = 0) const { return meshes_[meshIndex].blendMode; }
+        bool GetCastShadow() const { return castShadow_; }
+        bool IsBackground() const { return isBackground_; }
         bool GetHasUV(size_t meshIndex = 0) const;
         Vector2 GetUVScale(size_t meshIndex = 0) const { return meshes_[meshIndex].uvScale; }
         /// <summary>UV回転(度数法)</summary>
@@ -167,6 +170,18 @@ namespace RyoEngine {
         void SetEmissive(const Vector3& color, float intensity, int32_t meshIndex = -1);
         void SetEnableLighting(bool enable, int32_t meshIndex = -1);
         void SetLambert(ShadingMode mode, int32_t meshIndex = -1);
+        /// <summary>
+        /// ブレンドモード (初期値 None = 不透明)。半透明にしたいときは Normal、光るエフェクトは Add など。
+        /// None と Normal 以外は深度を書かない。Add/Subtract/Screen は影を落とさない
+        /// </summary>
+        void SetBlendMode(BlendMode blendMode, int32_t meshIndex = -1);
+        /// <summary>影を落とすか (初期値 true)。Add/Subtract/Screen のメッシュは true でも影を落とさない</summary>
+        void SetCastShadow(bool castShadow) { castShadow_ = castShadow; }
+        /// <summary>
+        /// 背景にする (天球など)。ほかの何よりも先に、深度を書かずに描くので、
+        /// 後から描くものは必ずこのモデルより手前に見える (地面などが背景からはみ出していても隠れない)。影は落とさない
+        /// </summary>
+        void SetBackground(bool isBackground) { isBackground_ = isBackground; }
 
         void SetUVScale(const Vector2& scale, int32_t meshIndex = -1);
         /// <summary>UV回転(度数法)</summary>
@@ -179,6 +194,7 @@ namespace RyoEngine {
         void SetTexByName(const std::string& filePath, const std::string& materialName);
         void SetColorByName(const Vector4& color, const std::string& materialName);
         void SetLambertByName(ShadingMode mode, const std::string& materialName);
+        void SetBlendModeByName(BlendMode blendMode, const std::string& materialName);
         void SetUVScaleByName(const Vector2& scale, const std::string& materialName);
         void SetUVRotateByName(float rotateDeg, const std::string& materialName);
         void SetUVTranslateByName(const Vector2& translate, const std::string& materialName);
@@ -194,6 +210,7 @@ namespace RyoEngine {
             float emissiveIntensity = 0.0f;
             bool enableLighting = true;
             ShadingMode shadingMode = ShadingMode::HALF_LAMBERT;
+            BlendMode blendMode = BlendMode::None;
             Vector2 uvScale = { 1.0f, 1.0f };
             float uvRotate = 0.0f; // 度数法
             Vector2 uvTranslate = { 0.0f, 0.0f };
@@ -221,6 +238,8 @@ namespace RyoEngine {
 
         // クリック選択用 (TransferMatrixで更新。視錐台判定のバウンディング球も兼ねる)
         bool pickable_ = true;
+        bool castShadow_ = true;
+        bool isBackground_ = false;
         Vector3 pickCenter_{ 0.0f, 0.0f, 0.0f };
         float pickRadius_ = 0.0f;
         std::function<void(const Transform&)> onTransformEdited_;

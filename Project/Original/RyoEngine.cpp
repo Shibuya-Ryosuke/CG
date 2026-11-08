@@ -373,11 +373,6 @@ namespace RyoEngine {
         SpriteCommon::SetBlendMode(blendMode);
     }
 
-    void Change3DBlendMode(BlendMode blendMode) {
-        ModelCommon::SetBlendMode(blendMode);
-        ModelManager::SetBlendMode(blendMode);
-    }
-
     // --- ゲッターの実装 ---
     // これは Engine 名前空間の関数なので、上の匿名名前空間にある変数にアクセスできます。
     //ReflectCommon* GetReflectCommon() { return reflectCommon_; }

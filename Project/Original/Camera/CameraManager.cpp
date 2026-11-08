@@ -65,6 +65,7 @@ namespace RyoEngine {
         void ApplyRenderCamera() {
             renderCamera = &DecideActive();
             ModelManager::SetViewProjection(renderCamera->GetViewProjectionMatrix());
+            ModelManager::SetCameraPosition(renderCamera->GetWorldPosition());
             ModelPicker::SetCamera(*renderCamera);
         }
     }

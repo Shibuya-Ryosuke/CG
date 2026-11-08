@@ -9,6 +9,7 @@ namespace Test {
 		// モデル初期化
 		ground_ = Model::Create("Resources/EngineResources/Test/ground.obj");
 		sky_ = Model::Create("Resources/EngineResources/Test/skydome.obj");
+		sky_->SetBackground(true); // 天球は背景 (地面が天球からはみ出していても隠れない)
 
 		// テクスチャ初期化
 		flower.Initialize("Resources/EngineResources/Test/flower.png");
@@ -45,18 +46,19 @@ namespace Test {
 	void TestScene::Update() {
 		// （Normalはアルファブレンド）
 		// 3Dオブジェクトたちのブレンドモード
+		// (ブレンドモードはモデルごとの指定になったので、地面で確認する)
 		if (Input::TriggerKey(DIK_0)) {
-			Change3DBlendMode(BlendMode::None);
+			ground_->SetBlendMode(BlendMode::None);
 		} else if (Input::TriggerKey(DIK_1)) {
-			Change3DBlendMode(BlendMode::Normal);
+			ground_->SetBlendMode(BlendMode::Normal);
 		} else if (Input::TriggerKey(DIK_2)) {
-			Change3DBlendMode(BlendMode::Add);
+			ground_->SetBlendMode(BlendMode::Add);
 		} else if (Input::TriggerKey(DIK_3)) {
-			Change3DBlendMode(BlendMode::Subtract);
+			ground_->SetBlendMode(BlendMode::Subtract);
 		} else if (Input::TriggerKey(DIK_4)) {
-			Change3DBlendMode(BlendMode::Multiply);
+			ground_->SetBlendMode(BlendMode::Multiply);
 		} else if (Input::TriggerKey(DIK_5)) {
-			Change3DBlendMode(BlendMode::Screen);
+			ground_->SetBlendMode(BlendMode::Screen);
 		}
 
 		// 画像のブレンドモード

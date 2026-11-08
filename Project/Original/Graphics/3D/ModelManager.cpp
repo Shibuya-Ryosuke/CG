@@ -44,7 +44,11 @@ namespace RyoEngine {
         Logger::Log("ModelManager : Finalizing...\n");
         instance->frameData_.clear();
         instance->entries_.clear();
-        instance->groups_.clear();
+        instance->backgroundGroups_.clear();
+        instance->opaqueGroups_.clear();
+        instance->sortedGroups_.clear();
+        instance->commutativeGroups_.clear();
+        instance->shadowGroups_.clear();
         instance->retired_.clear();
 
         instance->instanceResource_.Reset();
@@ -57,9 +61,9 @@ namespace RyoEngine {
         instance->pathToIndex_.clear();
 
         instance->shadowPipelineState_.Reset();
-        for (auto& pso : instance->pipelineStates_) {
-            pso.Reset();
-        }
+        instance->pipelineCache_.clear();
+        instance->vertexShaderBytecode_.clear();
+        instance->pixelShaderBytecode_.clear();
         instance->rootSignature_.Reset();
         Logger::LogSuccess("ModelManager : Finalized\n");
     }
@@ -154,7 +158,11 @@ namespace RyoEngine {
         ModelPicker::NewFrame();
         instance->frameData_.clear();
         instance->entries_.clear();
-        instance->groups_.clear();
+        instance->backgroundGroups_.clear();
+        instance->opaqueGroups_.clear();
+        instance->sortedGroups_.clear();
+        instance->commutativeGroups_.clear();
+        instance->shadowGroups_.clear();
         instance->prepared_ = false;
 
         // 作り直し前の古いバッファを、時間が経ったものから解放する
@@ -167,7 +175,8 @@ namespace RyoEngine {
             instance->retired_.end());
     }
 
-    void ModelManager::Submit(uint32_t modelIndex, uint32_t meshIndex, uint32_t textureHandle, const ModelInstanceData& data) {
+    void ModelManager::Submit(uint32_t modelIndex, uint32_t meshIndex, uint32_t textureHandle,
+        BlendMode blendMode, bool castShadow, bool isBackground, const ModelInstanceData& data) {
         ModelManager* instance = GetInstance();
 
         const ModelAsset* asset = GetAsset(modelIndex);
@@ -180,6 +189,11 @@ namespace RyoEngine {
             (static_cast<uint64_t>(meshIndex & 0xFFFFu) << 32) |
             static_cast<uint64_t>(textureHandle);
         entry.dataIndex = static_cast<uint32_t>(instance->frameData_.size());
+        entry.blendMode = blendMode;
+        entry.isBackground = isBackground;
+        // 加算・減算・スクリーンは光るエフェクト向けなので、影を落とさない。背景も影を落とさない
+        entry.castShadow = castShadow && !isBackground &&
+            (blendMode == BlendMode::None || blendMode == BlendMode::Normal || blendMode == BlendMode::Multiply);
 
         instance->frameData_.push_back(data);
         instance->entries_.push_back(entry);
@@ -213,7 +227,11 @@ namespace RyoEngine {
             return;
         }
         prepared_ = true;
-        groups_.clear();
+        backgroundGroups_.clear();
+        opaqueGroups_.clear();
+        sortedGroups_.clear();
+        commutativeGroups_.clear();
+        shadowGroups_.clear();
 
         // カメラのVPはここでGPUバッファへ書く (GPUが使う直前に書くため)
         *cameraVPData_ = viewProjection_;
@@ -222,29 +240,82 @@ namespace RyoEngine {
             return;
         }
 
-        // (モデル, メッシュ, テクスチャ) の順に並べる。同じキーの中は提出順を保つ
-        std::sort(entries_.begin(), entries_.end(),
-            [](const Entry& a, const Entry& b) {
-                if (a.key != b.key) return a.key < b.key;
-                return a.dataIndex < b.dataIndex;
-            });
+        // ブレンドモードごとに振り分ける
+        std::vector<const Entry*> background;
+        std::vector<const Entry*> opaque;
+        std::vector<const Entry*> sorted;
+        std::vector<const Entry*> commutative;
+        std::vector<const Entry*> shadow;
+        for (Entry& entry : entries_) {
+            const Matrix4x4& world = frameData_[entry.dataIndex].world;
+            const Vector3 toCamera = Vector3{ world.m[3][0], world.m[3][1], world.m[3][2] } - cameraPosition_;
+            entry.distanceSq = Dot(toCamera, toCamera);
 
-        EnsureInstanceCapacity(entries_.size());
-
-        for (size_t i = 0; i < entries_.size(); ++i) {
-            const Entry& entry = entries_[i];
-            instanceMapped_[i] = frameData_[entry.dataIndex];
-
-            if (groups_.empty() || (i > 0 && entries_[i - 1].key != entry.key)) {
-                Group group;
-                group.modelIndex = static_cast<uint32_t>(entry.key >> 48);
-                group.meshIndex = static_cast<uint32_t>((entry.key >> 32) & 0xFFFFu);
-                group.textureHandle = static_cast<uint32_t>(entry.key & 0xFFFFFFFFu);
-                group.firstInstance = static_cast<uint32_t>(i);
-                group.instanceCount = 0;
-                groups_.push_back(group);
+            if (entry.isBackground) {
+                background.push_back(&entry);
+            } else if (entry.blendMode == BlendMode::None) {
+                opaque.push_back(&entry);
+            } else if (entry.blendMode == BlendMode::Normal) {
+                sorted.push_back(&entry);
+            } else {
+                commutative.push_back(&entry);
             }
-            groups_.back().instanceCount++;
+            if (entry.castShadow) {
+                shadow.push_back(&entry);
+            }
+        }
+
+        // 同じキーの中は提出順を保つ (dataIndexで比べる)
+        auto byKey = [](const Entry* a, const Entry* b) {
+            if (a->key != b->key) return a->key < b->key;
+            return a->dataIndex < b->dataIndex;
+        };
+        // 不透明・影: (モデル, メッシュ, テクスチャ) の順に並べてまとめる
+        std::sort(opaque.begin(), opaque.end(), byKey);
+        std::sort(shadow.begin(), shadow.end(), byKey);
+        // 半透明: 奥から手前へ描かないと、手前の半透明に隠れた奥のものが正しく透けない
+        std::sort(sorted.begin(), sorted.end(), [&byKey](const Entry* a, const Entry* b) {
+            if (a->distanceSq != b->distanceSq) return a->distanceSq > b->distanceSq;
+            return byKey(a, b);
+            });
+        // 加算など: 順番は結果に関係ないので、ブレンドモード → キーで並べてまとめる
+        auto byBlendThenKey = [&byKey](const Entry* a, const Entry* b) {
+            if (a->blendMode != b->blendMode) return a->blendMode < b->blendMode;
+            return byKey(a, b);
+        };
+        std::sort(commutative.begin(), commutative.end(), byBlendThenKey);
+        // 背景: 深度を書かないので、ブレンドモードが違っても互いに隠し合わない。まとめやすい順に並べる
+        std::sort(background.begin(), background.end(), byBlendThenKey);
+
+        // インスタンス配列には 背景 → 不透明 → 半透明 → 加算など → 影 の順に詰める
+        EnsureInstanceCapacity(background.size() + opaque.size() + sorted.size() + commutative.size() + shadow.size());
+        size_t writeIndex = 0;
+        AppendGroups(background, writeIndex, backgroundGroups_);
+        AppendGroups(opaque, writeIndex, opaqueGroups_);
+        AppendGroups(sorted, writeIndex, sortedGroups_);
+        AppendGroups(commutative, writeIndex, commutativeGroups_);
+        AppendGroups(shadow, writeIndex, shadowGroups_);
+    }
+
+    void ModelManager::AppendGroups(const std::vector<const Entry*>& sorted, size_t& writeIndex, std::vector<Group>& outGroups) {
+        const Entry* previous = nullptr;
+        for (const Entry* entry : sorted) {
+            instanceMapped_[writeIndex] = frameData_[entry->dataIndex];
+
+            // キーかブレンドモードが変わったら新しいグループ
+            if (!previous || previous->key != entry->key || previous->blendMode != entry->blendMode) {
+                Group group;
+                group.modelIndex = static_cast<uint32_t>(entry->key >> 48);
+                group.meshIndex = static_cast<uint32_t>((entry->key >> 32) & 0xFFFFu);
+                group.textureHandle = static_cast<uint32_t>(entry->key & 0xFFFFFFFFu);
+                group.blendMode = entry->blendMode;
+                group.firstInstance = static_cast<uint32_t>(writeIndex);
+                group.instanceCount = 0;
+                outGroups.push_back(group);
+            }
+            outGroups.back().instanceCount++;
+            previous = entry;
+            ++writeIndex;
         }
     }
 
@@ -269,11 +340,22 @@ namespace RyoEngine {
         commandList->SetGraphicsRootDescriptorTable(7, TextureManager::GetGPUHandle(ShadowMap::GetShadowMapTextureHandle()));
     }
 
-    void ModelManager::DrawGroups(bool bindTexture) {
+    void ModelManager::SetDrawParams(BlendMode blendMode) {
+        auto commandList = DirectXCommon::GetCommandList();
+        // root 8: b4 { uint blendMode; float nearFadeStart; float nearFadeEnd; }
+        struct DrawParams {
+            uint32_t blendMode;
+            float nearFadeStart;
+            float nearFadeEnd;
+        } params{ static_cast<uint32_t>(blendMode), nearFadeStart_, nearFadeEnd_ };
+        commandList->SetGraphicsRoot32BitConstants(8, 3, &params, 0);
+    }
+
+    void ModelManager::DrawGroups(const std::vector<Group>& groups, bool bindTexture) {
         auto commandList = DirectXCommon::GetCommandList();
         const D3D12_GPU_VIRTUAL_ADDRESS base = instanceResource_->GetGPUVirtualAddress();
 
-        for (const Group& group : groups_) {
+        for (const Group& group : groups) {
             const MeshAsset& mesh = assets_[group.modelIndex - 1]->meshes[group.meshIndex];
 
             if (bindTexture) {
@@ -293,21 +375,66 @@ namespace RyoEngine {
         ModelManager* instance = GetInstance();
 
         instance->BuildFrame();
-        if (instance->groups_.empty()) {
+        if (instance->backgroundGroups_.empty() && instance->opaqueGroups_.empty() &&
+            instance->sortedGroups_.empty() && instance->commutativeGroups_.empty()) {
             return;
         }
 
         auto commandList = DirectXCommon::GetCommandList();
         instance->BindCommonState();
-        commandList->SetPipelineState(instance->pipelineStates_[static_cast<size_t>(instance->blendMode_)].Get());
-        instance->DrawGroups(true);
+
+        // 0. 背景 (深度を書かないので、後から描くものは必ず背景より手前に見える)
+        {
+            const std::vector<Group>& groups = instance->backgroundGroups_;
+            size_t begin = 0;
+            while (begin < groups.size()) {
+                const BlendMode blendMode = groups[begin].blendMode;
+                size_t end = begin;
+                while (end < groups.size() && groups[end].blendMode == blendMode) {
+                    ++end;
+                }
+                commandList->SetPipelineState(instance->GetPipelineState(blendMode, true));
+                instance->SetDrawParams(blendMode);
+                instance->DrawGroups(std::vector<Group>(groups.begin() + begin, groups.begin() + end), true);
+                begin = end;
+            }
+        }
+
+        // 1. 不透明 (深度を書く)
+        if (!instance->opaqueGroups_.empty()) {
+            commandList->SetPipelineState(instance->GetPipelineState(BlendMode::None));
+            instance->SetDrawParams(BlendMode::None);
+            instance->DrawGroups(instance->opaqueGroups_, true);
+        }
+
+        // 2. 半透明 (遠い順に並んでいる。自分の奥の面が手前に出ないよう深度は書く)
+        if (!instance->sortedGroups_.empty()) {
+            commandList->SetPipelineState(instance->GetPipelineState(BlendMode::Normal));
+            instance->SetDrawParams(BlendMode::Normal);
+            instance->DrawGroups(instance->sortedGroups_, true);
+        }
+
+        // 3. 加算・減算・乗算・スクリーン (ブレンドモードごとに並んでいるので、変わったところだけPSOを切り替える)
+        const std::vector<Group>& groups = instance->commutativeGroups_;
+        size_t begin = 0;
+        while (begin < groups.size()) {
+            const BlendMode blendMode = groups[begin].blendMode;
+            size_t end = begin;
+            while (end < groups.size() && groups[end].blendMode == blendMode) {
+                ++end;
+            }
+            commandList->SetPipelineState(instance->GetPipelineState(blendMode));
+            instance->SetDrawParams(blendMode);
+            instance->DrawGroups(std::vector<Group>(groups.begin() + begin, groups.begin() + end), true);
+            begin = end;
+        }
     }
 
     void ModelManager::DrawShadow() {
         ModelManager* instance = GetInstance();
 
         instance->BuildFrame();
-        if (instance->groups_.empty()) {
+        if (instance->shadowGroups_.empty()) {
             return;
         }
 
@@ -317,7 +444,7 @@ namespace RyoEngine {
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetLightViewProjGPUVirtualAddress());
         commandList->SetPipelineState(instance->shadowPipelineState_.Get());
-        instance->DrawGroups(false);
+        instance->DrawGroups(instance->shadowGroups_, false);
     }
 
     // ------------------------------------------------------------------
@@ -351,7 +478,7 @@ namespace RyoEngine {
         shadowRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         shadowRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-        D3D12_ROOT_PARAMETER rootParameters[8] = {};
+        D3D12_ROOT_PARAMETER rootParameters[9] = {};
         // 0: カメラのView-Projection (CBV b0, Vertex)
         rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -386,6 +513,12 @@ namespace RyoEngine {
         rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         rootParameters[7].DescriptorTable.pDescriptorRanges = shadowRange;
         rootParameters[7].DescriptorTable.NumDescriptorRanges = _countof(shadowRange);
+        // 8: 描画パスごとの値 (Root Constants b4, Pixel) { blendMode, nearFadeStart, nearFadeEnd }
+        rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[8].Constants.ShaderRegister = 4;
+        rootParameters[8].Constants.RegisterSpace = 0;
+        rootParameters[8].Constants.Num32BitValues = 3;
 
         D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
         // s0: 通常のテクスチャ用
@@ -436,51 +569,21 @@ namespace RyoEngine {
         depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
         depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
-        // ---------- 通常描画 (ブレンドモード6種) ----------
+        // ---------- 通常描画 ----------
+        // PSOは GetPipelineState() で、初めて使われたブレンドモードの分だけ作る。ここではシェーダーのコンパイルだけ行う
         {
-            D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
-            inputElementDescs[0].SemanticName = "POSITION";
-            inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-            inputElementDescs[0].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, position));
-            inputElementDescs[1].SemanticName = "TEXCOORD";
-            inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-            inputElementDescs[1].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, texcoord));
-            inputElementDescs[2].SemanticName = "NORMAL";
-            inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-            inputElementDescs[2].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, normal));
-
-            D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
-            inputLayoutDesc.pInputElementDescs = inputElementDescs;
-            inputLayoutDesc.NumElements = _countof(inputElementDescs);
-
-            D3D12_RASTERIZER_DESC rasterizerDesc{};
-            rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-            rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-
             Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/ModelBatch.VS.hlsl", L"vs_6_0");
             Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/ModelBatch.PS.hlsl", L"ps_6_0");
             assert(vertexShaderBlob != nullptr);
             assert(pixelShaderBlob != nullptr);
 
-            for (int i = 0; i < 6; ++i) {
-                D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
-                psoDesc.pRootSignature = rootSignature_.Get();
-                psoDesc.InputLayout = inputLayoutDesc;
-                psoDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
-                psoDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
-                psoDesc.BlendState = CreateBlendDesc(static_cast<BlendMode>(i));
-                psoDesc.RasterizerState = rasterizerDesc;
-                psoDesc.NumRenderTargets = 1;
-                psoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
-                psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-                psoDesc.SampleDesc.Count = 1;
-                psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-                psoDesc.DepthStencilState = depthStencilDesc;
-                psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+            const uint8_t* vs = static_cast<const uint8_t*>(vertexShaderBlob->GetBufferPointer());
+            vertexShaderBytecode_.assign(vs, vs + vertexShaderBlob->GetBufferSize());
+            const uint8_t* ps = static_cast<const uint8_t*>(pixelShaderBlob->GetBufferPointer());
+            pixelShaderBytecode_.assign(ps, ps + pixelShaderBlob->GetBufferSize());
 
-                hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStates_[i]));
-                assert(SUCCEEDED(hr));
-            }
+            // 一番使う不透明だけは最初に作っておく
+            GetPipelineState(BlendMode::None);
         }
 
         // ---------- シャドウ (深度のみ) ----------
@@ -520,6 +623,67 @@ namespace RyoEngine {
             hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&shadowPipelineState_));
             assert(SUCCEEDED(hr));
         }
+    }
+
+    ID3D12PipelineState* ModelManager::GetPipelineState(BlendMode blendMode, bool isBackground) {
+        const uint32_t key = static_cast<uint32_t>(blendMode) | (isBackground ? 0x100u : 0u);
+        if (auto it = pipelineCache_.find(key); it != pipelineCache_.end()) {
+            return it->second.Get();
+        }
+
+        auto device = DirectXCommon::GetDevice();
+
+        D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+        inputElementDescs[0].SemanticName = "POSITION";
+        inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        inputElementDescs[0].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, position));
+        inputElementDescs[1].SemanticName = "TEXCOORD";
+        inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+        inputElementDescs[1].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, texcoord));
+        inputElementDescs[2].SemanticName = "NORMAL";
+        inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+        inputElementDescs[2].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, normal));
+
+        D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
+        inputLayoutDesc.pInputElementDescs = inputElementDescs;
+        inputLayoutDesc.NumElements = _countof(inputElementDescs);
+
+        D3D12_RASTERIZER_DESC rasterizerDesc{};
+        rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
+        rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+
+        // 深度テストは全部で行う。深度を書くのは不透明と半透明(Normal)だけ
+        // (Normalは書かないと、立体的なモデルの奥の面が手前に出てしまうため。遠い順に描くので他の半透明を隠すことはほぼ無い)
+        // (加算などが深度を書くと、後ろに描くエフェクトが隠れてしまうため書かない)
+        // 背景は何も隠さないよう、ブレンドモードに関係なく書かない
+        const bool depthWrite = !isBackground && (blendMode == BlendMode::None || blendMode == BlendMode::Normal);
+        D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
+        depthStencilDesc.DepthEnable = true;
+        depthStencilDesc.DepthWriteMask = depthWrite ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+        depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
+        psoDesc.pRootSignature = rootSignature_.Get();
+        psoDesc.InputLayout = inputLayoutDesc;
+        psoDesc.VS = { vertexShaderBytecode_.data(), vertexShaderBytecode_.size() };
+        psoDesc.PS = { pixelShaderBytecode_.data(), pixelShaderBytecode_.size() };
+        psoDesc.BlendState = CreateBlendDesc(blendMode);
+        psoDesc.RasterizerState = rasterizerDesc;
+        psoDesc.NumRenderTargets = 1;
+        psoDesc.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        psoDesc.SampleDesc.Count = 1;
+        psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        psoDesc.DepthStencilState = depthStencilDesc;
+        psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+        HRESULT hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
+        assert(SUCCEEDED(hr));
+
+        ID3D12PipelineState* result = pipelineState.Get();
+        pipelineCache_[key] = std::move(pipelineState);
+        return result;
     }
 
     D3D12_BLEND_DESC ModelManager::CreateBlendDesc(BlendMode blendMode) const {

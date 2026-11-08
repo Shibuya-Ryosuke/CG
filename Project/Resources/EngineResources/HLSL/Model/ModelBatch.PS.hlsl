@@ -51,6 +51,21 @@ cbuffer LightViewProjBuffer : register(b3)
 Texture2D<float> gShadowMap : register(t2);
 SamplerComparisonState gShadowSampler : register(s1);
 
+// ブレンドモードとカメラに近いものを消す距離 (C++側 root param 8 のルート定数、ModelManager::DrawConstants と合わせる)
+cbuffer DrawConstants : register(b4)
+{
+    uint gBlendMode;        // C++側 BlendMode と同じ番号
+    float gNearFadeStart;
+    float gNearFadeEnd;
+};
+
+static const uint BLEND_NONE     = 0;
+static const uint BLEND_NORMAL   = 1;
+static const uint BLEND_ADD      = 2;
+static const uint BLEND_SUBTRACT = 3;
+static const uint BLEND_MULTIPLY = 4;
+static const uint BLEND_SCREEN   = 5;
+
 struct PixelShaderOutput
 {
     float4 color : SV_TARGET0;
@@ -104,8 +119,13 @@ PixelShaderOutput main(VertexShaderOutput input)
     PixelShaderOutput output;
     ModelInstance instance = gInstances[input.instanceId];
 
-    // カメラに極端に近いピクセルをディザで消す (Dither.hlsli)
-    ApplyNearCameraDither(input.position);
+    // カメラに極端に近いピクセルを消す (Dither.hlsli)
+    // 不透明はディザで消す。それ以外は最後に色・アルファを薄くして消す
+    float nearOpacity = ComputeNearCameraOpacity(input.position, gNearFadeStart, gNearFadeEnd);
+    if (gBlendMode == BLEND_NONE)
+    {
+        ApplyNearCameraDither(input.position, nearOpacity);
+    }
 
     float4 textureColor = gTexture.Sample(gSampler, input.texcoord);
 
@@ -158,6 +178,23 @@ PixelShaderOutput main(VertexShaderOutput input)
 
     // 発光: ライティングを通さず無条件で加算
     output.color.rgb += instance.emissive.rgb * instance.emissive.a;
+
+    // カメラに近い半透明・加算などを、ブレンドモードごとに「何も変えない色」へ近づけて消す
+    if (gBlendMode == BLEND_MULTIPLY)
+    {
+        // 乗算は白(1)が「変化なし」
+        output.color.rgb = lerp(float3(1.0f, 1.0f, 1.0f), output.color.rgb, nearOpacity);
+    }
+    else if (gBlendMode == BLEND_SCREEN)
+    {
+        // スクリーンは黒(0)が「変化なし」
+        output.color.rgb *= nearOpacity;
+    }
+    else if (gBlendMode != BLEND_NONE)
+    {
+        // Normal / Add / Subtract はアルファで強さが決まる
+        output.color.a *= nearOpacity;
+    }
 
     return output;
 }

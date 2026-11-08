@@ -5,11 +5,10 @@
 // Model_PS / Model_NoUV_PS / Instanced_PS から #include して使う。
 // 頂点シェーダーや定数バッファの変更は不要(SV_Positionだけで完結する)。
 
-// --- 調整用定数 (ビュー空間のZ深度 = カメラからの奥行き距離、ワールド単位) ---
-// この距離以上では完全に不透明。ここから近づくほど薄くなり始める
-static const float DITHER_FADE_START = 3.0f;
-// この距離以下では完全に消える。カメラのニアクリップ距離より少し大きい値にすること
-static const float DITHER_FADE_END = 0.2f;
+// --- 調整用の距離 (ビュー空間のZ深度 = カメラからの奥行き距離、ワールド単位) ---
+// C++側 ModelManager::SetNearFadeStart / SetNearFadeEnd で設定し、ルート定数で渡される
+//   fadeStart : この距離以上では完全に不透明。ここから近づくほど薄くなり始める
+//   fadeEnd   : この距離以下では完全に消える。カメラのニアクリップ距離より少し大きい値にすること
 
 // 4x4 ベイヤー行列 (0〜15)。ピクセル座標%4で参照して、ピクセルごとの閾値にする
 static const float kBayer4x4[16] =
@@ -20,18 +19,22 @@ static const float kBayer4x4[16] =
     15.0f,  7.0f, 13.0f,  5.0f
 };
 
-// ピクセルシェーダーの先頭で呼ぶ。カメラに近いほど、パターン状にピクセルをdiscardする。
+// カメラからの距離 → 不透明度 (0:完全に消える 〜 1:完全に描く)
 // svPosition : ピクセルシェーダー入力の SV_Position (input.position をそのまま渡す)
 // NOTE: PS入力のSV_Position.wは「1 / クリップ空間のw」になっている。
 //       透視投影ではクリップ空間のw = ビュー空間のZ深度なので、逆数を取れば距離になる。
 //       (平行投影ではwが常に1になるため、この方式は使えない)
-void ApplyNearCameraDither(float4 svPosition)
+float ComputeNearCameraOpacity(float4 svPosition, float fadeStart, float fadeEnd)
 {
     float viewDepth = svPosition.w;
+    return saturate((viewDepth - fadeEnd) / max(fadeStart - fadeEnd, 0.0001f));
+}
 
-    // 距離 → 不透明度 (0:完全に消える 〜 1:完全に描く)
-    float opacity = saturate((viewDepth - DITHER_FADE_END) / max(DITHER_FADE_START - DITHER_FADE_END, 0.0001f));
-
+// 不透明のモデル用。ピクセルシェーダーの先頭で呼ぶ。カメラに近いほど、パターン状にピクセルをdiscardする。
+// opacity : ComputeNearCameraOpacity の結果
+// (半透明・加算などはディザではなく、ModelBatch.PS で色・アルファを薄くして消す)
+void ApplyNearCameraDither(float4 svPosition, float opacity)
+{
     // 十分遠ければ何もしない(ほとんどのピクセルはここで抜ける)
     if (opacity >= 1.0f)
     {

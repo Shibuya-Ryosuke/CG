@@ -191,7 +191,7 @@ namespace RyoEngine {
             // UVを持たないメッシュはテクスチャを引けないので、上書きされていても既定(white)を使う
             const uint32_t textureHandle = meshAsset.hasUV ? state.textureHandle : meshAsset.defaultTextureHandle;
 
-            ModelManager::Submit(modelIndex_, static_cast<uint32_t>(i), textureHandle, data);
+            ModelManager::Submit(modelIndex_, static_cast<uint32_t>(i), textureHandle, state.blendMode, castShadow_, isBackground_, data);
         }
     }
 
@@ -263,6 +263,10 @@ namespace RyoEngine {
         ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.shadingMode = mode; });
     }
 
+    void Model::SetBlendMode(BlendMode blendMode, int32_t meshIndex) {
+        ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.blendMode = blendMode; });
+    }
+
     void Model::SetUVScale(const Vector2& scale, int32_t meshIndex) {
         ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.uvScale = scale; });
     }
@@ -301,6 +305,10 @@ namespace RyoEngine {
     void Model::SetLambertByName(ShadingMode mode, const std::string& materialName) {
         const int32_t index = GetMeshIndexByName(materialName);
         if (index >= 0) SetLambert(mode, index);
+    }
+    void Model::SetBlendModeByName(BlendMode blendMode, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetBlendMode(blendMode, index);
     }
     void Model::SetUVScaleByName(const Vector2& scale, const std::string& materialName) {
         const int32_t index = GetMeshIndexByName(materialName);
