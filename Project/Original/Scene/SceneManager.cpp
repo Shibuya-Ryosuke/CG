@@ -106,6 +106,8 @@ namespace RyoEngine {
         // (ParamEditorは解除時に今の値をキャッシュへ退避するので、破棄後だと解放済みのメモリを読んでしまう)
         ParamEditor::ClearEntries();
         GPUParticleManager::ClearRegistrations();
+        // カスタムポストエフェクトもシーンごとに登録し直す
+        PostEffectManager::Clear();
 
         currentScene_->Finalize();
         currentScene_.reset();

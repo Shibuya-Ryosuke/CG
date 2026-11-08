@@ -55,5 +55,37 @@ namespace Test {
 
 		// お試しフラグ
 		bool particleEmit_ = false;
+
+		// --- カスタムポストエフェクト (PostEffectManager の効果の番号) ---
+		uint32_t vignetteEffect_ = RyoEngine::PostEffectManager::kInvalidEffect;
+		uint32_t screenWaveEffect_ = RyoEngine::PostEffectManager::kInvalidEffect;
+		// 地面用のカスタムシェーダー (UVスクロール)
+		uint32_t groundScrollShader_ = RyoEngine::ShaderManager::kDefaultShader;
+
+		// --- テスト用の設定 (ParamEditor の "TestScene" グループで切り替える) ---
+		// 地面のブレンドモード (0:None 1:Normal 2:Add 3:Subtract 4:Multiply 5:Screen)
+		int32_t groundBlendMode_ = 0;
+		// 地面にUVスクロールのシェーダーを使うか / 流れる速さ(UV/秒) / 色を波打たせる強さ
+		bool useGroundScrollShader_ = false;
+		RyoEngine::Vector2 groundScrollSpeed_ = { 0.05f, 0.0f };
+		float groundColorWave_ = 1.0f;
+		// ビネット: オンオフ / 暗さの強さ / 暗くなり始める位置 / 暗くする色
+		bool vignetteEnabled_ = false;
+		float vignetteStrength_ = 0.8f;
+		float vignetteStart_ = 0.3f;
+		RyoEngine::Vector3 vignetteColor_ = { 0.0f, 0.0f, 0.0f };
+		// 画面の波: オンオフ / 揺れの大きさ / 波の細かさ / 波の速さ
+		bool screenWaveEnabled_ = false;
+		float screenWaveAmplitude_ = 0.005f;
+		float screenWaveFrequency_ = 20.0f;
+		float screenWaveSpeed_ = 3.0f;
+		// 2D(画像)のブレンドモード (0:None 1:Normal 2:Add 3:Subtract 4:Multiply 5:Screen)
+		int32_t spriteBlendMode_ = 1;
+
+		// 反映済みの値 (変わったときだけ反映するため。-1/最初の値と違うものにして、1フレーム目に必ず反映させる)
+		int32_t appliedGroundBlendMode_ = -1;
+		bool appliedGroundScrollShader_ = false;
+		int32_t appliedSpriteBlendMode_ = -1;
+		bool appliedUseSubCamera_ = false;
 	};
 }

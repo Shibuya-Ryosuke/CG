@@ -260,6 +260,28 @@ namespace RyoEngine {
 
         ImGui::Separator();
 
+        // --- デバッグカメラ ---
+        if (ImGui::TreeNode("debugCamera", "DebugCamera%s", debugCamera.GetIsAvailable() ? " (使用中)" : "")) {
+            ImGui::TextDisabled("LCtrl + LShift でもオン/オフを切り替えられます");
+            bool available = debugCamera.GetIsAvailable();
+            if (ImGui::Button("SetActive")) {
+                debugCamera.SetAvailable(true);
+            }
+            Vector3 translate = debugCamera.GetTranslate();
+            if (ImGui::DragFloat3("座標", &translate.x, 0.1f)) {
+                debugCamera.SetTranslate(translate);
+            }
+            Vector3 rotate = debugCamera.GetRotate();
+            if (ImGui::DragFloat3("回転(ラジアン)", &rotate.x, 0.01f)) {
+                debugCamera.SetRotate(rotate);
+            }
+            const Vector3 worldPosition = debugCamera.GetWorldPosition();
+            ImGui::Text("ワールド座標 : (%.2f, %.2f, %.2f)", worldPosition.x, worldPosition.y, worldPosition.z);
+            ImGui::TreePop();
+        }
+
+        ImGui::Separator();
+
         // --- カメラ一覧 ---
         // NOTE: ボタン操作でslotsの中身(アクティブ等)は変わるが、要素の追加・削除はしないのでループ中でも安全
         for (auto& [index, slot] : slots) {
@@ -268,7 +290,8 @@ namespace RyoEngine {
 
             ImGui::PushID(static_cast<int>(index));
             // ラベルが変わってもツリーの開閉状態が保たれるよう、IDは固定の文字列にする
-            if (ImGui::TreeNode("camera", "%s%s [%u]", isActive ? "* " : "  ", DisplayName(slot).c_str(), index)) {
+            const bool isRendering = isActive && !debugCamera.GetIsAvailable();
+            if (ImGui::TreeNode("camera", "%s [%u]%s", DisplayName(slot).c_str(), index, isRendering ? " (使用中)" : "")) {
                 if (ImGui::Button("SetActive")) {
                     SetActive(index);
                 }

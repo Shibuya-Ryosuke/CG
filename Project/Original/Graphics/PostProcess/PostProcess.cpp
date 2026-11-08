@@ -4,6 +4,7 @@
 #include "../Shader/ShaderCompiler.h"
 #include "../../Core/Base/SrvManager.h"
 #include "../../Graphics/2D/TextureManager.h"
+#include "PostEffectManager.h"
 #include <cassert>
 #include <algorithm>
 
@@ -496,7 +497,8 @@ namespace RyoEngine {
         }
 
         // 描画先をgameRenderTargetResource_へ戻す
-        D3D12_CPU_DESCRIPTOR_HANDLE gameRtvHandle = DirectXCommon::GetGameRenderTargetRTVHandle();
+        // (カスタムポストエフェクトがある場合は、PostEffectManager の作業用テクスチャへ書き、最後の効果がゲーム画面へ書く)
+        D3D12_CPU_DESCRIPTOR_HANDLE gameRtvHandle = PostEffectManager::BeginComposite();
         commandList->OMSetRenderTargets(1, &gameRtvHandle, false, nullptr);
 
         // NOTE: RenderBloom()内でビューポート/シザーをブルーム用の縮小解像度に変更しているため、

@@ -30,6 +30,7 @@
 #include "Graphics/Light/LightManager.h"
 #include "Graphics/Shadow/ShadowMap.h"
 #include "Graphics/PostProcess/PostProcess.h"
+#include "Graphics/PostProcess/PostEffectManager.h"
 #include "Graphics/PrimitiveRenderer/PrimitiveRenderer.h"
 #include "Graphics/GPUParticle/GPUParticleCommon.h"
 #include "Graphics/GPUParticle/GPUParticleEmitter.h"

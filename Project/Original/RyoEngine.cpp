@@ -67,6 +67,8 @@ namespace RyoEngine {
 
         // カスタムシェーダー (ModelManagerがPSOを作るときに使うので、先に初期化する)
         ShaderManager::Initialize();
+        // カスタムポストエフェクト (ShaderManager のシェーダーを使う)
+        PostEffectManager::Initialize();
 
         ModelManager::Initialize();
 
@@ -118,6 +120,7 @@ namespace RyoEngine {
         GPUParticleManager::Finalize();
         GPUParticleCommon::Finalize();
         ModelManager::Finalize();
+        PostEffectManager::Finalize();
         ShaderManager::Finalize();
         ModelCommon::Finalize();
         PrimitiveRenderer::Finalize();
@@ -161,6 +164,7 @@ namespace RyoEngine {
         ModelCommon::CommandsClear();
         SpriteCommon::CommandsClear();
         ModelManager::NewFrame();
+        PostEffectManager::NewFrame();
         WorldTransform::NewFrame();
         GPUParticleCommon::CommandsClear();
 
@@ -301,6 +305,8 @@ namespace RyoEngine {
         // HDR→LDR合成 (トーンマッピングのON/OFFはここで反映される)
         PostProcess::EndScenePass();
         PostProcess::Composite();
+        // カスタムポストエフェクト (トーンマッピングの後、UIの前)
+        PostEffectManager::Draw();
 
         // 2d描画
         Begin2dDraw();

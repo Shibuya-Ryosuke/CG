@@ -46,6 +46,7 @@
     <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleEmitter.cpp" />
     <ClCompile Include="Original\Graphics\2D\TextureManager.cpp" />
     <ClCompile Include="Original\Graphics\GPUParticle\GPUParticleManager.cpp" />
+    <ClCompile Include="Original\Graphics\PostProcess\PostEffectManager.cpp" />
     <ClCompile Include="Original\Graphics\Shader\ShaderCompiler.cpp" />
     <ClCompile Include="Original\Graphics\Shader\ShaderManager.cpp" />
     <ClCompile Include="Original\ImGui\ImGuiManager.cpp" />
@@ -97,6 +98,7 @@
     <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleEmitter.h" />
     <ClInclude Include="Original\Graphics\2D\TextureManager.h" />
     <ClInclude Include="Original\Graphics\GPUParticle\GPUParticleManager.h" />
+    <ClInclude Include="Original\Graphics\PostProcess\PostEffectManager.h" />
     <ClInclude Include="Original\Graphics\Shader\ShaderCompiler.h" />
     <ClInclude Include="Original\Graphics\Shader\ShaderManager.h" />
     <ClInclude Include="Original\ImGui\ImGuiAllInclude.h" />
