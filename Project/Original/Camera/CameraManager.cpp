@@ -283,7 +283,7 @@ namespace RyoEngine {
         ImGui::Separator();
 
         // --- カメラ一覧 ---
-        // NOTE: ボタン操作でslotsの中身(アクティブ等)は変わるが、要素の追加・削除はしないのでループ中でも安全
+        // ボタン操作でslotsの中身(アクティブ等)は変わるが、要素の追加・削除はしないのでループ中でも安全
         for (auto& [index, slot] : slots) {
             Camera* camera = slot.camera.get();
             const bool isActive = (index == activeIndex);
