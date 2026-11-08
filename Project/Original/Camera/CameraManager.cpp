@@ -263,8 +263,8 @@ namespace RyoEngine {
         // --- デバッグカメラ ---
         if (ImGui::TreeNode("debugCamera", "DebugCamera%s", debugCamera.GetIsAvailable() ? " (使用中)" : "")) {
             ImGui::TextDisabled("LCtrl + LShift でもオン/オフを切り替えられます");
-            if (ImGui::Button("SetActive")) {
-                debugCamera.SetAvailable(true);
+            if (ImGui::Button(debugCamera.GetIsAvailable() ? "SetInactive" : "SetActive")) {
+                debugCamera.ToggleIsAvailable();
             }
             Vector3 translate = debugCamera.GetTranslate();
             if (ImGui::DragFloat3("座標", &translate.x, 0.1f)) {
