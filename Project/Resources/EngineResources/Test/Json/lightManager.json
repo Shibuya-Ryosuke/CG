@@ -22,17 +22,26 @@
                 "z": 0.0
             },
             "enabled": true,
+            "flagKey": "",
             "intensity": 0.11699999868869781,
+            "lightWhenTrue": true,
             "name": "Light_0",
             "position": {
                 "x": 0.0,
                 "y": 0.0,
                 "z": 0.0
             },
+            "positionKey": "",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
             "range": 0.0,
             "spotAngle": 0.0,
             "spotFalloff": 0.0,
-            "type": 0
+            "type": 0,
+            "useFlag": false
         },
         {
             "color": {
@@ -47,17 +56,26 @@
                 "z": 0.0
             },
             "enabled": true,
+            "flagKey": "player light",
             "intensity": 4.574999809265137,
+            "lightWhenTrue": true,
             "name": "bunnyLight",
             "position": {
                 "x": 12.36756420135498,
                 "y": 5.0,
                 "z": -14.582764625549316
             },
+            "positionKey": "player pos",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
             "range": 33.54399871826172,
             "spotAngle": 0.5,
             "spotFalloff": 0.10000000149011612,
-            "type": 1
+            "type": 1,
+            "useFlag": true
         }
     ]
 }
