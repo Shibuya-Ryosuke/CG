@@ -100,6 +100,12 @@
     <Filter Include="Engine\Object">
       <UniqueIdentifier>{fc8b7b1a-a47e-468a-97c9-477267c67454}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Application">
+      <UniqueIdentifier>{4228bbb2-6d69-4265-90f8-5348801dc2fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\Scene">
+      <UniqueIdentifier>{06f49617-459b-4193-a563-8ecb57f3d19d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -264,6 +270,12 @@
     </ClCompile>
     <ClCompile Include="Engine\Core\Base\BindingRegistry.cpp">
       <Filter>Engine\Core\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\Scene\SceneFactory.cpp">
+      <Filter>Application\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\Application.cpp">
+      <Filter>Application</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -467,6 +479,18 @@
     </ClInclude>
     <ClInclude Include="Engine\Core\Base\BindingRegistry.h">
       <Filter>Engine\Core\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\Scene\Title.h">
+      <Filter>Application\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\Scene\Game.h">
+      <Filter>Application\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\Scene\SceneFactory.h">
+      <Filter>Application\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\Application.h">
+      <Filter>Application</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

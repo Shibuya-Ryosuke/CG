@@ -55,7 +55,7 @@ namespace RyoEngine {
 		// ウィンドウプロシージャ
 		instance->wc_.lpfnWndProc = WindowProc;
 		// ウィンドウクラス名(何でもいい)
-		instance->wc_.lpszClassName = L"OriginalEngine";
+		instance->wc_.lpszClassName = L"RyoEngine";
 		// インスタンスハンドル
 		instance->wc_.hInstance = GetModuleHandle(nullptr);
 		// カーソル
