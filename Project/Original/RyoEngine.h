@@ -150,4 +150,4 @@ namespace RyoEngine {
     }
 
     void Change2DBlendMode(BlendMode blendMode);
-}
+}
