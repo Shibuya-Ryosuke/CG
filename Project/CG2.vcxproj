@@ -16,7 +16,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application\Application.cpp" />
+    <ClCompile Include="Application\Scene\Game.cpp" />
     <ClCompile Include="Application\Scene\SceneFactory.cpp" />
+    <ClCompile Include="Application\Scene\Title.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Camera\CameraManager.cpp" />
     <ClCompile Include="Engine\Core\Asset\AssetRegistry.cpp" />

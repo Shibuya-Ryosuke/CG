@@ -37,7 +37,7 @@ namespace Test {
 		// --- カスタムシェーダー (モデル用) ---
 		groundScrollShader_ = ShaderManager::Load("Resources/EngineResources/Test/Shaders/UVScroll.hlsl");
 
-		// --- 自作ポストエフェクト (Add した順にかかる) ---
+		// --- カスタムポストエフェクト (Add した順にかかる) ---
 		vignetteEffect_ = PostEffectManager::Add(ShaderManager::LoadPostEffect("Resources/EngineResources/Test/Shaders/Vignette.hlsl"));
 		screenWaveEffect_ = PostEffectManager::Add(ShaderManager::LoadPostEffect("Resources/EngineResources/Test/Shaders/ScreenWave.hlsl"));
 	}
@@ -82,7 +82,7 @@ namespace Test {
 		ParamEditor::RegisterValue("UVの拡大", &groundUVScale_, 0.01f, -100.0f, 100.0f);
 		ParamEditor::RegisterValue("UVの回転(度)", &groundUVRotate_, 0.1f, -360.0f, 360.0f);
 		ParamEditor::RegisterValue("UVの移動", &groundUVTranslate_, 0.01f, -100.0f, 100.0f);
-		ParamEditor::RegisterFlag("UVスクロールのシェーダーを使う", &useGroundScrollShader_);
+		ParamEditor::RegisterFlag("UVスクロールのシェーダーを使う（カスタムシェーダー）", &useGroundScrollShader_);
 		ParamEditor::RegisterValue("シェーダー:流れる速さ", &groundScrollSpeed_, 0.01f, -2.0f, 2.0f);
 		ParamEditor::RegisterValue("シェーダー:色の波打ち", &groundColorWave_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
@@ -92,46 +92,46 @@ namespace Test {
 		ParamEditor::RegisterValue("完全に透明になる距離", &nearFadeEnd_, 0.01f, 0.0f, 50.0f);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("【後処理】トーンマッピング");
+		ParamEditor::BeginGroup("【ポストエフェクト】トーンマッピング");
 		ParamEditor::RegisterFlag("ACES", &acesEnabled_);
 		ParamEditor::RegisterValue("露出", &exposure_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("【後処理】ブルーム");
+		ParamEditor::BeginGroup("【ポストエフェクト】ブルーム");
 		ParamEditor::RegisterFlag("オン", &bloomEnabled_);
 		ParamEditor::RegisterValue("しきい値", &bloomThreshold_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::RegisterValue("強さ", &bloomIntensity_, 0.01f, 0.0f, 10.0f);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("【後処理】歪み・グリッチ");
-		ParamEditor::RegisterFlag("歪み", &distortionEnabled_);
-		ParamEditor::RegisterValue("歪みの強さ", &distortionStrength_, 0.001f, 0.0f, 0.2f);
+		ParamEditor::BeginGroup("【ポストエフェクト】ゆがみ・グリッチ");
+		ParamEditor::RegisterFlag("ゆがみ", &distortionEnabled_);
+		ParamEditor::RegisterValue("ゆがみの強さ", &distortionStrength_, 0.001f, 0.0f, 0.2f);
 		ParamEditor::RegisterFlag("グリッチ", &glitchEnabled_);
 		ParamEditor::RegisterValue("グリッチの強さ", &glitchIntensity_, 0.001f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("【後処理】色収差・ぼかし");
+		ParamEditor::BeginGroup("【ポストエフェクト】色収差・ぼかし");
 		ParamEditor::RegisterFlag("色収差", &chromaticEnabled_);
 		ParamEditor::RegisterValue("色収差の強さ", &chromaticStrength_, 0.0005f, 0.0f, 0.1f);
 		ParamEditor::RegisterFlag("ぼかし", &blurEnabled_);
 		ParamEditor::RegisterValue("ぼかしの強さ", &blurStrength_, 0.0005f, 0.0f, 0.05f);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("【後処理】グレースケール・ノイズ");
+		ParamEditor::BeginGroup("【ポストエフェクト】グレースケール・ノイズ");
 		ParamEditor::RegisterFlag("グレースケール", &grayscaleEnabled_);
 		ParamEditor::RegisterValue("白黒の度合い", &grayscaleIntensity_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterFlag("ノイズ", &noiseEnabled_);
 		ParamEditor::RegisterValue("ノイズの強さ", &noiseIntensity_, 0.001f, 0.0f, 1.0f);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("【自作後処理】ビネット");
+		ParamEditor::BeginGroup("【カスタムポストエフェクト】ビネット");
 		ParamEditor::RegisterFlag("オン", &vignetteEnabled_);
 		ParamEditor::RegisterValue("暗さ", &vignetteStrength_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterValue("暗くなり始める位置", &vignetteStart_, 0.01f, 0.0f, 1.0f);
 		ParamEditor::RegisterColor("色", &vignetteColor_);
 		ParamEditor::EndGroup();
 
-		ParamEditor::BeginGroup("【自作後処理】画面の波");
+		ParamEditor::BeginGroup("【カスタムポストエフェクト】画面の波");
 		ParamEditor::RegisterFlag("オン", &screenWaveEnabled_);
 		ParamEditor::RegisterValue("揺れの大きさ", &screenWaveAmplitude_, 0.0005f, 0.0f, 0.05f);
 		ParamEditor::RegisterValue("波の細かさ", &screenWaveFrequency_, 0.1f, 0.0f, 100.0f);
@@ -238,7 +238,7 @@ namespace Test {
 		PostProcess::SetNoiseEnabled(noiseEnabled_);
 		PostProcess::SetNoiseIntensity(noiseIntensity_);
 
-		// 自作 (PostEffectManager)。値はシェーダーの params[0], params[1] に入る
+		// カスタム (PostEffectManager)。値はシェーダーの params[0], params[1] に入る
 		PostEffectManager::SetEnabled(vignetteEffect_, vignetteEnabled_);
 		PostEffectManager::SetParams(vignetteEffect_, 0, { vignetteStrength_, vignetteStart_, vignetteColor_.x, vignetteColor_.y });
 		PostEffectManager::SetParams(vignetteEffect_, 1, { vignetteColor_.z, 0.0f, 0.0f, 0.0f });
