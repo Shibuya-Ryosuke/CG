@@ -1,7 +1,7 @@
 #include "SpriteCommon.h"
 #include "../../Core/Base/DirectXCommon.h"
 #include "../../Core/Base/Logger.h"
-#include "../../Core/Base/ShaderCompiler.h"
+#include "../Shader/ShaderCompiler.h"
 #include "../../Graphics/2D/TextureManager.h"
 #include <cassert>
 

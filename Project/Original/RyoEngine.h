@@ -10,7 +10,7 @@
 #include "Core/Loader/ModelLoader.h"
 #include "Framework/Framework.h"
 #include "Scene/SceneManager.h"
-#include "Core/Base/ShaderCompiler.h"
+#include "Graphics/Shader/ShaderCompiler.h"
 #include "Core/Base/IGame.h"
 #include "Core/Easing/Easing.h"
 #include "Core/Math/Math.h"
@@ -22,6 +22,7 @@
 
 #include "Graphics/3D/ModelCommon.h"
 #include "Graphics/3D/Model.h"
+#include "Graphics/Shader/ShaderManager.h"
 #include "Graphics/3D/InstancedModelCommon.h"
 #include "Graphics/2D/SpriteCommon.h"
 #include "Graphics/2D/Sprite.h"

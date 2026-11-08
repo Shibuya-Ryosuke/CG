@@ -94,6 +94,9 @@
     <Filter Include="Engine\Core\Asset">
       <UniqueIdentifier>{aedd5725-5b1d-41da-bfbc-4323a6850b6e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Graphics\Shader">
+      <UniqueIdentifier>{ca76dd66-c9b5-4343-b78e-5f9e148af6cb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -146,9 +149,6 @@
       <Filter>Engine\Core\Base</Filter>
     </ClCompile>
     <ClCompile Include="Original\Core\Base\Font.cpp">
-      <Filter>Engine\Core\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Original\Core\Base\ShaderCompiler.cpp">
       <Filter>Engine\Core\Base</Filter>
     </ClCompile>
     <ClCompile Include="Original\Core\Base\TimeManager.cpp">
@@ -237,6 +237,12 @@
     </ClCompile>
     <ClCompile Include="Original\Core\Asset\AssetRegistry.cpp">
       <Filter>Engine\Core\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Graphics\Shader\ShaderManager.cpp">
+      <Filter>Engine\Graphics\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="Original\Graphics\Shader\ShaderCompiler.cpp">
+      <Filter>Engine\Graphics\Shader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -336,9 +342,6 @@
     <ClInclude Include="Original\Graphics\PrimitiveRenderer\PrimitiveRenderer.h">
       <Filter>Engine\Graphics\PrimitiveRenderer</Filter>
     </ClInclude>
-    <ClInclude Include="Original\Core\Base\ShaderCompiler.h">
-      <Filter>Engine\Core\Base</Filter>
-    </ClInclude>
     <ClInclude Include="Original\Core\Base\TimeManager.h">
       <Filter>Engine\Core\Base</Filter>
     </ClInclude>
@@ -414,6 +417,12 @@
     <ClInclude Include="Original\Core\Asset\AssetRegistry.h">
       <Filter>Engine\Core\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Original\Graphics\Shader\ShaderManager.h">
+      <Filter>Engine\Graphics\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Original\Graphics\Shader\ShaderCompiler.h">
+      <Filter>Engine\Graphics\Shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\EngineResources\HLSL\Sprite\Sprite.hlsli">
@@ -435,6 +444,21 @@
       <Filter>HLSL\Model</Filter>
     </None>
     <None Include="Resources\EngineResources\HLSL\Model\Dither.hlsli">
+      <Filter>HLSL\Model</Filter>
+    </None>
+    <None Include="Resources\EngineResources\HLSL\Model\DefaultSurface.hlsli">
+      <Filter>HLSL\Model</Filter>
+    </None>
+    <None Include="Resources\EngineResources\HLSL\Model\ModelMain.PS.hlsli">
+      <Filter>HLSL\Model</Filter>
+    </None>
+    <None Include="Resources\EngineResources\HLSL\Model\ModelMain.VS.hlsli">
+      <Filter>HLSL\Model</Filter>
+    </None>
+    <None Include="Resources\EngineResources\HLSL\Model\ModelMainShadow.VS.hlsli">
+      <Filter>HLSL\Model</Filter>
+    </None>
+    <None Include="Resources\EngineResources\HLSL\Model\ModelSurface.hlsli">
       <Filter>HLSL\Model</Filter>
     </None>
   </ItemGroup>
@@ -498,15 +522,6 @@
     </FxCompile>
     <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticleBillboard.VS.hlsl">
       <Filter>HLSL\GPUParticle</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\Model\ModelBatch.PS.hlsl">
-      <Filter>HLSL\Model</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\Model\ModelBatch.VS.hlsl">
-      <Filter>HLSL\Model</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\Model\ModelBatchShadow.VS.hlsl">
-      <Filter>HLSL\Model</Filter>
     </FxCompile>
     <FxCompile Include="Resources\EngineResources\HLSL\PostProcess\BloomDownsample.PS.hlsl">
       <Filter>HLSL\PostProcess</Filter>

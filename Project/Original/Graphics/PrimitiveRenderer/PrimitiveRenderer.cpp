@@ -1,6 +1,6 @@
 #include "PrimitiveRenderer.h"
 #include "../../Core/Base/DirectXCommon.h"
-#include "../../Core/Base/ShaderCompiler.h"
+#include "../Shader/ShaderCompiler.h"
 #include "../3D/ModelCommon.h"
 #include <cmath>
 #include <cstring>

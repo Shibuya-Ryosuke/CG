@@ -14,7 +14,7 @@ namespace RyoEngine {
 
     /// <summary>
     /// GPUへ渡す「1体 x 1メッシュ」分のデータ。
-    /// HLSL側 ModelInstance (ModelInstance.hlsli) と1:1でレイアウトを合わせること。全体で128byte。
+    /// HLSL側 ModelInstance (ModelInstance.hlsli) と1:1でレイアウトを合わせること。全体で160byte。
     /// </summary>
     struct ModelInstanceData {
         Matrix4x4 world;          // 64
@@ -24,8 +24,23 @@ namespace RyoEngine {
         Vector2   uvOffset;       //  8  UV変換の平行移動 (m30, m31)
         int32_t   enableLighting; //  4
         int32_t   shadingMode;    //  4
+        Vector4   params[2];      // 32  カスタムシェーダー用の自由な値 (Model::SetShaderParam)
     };
-    static_assert(sizeof(ModelInstanceData) == 128, "ModelInstanceData は128byteであること (ModelInstance.hlsli と合わせる)");
+    static_assert(sizeof(ModelInstanceData) == 160, "ModelInstanceData は160byteであること (ModelInstance.hlsli と合わせる)");
+
+    /// <summary>
+    /// 描画のしかた (Model::Draw() から ModelManager::Submit() へ渡す)
+    /// </summary>
+    struct ModelDrawOptions {
+        // None:不透明 / Normal:遠い順に描く (この2つは深度を書く) / それ以外:順番に関係なくまとめて描く
+        BlendMode blendMode = BlendMode::None;
+        // カスタムシェーダー (ShaderManager::Load の戻り値。0 = エンジン標準)
+        uint32_t shader = 0;
+        // 影を落とすか。Add/Subtract/Screen は指定に関係なく影を落とさない
+        bool castShadow = true;
+        // 背景(天球など)。ほかの何よりも先に、深度を書かずに描く。影は落とさない
+        bool isBackground = false;
+    };
 
     /// <summary>
     /// objなどのモデルデータを1度だけ読み込んで保持し、描画をまとめて行うクラス。
@@ -101,11 +116,15 @@ namespace RyoEngine {
         /// <summary>
         /// 1体x1メッシュ分を描画キューへ積む (Model::Draw() から呼ばれる)
         /// </summary>
-        /// <param name="blendMode">None:不透明 / Normal:遠い順に描く (この2つは深度を書く) / それ以外:順番に関係なくまとめて描く</param>
-        /// <param name="castShadow">影を落とすか。Add/Subtract/Screen は指定に関係なく影を落とさない</param>
-        /// <param name="isBackground">背景(天球など)。ほかの何よりも先に、深度を書かずに描く。影は落とさない</param>
         static void Submit(uint32_t modelIndex, uint32_t meshIndex, uint32_t textureHandle,
-            BlendMode blendMode, bool castShadow, bool isBackground, const ModelInstanceData& data);
+            const ModelDrawOptions& options, const ModelInstanceData& data);
+
+        /// <summary>
+        /// その組み合わせのPSOを先に作っておく (作るのは少し重いので、描く瞬間ではなく準備の段階で作るため)。
+        /// Model::SetShader / SetBlendMode / SetBackground から呼ばれる。
+        /// 演出の途中で初めて使う組み合わせがある場合は、シーンの初期化などで呼んでおくとカクつかない
+        /// </summary>
+        static void PreparePipeline(uint32_t shader, BlendMode blendMode, bool isBackground = false);
 
         /// <summary>
         /// 積まれたものを通常描画する (EndFrame内、3Dシーンパス中に呼ぶこと)
@@ -132,7 +151,11 @@ namespace RyoEngine {
         D3D12_BLEND_DESC CreateBlendDesc(BlendMode blendMode) const;
         // 通常描画のPSOを取得する。無ければその場で作って保存する (初めて使われた組み合わせだけ作る)
         // isBackground: 背景用 (深度を書かない)
-        ID3D12PipelineState* GetPipelineState(BlendMode blendMode, bool isBackground = false);
+        ID3D12PipelineState* GetPipelineState(uint32_t shader, BlendMode blendMode, bool isBackground);
+        // シャドウ用のPSO (シェーダーごと。Vertex()の頂点変形を影にも反映するため)
+        ID3D12PipelineState* GetShadowPipelineState(uint32_t shader);
+        // ShaderManager でシェーダーが再読み込みされたら、作ったPSOを捨てる (GPUが使い終わるまで数フレーム生かす)
+        void RetirePipelinesIfShaderReloaded();
 
         // 積まれた分をソート・グループ化し、GPUバッファへ詰める (1フレームに1回だけ実行される)
         void BuildFrame();
@@ -142,6 +165,7 @@ namespace RyoEngine {
         struct Entry {
             uint64_t key = 0;
             uint32_t dataIndex = 0;
+            uint32_t shader = 0;
             BlendMode blendMode = BlendMode::None;
             bool castShadow = true;
             bool isBackground = false;
@@ -152,15 +176,19 @@ namespace RyoEngine {
             uint32_t modelIndex = 0;
             uint32_t meshIndex = 0;
             uint32_t textureHandle = 0;
+            uint32_t shader = 0;
             BlendMode blendMode = BlendMode::None;
             uint32_t firstInstance = 0;
             uint32_t instanceCount = 0;
         };
         // 並べ終わった entries を、instanceMapped_ の writeIndex から詰めてグループにする
         void AppendGroups(const std::vector<const Entry*>& sorted, size_t& writeIndex, std::vector<Group>& outGroups);
-        void DrawGroups(const std::vector<Group>& groups, bool bindTexture);
-        // 3つの描画パス共通: ブレンドモードと消える距離をPSへ渡す (root param 8)
+        // グループを順に描く。シェーダーかブレンドモードが変わったところだけPSO・定数・追加テクスチャを切り替える
+        void DrawGroups(const std::vector<Group>& groups, bool isBackground, bool isShadow);
+        // ブレンドモード・消える距離・時間をシェーダーへ渡す (root param 8)
         void SetDrawParams(BlendMode blendMode);
+        // シェーダーごとの追加テクスチャを結ぶ (root param 9 / 10)
+        void BindShaderTextures(uint32_t shader);
 
         // --- モデルデータ ---
         std::vector<std::unique_ptr<ModelAsset>> assets_; // modelIndex-1 が添字。ポインタは安定
@@ -168,12 +196,17 @@ namespace RyoEngine {
 
         // --- パイプライン ---
         Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
-        // 通常描画のPSO。key = ブレンドモード | (背景なら 0x100) (5でシェーダーを足すときは、keyにシェーダーの番号も入れる)
-        std::unordered_map<uint32_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> pipelineCache_;
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> shadowPipelineState_;
-        // PSOを後から作るため、コンパイル済みのシェーダーを持っておく
-        std::vector<uint8_t> vertexShaderBytecode_;
-        std::vector<uint8_t> pixelShaderBytecode_;
+        // 通常描画のPSO。key = (シェーダー << 16) | (背景なら 0x100) | ブレンドモード
+        std::unordered_map<uint64_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> pipelineCache_;
+        // シャドウ用のPSO。key = シェーダー
+        std::unordered_map<uint32_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>> shadowPipelineCache_;
+        // 再読み込みで捨てたPSO (GPUがまだ使っているかもしれないので数フレーム生かす)
+        struct RetiredPipeline {
+            Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+            int framesLeft = 0;
+        };
+        std::vector<RetiredPipeline> retiredPipelines_;
+        uint32_t shaderReloadCount_ = 0; // ShaderManager::GetReloadCount() の値 (変わったら作り直す)
 
         // --- フレームごとの提出データ ---
         std::vector<ModelInstanceData> frameData_;
@@ -191,6 +224,8 @@ namespace RyoEngine {
         float nearFadeStart_ = 3.0f;
         // この距離以下では完全に消える。カメラのニアクリップ距離より少し大きい値にすること
         float nearFadeEnd_ = 0.2f;
+        // シェーダーに渡す経過時間 (秒)。TimeManager の時間の速さ(スロー等)に合わせて進む
+        float time_ = 0.0f;
         bool prepared_ = false;
 
         // --- GPUバッファ ---

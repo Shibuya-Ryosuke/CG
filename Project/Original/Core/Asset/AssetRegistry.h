@@ -21,6 +21,7 @@ namespace RyoEngine {
     ///   Texture : .png .jpg .jpeg .dds
     ///   Model   : .obj .gltf .glb
     ///   Sound   : .wav .mp3 .aac .m4a .wma
+    ///   Shader  : .hlsl (アプリのカスタムシェーダー。ShaderManager::Load で使う)
     /// </summary>
     class AssetRegistry {
     public:
@@ -28,6 +29,7 @@ namespace RyoEngine {
             Texture,
             Model,
             Sound,
+            Shader,
             Count,
         };
 

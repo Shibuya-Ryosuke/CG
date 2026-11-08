@@ -1,6 +1,6 @@
 #include <d3d12.h>
 #include "ShaderCompiler.h"
-#include "Logger.h"
+#include "../../Core/Base/Logger.h"
 #include <format>
 #include <cassert>
 #include <filesystem>
@@ -112,6 +112,66 @@ namespace RyoEngine {
         // 成功したログを出す
         Logger::LogSuccess(Logger::ConvertString(std::format(L"* Compile Succeeded *\n- path:{}\n- profile{}\n", filePath, profile)));
         // 実行用のバイナリを返却
+        return shaderBlob;
+    }
+
+    Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::CompileSource(const std::string& source, const std::wstring& sourceName,
+        const wchar_t* profile, const std::vector<std::wstring>& includeDirs, std::string& outError) {
+        ShaderCompiler* instance = GetInstance();
+        outError.clear();
+
+        DxcBuffer sourceBuffer;
+        sourceBuffer.Ptr = source.data();
+        sourceBuffer.Size = source.size();
+        sourceBuffer.Encoding = DXC_CP_UTF8;
+
+        std::vector<LPCWSTR> arguments = {
+            sourceName.c_str(),
+            L"-E", L"main",
+            L"-T", profile,
+            L"-Zi", L"-Qembed_debug",
+            L"-Od",
+            L"-Zpr",
+        };
+        for (const std::wstring& dir : includeDirs) {
+            arguments.push_back(L"-I");
+            arguments.push_back(dir.c_str());
+        }
+
+        Microsoft::WRL::ComPtr<IDxcResult> shaderResult = nullptr;
+        HRESULT hr = instance->dxcCompiler_->Compile(
+            &sourceBuffer,
+            arguments.data(),
+            static_cast<UINT32>(arguments.size()),
+            instance->includeHandler_.Get(),
+            IID_PPV_ARGS(&shaderResult));
+        if (FAILED(hr) || !shaderResult) {
+            outError = "dxcの呼び出しに失敗しました";
+            return nullptr;
+        }
+
+        // エラー・警告の文章
+        Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError = nullptr;
+        shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
+        const std::string message = (shaderError && shaderError->GetStringLength() != 0) ? shaderError->GetStringPointer() : "";
+
+        HRESULT status = S_OK;
+        shaderResult->GetStatus(&status);
+        if (FAILED(status)) {
+            outError = message.empty() ? "コンパイルに失敗しました" : message;
+            return nullptr;
+        }
+        if (!message.empty()) {
+            // 警告だけなら止めずにログに出す
+            Logger::LogWarning("[ShaderCompiler] {}\n{}\n", Logger::ConvertString(sourceName), message);
+        }
+
+        Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = nullptr;
+        hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
+        if (FAILED(hr) || !shaderBlob) {
+            outError = "コンパイル結果を取得できませんでした";
+            return nullptr;
+        }
         return shaderBlob;
     }
 }

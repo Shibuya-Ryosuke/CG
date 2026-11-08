@@ -1,6 +1,24 @@
-#include "ModelInstance.hlsli"
+// モデル描画のピクセルシェーダー main (エンジン側の型紙)
+// ShaderManager が「ModelSurface.hlsli → アプリのシェーダー → このファイル」の順にまとめてコンパイルする。
+// (旧 ModelBatch.PS.hlsl の処理を、アプリの Surface() を呼ぶ形にしたもの)
+//   1. カメラに近いときの処理 (不透明はディザ)          … 必ず通る
+//   2. Surface() で色を決める                           … アプリの処理
+//   3. ライティング・影                                  … output.enableLighting が true のとき
+//   4. 発光を足す
+//   5. カメラに近いときの処理 (半透明・加算などは薄くする) … 必ず通る
+// エディタ(IntelliSense)がこのファイル単体を見ても型や関数が分かるように include しておく。
+// 実際のコンパイルでは ShaderManager が先に include しているので、二重には読まれない (include guard)
+#include "ModelSurface.hlsli"
+// アプリのシェーダー (またはエンジン標準の DefaultSurface.hlsli) で定義される
+void Surface(SurfaceInput input, inout SurfaceOutput output);
 #include "ModelBatch.hlsli"
 #include "Dither.hlsli"
+
+// エディタ用: 単体で見たときだけ標準の Surface を読む (実際のコンパイルでは MODEL_STAGE_PS が定義されているので読まない)
+// 定義してないよーってエラーがでてしまうので
+#ifndef MODEL_STAGE_PS
+#include "DefaultSurface.hlsli"
+#endif
 
 // C++側 Light構造体(Light.h)と1:1でレイアウトを合わせること。全体で64byte。
 struct Light
@@ -21,9 +39,6 @@ static const uint LIGHT_TYPE_POINT       = 1;
 static const uint LIGHT_TYPE_SPOT        = 2;
 static const uint LIGHT_TYPE_AREA        = 3;
 
-
-Texture2D<float4> gTexture : register(t0);
-SamplerState gSampler : register(s0);
 
 // Light配列本体 (StructuredBuffer。C++側はRoot Descriptor SRVとして直接バインドしている)
 StructuredBuffer<Light> gLights : register(t1);
@@ -50,21 +65,6 @@ cbuffer LightViewProjBuffer : register(b3)
 // シャドウマップ本体と、PCF用の比較サンプラー
 Texture2D<float> gShadowMap : register(t2);
 SamplerComparisonState gShadowSampler : register(s1);
-
-// ブレンドモードとカメラに近いものを消す距離 (C++側 root param 8 のルート定数、ModelManager::DrawConstants と合わせる)
-cbuffer DrawConstants : register(b4)
-{
-    uint gBlendMode;        // C++側 BlendMode と同じ番号
-    float gNearFadeStart;
-    float gNearFadeEnd;
-};
-
-static const uint BLEND_NONE     = 0;
-static const uint BLEND_NORMAL   = 1;
-static const uint BLEND_ADD      = 2;
-static const uint BLEND_SUBTRACT = 3;
-static const uint BLEND_MULTIPLY = 4;
-static const uint BLEND_SCREEN   = 5;
 
 struct PixelShaderOutput
 {
@@ -127,11 +127,30 @@ PixelShaderOutput main(VertexShaderOutput input)
         ApplyNearCameraDither(input.position, nearOpacity);
     }
 
-    float4 textureColor = gTexture.Sample(gSampler, input.texcoord);
+    // Surface() に渡す値
+    SurfaceInput surfaceInput;
+    surfaceInput.uv = input.texcoord;
+    surfaceInput.normal = normalize(input.normal);
+    surfaceInput.worldPosition = input.worldPosition;
+    surfaceInput.screenPosition = input.position;
+    surfaceInput.params = instance.params;
+    surfaceInput.time = gTime;
+    surfaceInput.instance = instance;
 
-    if (instance.enableLighting != 0 && instance.shadingMode != 0)
+    // 「いつもの見た目」を入れてから Surface() に渡す (何もしなければエンジン標準と同じ見た目になる)
+    float4 textureColor = SampleMainTexture(input.texcoord);
+    SurfaceOutput surface;
+    surface.color = instance.color.rgb * textureColor.rgb;
+    surface.alpha = instance.color.a * textureColor.a;
+    surface.emissive = instance.emissive.rgb * instance.emissive.a;
+    surface.normal = surfaceInput.normal;
+    surface.enableLighting = (instance.enableLighting != 0 && instance.shadingMode != 0);
+
+    Surface(surfaceInput, surface);
+
+    if (surface.enableLighting)
     {
-        float3 normal = normalize(input.normal);
+        float3 normal = normalize(surface.normal);
         float3 lightSum = float3(0.0f, 0.0f, 0.0f);
 
         for (uint i = 0; i < gLightCount; ++i)
@@ -168,16 +187,16 @@ PixelShaderOutput main(VertexShaderOutput input)
 
         lightSum += gAmbientColor.rgb * gAmbientIntensity;
 
-        output.color.rgb = instance.color.rgb * textureColor.rgb * lightSum;
-        output.color.a = instance.color.a * textureColor.a;
+        output.color.rgb = surface.color * lightSum;
     }
     else
     {
-        output.color = instance.color * textureColor;
+        output.color.rgb = surface.color;
     }
+    output.color.a = surface.alpha;
 
     // 発光: ライティングを通さず無条件で加算
-    output.color.rgb += instance.emissive.rgb * instance.emissive.a;
+    output.color.rgb += surface.emissive;
 
     // カメラに近い半透明・加算などを、ブレンドモードごとに「何も変えない色」へ近づけて消す
     if (gBlendMode == BLEND_MULTIPLY)

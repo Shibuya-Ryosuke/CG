@@ -1,7 +1,7 @@
 #include "Model.h"
 #include "../../Core/Base/Logger.h"
 #include "../../Core/Base/DirectXCommon.h"
-#include "../../Core/Base/ShaderCompiler.h"
+#include "../Shader/ShaderCompiler.h"
 #include "../../Graphics/2D/TextureManager.h"
 #include "../../Core/Base/SrvManager.h"
 #include "../Shadow/ShadowMap.h"

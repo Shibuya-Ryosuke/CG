@@ -65,6 +65,9 @@ namespace RyoEngine {
 
         ModelCommon::Initialize();
 
+        // カスタムシェーダー (ModelManagerがPSOを作るときに使うので、先に初期化する)
+        ShaderManager::Initialize();
+
         ModelManager::Initialize();
 
         GPUParticleCommon::Initialize();
@@ -115,6 +118,7 @@ namespace RyoEngine {
         GPUParticleManager::Finalize();
         GPUParticleCommon::Finalize();
         ModelManager::Finalize();
+        ShaderManager::Finalize();
         ModelCommon::Finalize();
         PrimitiveRenderer::Finalize();
         ShadowMap::Finalize();
@@ -214,6 +218,8 @@ namespace RyoEngine {
         LightManager::DrawImGui();
         // シャドウ(範囲・カメラ追従)
         ShadowMap::DrawImGui();
+        // シェーダー(一覧・エラー・再読み込み)
+        ShaderManager::DrawImGui();
         // ギズモ操作モード(W/E/R・ローカル/ワールド・スナップ)
         Gizmo::DrawToolbar();
         // GPUパーティクル

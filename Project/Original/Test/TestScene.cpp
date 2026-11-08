@@ -61,6 +61,16 @@ namespace Test {
 			ground_->SetBlendMode(BlendMode::Screen);
 		}
 
+		// カスタムシェーダーの確認 (6: UVスクロール / 7: エンジン標準)
+		// ImGuiの「Shader」ウィンドウの「シェーダーを再読み込み」で、書き換えたシェーダーがその場で反映される
+		if (Input::TriggerKey(DIK_6)) {
+			ground_->SetShader(ShaderManager::Load("Resources/EngineResources/Test/Shaders/UVScroll.hlsl"));
+			ground_->SetShaderParam(0, 0.05f); // 横に流れる速さ
+			ground_->SetShaderParam(2, 1.0f);  // 色を波打たせる強さ
+		} else if (Input::TriggerKey(DIK_7)) {
+			ground_->SetShader(ShaderManager::kDefaultShader);
+		}
+
 		// 画像のブレンドモード
 		if (Input::TriggerKey(DIK_Z)) {
 			Change2DBlendMode(BlendMode::None);

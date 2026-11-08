@@ -1,11 +1,12 @@
 #include "ModelManager.h"
 #include "../../Core/Base/DirectXCommon.h"
 #include "../../Core/Base/Logger.h"
-#include "../../Core/Base/ShaderCompiler.h"
 #include "../../Core/Base/SrvManager.h"
 #include "../2D/TextureManager.h"
 #include "../Light/LightManager.h"
 #include "../Shadow/ShadowMap.h"
+#include "../Shader/ShaderManager.h"
+#include "../../Core/Base/TimeManager.h"
 #include "../../Core/Loader/ModelLoader.h"
 #include "../../Editor/ModelPicker.h"
 #include <algorithm>
@@ -60,10 +61,9 @@ namespace RyoEngine {
         instance->assets_.clear();
         instance->pathToIndex_.clear();
 
-        instance->shadowPipelineState_.Reset();
         instance->pipelineCache_.clear();
-        instance->vertexShaderBytecode_.clear();
-        instance->pixelShaderBytecode_.clear();
+        instance->shadowPipelineCache_.clear();
+        instance->retiredPipelines_.clear();
         instance->rootSignature_.Reset();
         Logger::LogSuccess("ModelManager : Finalized\n");
     }
@@ -173,10 +173,41 @@ namespace RyoEngine {
             std::remove_if(instance->retired_.begin(), instance->retired_.end(),
                 [](const RetiredBuffer& r) { return r.framesLeft <= 0; }),
             instance->retired_.end());
+
+        // シェーダーが再読み込みされていたらPSOを作り直す。捨てたPSOも時間が経ったものから解放する
+        instance->RetirePipelinesIfShaderReloaded();
+        for (auto& retired : instance->retiredPipelines_) {
+            --retired.framesLeft;
+        }
+        instance->retiredPipelines_.erase(
+            std::remove_if(instance->retiredPipelines_.begin(), instance->retiredPipelines_.end(),
+                [](const RetiredPipeline& r) { return r.framesLeft <= 0; }),
+            instance->retiredPipelines_.end());
+
+        // シェーダーに渡す経過時間 (前フレームのスケール済みdeltaTime)
+        instance->time_ += TimeManager::GetScaleTime();
+    }
+
+    void ModelManager::RetirePipelinesIfShaderReloaded() {
+        const uint32_t reloadCount = ShaderManager::GetReloadCount();
+        if (reloadCount == shaderReloadCount_) {
+            return;
+        }
+        shaderReloadCount_ = reloadCount;
+
+        for (auto& [key, pipelineState] : pipelineCache_) {
+            retiredPipelines_.push_back({ std::move(pipelineState), kRetireFrames });
+        }
+        for (auto& [key, pipelineState] : shadowPipelineCache_) {
+            retiredPipelines_.push_back({ std::move(pipelineState), kRetireFrames });
+        }
+        pipelineCache_.clear();
+        shadowPipelineCache_.clear();
+        Logger::Log("[ModelManager] シェーダーが再読み込みされたので、PSOを作り直します\n");
     }
 
     void ModelManager::Submit(uint32_t modelIndex, uint32_t meshIndex, uint32_t textureHandle,
-        BlendMode blendMode, bool castShadow, bool isBackground, const ModelInstanceData& data) {
+        const ModelDrawOptions& options, const ModelInstanceData& data) {
         ModelManager* instance = GetInstance();
 
         const ModelAsset* asset = GetAsset(modelIndex);
@@ -189,11 +220,12 @@ namespace RyoEngine {
             (static_cast<uint64_t>(meshIndex & 0xFFFFu) << 32) |
             static_cast<uint64_t>(textureHandle);
         entry.dataIndex = static_cast<uint32_t>(instance->frameData_.size());
-        entry.blendMode = blendMode;
-        entry.isBackground = isBackground;
+        entry.shader = options.shader;
+        entry.blendMode = options.blendMode;
+        entry.isBackground = options.isBackground;
         // 加算・減算・スクリーンは光るエフェクト向けなので、影を落とさない。背景も影を落とさない
-        entry.castShadow = castShadow && !isBackground &&
-            (blendMode == BlendMode::None || blendMode == BlendMode::Normal || blendMode == BlendMode::Multiply);
+        entry.castShadow = options.castShadow && !options.isBackground &&
+            (options.blendMode == BlendMode::None || options.blendMode == BlendMode::Normal || options.blendMode == BlendMode::Multiply);
 
         instance->frameData_.push_back(data);
         instance->entries_.push_back(entry);
@@ -265,12 +297,14 @@ namespace RyoEngine {
             }
         }
 
-        // 同じキーの中は提出順を保つ (dataIndexで比べる)
+        // シェーダー → (モデル, メッシュ, テクスチャ) の順。同じキーの中は提出順を保つ (dataIndexで比べる)
+        // (シェーダーを一番上にすると、PSOの切り替えがシェーダーの種類数ぶんで済む)
         auto byKey = [](const Entry* a, const Entry* b) {
+            if (a->shader != b->shader) return a->shader < b->shader;
             if (a->key != b->key) return a->key < b->key;
             return a->dataIndex < b->dataIndex;
         };
-        // 不透明・影: (モデル, メッシュ, テクスチャ) の順に並べてまとめる
+        // 不透明・影: シェーダー → (モデル, メッシュ, テクスチャ) の順に並べてまとめる
         std::sort(opaque.begin(), opaque.end(), byKey);
         std::sort(shadow.begin(), shadow.end(), byKey);
         // 半透明: 奥から手前へ描かないと、手前の半透明に隠れた奥のものが正しく透けない
@@ -302,12 +336,13 @@ namespace RyoEngine {
         for (const Entry* entry : sorted) {
             instanceMapped_[writeIndex] = frameData_[entry->dataIndex];
 
-            // キーかブレンドモードが変わったら新しいグループ
-            if (!previous || previous->key != entry->key || previous->blendMode != entry->blendMode) {
+            // キー・シェーダー・ブレンドモードのどれかが変わったら新しいグループ
+            if (!previous || previous->key != entry->key || previous->shader != entry->shader || previous->blendMode != entry->blendMode) {
                 Group group;
                 group.modelIndex = static_cast<uint32_t>(entry->key >> 48);
                 group.meshIndex = static_cast<uint32_t>((entry->key >> 32) & 0xFFFFu);
                 group.textureHandle = static_cast<uint32_t>(entry->key & 0xFFFFFFFFu);
+                group.shader = entry->shader;
                 group.blendMode = entry->blendMode;
                 group.firstInstance = static_cast<uint32_t>(writeIndex);
                 group.instanceCount = 0;
@@ -342,25 +377,43 @@ namespace RyoEngine {
 
     void ModelManager::SetDrawParams(BlendMode blendMode) {
         auto commandList = DirectXCommon::GetCommandList();
-        // root 8: b4 { uint blendMode; float nearFadeStart; float nearFadeEnd; }
+        // root 8: b4 { uint blendMode; float nearFadeStart; float nearFadeEnd; float time; } (ModelSurface.hlsli の DrawConstants)
         struct DrawParams {
             uint32_t blendMode;
             float nearFadeStart;
             float nearFadeEnd;
-        } params{ static_cast<uint32_t>(blendMode), nearFadeStart_, nearFadeEnd_ };
-        commandList->SetGraphicsRoot32BitConstants(8, 3, &params, 0);
+            float time;
+        } params{ static_cast<uint32_t>(blendMode), nearFadeStart_, nearFadeEnd_, time_ };
+        commandList->SetGraphicsRoot32BitConstants(8, 4, &params, 0);
     }
 
-    void ModelManager::DrawGroups(const std::vector<Group>& groups, bool bindTexture) {
+    void ModelManager::BindShaderTextures(uint32_t shader) {
+        auto commandList = DirectXCommon::GetCommandList();
+        // root 9: t4 / root 10: t5 (設定していなければ white1x1)
+        commandList->SetGraphicsRootDescriptorTable(9, TextureManager::GetGPUHandle(ShaderManager::GetTexture(shader, 0)));
+        commandList->SetGraphicsRootDescriptorTable(10, TextureManager::GetGPUHandle(ShaderManager::GetTexture(shader, 1)));
+    }
+
+    void ModelManager::DrawGroups(const std::vector<Group>& groups, bool isBackground, bool isShadow) {
         auto commandList = DirectXCommon::GetCommandList();
         const D3D12_GPU_VIRTUAL_ADDRESS base = instanceResource_->GetGPUVirtualAddress();
 
+        const Group* previous = nullptr;
         for (const Group& group : groups) {
+            // シェーダーかブレンドモードが変わったところだけ、PSO・定数・追加テクスチャを切り替える
+            if (!previous || previous->shader != group.shader || previous->blendMode != group.blendMode) {
+                commandList->SetPipelineState(isShadow
+                    ? GetShadowPipelineState(group.shader)
+                    : GetPipelineState(group.shader, group.blendMode, isBackground));
+                SetDrawParams(group.blendMode);
+                BindShaderTextures(group.shader);
+            }
+            previous = &group;
+
             const MeshAsset& mesh = assets_[group.modelIndex - 1]->meshes[group.meshIndex];
 
-            if (bindTexture) {
-                commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetGPUHandle(group.textureHandle));
-            }
+            // 影のパスでも結ぶ (アプリの Vertex() がテクスチャを読むことがあるため)
+            commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetGPUHandle(group.textureHandle));
             commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
 
             // グループの先頭インスタンスへずらしたアドレスを渡す。
@@ -380,54 +433,16 @@ namespace RyoEngine {
             return;
         }
 
-        auto commandList = DirectXCommon::GetCommandList();
         instance->BindCommonState();
 
         // 0. 背景 (深度を書かないので、後から描くものは必ず背景より手前に見える)
-        {
-            const std::vector<Group>& groups = instance->backgroundGroups_;
-            size_t begin = 0;
-            while (begin < groups.size()) {
-                const BlendMode blendMode = groups[begin].blendMode;
-                size_t end = begin;
-                while (end < groups.size() && groups[end].blendMode == blendMode) {
-                    ++end;
-                }
-                commandList->SetPipelineState(instance->GetPipelineState(blendMode, true));
-                instance->SetDrawParams(blendMode);
-                instance->DrawGroups(std::vector<Group>(groups.begin() + begin, groups.begin() + end), true);
-                begin = end;
-            }
-        }
-
+        instance->DrawGroups(instance->backgroundGroups_, true, false);
         // 1. 不透明 (深度を書く)
-        if (!instance->opaqueGroups_.empty()) {
-            commandList->SetPipelineState(instance->GetPipelineState(BlendMode::None));
-            instance->SetDrawParams(BlendMode::None);
-            instance->DrawGroups(instance->opaqueGroups_, true);
-        }
-
+        instance->DrawGroups(instance->opaqueGroups_, false, false);
         // 2. 半透明 (遠い順に並んでいる。自分の奥の面が手前に出ないよう深度は書く)
-        if (!instance->sortedGroups_.empty()) {
-            commandList->SetPipelineState(instance->GetPipelineState(BlendMode::Normal));
-            instance->SetDrawParams(BlendMode::Normal);
-            instance->DrawGroups(instance->sortedGroups_, true);
-        }
-
-        // 3. 加算・減算・乗算・スクリーン (ブレンドモードごとに並んでいるので、変わったところだけPSOを切り替える)
-        const std::vector<Group>& groups = instance->commutativeGroups_;
-        size_t begin = 0;
-        while (begin < groups.size()) {
-            const BlendMode blendMode = groups[begin].blendMode;
-            size_t end = begin;
-            while (end < groups.size() && groups[end].blendMode == blendMode) {
-                ++end;
-            }
-            commandList->SetPipelineState(instance->GetPipelineState(blendMode));
-            instance->SetDrawParams(blendMode);
-            instance->DrawGroups(std::vector<Group>(groups.begin() + begin, groups.begin() + end), true);
-            begin = end;
-        }
+        instance->DrawGroups(instance->sortedGroups_, false, false);
+        // 3. 加算・減算・乗算・スクリーン (ブレンドモード → シェーダーの順に並んでいるので、変わったところだけPSOを切り替える)
+        instance->DrawGroups(instance->commutativeGroups_, false, false);
     }
 
     void ModelManager::DrawShadow() {
@@ -442,9 +457,19 @@ namespace RyoEngine {
         // シャドウパス中はシャドウマップ自体をSRVとして結ばない (深度書き込み中のため)
         commandList->SetGraphicsRootSignature(instance->rootSignature_.Get());
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        // テクスチャ(ディスクリプタテーブル)を結ぶため、SRVのヒープを設定しておく
+        SrvManager::PreDraw(commandList);
         commandList->SetGraphicsRootConstantBufferView(6, ShadowMap::GetLightViewProjGPUVirtualAddress());
-        commandList->SetPipelineState(instance->shadowPipelineState_.Get());
-        instance->DrawGroups(instance->shadowGroups_, false);
+        instance->DrawGroups(instance->shadowGroups_, false, true);
+    }
+
+    void ModelManager::PreparePipeline(uint32_t shader, BlendMode blendMode, bool isBackground) {
+        ModelManager* instance = GetInstance();
+        instance->GetPipelineState(shader, blendMode, isBackground);
+        // 影を落とすブレンドモードなら、影用も作っておく
+        if (!isBackground && (blendMode == BlendMode::None || blendMode == BlendMode::Normal || blendMode == BlendMode::Multiply)) {
+            instance->GetShadowPipelineState(shader);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -478,7 +503,19 @@ namespace RyoEngine {
         shadowRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         shadowRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-        D3D12_ROOT_PARAMETER rootParameters[9] = {};
+        // シェーダーごとの追加テクスチャ (t4 / t5, Vertex/Pixel共通)
+        D3D12_DESCRIPTOR_RANGE shaderTexture0Range[1] = {};
+        shaderTexture0Range[0].BaseShaderRegister = 4;
+        shaderTexture0Range[0].NumDescriptors = 1;
+        shaderTexture0Range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        shaderTexture0Range[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        D3D12_DESCRIPTOR_RANGE shaderTexture1Range[1] = {};
+        shaderTexture1Range[0].BaseShaderRegister = 5;
+        shaderTexture1Range[0].NumDescriptors = 1;
+        shaderTexture1Range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        shaderTexture1Range[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+        D3D12_ROOT_PARAMETER rootParameters[11] = {};
         // 0: カメラのView-Projection (CBV b0, Vertex)
         rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -487,9 +524,9 @@ namespace RyoEngine {
         rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
         rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[1].Descriptor.ShaderRegister = 3;
-        // 2: テクスチャ (Table t0, Pixel)
+        // 2: テクスチャ (Table t0, Vertex/Pixel共通。アプリの Vertex() からも読めるように)
         rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[2].DescriptorTable.pDescriptorRanges = textureRange;
         rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(textureRange);
         // 3: Light配列 (Root SRV t1, Pixel)
@@ -513,12 +550,21 @@ namespace RyoEngine {
         rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         rootParameters[7].DescriptorTable.pDescriptorRanges = shadowRange;
         rootParameters[7].DescriptorTable.NumDescriptorRanges = _countof(shadowRange);
-        // 8: 描画パスごとの値 (Root Constants b4, Pixel) { blendMode, nearFadeStart, nearFadeEnd }
+        // 8: 描画パスごとの値 (Root Constants b4, Vertex/Pixel共通) { blendMode, nearFadeStart, nearFadeEnd, time }
         rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[8].Constants.ShaderRegister = 4;
         rootParameters[8].Constants.RegisterSpace = 0;
-        rootParameters[8].Constants.Num32BitValues = 3;
+        rootParameters[8].Constants.Num32BitValues = 4;
+        // 9 / 10: シェーダーごとの追加テクスチャ (Table t4 / t5, Vertex/Pixel共通)
+        rootParameters[9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[9].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        rootParameters[9].DescriptorTable.pDescriptorRanges = shaderTexture0Range;
+        rootParameters[9].DescriptorTable.NumDescriptorRanges = _countof(shaderTexture0Range);
+        rootParameters[10].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[10].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        rootParameters[10].DescriptorTable.pDescriptorRanges = shaderTexture1Range;
+        rootParameters[10].DescriptorTable.NumDescriptorRanges = _countof(shaderTexture1Range);
 
         D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
         // s0: 通常のテクスチャ用
@@ -530,7 +576,7 @@ namespace RyoEngine {
         staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
         staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;
         staticSamplers[0].ShaderRegister = 0;
-        staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // アプリの Vertex() からも使えるように
         // s1: シャドウマップ比較用 (ハードウェアPCF)
         staticSamplers[1].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
         staticSamplers[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
@@ -561,77 +607,21 @@ namespace RyoEngine {
     }
 
     void ModelManager::CreatePipelineStates() {
-        auto device = DirectXCommon::GetDevice();
-        HRESULT hr = S_OK;
-
-        D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
-        depthStencilDesc.DepthEnable = true;
-        depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-        depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-
-        // ---------- 通常描画 ----------
-        // PSOは GetPipelineState() で、初めて使われたブレンドモードの分だけ作る。ここではシェーダーのコンパイルだけ行う
-        {
-            Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/ModelBatch.VS.hlsl", L"vs_6_0");
-            Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/ModelBatch.PS.hlsl", L"ps_6_0");
-            assert(vertexShaderBlob != nullptr);
-            assert(pixelShaderBlob != nullptr);
-
-            const uint8_t* vs = static_cast<const uint8_t*>(vertexShaderBlob->GetBufferPointer());
-            vertexShaderBytecode_.assign(vs, vs + vertexShaderBlob->GetBufferSize());
-            const uint8_t* ps = static_cast<const uint8_t*>(pixelShaderBlob->GetBufferPointer());
-            pixelShaderBytecode_.assign(ps, ps + pixelShaderBlob->GetBufferSize());
-
-            // 一番使う不透明だけは最初に作っておく
-            GetPipelineState(BlendMode::None);
-        }
-
-        // ---------- シャドウ (深度のみ) ----------
-        {
-            D3D12_INPUT_ELEMENT_DESC inputElementDescs[1] = {};
-            inputElementDescs[0].SemanticName = "POSITION";
-            inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-            inputElementDescs[0].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, position));
-
-            D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
-            inputLayoutDesc.pInputElementDescs = inputElementDescs;
-            inputLayoutDesc.NumElements = _countof(inputElementDescs);
-
-            D3D12_RASTERIZER_DESC rasterizerDesc{};
-            rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-            rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-            // シャドウアクネ対策の深度バイアス (ModelCommonのシャドウPSOと同じ値)
-            rasterizerDesc.DepthBias = 50;
-            rasterizerDesc.DepthBiasClamp = 0.0f;
-            rasterizerDesc.SlopeScaledDepthBias = 1.5f;
-
-            Microsoft::WRL::ComPtr<IDxcBlob> shadowVSBlob = ShaderCompiler::Compile(L"Resources/EngineResources/HLSL/Model/ModelBatchShadow.VS.hlsl", L"vs_6_0");
-            assert(shadowVSBlob != nullptr);
-
-            D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
-            psoDesc.pRootSignature = rootSignature_.Get();
-            psoDesc.InputLayout = inputLayoutDesc;
-            psoDesc.VS = { shadowVSBlob->GetBufferPointer(), shadowVSBlob->GetBufferSize() };
-            psoDesc.RasterizerState = rasterizerDesc;
-            psoDesc.NumRenderTargets = 0;
-            psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-            psoDesc.SampleDesc.Count = 1;
-            psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-            psoDesc.DepthStencilState = depthStencilDesc;
-            psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-
-            hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&shadowPipelineState_));
-            assert(SUCCEEDED(hr));
-        }
+        // シェーダーのコンパイルは ShaderManager が行う (エンジン標準 = ShaderManager::kDefaultShader)。
+        // PSOは GetPipelineState() / GetShadowPipelineState() で、初めて使われた組み合わせの分だけ作る。
+        // ここでは一番よく使う「エンジン標準の不透明」「背景(不透明)」「影」だけ先に作っておく
+        PreparePipeline(ShaderManager::kDefaultShader, BlendMode::None, false);
+        PreparePipeline(ShaderManager::kDefaultShader, BlendMode::None, true);
     }
 
-    ID3D12PipelineState* ModelManager::GetPipelineState(BlendMode blendMode, bool isBackground) {
-        const uint32_t key = static_cast<uint32_t>(blendMode) | (isBackground ? 0x100u : 0u);
+    ID3D12PipelineState* ModelManager::GetPipelineState(uint32_t shader, BlendMode blendMode, bool isBackground) {
+        const uint64_t key = (static_cast<uint64_t>(shader) << 16) | (isBackground ? 0x100u : 0u) | static_cast<uint64_t>(blendMode);
         if (auto it = pipelineCache_.find(key); it != pipelineCache_.end()) {
             return it->second.Get();
         }
 
         auto device = DirectXCommon::GetDevice();
+        const ShaderManager::ModelProgram& program = ShaderManager::GetModelProgram(shader);
 
         D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
         inputElementDescs[0].SemanticName = "POSITION";
@@ -665,8 +655,8 @@ namespace RyoEngine {
         D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
         psoDesc.pRootSignature = rootSignature_.Get();
         psoDesc.InputLayout = inputLayoutDesc;
-        psoDesc.VS = { vertexShaderBytecode_.data(), vertexShaderBytecode_.size() };
-        psoDesc.PS = { pixelShaderBytecode_.data(), pixelShaderBytecode_.size() };
+        psoDesc.VS = { program.vertexShader.data(), program.vertexShader.size() };
+        psoDesc.PS = { program.pixelShader.data(), program.pixelShader.size() };
         psoDesc.BlendState = CreateBlendDesc(blendMode);
         psoDesc.RasterizerState = rasterizerDesc;
         psoDesc.NumRenderTargets = 1;
@@ -683,6 +673,64 @@ namespace RyoEngine {
 
         ID3D12PipelineState* result = pipelineState.Get();
         pipelineCache_[key] = std::move(pipelineState);
+        return result;
+    }
+
+    ID3D12PipelineState* ModelManager::GetShadowPipelineState(uint32_t shader) {
+        if (auto it = shadowPipelineCache_.find(shader); it != shadowPipelineCache_.end()) {
+            return it->second.Get();
+        }
+
+        auto device = DirectXCommon::GetDevice();
+        const ShaderManager::ModelProgram& program = ShaderManager::GetModelProgram(shader);
+
+        // アプリの Vertex() が UV や法線を使えるよう、位置以外も渡す
+        D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+        inputElementDescs[0].SemanticName = "POSITION";
+        inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        inputElementDescs[0].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, position));
+        inputElementDescs[1].SemanticName = "TEXCOORD";
+        inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+        inputElementDescs[1].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, texcoord));
+        inputElementDescs[2].SemanticName = "NORMAL";
+        inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+        inputElementDescs[2].AlignedByteOffset = static_cast<UINT>(offsetof(VertexData, normal));
+
+        D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
+        inputLayoutDesc.pInputElementDescs = inputElementDescs;
+        inputLayoutDesc.NumElements = _countof(inputElementDescs);
+
+        D3D12_RASTERIZER_DESC rasterizerDesc{};
+        rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
+        rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+        // シャドウアクネ対策の深度バイアス (ModelCommonのシャドウPSOと同じ値)
+        rasterizerDesc.DepthBias = 50;
+        rasterizerDesc.DepthBiasClamp = 0.0f;
+        rasterizerDesc.SlopeScaledDepthBias = 1.5f;
+
+        D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
+        depthStencilDesc.DepthEnable = true;
+        depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+        depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
+        psoDesc.pRootSignature = rootSignature_.Get();
+        psoDesc.InputLayout = inputLayoutDesc;
+        psoDesc.VS = { program.shadowVertexShader.data(), program.shadowVertexShader.size() };
+        psoDesc.RasterizerState = rasterizerDesc;
+        psoDesc.NumRenderTargets = 0;
+        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        psoDesc.SampleDesc.Count = 1;
+        psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        psoDesc.DepthStencilState = depthStencilDesc;
+        psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+        HRESULT hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
+        assert(SUCCEEDED(hr));
+
+        ID3D12PipelineState* result = pipelineState.Get();
+        shadowPipelineCache_[shader] = std::move(pipelineState);
         return result;
     }
 

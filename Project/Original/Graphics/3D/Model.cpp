@@ -191,7 +191,15 @@ namespace RyoEngine {
             // UVを持たないメッシュはテクスチャを引けないので、上書きされていても既定(white)を使う
             const uint32_t textureHandle = meshAsset.hasUV ? state.textureHandle : meshAsset.defaultTextureHandle;
 
-            ModelManager::Submit(modelIndex_, static_cast<uint32_t>(i), textureHandle, state.blendMode, castShadow_, isBackground_, data);
+            data.params[0] = shaderParams_[0];
+            data.params[1] = shaderParams_[1];
+
+            ModelDrawOptions options;
+            options.blendMode = state.blendMode;
+            options.shader = state.shader;
+            options.castShadow = castShadow_;
+            options.isBackground = isBackground_;
+            ModelManager::Submit(modelIndex_, static_cast<uint32_t>(i), textureHandle, options, data);
         }
     }
 
@@ -265,6 +273,50 @@ namespace RyoEngine {
 
     void Model::SetBlendMode(BlendMode blendMode, int32_t meshIndex) {
         ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.blendMode = blendMode; });
+        PreparePipelines();
+    }
+
+    void Model::SetBackground(bool isBackground) {
+        isBackground_ = isBackground;
+        PreparePipelines();
+    }
+
+    void Model::SetShader(uint32_t shader, int32_t meshIndex) {
+        ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.shader = shader; });
+        PreparePipelines();
+    }
+
+    void Model::SetShaderParam(uint32_t index, float value) {
+        if (index >= 8) return;
+        Vector4& slot = shaderParams_[index / 4];
+        switch (index % 4) {
+        case 0: slot.x = value; break;
+        case 1: slot.y = value; break;
+        case 2: slot.z = value; break;
+        default: slot.w = value; break;
+        }
+    }
+
+    void Model::SetShaderParams(uint32_t slot, const Vector4& values) {
+        if (slot >= 2) return;
+        shaderParams_[slot] = values;
+    }
+
+    float Model::GetShaderParam(uint32_t index) const {
+        if (index >= 8) return 0.0f;
+        const Vector4& slot = shaderParams_[index / 4];
+        switch (index % 4) {
+        case 0: return slot.x;
+        case 1: return slot.y;
+        case 2: return slot.z;
+        default: return slot.w;
+        }
+    }
+
+    void Model::PreparePipelines() {
+        for (const MeshState& mesh : meshes_) {
+            ModelManager::PreparePipeline(mesh.shader, mesh.blendMode, isBackground_);
+        }
     }
 
     void Model::SetUVScale(const Vector2& scale, int32_t meshIndex) {
@@ -309,6 +361,10 @@ namespace RyoEngine {
     void Model::SetBlendModeByName(BlendMode blendMode, const std::string& materialName) {
         const int32_t index = GetMeshIndexByName(materialName);
         if (index >= 0) SetBlendMode(blendMode, index);
+    }
+    void Model::SetShaderByName(uint32_t shader, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetShader(shader, index);
     }
     void Model::SetUVScaleByName(const Vector2& scale, const std::string& materialName) {
         const int32_t index = GetMeshIndexByName(materialName);

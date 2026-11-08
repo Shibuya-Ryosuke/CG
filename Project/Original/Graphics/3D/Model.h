@@ -122,6 +122,9 @@ namespace RyoEngine {
         BlendMode GetBlendMode(size_t meshIndex = 0) const { return meshes_[meshIndex].blendMode; }
         bool GetCastShadow() const { return castShadow_; }
         bool IsBackground() const { return isBackground_; }
+        uint32_t GetShader(size_t meshIndex = 0) const { return meshes_[meshIndex].shader; }
+        /// <summary>自由な値 (index: 0〜7)</summary>
+        float GetShaderParam(uint32_t index) const;
         bool GetHasUV(size_t meshIndex = 0) const;
         Vector2 GetUVScale(size_t meshIndex = 0) const { return meshes_[meshIndex].uvScale; }
         /// <summary>UV回転(度数法)</summary>
@@ -181,7 +184,21 @@ namespace RyoEngine {
         /// 背景にする (天球など)。ほかの何よりも先に、深度を書かずに描くので、
         /// 後から描くものは必ずこのモデルより手前に見える (地面などが背景からはみ出していても隠れない)。影は落とさない
         /// </summary>
-        void SetBackground(bool isBackground) { isBackground_ = isBackground; }
+        void SetBackground(bool isBackground);
+
+        // ---------------- カスタムシェーダー ----------------
+        /// <summary>
+        /// カスタムシェーダーを指定する (ShaderManager::Load の戻り値。0 でエンジン標準に戻る)
+        /// </summary>
+        void SetShader(uint32_t shader, int32_t meshIndex = -1);
+        /// <summary>
+        /// カスタムシェーダーに渡す自由な値 (モデルごと。全メッシュ共通)。index: 0〜7
+        /// HLSLでは 0〜3番 = input.params[0].xyzw、4〜7番 = input.params[1].xyzw で読める。
+        /// 何番を何に使うかはシェーダーごとに決める (シェーダーファイルの先頭に書いておくこと)
+        /// </summary>
+        void SetShaderParam(uint32_t index, float value);
+        /// <summary>自由な値を4つまとめて設定する。slot 0 = 0〜3番、slot 1 = 4〜7番</summary>
+        void SetShaderParams(uint32_t slot, const Vector4& values);
 
         void SetUVScale(const Vector2& scale, int32_t meshIndex = -1);
         /// <summary>UV回転(度数法)</summary>
@@ -195,6 +212,7 @@ namespace RyoEngine {
         void SetColorByName(const Vector4& color, const std::string& materialName);
         void SetLambertByName(ShadingMode mode, const std::string& materialName);
         void SetBlendModeByName(BlendMode blendMode, const std::string& materialName);
+        void SetShaderByName(uint32_t shader, const std::string& materialName);
         void SetUVScaleByName(const Vector2& scale, const std::string& materialName);
         void SetUVRotateByName(float rotateDeg, const std::string& materialName);
         void SetUVTranslateByName(const Vector2& translate, const std::string& materialName);
@@ -211,6 +229,7 @@ namespace RyoEngine {
             bool enableLighting = true;
             ShadingMode shadingMode = ShadingMode::HALF_LAMBERT;
             BlendMode blendMode = BlendMode::None;
+            uint32_t shader = 0; // カスタムシェーダー (0 = エンジン標準)
             Vector2 uvScale = { 1.0f, 1.0f };
             float uvRotate = 0.0f; // 度数法
             Vector2 uvTranslate = { 0.0f, 0.0f };
@@ -240,6 +259,11 @@ namespace RyoEngine {
         bool pickable_ = true;
         bool castShadow_ = true;
         bool isBackground_ = false;
+        // カスタムシェーダーに渡す自由な値 (0〜3番 = [0].xyzw、4〜7番 = [1].xyzw)
+        Vector4 shaderParams_[2] = { { 0.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } };
+
+        // 今の設定で使うPSOを先に作っておく (描く瞬間に作るとカクつくことがあるため)
+        void PreparePipelines();
         Vector3 pickCenter_{ 0.0f, 0.0f, 0.0f };
         float pickRadius_ = 0.0f;
         std::function<void(const Transform&)> onTransformEdited_;

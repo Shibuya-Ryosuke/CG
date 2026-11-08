@@ -185,6 +185,10 @@ namespace RyoEngine {
             outType = Type::Sound;
             return true;
         }
+        if (extensionLower == ".hlsl") {
+            outType = Type::Shader;
+            return true;
+        }
         return false;
     }
 

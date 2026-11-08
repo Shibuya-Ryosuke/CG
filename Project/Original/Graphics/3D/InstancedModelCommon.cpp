@@ -1,7 +1,7 @@
 #include "InstancedModelCommon.h"
 #include "../../Core/Base/DirectXCommon.h"
 #include "../../Core/Base/Logger.h"
-#include "../../Core/Base/ShaderCompiler.h"
+#include "../Shader/ShaderCompiler.h"
 #include "../../Core/Math/Geometry.h" // VertexDataのoffsetof用
 #include <cassert>
 #include <cstddef>
