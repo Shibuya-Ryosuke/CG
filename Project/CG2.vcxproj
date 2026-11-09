@@ -16,12 +16,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application\Application.cpp" />
+    <ClCompile Include="Application\Scene\Game.cpp" />
+    <ClCompile Include="Application\Scene\Title.cpp" />
     <ClCompile Include="Engine\Graphics\Particle\ParticleCommon.cpp" />
     <ClCompile Include="Engine\Graphics\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="Engine\Graphics\Particle\ParticleManager.cpp" />
     <ClCompile Include="Engine\Graphics\Particle\ParticleTemplates.cpp" />
-    <ClCompile Include="Application\Scene\Showcase.cpp" />
-    <ClCompile Include="Application\Scene\InstancingDemo.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Camera\CameraManager.cpp" />
     <ClCompile Include="Engine\Core\Asset\AssetRegistry.cpp" />
@@ -76,13 +76,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\Application.h" />
+    <ClInclude Include="Application\Scene\Game.h" />
+    <ClInclude Include="Application\Scene\Title.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleCommon.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleEmitter.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleManager.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleTemplates.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleTypes.h" />
-    <ClInclude Include="Application\Scene\Showcase.h" />
-    <ClInclude Include="Application\Scene\InstancingDemo.h" />
     <ClInclude Include="Application\Scene\SceneSetup.h" />
     <ClInclude Include="Engine\Camera\CameraManager.h" />
     <ClInclude Include="Engine\Core\Asset\AssetRegistry.h" />

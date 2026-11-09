@@ -259,9 +259,6 @@
     <ClCompile Include="Engine\Core\Base\BindingRegistry.cpp">
       <Filter>Engine\Core\Base</Filter>
     </ClCompile>
-    <ClCompile Include="Application\Scene\Showcase.cpp">
-      <Filter>Application\Scene</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Graphics\Particle\ParticleCommon.cpp">
       <Filter>Engine\Graphics\Particle</Filter>
     </ClCompile>
@@ -277,7 +274,10 @@
     <ClCompile Include="Application\Application.cpp">
       <Filter>Application</Filter>
     </ClCompile>
-    <ClCompile Include="Application\Scene\InstancingDemo.cpp">
+    <ClCompile Include="Application\Scene\Game.cpp">
+      <Filter>Application\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application\Scene\Title.cpp">
       <Filter>Application\Scene</Filter>
     </ClCompile>
   </ItemGroup>
@@ -468,12 +468,6 @@
     <ClInclude Include="Engine\Core\Base\BindingRegistry.h">
       <Filter>Engine\Core\Base</Filter>
     </ClInclude>
-    <ClInclude Include="Application\Scene\InstancingDemo.h">
-      <Filter>Application\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\Scene\Showcase.h">
-      <Filter>Application\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Graphics\Particle\ParticleCommon.h">
       <Filter>Engine\Graphics\Particle</Filter>
     </ClInclude>
@@ -493,6 +487,12 @@
       <Filter>Application</Filter>
     </ClInclude>
     <ClInclude Include="Application\Scene\SceneSetup.h">
+      <Filter>Application\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\Scene\Game.h">
+      <Filter>Application\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\Scene\Title.h">
       <Filter>Application\Scene</Filter>
     </ClInclude>
   </ItemGroup>

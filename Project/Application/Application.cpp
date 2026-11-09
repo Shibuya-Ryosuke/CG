@@ -12,8 +12,7 @@ namespace App {
 		ParticleManager::SetFolderPath(jsonFolder);
 		ParamEditor::Load();
 		LightManager::Load();
-		// パーティクル (JSONが無ければテンプレから見本を作る)
-		ParticleManager::LoadOrCreateDefaults();
+		ParticleManager::Load();
 
 		// シーンの登録と、起動時のシーンの指定 (Scene/SceneSetup.cpp)
 		SetupScenes();

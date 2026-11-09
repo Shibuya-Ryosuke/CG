@@ -2,8 +2,8 @@
 #include <RyoEngine.h>
 
 // 各シーン
-#include "InstancingDemo.h"
-#include "Showcase.h"
+#include "Title.h"
+#include "Game.h"
 
 namespace App {
 	/// <summary>
@@ -12,10 +12,10 @@ namespace App {
 	/// </summary>
 	inline void SetupScenes() {
 		// 各シーンの登録 (ImGui のシーン一覧には、クラス名で出る)
-		RyoEngine::SceneManager::RegisterScene<InstancingDemo>();
-		RyoEngine::SceneManager::RegisterScene<Showcase>();
+		RyoEngine::SceneManager::RegisterScene<Title>();
+		RyoEngine::SceneManager::RegisterScene<Game>();
 
 		// 起動時のシーン
-		RyoEngine::SceneManager::SetDefaultScene<InstancingDemo>();
+		RyoEngine::SceneManager::SetDefaultScene<Title>();
 	}
 }
