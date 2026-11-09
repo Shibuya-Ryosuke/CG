@@ -323,7 +323,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="externals\imgui\imgui.vcxproj">
+    <ProjectReference Include="externals\imgui\imgui.vcxproj" Condition="'$(Configuration)'!='Release'">
       <Project>{c36be18a-a14a-49da-b53f-c380ae71b282}</Project>
     </ProjectReference>
     <ProjectReference Include="Engine\Externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
@@ -389,7 +389,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
     <ExternalIncludePath>$(ProjectDir)Engine\Externals\assimp\include;$(ProjectDir)Engine\Externals\imgui;$(ProjectDir)Engine\Externals\nlohmann;$(ExternalIncludePath)</ExternalIncludePath>
-    <LibraryPath>$(SolutionDir)..\Generated\Outputs\Release\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\Generated\Outputs\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\Generated\Obj\$(ProjectName)\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)DirectXTex;$(SolutionDir)imgui;$(IncludePath)</IncludePath>
