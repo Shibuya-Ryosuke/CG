@@ -16,23 +16,64 @@ namespace RyoEngine {
         return instance;
     }
 
-    void SceneManager::SetSceneFactory(std::unique_ptr<AbstractSceneFactory> factory) {
-        GetInstance().sceneFactory_ = std::move(factory);
+    void SceneManager::SetDefaultScene(const std::string& sceneName) {
+        auto& inst = GetInstance();
+        inst.defaultSceneName_ = sceneName;
+        inst.defaultSceneStarted_ = false;
     }
 
     void SceneManager::ChangeScene(const std::string& sceneName) {
         auto& inst = GetInstance();
 
-        assert(inst.sceneFactory_);
         assert(inst.nextScene_ == nullptr);
 
-        // 次シーンを生成
-        inst.nextScene_ = inst.sceneFactory_->CreateScene(sceneName);
+        // 次シーンを生成 (登録されたシーンから探す)
+        if (auto it = inst.sceneCreators_.find(sceneName); it != inst.sceneCreators_.end()) {
+            inst.nextScene_ = it->second();
+        }
         if (!inst.nextScene_) {
             Logger::LogError("[SceneManager] ChangeScene: 該当するシーンがありません: " + sceneName);
             return;
         }
         inst.nextSceneName_ = sceneName;
+    }
+
+    void SceneManager::ChangeSceneByType(std::type_index type, const char* typeName) {
+        auto& inst = GetInstance();
+        auto it = inst.sceneNamesByType_.find(type);
+        if (it == inst.sceneNamesByType_.end()) {
+            Logger::LogError(std::string("[SceneManager] ChangeScene: RegisterScene されていないシーンです: ") + typeName);
+            return;
+        }
+        ChangeScene(it->second);
+    }
+
+    void SceneManager::SetDefaultSceneByType(std::type_index type, const char* typeName) {
+        auto& inst = GetInstance();
+        auto it = inst.sceneNamesByType_.find(type);
+        if (it == inst.sceneNamesByType_.end()) {
+            Logger::LogError(std::string("[SceneManager] SetDefaultScene: RegisterScene されていないシーンです: ") + typeName);
+            return;
+        }
+        SetDefaultScene(it->second);
+    }
+
+    std::string SceneManager::MakeSceneName(const char* typeName) {
+        std::string name = typeName;
+        // 先頭の "class " / "struct " を取り除く (MSVC の typeid().name() の形)
+        for (const char* prefix : { "class ", "struct " }) {
+            const std::string p = prefix;
+            if (name.compare(0, p.size(), p) == 0) {
+                name.erase(0, p.size());
+                break;
+            }
+        }
+        // 名前空間を取り除く ("App::Title" → "Title")
+        const size_t pos = name.rfind("::");
+        if (pos != std::string::npos) {
+            name.erase(0, pos + 2);
+        }
+        return name;
     }
 
     void SceneManager::ReloadScene() {
@@ -53,6 +94,12 @@ namespace RyoEngine {
 
     void SceneManager::Update() {
         auto& inst = GetInstance();
+
+        // まだシーンが無ければ、起動時のシーン (SetDefaultScene) に切り替える (1回だけ試す)
+        if (!inst.currentScene_ && !inst.nextScene_ && !inst.defaultSceneStarted_ && !inst.defaultSceneName_.empty()) {
+            inst.defaultSceneStarted_ = true;
+            ChangeScene(inst.defaultSceneName_);
+        }
 
         // 予約があれば、ここで入れ替える
         if (inst.nextScene_) {
@@ -96,7 +143,11 @@ namespace RyoEngine {
         inst.currentSceneName_.clear();
         inst.nextScene_.reset();
         inst.nextSceneName_.clear();
-        inst.sceneFactory_.reset();
+        inst.sceneCreators_.clear();
+        inst.sceneNamesByType_.clear();
+        inst.registeredSceneNames_.clear();
+        inst.defaultSceneName_.clear();
+        inst.defaultSceneStarted_ = false;
     }
 
     const std::string& SceneManager::GetCurrentSceneName() {
@@ -140,11 +191,29 @@ namespace RyoEngine {
 
         ImGui::Separator();
 
-        ImGui::InputText("シーン名", changeSceneNameBuffer_, sizeof(changeSceneNameBuffer_));
-        ImGui::SameLine();
-        if (ImGui::Button("切り替え")) {
-            if (changeSceneNameBuffer_[0] != '\0' && !nextScene_) {
-                ChangeScene(changeSceneNameBuffer_);
+        // 登録されたシーンから選んで切り替える
+        if (registeredSceneNames_.empty()) {
+            ImGui::TextDisabled("登録されたシーンがありません (SceneManager::RegisterScene)");
+        } else {
+            const int32_t count = static_cast<int32_t>(registeredSceneNames_.size());
+            if (selectedSceneIndex_ < 0 || selectedSceneIndex_ >= count) {
+                selectedSceneIndex_ = 0;
+            }
+            if (ImGui::BeginCombo("シーン", registeredSceneNames_[selectedSceneIndex_].c_str())) {
+                for (int32_t i = 0; i < count; ++i) {
+                    const bool selected = (i == selectedSceneIndex_);
+                    if (ImGui::Selectable(registeredSceneNames_[i].c_str(), selected)) {
+                        selectedSceneIndex_ = i;
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("切り替え") && !nextScene_) {
+                ChangeScene(registeredSceneNames_[selectedSceneIndex_]);
             }
         }
 

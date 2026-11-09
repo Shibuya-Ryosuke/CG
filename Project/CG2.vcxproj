@@ -17,7 +17,6 @@
   <ItemGroup>
     <ClCompile Include="Application\Application.cpp" />
     <ClCompile Include="Application\Scene\Game.cpp" />
-    <ClCompile Include="Application\Scene\SceneFactory.cpp" />
     <ClCompile Include="Application\Scene\Title.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Camera\CameraManager.cpp" />
@@ -73,12 +72,11 @@
     <ClCompile Include="Engine\Test\TestEnemy.cpp" />
     <ClCompile Include="Engine\Test\TestPlayer.cpp" />
     <ClCompile Include="Engine\Test\TestScene.cpp" />
-    <ClCompile Include="Engine\Test\TestSceneFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\Application.h" />
     <ClInclude Include="Application\Scene\Game.h" />
-    <ClInclude Include="Application\Scene\SceneFactory.h" />
+    <ClInclude Include="Application\Scene\SceneSetup.h" />
     <ClInclude Include="Application\Scene\Title.h" />
     <ClInclude Include="Engine\Camera\CameraManager.h" />
     <ClInclude Include="Engine\Core\Asset\AssetRegistry.h" />
@@ -137,7 +135,6 @@
     <ClInclude Include="Engine\Object\GameObjectManager.h" />
     <ClInclude Include="Engine\RyoEngine.h" />
     <ClInclude Include="Engine\Graphics\Shadow\ShadowMap.h" />
-    <ClInclude Include="Engine\Scene\AbstractSceneFactory.h" />
     <ClInclude Include="Engine\Scene\BaseScene.h" />
     <ClInclude Include="Engine\Scene\SceneManager.h" />
     <ClInclude Include="Engine\Test\Test.h" />
@@ -146,7 +143,6 @@
     <ClInclude Include="Engine\Test\TestLayer.h" />
     <ClInclude Include="Engine\Test\TestPlayer.h" />
     <ClInclude Include="Engine\Test\TestScene.h" />
-    <ClInclude Include="Engine\Test\TestSceneFactory.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\EngineResources\HLSL\Model\DefaultSurface.hlsli">

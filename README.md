@@ -1,8 +1,9 @@
 # RyoEngine 使用方法
-[![DebugBuild](https://github.com/Shibuya-Ryosuke/CG/actions/workflows/DebugBuild.yml/badge.svg)](https://github.com/Shibuya-Ryosuke/CG/actions/workflows/DebugBuild.yml)
+[![DebugBuild](https://github.com/Shibuya-Ryosuke/CG2/actions/workflows/DebugBuild.yml/badge.svg)](https://github.com/Shibuya-Ryosuke/CG2/actions/workflows/DebugBuild.yml)
 
 ## 目次
 * [アプリ開発にあたって](#アプリ開発にあたって)
+* [シーン (SceneManager)](#シーン-scenemanager)
 * [1フレームの流れ](#1フレームの流れ)
 * [アセット (登録と読み込み)](#アセット-登録と読み込み)
 * [共通関数](#共通関数)
@@ -30,12 +31,59 @@
 
 # アプリ開発にあたって
 
-* `RyoEngine::Framework` を継承したアプリのクラス (`（ゲーム名）.h/cpp`) を作り、`Initialize` で保存先の設定・読み込みと最初のシーンの予約を行う
-* シーンは `RyoEngine::BaseScene` を継承し、`AbstractSceneFactory` を継承したシーン工場で名前から作る
-* アプリのコードはすべて `namespace （ゲーム名）` で囲む (main.cpp で起動するアプリを選べるようにするため)
+アプリのコードは `Project/Application/` に書きます。最小限のひな形が入っています。
+
+```text
+Application/
+├─ Application.h / .cpp   … アプリ本体 (RyoEngine::Framework を継承)。保存先の設定・読み込みと SetupScenes() の呼び出し
+└─ Scene/
+   ├─ SceneSetup.h        … シーンの登録と、起動時のシーンの指定
+   ├─ Title.h / .cpp      … シーン (RyoEngine::BaseScene を継承)
+   └─ Game.h / .cpp
+```
+
+* アプリのコードはすべて `namespace App` (または `namespace （ゲーム名）`) で囲む
+* 起動するアプリは `main.cpp` の `std::make_unique<App::Application>()` で選ぶ
+* ImGui などで調整した値は `Resources/ApplicationResources/Json/` に保存される (`Application::Initialize` で設定)
+* エンジンの機能を一通り使った例は `Engine/Test/` (Test.h/cpp, TestScene.h/cpp など)
 * 欲しい機能・使いづらい機能があれば教えてください
 
-参考: `Engine/Test/` (Test.h/cpp, TestSceneFactory.h/cpp, TestScene.h/cpp)
+---
+
+# シーン (SceneManager)
+
+シーンは `RyoEngine::BaseScene` を継承して作り、`SceneSetup.h` で登録します。
+
+```cpp
+// Application/Scene/SceneSetup.h
+inline void SetupScenes() {
+    RyoEngine::SceneManager::RegisterScene<Title>();   // 名前はクラス名 ("Title") になる
+    RyoEngine::SceneManager::RegisterScene<Game>();
+    RyoEngine::SceneManager::SetDefaultScene<Title>(); // 起動時のシーン
+}
+
+// 切り替えたいシーンの cpp で
+#include "Game.h"
+if (Input::TriggerKey(DIK_SPACE)) { SceneManager::ChangeScene<Game>(); }
+```
+
+| 関数 | 役割 |
+| --- | --- |
+| `RegisterScene<T>()` / `RegisterScene<T>("表示名")` | シーンを登録する (名前を省略するとクラス名) |
+| `SetDefaultScene<T>()` / `SetDefaultScene("名前")` | 起動時のシーン |
+| `ChangeScene<T>()` / `ChangeScene("名前")` | 切り替えを予約する (次のフレームの頭で切り替わる) |
+| `ReloadScene()` | 今のシーンを最初からやり直す (DEBUG中は F5 でも可) |
+| `GetCurrentSceneName()` | 今のシーンの名前 |
+
+| シーンの関数 (BaseScene) | 呼ばれるとき |
+| --- | --- |
+| `Initialize()` | シーンに切り替わったとき |
+| `Update()` / `Draw()` | 毎フレーム |
+| `Finalize()` | 別のシーンに切り替わる前 (任意) |
+
+* シーンを増やしたら、クラスを作って `SceneSetup.h` に `RegisterScene` を1行足すだけ
+* シーンが切り替わると、GameObject・カメラ・自作ポストエフェクト・ParamEditor の登録・BindingRegistry の登録は自動で全部消える (シーンで後片付けを書かなくてよい)
+* DEBUG中は ImGui の「SceneManager」ウィンドウで、登録したシーンを選んで切り替えられる
 
 ---
 
@@ -568,7 +616,7 @@ ParamEditor::EndGroup(); // BeginGroup と同じ数だけ呼ぶ
 | --- | --- |
 | クリック選択とギズモ | ゲーム画面でモデルをクリックするとギズモが出て動かせる (W/E/R で移動/回転/拡大) |
 | Model Layout | ギズモで動かした配置を保存し、次回から自動で反映する (区別したいモデルは `SetName`) |
-| 各 ImGui ウィンドウ | Parameter Editor / LightManager / GPUParticleManager / Shader / Shadow / CameraManager / Performance / Log Console |
+| 各 ImGui ウィンドウ | Parameter Editor / SceneManager / LightManager / GPUParticleManager / Shader / Shadow / CameraManager / Performance / Log Console |
 | AnimEditor | 登録したモデル・カメラ・フラグのアニメーションを作る (`SetTargetModel` `SetTargetCamera` `RegisterFlag`) |
 
 ---

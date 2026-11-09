@@ -1,5 +1,5 @@
 #include "Test.h"
-#include "TestSceneFactory.h"
+#include "TestScene.h"
 
 using namespace RyoEngine;
 
@@ -14,9 +14,9 @@ namespace Test {
 		LightManager::Load();
 		GPUParticleManager::Load();
 
-		// シーン工場を渡して、最初のシーンを予約する (次の SceneManager::Update で作られる)
-		SceneManager::SetSceneFactory(std::make_unique<TestSceneFactory>());
-		SceneManager::ChangeScene("TEST");
+		// シーンを登録して、起動時のシーンにする (次の SceneManager::Update で作られる)
+		SceneManager::RegisterScene<TestScene>();
+		SceneManager::SetDefaultScene<TestScene>();
 	}
 
 	void Test::Finalize() {

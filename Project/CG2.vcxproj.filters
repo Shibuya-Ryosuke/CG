@@ -238,9 +238,6 @@
     <ClCompile Include="Engine\Test\TestScene.cpp">
       <Filter>Engine\Test</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Test\TestSceneFactory.cpp">
-      <Filter>Engine\Test</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Core\Math\WorldTransform.cpp">
       <Filter>Engine\Core\Math</Filter>
     </ClCompile>
@@ -270,9 +267,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Core\Base\BindingRegistry.cpp">
       <Filter>Engine\Core\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\Scene\SceneFactory.cpp">
-      <Filter>Application\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Application\Application.cpp">
       <Filter>Application</Filter>
@@ -435,9 +429,6 @@
     <ClInclude Include="Engine\Framework\Framework.h">
       <Filter>Engine\Framework</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Scene\AbstractSceneFactory.h">
-      <Filter>Engine\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Scene\BaseScene.h">
       <Filter>Engine\Scene</Filter>
     </ClInclude>
@@ -445,9 +436,6 @@
       <Filter>Engine\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Test\TestScene.h">
-      <Filter>Engine\Test</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Test\TestSceneFactory.h">
       <Filter>Engine\Test</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Math\WorldTransform.h">
@@ -492,11 +480,11 @@
     <ClInclude Include="Application\Scene\Game.h">
       <Filter>Application\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Application\Scene\SceneFactory.h">
-      <Filter>Application\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="Application\Application.h">
       <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="Application\Scene\SceneSetup.h">
+      <Filter>Application\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

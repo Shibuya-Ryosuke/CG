@@ -1,5 +1,5 @@
 #include "Application.h"
-#include "Scene/SceneFactory.h"
+#include "Scene/SceneSetup.h"
 
 using namespace RyoEngine;
 
@@ -14,9 +14,8 @@ namespace App {
 		LightManager::Load();
 		GPUParticleManager::Load();
 
-		// シーン工場を渡して、最初のシーンを予約する
-		SceneManager::SetSceneFactory(std::make_unique<SceneFactory>());
-		SceneManager::ChangeScene("Title");
+		// シーンの登録と、起動時のシーンの指定 (Scene/SceneSetup.cpp)
+		SetupScenes();
 	}
 
 	void Application::Finalize() {
