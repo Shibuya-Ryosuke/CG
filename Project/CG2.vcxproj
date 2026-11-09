@@ -16,8 +16,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application\Application.cpp" />
-    <ClCompile Include="Application\Scene\Game.cpp" />
-    <ClCompile Include="Application\Scene\Title.cpp" />
+    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxCommon.cpp" />
+    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxEmitter.cpp" />
+    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxManager.cpp" />
+    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxTemplates.cpp" />
+    <ClCompile Include="Application\Scene\Showcase.cpp" />
+    <ClCompile Include="Application\Scene\InstancingDemo.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Camera\CameraManager.cpp" />
     <ClCompile Include="Engine\Core\Asset\AssetRegistry.cpp" />
@@ -75,9 +79,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\Application.h" />
-    <ClInclude Include="Application\Scene\Game.h" />
+    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxCommon.h" />
+    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxEmitter.h" />
+    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxManager.h" />
+    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxTemplates.h" />
+    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxTypes.h" />
+    <ClInclude Include="Application\Scene\Showcase.h" />
+    <ClInclude Include="Application\Scene\InstancingDemo.h" />
     <ClInclude Include="Application\Scene\SceneSetup.h" />
-    <ClInclude Include="Application\Scene\Title.h" />
     <ClInclude Include="Engine\Camera\CameraManager.h" />
     <ClInclude Include="Engine\Core\Asset\AssetRegistry.h" />
     <ClInclude Include="Engine\Core\Base\BindingRegistry.h" />
@@ -145,6 +154,11 @@
     <ClInclude Include="Engine\Test\TestScene.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFx.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </None>
     <None Include="Resources\EngineResources\HLSL\Model\DefaultSurface.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -207,6 +221,26 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFx.PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFx.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFxReset.CS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFxSimulate.CS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="HLSL\Composite\Composite.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

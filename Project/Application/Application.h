@@ -16,6 +16,8 @@ namespace App {
 
 	protected:
 		void Initialize() override;
+		// パーティクル演出 (ParticleFx) のエディタ・更新・描画 (全シーン共通)
+		void Draw() override;
 		void Finalize() override;
 	};
 }
