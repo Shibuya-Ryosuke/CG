@@ -72,8 +72,8 @@ namespace RyoEngine {
 
         ModelManager::Initialize();
 
-        GPUParticleCommon::Initialize();
-        GPUParticleManager::Initialize();
+        ParticleCommon::Initialize();
+        ParticleManager::Initialize();
 
         SpriteCommon::Initialize();
 
@@ -123,8 +123,8 @@ namespace RyoEngine {
 
         //reflectCommon_->Finalize();
         SpriteCommon::Finalize();
-        GPUParticleManager::Finalize();
-        GPUParticleCommon::Finalize();
+        ParticleManager::Finalize();
+        ParticleCommon::Finalize();
         ModelManager::Finalize();
         PostEffectManager::Finalize();
         ShaderManager::Finalize();
@@ -172,7 +172,7 @@ namespace RyoEngine {
         ModelManager::NewFrame();
         PostEffectManager::NewFrame();
         WorldTransform::NewFrame();
-        GPUParticleCommon::CommandsClear();
+        ParticleCommon::CommandsClear();
 
         Input::Update();
 
@@ -233,7 +233,7 @@ namespace RyoEngine {
         // ギズモ操作モード(W/E/R・ローカル/ワールド・スナップ)
         Gizmo::DrawToolbar();
         // GPUパーティクル
-        GPUParticleManager::DrawImGui();
+        ParticleManager::DrawImGui();
         // カメラ(一覧・切り替え)
         CameraManager::DrawImGui();
 
@@ -293,8 +293,12 @@ namespace RyoEngine {
         // ライトをGPUへ送る (登録された座標・フラグの、このフレームの最新の値を反映する)
         LightManager::Update();
 
+        // パーティクルの発生・シミュレーション・描画の予約 (シーンの更新が終わった後の、最新の座標・カメラで行う)
+        ParticleManager::Update();
+        ParticleManager::Draw();
+
         // GPUパーティクルのシミュレーション(Dispatch)：RTV/DSVに依存しないので一番早く実行する
-        GPUParticleCommon::Dispatch();
+        ParticleCommon::Dispatch();
 
         // シャドウパス：ライト視点で深度だけ先に描画する
         ShadowMap::BeginShadowPass();
@@ -306,7 +310,7 @@ namespace RyoEngine {
         Begin3dDraw();
         ModelCommon::Draw();
         ModelManager::Draw();
-        GPUParticleCommon::Draw();
+        ParticleCommon::Draw();
         // 即時描画 (線・球などのデバッグ表示。3Dを全部描いた後に描く)
         PrimitiveRenderer::Flush();
 

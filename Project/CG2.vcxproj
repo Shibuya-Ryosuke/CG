@@ -16,10 +16,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application\Application.cpp" />
-    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxCommon.cpp" />
-    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxEmitter.cpp" />
-    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxManager.cpp" />
-    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxTemplates.cpp" />
+    <ClCompile Include="Engine\Graphics\Particle\ParticleCommon.cpp" />
+    <ClCompile Include="Engine\Graphics\Particle\ParticleEmitter.cpp" />
+    <ClCompile Include="Engine\Graphics\Particle\ParticleManager.cpp" />
+    <ClCompile Include="Engine\Graphics\Particle\ParticleTemplates.cpp" />
     <ClCompile Include="Application\Scene\Showcase.cpp" />
     <ClCompile Include="Application\Scene\InstancingDemo.cpp" />
     <ClCompile Include="main.cpp" />
@@ -50,10 +50,7 @@
     <ClCompile Include="Engine\Editor\AnimEditor.cpp" />
     <ClCompile Include="Engine\Editor\ParamEditor.cpp" />
     <ClCompile Include="Engine\Graphics\3D\ModelManager.cpp" />
-    <ClCompile Include="Engine\Graphics\GPUParticle\GPUParticleCommon.cpp" />
-    <ClCompile Include="Engine\Graphics\GPUParticle\GPUParticleEmitter.cpp" />
     <ClCompile Include="Engine\Graphics\2D\TextureManager.cpp" />
-    <ClCompile Include="Engine\Graphics\GPUParticle\GPUParticleManager.cpp" />
     <ClCompile Include="Engine\Graphics\PostProcess\PostEffectManager.cpp" />
     <ClCompile Include="Engine\Graphics\Shader\ShaderCompiler.cpp" />
     <ClCompile Include="Engine\Graphics\Shader\ShaderManager.cpp" />
@@ -79,11 +76,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\Application.h" />
-    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxCommon.h" />
-    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxEmitter.h" />
-    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxManager.h" />
-    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxTemplates.h" />
-    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxTypes.h" />
+    <ClInclude Include="Engine\Graphics\Particle\ParticleCommon.h" />
+    <ClInclude Include="Engine\Graphics\Particle\ParticleEmitter.h" />
+    <ClInclude Include="Engine\Graphics\Particle\ParticleManager.h" />
+    <ClInclude Include="Engine\Graphics\Particle\ParticleTemplates.h" />
+    <ClInclude Include="Engine\Graphics\Particle\ParticleTypes.h" />
     <ClInclude Include="Application\Scene\Showcase.h" />
     <ClInclude Include="Application\Scene\InstancingDemo.h" />
     <ClInclude Include="Application\Scene\SceneSetup.h" />
@@ -115,10 +112,7 @@
     <ClInclude Include="Engine\Editor\AnimEditor.h" />
     <ClInclude Include="Engine\Editor\ParamEditor.h" />
     <ClInclude Include="Engine\Graphics\3D\ModelManager.h" />
-    <ClInclude Include="Engine\Graphics\GPUParticle\GPUParticleCommon.h" />
-    <ClInclude Include="Engine\Graphics\GPUParticle\GPUParticleEmitter.h" />
     <ClInclude Include="Engine\Graphics\2D\TextureManager.h" />
-    <ClInclude Include="Engine\Graphics\GPUParticle\GPUParticleManager.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostEffectManager.h" />
     <ClInclude Include="Engine\Graphics\Shader\ShaderCompiler.h" />
     <ClInclude Include="Engine\Graphics\Shader\ShaderManager.h" />
@@ -154,7 +148,7 @@
     <ClInclude Include="Engine\Test\TestScene.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFx.hlsli">
+    <None Include="Resources\EngineResources\HLSL\Particle\Particle.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
@@ -221,22 +215,22 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFx.PS.hlsl">
+    <FxCompile Include="Resources\EngineResources\HLSL\Particle\Particle.PS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFx.VS.hlsl">
+    <FxCompile Include="Resources\EngineResources\HLSL\Particle\Particle.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFxReset.CS.hlsl">
+    <FxCompile Include="Resources\EngineResources\HLSL\Particle\ParticleReset.CS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFxSimulate.CS.hlsl">
+    <FxCompile Include="Resources\EngineResources\HLSL\Particle\ParticleSimulate.CS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
@@ -245,31 +239,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticle.PS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticle.VS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticleBillboard.VS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticleReset.CS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticleSimulate.CS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Resources\EngineResources\HLSL\Model\Instanced.PS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

@@ -1,23 +1,24 @@
 #pragma once
-#include <RyoEngine.h>
+#include "../../Core/Math/Math.h"
 #include <cstdint>
 #include <string>
+#include <vector>
 
-namespace App {
+namespace RyoEngine {
 
     // =====================================================================
-    // 種類 (HLSL側 ParticleFx.hlsli の値と合わせること)
+    // 種類 (HLSL側 Particle.hlsli の値と合わせること)
     // =====================================================================
 
     /// <summary>発生のさせ方</summary>
-    enum class ParticleFxEmitMode : uint32_t {
+    enum class ParticleEmitMode : uint32_t {
         Burst,      // 一度にまとめて (回数・間隔を指定して繰り返せる)
         Continuous, // 毎秒N個ずつ
         Count,
     };
 
     /// <summary>発生する場所の形</summary>
-    enum class ParticleFxSpawnShape : uint32_t {
+    enum class ParticleSpawnShape : uint32_t {
         Point,    // 1点
         Sphere,   // 球 (innerRatio=1で表面だけ、0で中まで)
         Ring,     // 輪 (innerRatio=1で線、0で円盤)
@@ -28,7 +29,7 @@ namespace App {
     };
 
     /// <summary>初速の決め方 (自由・追尾で使う)</summary>
-    enum class ParticleFxVelocityMode : uint32_t {
+    enum class ParticleVelocityMode : uint32_t {
         Fixed,   // 固定値
         Random,  // 箱の範囲で乱数
         Radial,  // 中心から外向き
@@ -37,7 +38,7 @@ namespace App {
     };
 
     /// <summary>動き方</summary>
-    enum class ParticleFxMotion : uint32_t {
+    enum class ParticleMotion : uint32_t {
         Physics,  // 自由 (重力・空気抵抗・揺らぎ・バウンド)
         Explode,  // 放射 (中心から外向きに飛んで減速)
         Converge, // 収束 (外側から弧を描いて目標へ)
@@ -48,7 +49,7 @@ namespace App {
     };
 
     /// <summary>消え方</summary>
-    enum class ParticleFxDeath : uint32_t {
+    enum class ParticleDeath : uint32_t {
         Fade,       // 薄くなる
         Blink,      // 点滅の幅を減らしながら消える
         Shrink,     // 縮む (1→0)
@@ -60,7 +61,7 @@ namespace App {
     };
 
     /// <summary>1粒の形 (プログラムで描く。Textureだけ画像を使う)</summary>
-    enum class ParticleFxLook : uint32_t {
+    enum class ParticleLook : uint32_t {
         Texture,
         SoftCircle,
         Spark,
@@ -69,7 +70,7 @@ namespace App {
         Count,
     };
 
-    enum class ParticleFxBlend : uint32_t {
+    enum class ParticleBlend : uint32_t {
         Alpha,
         Additive,
         Count,
@@ -78,7 +79,7 @@ namespace App {
     /// <summary>
     /// 表示名(ImGui)とJSONのキー名
     /// </summary>
-    struct ParticleFxNames {
+    struct ParticleNames {
         static constexpr const char* kEmitModeLabels[] = { "まとめて(Burst)", "連続(Continuous)" };
         static constexpr const char* kEmitModeIds[] = { "Burst", "Continuous" };
 
@@ -102,11 +103,21 @@ namespace App {
     };
 
     // =====================================================================
+    // 連鎖：このエフェクトを再生してから delay 秒後に、別のエフェクトを再生する
+    // (終わってからつなぐなら delay = このエフェクトの長さ、途中から重ねるなら短くする)
+    // =====================================================================
+    struct ParticleFollowUp {
+        std::string effectName;   // 再生するエフェクトの名前
+        float delay = 0.0f;       // 再生してから何秒後か
+        bool samePosition = true; // true: このエフェクトの発生位置で再生 / false: 呼ばれた側の設定の位置で再生
+    };
+
+    // =====================================================================
     // 1つのエフェクトの設定 (エディタでの編集対象・JSONの保存対象)
     // =====================================================================
-    struct ParticleFxConfig {
+    struct ParticleConfig {
         // --- 発生 ---
-        ParticleFxEmitMode emitMode = ParticleFxEmitMode::Burst;
+        ParticleEmitMode emitMode = ParticleEmitMode::Burst;
         uint32_t maxParticles = 1024;  // 同時に存在できる最大数 (GPUバッファの大きさ)
         uint32_t burstCount = 100;     // まとめて: 1回の数
         uint32_t burstRepeat = 1;      // まとめて: 何回出すか
@@ -125,7 +136,7 @@ namespace App {
         bool stopWhenFlagOff = true;   // フラグが下りたら Stop する (連続のとき)
 
         // --- 発生する場所の形 ---
-        ParticleFxSpawnShape spawnShape = ParticleFxSpawnShape::Point;
+        ParticleSpawnShape spawnShape = ParticleSpawnShape::Point;
         float radius = 1.0f;
         float innerRatio = 1.0f;       // 球・輪・円柱: 1で外周だけ、0で中まで
         float height = 1.0f;           // 円柱の高さ
@@ -136,7 +147,7 @@ namespace App {
         float shrinkEndRatio = 0.2f;   // 縮み終わったときの半径の割合
 
         // --- 初速 ---
-        ParticleFxVelocityMode velocityMode = ParticleFxVelocityMode::Random;
+        ParticleVelocityMode velocityMode = ParticleVelocityMode::Random;
         RyoEngine::Vector3 velocity = { 0.0f, 1.0f, 0.0f };
         RyoEngine::Vector3 velocityMin = { -1.0f, 1.0f, -1.0f };
         RyoEngine::Vector3 velocityMax = { 1.0f, 2.0f, 1.0f };
@@ -155,7 +166,7 @@ namespace App {
         float rotationSpeedMax = 0.0f;
 
         // --- 動き方 ---
-        ParticleFxMotion motion = ParticleFxMotion::Physics;
+        ParticleMotion motion = ParticleMotion::Physics;
         float gravity = 0.0f;
         float drag = 0.0f;             // 空気抵抗 (大きいほどすぐ止まる)
         float noiseStrength = 0.0f;    // 揺らぎの強さ
@@ -181,7 +192,7 @@ namespace App {
         float jitterFrequency = 20.0f; // ジッターの回数(回/秒)
 
         // --- 消え方 ---
-        ParticleFxDeath death = ParticleFxDeath::Fade;
+        ParticleDeath death = ParticleDeath::Fade;
         float deathRatio = 0.3f;       // 寿命の最後の何割で消える演出をするか
         float blinkFrequencyMin = 8.0f;
         float blinkFrequencyMax = 20.0f;
@@ -195,9 +206,9 @@ namespace App {
         float absorbStrength = 20.0f;
 
         // --- 見た目 ---
-        ParticleFxLook look = ParticleFxLook::SoftCircle;
+        ParticleLook look = ParticleLook::SoftCircle;
         std::string texturePath;       // 画像のとき (名前でもパスでもよい)
-        ParticleFxBlend blend = ParticleFxBlend::Additive;
+        ParticleBlend blend = ParticleBlend::Additive;
         RyoEngine::Vector4 colorA = { 1.0f, 1.0f, 1.0f, 1.0f }; // 発生時の色は colorA〜colorB の間で乱数
         RyoEngine::Vector4 colorB = { 1.0f, 1.0f, 1.0f, 1.0f };
         RyoEngine::Vector4 endColor = { 1.0f, 1.0f, 1.0f, 1.0f }; // 寿命の終わりに色へ掛ける値
@@ -205,6 +216,9 @@ namespace App {
         float softness = 2.0f;         // 形のふちのぼけ具合
         float stretch = 0.0f;          // 速度方向への伸び
         float speedBrightness = 0.0f;  // 速いほど明るくする量
+
+        // --- 連鎖 ---
+        std::vector<ParticleFollowUp> followUps;
     };
 
     // =====================================================================
@@ -212,7 +226,7 @@ namespace App {
     // =====================================================================
 
     // 1粒ぶん。HLSLの FxParticle と同じ並び
-    struct ParticleFxGPUData {
+    struct ParticleGPUData {
         RyoEngine::Vector3 position;
         float scale;
         RyoEngine::Vector3 velocity;
@@ -229,10 +243,10 @@ namespace App {
         uint32_t flags;
         float padding;
     };
-    static_assert(sizeof(ParticleFxGPUData) == 112, "ParticleFxGPUData のサイズがシェーダー側と食い違うと壊れるので確認すること");
+    static_assert(sizeof(ParticleGPUData) == 112, "ParticleGPUData のサイズがシェーダー側と食い違うと壊れるので確認すること");
 
     // シミュレーション用 (HLSLの SimParams と同じ並び)
-    struct ParticleFxSimParams {
+    struct ParticleSimParams {
         float deltaTime;
         uint32_t spawnCount;
         uint32_t maxCount;
@@ -279,14 +293,14 @@ namespace App {
         uint32_t batchCount;
         float padding1;
     };
-    static_assert(sizeof(ParticleFxSimParams) == 160, "ParticleFxSimParams のサイズがシェーダー側と食い違うと壊れるので確認すること");
+    static_assert(sizeof(ParticleSimParams) == 160, "ParticleSimParams のサイズがシェーダー側と食い違うと壊れるので確認すること");
 
     // 発生の命令 (HLSLの SpawnBatch と同じ並び)。CPUは「どこに何粒」だけを送る
-    struct ParticleFxSpawnBatch {
+    struct ParticleSpawnBatch {
         RyoEngine::Vector3 origin;
         uint32_t count;
         RyoEngine::Vector3 target;
-        uint32_t firstIndex;  // ParticleFxEmitter::Update で詰める
+        uint32_t firstIndex;  // ParticleEmitter::Update で詰める
         RyoEngine::Vector3 axis;
         float radiusScale;
         RyoEngine::Vector3 tangent1;
@@ -294,10 +308,10 @@ namespace App {
         RyoEngine::Vector3 tangent2;
         float padding;
     };
-    static_assert(sizeof(ParticleFxSpawnBatch) == 80, "ParticleFxSpawnBatch のサイズがシェーダー側と食い違うと壊れるので確認すること");
+    static_assert(sizeof(ParticleSpawnBatch) == 80, "ParticleSpawnBatch のサイズがシェーダー側と食い違うと壊れるので確認すること");
 
     // 発生のさせ方 (HLSLの SpawnParams と同じ並び)。1粒の初期値をGPUで作るのに使う
-    struct ParticleFxSpawnParams {
+    struct ParticleSpawnParams {
         uint32_t shape;
         float radius;
         float innerRatio;
@@ -337,10 +351,10 @@ namespace App {
         float padding1;
         float padding2;
     };
-    static_assert(sizeof(ParticleFxSpawnParams) == 192, "ParticleFxSpawnParams のサイズがシェーダー側と食い違うと壊れるので確認すること");
+    static_assert(sizeof(ParticleSpawnParams) == 192, "ParticleSpawnParams のサイズがシェーダー側と食い違うと壊れるので確認すること");
 
     // 描画用 (HLSLの RenderParams と同じ並び)
-    struct ParticleFxRenderParams {
+    struct ParticleRenderParams {
         RyoEngine::Matrix4x4 viewProjection;
         RyoEngine::Vector3 cameraRight;
         float time;
@@ -361,5 +375,5 @@ namespace App {
         float deathStretch;
         float softness;
     };
-    static_assert(sizeof(ParticleFxRenderParams) == 176, "ParticleFxRenderParams のサイズがシェーダー側と食い違うと壊れるので確認すること");
+    static_assert(sizeof(ParticleRenderParams) == 176, "ParticleRenderParams のサイズがシェーダー側と食い違うと壊れるので確認すること");
 }

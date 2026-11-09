@@ -1,0 +1,1737 @@
+{
+    "effects": {
+        "Absorb": {
+            "absorbStrength": 25.0,
+            "arcAngle": 180.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.30000001192092896,
+            "axisFacesCamera": false,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.5,
+            "blinkFrequencyMax": 20.0,
+            "blinkFrequencyMin": 8.0,
+            "bounce": false,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 500,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 1,
+            "colorA": [
+                0.699999988079071,
+                0.30000001192092896,
+                1.0,
+                1.0
+            ],
+            "colorB": [
+                0.30000001192092896,
+                0.5,
+                1.0,
+                1.0
+            ],
+            "controlOffsetMax": [
+                3.0,
+                5.0,
+                3.0
+            ],
+            "controlOffsetMin": [
+                -3.0,
+                2.0,
+                -3.0
+            ],
+            "death": "Absorb",
+            "deathColor": [
+                1.0,
+                0.30000001192092896,
+                0.05000000074505806,
+                1.0
+            ],
+            "deathRatio": 0.550000011920929,
+            "deathStretch": 3.0,
+            "drag": 1.0,
+            "duration": 1.0,
+            "easePower": 2.0,
+            "emitMode": "Burst",
+            "endColor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "endScale": 1.0,
+            "floorY": 0.0,
+            "followUps": [],
+            "friction": 0.800000011920929,
+            "gravity": 0.0,
+            "height": 1.0,
+            "homingSpeed": 12.0,
+            "homingTurn": 4.0,
+            "innerRatio": 0.0,
+            "intensity": 2.5,
+            "jitterFrequency": 20.0,
+            "jitterStrength": 0.0,
+            "lifeMax": 2.200000047683716,
+            "lifeMin": 1.600000023841858,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "SoftCircle",
+            "maxParticles": 1024,
+            "motion": "Physics",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 0.4000000059604645,
+            "noiseStrength": 5.0,
+            "positionKey": "ParticleCenter",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "radius": 7.0,
+            "randomRotation": true,
+            "rate": 100.0,
+            "restitution": 0.5,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.11999999731779099,
+            "scaleMin": 0.05999999865889549,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.20000000298023224,
+            "shrinkTime": 0.0,
+            "softness": 2.0,
+            "spawnShape": "Sphere",
+            "speedBrightness": 0.0,
+            "speedMax": 4.0,
+            "speedMin": 2.0,
+            "splitCount": 6,
+            "splitLife": 0.5,
+            "splitScale": 0.5,
+            "splitSpeed": 3.0,
+            "startScale": 1.0,
+            "stopWhenFlagOff": true,
+            "stretch": 0.019999999552965164,
+            "targetKey": "",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "velocityMin": [
+                -0.5,
+                -0.5,
+                -0.5
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 180.0,
+            "vortexRadialSpeed": 0.0,
+            "vortexRiseSpeed": 1.0
+        },
+        "Burst": {
+            "absorbStrength": 20.0,
+            "arcAngle": 180.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.30000001192092896,
+            "axisFacesCamera": false,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.30000001192092896,
+            "blinkFrequencyMax": 30.0,
+            "blinkFrequencyMin": 10.0,
+            "bounce": false,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 260,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 1,
+            "colorA": [
+                1.0,
+                0.8999999761581421,
+                0.4000000059604645,
+                1.0
+            ],
+            "colorB": [
+                1.0,
+                0.5,
+                0.10000000149011612,
+                1.0
+            ],
+            "controlOffsetMax": [
+                3.0,
+                5.0,
+                3.0
+            ],
+            "controlOffsetMin": [
+                -3.0,
+                2.0,
+                -3.0
+            ],
+            "death": "Blink",
+            "deathColor": [
+                1.0,
+                0.30000001192092896,
+                0.05000000074505806,
+                1.0
+            ],
+            "deathRatio": 0.5,
+            "deathStretch": 3.0,
+            "drag": 3.0,
+            "duration": 1.0,
+            "easePower": 2.0,
+            "emitMode": "Burst",
+            "endColor": [
+                1.0,
+                0.6000000238418579,
+                0.30000001192092896,
+                1.0
+            ],
+            "endScale": 1.0,
+            "floorY": 0.0,
+            "followUps": [],
+            "friction": 0.800000011920929,
+            "gravity": 3.0,
+            "height": 1.0,
+            "homingSpeed": 12.0,
+            "homingTurn": 4.0,
+            "innerRatio": 1.0,
+            "intensity": 4.0,
+            "jitterFrequency": 20.0,
+            "jitterStrength": 0.0,
+            "lifeMax": 1.0,
+            "lifeMin": 0.5,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "Spark",
+            "maxParticles": 1024,
+            "motion": "Explode",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 1.0,
+            "noiseStrength": 0.0,
+            "positionKey": "ParticleCenter",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "radius": 0.20000000298023224,
+            "randomRotation": true,
+            "rate": 100.0,
+            "restitution": 0.5,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.11999999731779099,
+            "scaleMin": 0.05000000074505806,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.20000000298023224,
+            "shrinkTime": 0.0,
+            "softness": 2.0,
+            "spawnShape": "Sphere",
+            "speedBrightness": 0.029999999329447746,
+            "speedMax": 20.0,
+            "speedMin": 6.0,
+            "splitCount": 6,
+            "splitLife": 0.5,
+            "splitScale": 0.5,
+            "splitSpeed": 3.0,
+            "startScale": 1.0,
+            "stopWhenFlagOff": true,
+            "stretch": 0.05999999865889549,
+            "targetKey": "",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                1.0,
+                2.0,
+                1.0
+            ],
+            "velocityMin": [
+                -1.0,
+                1.0,
+                -1.0
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 180.0,
+            "vortexRadialSpeed": 0.0,
+            "vortexRiseSpeed": 1.0
+        },
+        "Charge": {
+            "absorbStrength": 20.0,
+            "arcAngle": 120.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.30000001192092896,
+            "axisFacesCamera": true,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.5,
+            "blinkFrequencyMax": 20.0,
+            "blinkFrequencyMin": 8.0,
+            "bounce": false,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 100,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 1,
+            "colorA": [
+                0.30000001192092896,
+                0.800000011920929,
+                1.0,
+                1.0
+            ],
+            "colorB": [
+                0.699999988079071,
+                0.4000000059604645,
+                1.0,
+                1.0
+            ],
+            "controlOffsetMax": [
+                3.0,
+                5.0,
+                3.0
+            ],
+            "controlOffsetMin": [
+                -3.0,
+                2.0,
+                -3.0
+            ],
+            "death": "Shrink",
+            "deathColor": [
+                1.0,
+                0.30000001192092896,
+                0.05000000074505806,
+                1.0
+            ],
+            "deathRatio": 0.25,
+            "deathStretch": 3.0,
+            "drag": 0.0,
+            "duration": 1.0,
+            "easePower": 2.200000047683716,
+            "emitMode": "Continuous",
+            "endColor": [
+                1.5,
+                1.5,
+                1.5,
+                1.0
+            ],
+            "endScale": 1.399999976158142,
+            "floorY": 0.0,
+            "followUps": [
+                {
+                    "delay": 1.0499999523162842,
+                    "effect": "Burst",
+                    "samePosition": true
+                },
+                {
+                    "delay": 1.0499999523162842,
+                    "effect": "RingWave",
+                    "samePosition": true
+                },
+                {
+                    "delay": 1.0499999523162842,
+                    "effect": "Fireworks",
+                    "samePosition": true
+                }
+            ],
+            "friction": 0.800000011920929,
+            "gravity": 0.0,
+            "height": 1.0,
+            "homingSpeed": 12.0,
+            "homingTurn": 4.0,
+            "innerRatio": 1.0,
+            "intensity": 3.0,
+            "jitterFrequency": 20.0,
+            "jitterStrength": 0.0,
+            "lifeMax": 0.8999999761581421,
+            "lifeMin": 0.699999988079071,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "SoftCircle",
+            "maxParticles": 1024,
+            "motion": "Converge",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 1.0,
+            "noiseStrength": 0.0,
+            "positionKey": "ParticleCenter",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "radius": 6.0,
+            "randomRotation": true,
+            "rate": 280.0,
+            "restitution": 0.5,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.1599999964237213,
+            "scaleMin": 0.07999999821186066,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.4000000059604645,
+            "shrinkTime": 1.0,
+            "softness": 1.5,
+            "spawnShape": "Ring",
+            "speedBrightness": 0.05000000074505806,
+            "speedMax": 4.0,
+            "speedMin": 2.0,
+            "splitCount": 6,
+            "splitLife": 0.5,
+            "splitScale": 0.5,
+            "splitSpeed": 3.0,
+            "startScale": 0.6000000238418579,
+            "stopWhenFlagOff": true,
+            "stretch": 0.03999999910593033,
+            "targetKey": "",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                1.0,
+                2.0,
+                1.0
+            ],
+            "velocityMin": [
+                -1.0,
+                1.0,
+                -1.0
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 180.0,
+            "vortexRadialSpeed": 0.0,
+            "vortexRiseSpeed": 1.0
+        },
+        "Curve": {
+            "absorbStrength": 20.0,
+            "arcAngle": 180.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.30000001192092896,
+            "axisFacesCamera": false,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.5,
+            "blinkFrequencyMax": 20.0,
+            "blinkFrequencyMin": 8.0,
+            "bounce": false,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 70,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 1,
+            "colorA": [
+                1.0,
+                0.800000011920929,
+                0.30000001192092896,
+                1.0
+            ],
+            "colorB": [
+                1.0,
+                0.4000000059604645,
+                0.6000000238418579,
+                1.0
+            ],
+            "controlOffsetMax": [
+                7.0,
+                9.0,
+                7.0
+            ],
+            "controlOffsetMin": [
+                -7.0,
+                3.0,
+                -7.0
+            ],
+            "death": "Stretch",
+            "deathColor": [
+                1.0,
+                0.30000001192092896,
+                0.05000000074505806,
+                1.0
+            ],
+            "deathRatio": 0.30000001192092896,
+            "deathStretch": 4.0,
+            "drag": 0.0,
+            "duration": 1.0,
+            "easePower": 1.600000023841858,
+            "emitMode": "Burst",
+            "endColor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "endScale": 1.0,
+            "floorY": 0.0,
+            "followUps": [],
+            "friction": 0.800000011920929,
+            "gravity": 0.0,
+            "height": 1.0,
+            "homingSpeed": 12.0,
+            "homingTurn": 4.0,
+            "innerRatio": 1.0,
+            "intensity": 3.0,
+            "jitterFrequency": 20.0,
+            "jitterStrength": 0.0,
+            "lifeMax": 1.5,
+            "lifeMin": 1.0,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "Star",
+            "maxParticles": 512,
+            "motion": "Bezier",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 1.0,
+            "noiseStrength": 0.0,
+            "positionKey": "ParticleCenter",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "radius": 0.4000000059604645,
+            "randomRotation": true,
+            "rate": 100.0,
+            "restitution": 0.5,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.1599999964237213,
+            "scaleMin": 0.10000000149011612,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.20000000298023224,
+            "shrinkTime": 0.0,
+            "softness": 2.0,
+            "spawnShape": "Sphere",
+            "speedBrightness": 0.0,
+            "speedMax": 4.0,
+            "speedMin": 2.0,
+            "splitCount": 6,
+            "splitLife": 0.5,
+            "splitScale": 0.5,
+            "splitSpeed": 3.0,
+            "startScale": 1.0,
+            "stopWhenFlagOff": true,
+            "stretch": 0.019999999552965164,
+            "targetKey": "ParticleTarget",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                1.0,
+                2.0,
+                1.0
+            ],
+            "velocityMin": [
+                -1.0,
+                1.0,
+                -1.0
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 180.0,
+            "vortexRadialSpeed": 0.0,
+            "vortexRiseSpeed": 1.0
+        },
+        "Electric": {
+            "absorbStrength": 20.0,
+            "arcAngle": 180.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.30000001192092896,
+            "axisFacesCamera": false,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.0,
+            "blinkFrequencyMax": 40.0,
+            "blinkFrequencyMin": 20.0,
+            "bounce": false,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 100,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 1,
+            "colorA": [
+                0.5,
+                0.800000011920929,
+                1.0,
+                1.0
+            ],
+            "colorB": [
+                0.8999999761581421,
+                0.949999988079071,
+                1.0,
+                1.0
+            ],
+            "controlOffsetMax": [
+                3.0,
+                5.0,
+                3.0
+            ],
+            "controlOffsetMin": [
+                -3.0,
+                2.0,
+                -3.0
+            ],
+            "death": "Blink",
+            "deathColor": [
+                1.0,
+                0.30000001192092896,
+                0.05000000074505806,
+                1.0
+            ],
+            "deathRatio": 0.800000011920929,
+            "deathStretch": 3.0,
+            "drag": 0.0,
+            "duration": 2.5,
+            "easePower": 2.0,
+            "emitMode": "Continuous",
+            "endColor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "endScale": 1.0,
+            "floorY": 0.0,
+            "followUps": [],
+            "friction": 0.800000011920929,
+            "gravity": 0.0,
+            "height": 1.0,
+            "homingSpeed": 12.0,
+            "homingTurn": 4.0,
+            "innerRatio": 0.30000001192092896,
+            "intensity": 5.0,
+            "jitterFrequency": 30.0,
+            "jitterStrength": 0.30000001192092896,
+            "lifeMax": 0.30000001192092896,
+            "lifeMin": 0.11999999731779099,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "Spark",
+            "maxParticles": 512,
+            "motion": "Physics",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 1.0,
+            "noiseStrength": 0.0,
+            "positionKey": "ParticleTarget",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "radius": 1.0,
+            "randomRotation": true,
+            "rate": 160.0,
+            "restitution": 0.5,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.14000000059604645,
+            "scaleMin": 0.05999999865889549,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.20000000298023224,
+            "shrinkTime": 0.0,
+            "softness": 3.0,
+            "spawnShape": "Sphere",
+            "speedBrightness": 0.0,
+            "speedMax": 4.0,
+            "speedMin": 2.0,
+            "splitCount": 6,
+            "splitLife": 0.5,
+            "splitScale": 0.5,
+            "splitSpeed": 3.0,
+            "startScale": 1.0,
+            "stopWhenFlagOff": true,
+            "stretch": 0.0,
+            "targetKey": "",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "velocityMin": [
+                -0.5,
+                -0.5,
+                -0.5
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 180.0,
+            "vortexRadialSpeed": 0.0,
+            "vortexRiseSpeed": 1.0
+        },
+        "Fireworks": {
+            "absorbStrength": 20.0,
+            "arcAngle": 180.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.30000001192092896,
+            "axisFacesCamera": false,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.5,
+            "blinkFrequencyMax": 20.0,
+            "blinkFrequencyMin": 8.0,
+            "bounce": false,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 36,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 1,
+            "colorA": [
+                1.0,
+                0.30000001192092896,
+                0.800000011920929,
+                1.0
+            ],
+            "colorB": [
+                0.6000000238418579,
+                0.4000000059604645,
+                1.0,
+                1.0
+            ],
+            "controlOffsetMax": [
+                3.0,
+                5.0,
+                3.0
+            ],
+            "controlOffsetMin": [
+                -3.0,
+                2.0,
+                -3.0
+            ],
+            "death": "Split",
+            "deathColor": [
+                1.0,
+                0.30000001192092896,
+                0.05000000074505806,
+                1.0
+            ],
+            "deathRatio": 0.30000001192092896,
+            "deathStretch": 3.0,
+            "drag": 1.2000000476837158,
+            "duration": 1.0,
+            "easePower": 2.0,
+            "emitMode": "Burst",
+            "endColor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "endScale": 1.0,
+            "floorY": 0.0,
+            "followUps": [],
+            "friction": 0.800000011920929,
+            "gravity": 5.0,
+            "height": 1.0,
+            "homingSpeed": 12.0,
+            "homingTurn": 4.0,
+            "innerRatio": 1.0,
+            "intensity": 3.0,
+            "jitterFrequency": 20.0,
+            "jitterStrength": 0.0,
+            "lifeMax": 1.100000023841858,
+            "lifeMin": 0.8999999761581421,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "Star",
+            "maxParticles": 2048,
+            "motion": "Explode",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 1.0,
+            "noiseStrength": 0.0,
+            "positionKey": "ParticleCenter",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "radius": 0.10000000149011612,
+            "randomRotation": true,
+            "rate": 100.0,
+            "restitution": 0.5,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.1599999964237213,
+            "scaleMin": 0.11999999731779099,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.20000000298023224,
+            "shrinkTime": 0.0,
+            "softness": 2.0,
+            "spawnShape": "Sphere",
+            "speedBrightness": 0.0,
+            "speedMax": 11.0,
+            "speedMin": 8.0,
+            "splitCount": 10,
+            "splitLife": 0.699999988079071,
+            "splitScale": 0.5,
+            "splitSpeed": 4.0,
+            "startScale": 1.0,
+            "stopWhenFlagOff": true,
+            "stretch": 0.029999999329447746,
+            "targetKey": "",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                1.0,
+                2.0,
+                1.0
+            ],
+            "velocityMin": [
+                -1.0,
+                1.0,
+                -1.0
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 180.0,
+            "vortexRadialSpeed": 0.0,
+            "vortexRiseSpeed": 1.0
+        },
+        "Homing": {
+            "absorbStrength": 20.0,
+            "arcAngle": 180.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.6000000238418579,
+            "axisFacesCamera": false,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.5,
+            "blinkFrequencyMax": 20.0,
+            "blinkFrequencyMin": 8.0,
+            "bounce": false,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 50,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 4,
+            "colorA": [
+                0.4000000059604645,
+                1.0,
+                0.6000000238418579,
+                1.0
+            ],
+            "colorB": [
+                0.10000000149011612,
+                1.0,
+                0.8999999761581421,
+                1.0
+            ],
+            "controlOffsetMax": [
+                3.0,
+                5.0,
+                3.0
+            ],
+            "controlOffsetMin": [
+                -3.0,
+                2.0,
+                -3.0
+            ],
+            "death": "Fade",
+            "deathColor": [
+                1.0,
+                0.30000001192092896,
+                0.05000000074505806,
+                1.0
+            ],
+            "deathRatio": 0.20000000298023224,
+            "deathStretch": 3.0,
+            "drag": 0.0,
+            "duration": 1.0,
+            "easePower": 2.0,
+            "emitMode": "Burst",
+            "endColor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "endScale": 1.0,
+            "floorY": 0.0,
+            "followUps": [],
+            "friction": 0.800000011920929,
+            "gravity": 0.0,
+            "height": 1.0,
+            "homingSpeed": 16.0,
+            "homingTurn": 3.5,
+            "innerRatio": 1.0,
+            "intensity": 3.0,
+            "jitterFrequency": 20.0,
+            "jitterStrength": 0.0,
+            "lifeMax": 3.0,
+            "lifeMin": 2.5,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "Spark",
+            "maxParticles": 512,
+            "motion": "Homing",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 0.5,
+            "noiseStrength": 4.0,
+            "positionKey": "ParticleCenter",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "radius": 0.30000001192092896,
+            "randomRotation": true,
+            "rate": 100.0,
+            "restitution": 0.5,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.11999999731779099,
+            "scaleMin": 0.07999999821186066,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.20000000298023224,
+            "shrinkTime": 0.0,
+            "softness": 2.0,
+            "spawnShape": "Sphere",
+            "speedBrightness": 0.0,
+            "speedMax": 4.0,
+            "speedMin": 2.0,
+            "splitCount": 6,
+            "splitLife": 0.5,
+            "splitScale": 0.5,
+            "splitSpeed": 3.0,
+            "startScale": 1.0,
+            "stopWhenFlagOff": true,
+            "stretch": 0.05999999865889549,
+            "targetKey": "ParticleTarget",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                12.0,
+                14.0,
+                12.0
+            ],
+            "velocityMin": [
+                -12.0,
+                4.0,
+                -12.0
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 180.0,
+            "vortexRadialSpeed": 0.0,
+            "vortexRiseSpeed": 1.0
+        },
+        "Original": {
+            "absorbStrength": 20.0,
+            "arcAngle": 180.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.30000001192092896,
+            "axisFacesCamera": false,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.5,
+            "blinkFrequencyMax": 20.0,
+            "blinkFrequencyMin": 8.0,
+            "bounce": false,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 100,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 1,
+            "colorA": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "colorB": [
+                0.6000000238418579,
+                0.8999999761581421,
+                1.0,
+                1.0
+            ],
+            "controlOffsetMax": [
+                3.0,
+                5.0,
+                3.0
+            ],
+            "controlOffsetMin": [
+                -3.0,
+                2.0,
+                -3.0
+            ],
+            "death": "Stretch",
+            "deathColor": [
+                0.20000000298023224,
+                0.4000000059604645,
+                1.0,
+                1.0
+            ],
+            "deathRatio": 0.6000000238418579,
+            "deathStretch": 3.0,
+            "drag": 0.0,
+            "duration": 3.0,
+            "easePower": 2.0,
+            "emitMode": "Continuous",
+            "endColor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "endScale": 1.0,
+            "floorY": 0.0,
+            "followUps": [],
+            "friction": 0.800000011920929,
+            "gravity": 0.0,
+            "height": 1.0,
+            "homingSpeed": 12.0,
+            "homingTurn": 4.0,
+            "innerRatio": 0.800000011920929,
+            "intensity": 2.5,
+            "jitterFrequency": 20.0,
+            "jitterStrength": 0.0,
+            "lifeMax": 2.0,
+            "lifeMin": 1.600000023841858,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "Star",
+            "maxParticles": 1024,
+            "motion": "Vortex",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 1.0,
+            "noiseStrength": 0.0,
+            "positionKey": "ParticleCenter",
+            "positionOffset": [
+                0.0,
+                -1.5,
+                0.0
+            ],
+            "radius": 3.0,
+            "randomRotation": true,
+            "rate": 300.0,
+            "restitution": 0.5,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.11999999731779099,
+            "scaleMin": 0.05999999865889549,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.20000000298023224,
+            "shrinkTime": 0.0,
+            "softness": 2.0,
+            "spawnShape": "Sphere",
+            "speedBrightness": 0.017999999225139618,
+            "speedMax": 4.0,
+            "speedMin": 2.0,
+            "splitCount": 6,
+            "splitLife": 0.5,
+            "splitScale": 0.5,
+            "splitSpeed": 3.0,
+            "startScale": 1.0,
+            "stopWhenFlagOff": true,
+            "stretch": 0.0430000014603138,
+            "targetKey": "",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                1.0,
+                2.0,
+                1.0
+            ],
+            "velocityMin": [
+                -1.0,
+                1.0,
+                -1.0
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 220.0,
+            "vortexRadialSpeed": -0.6000000238418579,
+            "vortexRiseSpeed": 2.5
+        },
+        "RingWave": {
+            "absorbStrength": 20.0,
+            "arcAngle": 180.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.30000001192092896,
+            "axisFacesCamera": true,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.5,
+            "blinkFrequencyMax": 20.0,
+            "blinkFrequencyMin": 8.0,
+            "bounce": false,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 160,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 1,
+            "colorA": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "colorB": [
+                0.800000011920929,
+                0.8999999761581421,
+                1.0,
+                1.0
+            ],
+            "controlOffsetMax": [
+                3.0,
+                5.0,
+                3.0
+            ],
+            "controlOffsetMin": [
+                -3.0,
+                2.0,
+                -3.0
+            ],
+            "death": "Fade",
+            "deathColor": [
+                1.0,
+                0.30000001192092896,
+                0.05000000074505806,
+                1.0
+            ],
+            "deathRatio": 0.699999988079071,
+            "deathStretch": 3.0,
+            "drag": 3.5,
+            "duration": 1.0,
+            "easePower": 2.0,
+            "emitMode": "Burst",
+            "endColor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "endScale": 0.30000001192092896,
+            "floorY": 0.0,
+            "followUps": [],
+            "friction": 0.800000011920929,
+            "gravity": 0.0,
+            "height": 1.0,
+            "homingSpeed": 12.0,
+            "homingTurn": 4.0,
+            "innerRatio": 1.0,
+            "intensity": 3.0,
+            "jitterFrequency": 20.0,
+            "jitterStrength": 0.0,
+            "lifeMax": 0.699999988079071,
+            "lifeMin": 0.6000000238418579,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "SoftCircle",
+            "maxParticles": 512,
+            "motion": "Explode",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 1.0,
+            "noiseStrength": 0.0,
+            "positionKey": "ParticleCenter",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "radius": 0.30000001192092896,
+            "randomRotation": true,
+            "rate": 100.0,
+            "restitution": 0.5,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.14000000059604645,
+            "scaleMin": 0.10000000149011612,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.20000000298023224,
+            "shrinkTime": 0.0,
+            "softness": 2.0,
+            "spawnShape": "Ring",
+            "speedBrightness": 0.0,
+            "speedMax": 14.0,
+            "speedMin": 14.0,
+            "splitCount": 6,
+            "splitLife": 0.5,
+            "splitScale": 0.5,
+            "splitSpeed": 3.0,
+            "startScale": 1.0,
+            "stopWhenFlagOff": true,
+            "stretch": 0.019999999552965164,
+            "targetKey": "",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                1.0,
+                2.0,
+                1.0
+            ],
+            "velocityMin": [
+                -1.0,
+                1.0,
+                -1.0
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 180.0,
+            "vortexRadialSpeed": 0.0,
+            "vortexRiseSpeed": 1.0
+        },
+        "Sparks": {
+            "absorbStrength": 20.0,
+            "arcAngle": 180.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.30000001192092896,
+            "axisFacesCamera": false,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.5,
+            "blinkFrequencyMax": 20.0,
+            "blinkFrequencyMin": 8.0,
+            "bounce": true,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 100,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 1,
+            "colorA": [
+                1.0,
+                1.0,
+                0.800000011920929,
+                1.0
+            ],
+            "colorB": [
+                1.0,
+                0.8500000238418579,
+                0.4000000059604645,
+                1.0
+            ],
+            "controlOffsetMax": [
+                3.0,
+                5.0,
+                3.0
+            ],
+            "controlOffsetMin": [
+                -3.0,
+                2.0,
+                -3.0
+            ],
+            "death": "ColorShift",
+            "deathColor": [
+                1.0,
+                0.25,
+                0.05000000074505806,
+                1.0
+            ],
+            "deathRatio": 0.5,
+            "deathStretch": 3.0,
+            "drag": 0.20000000298023224,
+            "duration": 3.0,
+            "easePower": 2.0,
+            "emitMode": "Continuous",
+            "endColor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "endScale": 1.0,
+            "floorY": 0.0,
+            "followUps": [],
+            "friction": 0.699999988079071,
+            "gravity": 20.0,
+            "height": 1.0,
+            "homingSpeed": 12.0,
+            "homingTurn": 4.0,
+            "innerRatio": 1.0,
+            "intensity": 4.0,
+            "jitterFrequency": 20.0,
+            "jitterStrength": 0.0,
+            "lifeMax": 2.200000047683716,
+            "lifeMin": 1.600000023841858,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "Spark",
+            "maxParticles": 1024,
+            "motion": "Physics",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 1.0,
+            "noiseStrength": 0.0,
+            "positionKey": "ParticleCenter",
+            "positionOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "radius": 1.0,
+            "randomRotation": true,
+            "rate": 90.0,
+            "restitution": 0.44999998807907104,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.07999999821186066,
+            "scaleMin": 0.03999999910593033,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.20000000298023224,
+            "shrinkTime": 0.0,
+            "softness": 2.0,
+            "spawnShape": "Point",
+            "speedBrightness": 0.0,
+            "speedMax": 4.0,
+            "speedMin": 2.0,
+            "splitCount": 6,
+            "splitLife": 0.5,
+            "splitScale": 0.5,
+            "splitSpeed": 3.0,
+            "startScale": 1.0,
+            "stopWhenFlagOff": true,
+            "stretch": 0.05000000074505806,
+            "targetKey": "",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                5.0,
+                14.0,
+                5.0
+            ],
+            "velocityMin": [
+                -5.0,
+                8.0,
+                -5.0
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 180.0,
+            "vortexRadialSpeed": 0.0,
+            "vortexRiseSpeed": 1.0
+        },
+        "Vortex": {
+            "absorbStrength": 20.0,
+            "arcAngle": 180.0,
+            "arcBothDirections": false,
+            "arriveRadius": 0.30000001192092896,
+            "axisFacesCamera": false,
+            "basePosition": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "blend": "Additive",
+            "blinkFade": 0.5,
+            "blinkFrequencyMax": 20.0,
+            "blinkFrequencyMin": 8.0,
+            "bounce": false,
+            "boxSize": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "burstCount": 100,
+            "burstInterval": 0.20000000298023224,
+            "burstRepeat": 1,
+            "colorA": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "colorB": [
+                0.6000000238418579,
+                0.8999999761581421,
+                1.0,
+                1.0
+            ],
+            "controlOffsetMax": [
+                3.0,
+                5.0,
+                3.0
+            ],
+            "controlOffsetMin": [
+                -3.0,
+                2.0,
+                -3.0
+            ],
+            "death": "ColorShift",
+            "deathColor": [
+                0.20000000298023224,
+                0.4000000059604645,
+                1.0,
+                1.0
+            ],
+            "deathRatio": 0.6000000238418579,
+            "deathStretch": 3.0,
+            "drag": 0.0,
+            "duration": 3.0,
+            "easePower": 2.0,
+            "emitMode": "Continuous",
+            "endColor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "endScale": 1.0,
+            "floorY": 0.0,
+            "followUps": [],
+            "friction": 0.800000011920929,
+            "gravity": 0.0,
+            "height": 1.0,
+            "homingSpeed": 12.0,
+            "homingTurn": 4.0,
+            "innerRatio": 0.800000011920929,
+            "intensity": 2.5,
+            "jitterFrequency": 20.0,
+            "jitterStrength": 0.0,
+            "lifeMax": 2.0,
+            "lifeMin": 1.600000023841858,
+            "lineEnd": [
+                2.0,
+                0.0,
+                0.0
+            ],
+            "look": "SoftCircle",
+            "maxParticles": 1024,
+            "motion": "Vortex",
+            "motionAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "noiseFrequency": 1.0,
+            "noiseStrength": 0.0,
+            "positionKey": "ParticleCenter",
+            "positionOffset": [
+                0.0,
+                -1.5,
+                0.0
+            ],
+            "radius": 3.0,
+            "randomRotation": true,
+            "rate": 150.0,
+            "restitution": 0.5,
+            "rotationSpeedMax": 0.0,
+            "rotationSpeedMin": 0.0,
+            "scaleMax": 0.11999999731779099,
+            "scaleMin": 0.05999999865889549,
+            "shapeAxis": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "shrinkEndRatio": 0.20000000298023224,
+            "shrinkTime": 0.0,
+            "softness": 2.0,
+            "spawnShape": "Ring",
+            "speedBrightness": 0.0,
+            "speedMax": 4.0,
+            "speedMin": 2.0,
+            "splitCount": 6,
+            "splitLife": 0.5,
+            "splitScale": 0.5,
+            "splitSpeed": 3.0,
+            "startScale": 1.0,
+            "stopWhenFlagOff": true,
+            "stretch": 0.029999999329447746,
+            "targetKey": "",
+            "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "texturePath": "",
+            "triggerFlagKey": "",
+            "useUnscaledTime": false,
+            "velocity": [
+                0.0,
+                1.0,
+                0.0
+            ],
+            "velocityMax": [
+                1.0,
+                2.0,
+                1.0
+            ],
+            "velocityMin": [
+                -1.0,
+                1.0,
+                -1.0
+            ],
+            "velocityMode": "Random",
+            "vortexAngularSpeed": 220.0,
+            "vortexRadialSpeed": -0.6000000238418579,
+            "vortexRiseSpeed": 2.5
+        }
+    },
+    "version": 1
+}

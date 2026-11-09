@@ -162,7 +162,7 @@ namespace RyoEngine {
         ImGui::DockBuilderDockWindow("LightManager", rightBottom);
         ImGui::DockBuilderDockWindow("Shadow", rightBottom);
         ImGui::DockBuilderDockWindow("PostProcess", rightBottom);
-        ImGui::DockBuilderDockWindow("GPUParticleManager", rightBottom);
+        ImGui::DockBuilderDockWindow("ParticleManager", rightBottom);
         ImGui::DockBuilderDockWindow("Animation Editor", rightBottom);
 
         // 下：ログ・パフォーマンス

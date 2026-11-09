@@ -188,9 +188,6 @@ namespace Test {
 		// 地面と空の行列を確定 (カリングは Draw で行われる)
 		ground_->TransferMatrix();
 		sky_->TransferMatrix();
-
-		// パーティクル (タイムスケールのかかった時間で動かす)
-		GPUParticleManager::Update(GetScaleTime());
 	}
 
 	void TestScene::ApplyGround() {
@@ -319,8 +316,6 @@ namespace Test {
 		easingSprite_.Draw();
 
 		DrawPrimitives();
-
-		GPUParticleManager::Draw();
 	}
 
 	void TestScene::DrawPrimitives() {

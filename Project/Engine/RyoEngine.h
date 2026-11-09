@@ -36,9 +36,10 @@
 #include "Object/GameObjectManager.h"
 #include "Object/CollisionManager.h"
 #include "Graphics/PrimitiveRenderer/PrimitiveRenderer.h"
-#include "Graphics/GPUParticle/GPUParticleCommon.h"
-#include "Graphics/GPUParticle/GPUParticleEmitter.h"
-#include "Graphics/GPUParticle/GPUParticleManager.h"
+#include "Graphics/Particle/ParticleCommon.h"
+#include "Graphics/Particle/ParticleEmitter.h"
+#include "Graphics/Particle/ParticleManager.h"
+#include "Graphics/Particle/ParticleTemplates.h"
 
 #include "Audio/Audio.h"
 #include "Camera/Camera.h"

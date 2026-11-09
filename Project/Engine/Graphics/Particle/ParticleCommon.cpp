@@ -1,4 +1,7 @@
-#include "ParticleFxCommon.h"
+#include "ParticleCommon.h"
+#include "../../Core/Base/DirectXCommon.h"
+#include "../../Core/Base/Logger.h"
+#include "../Shader/ShaderCompiler.h"
 #include <cassert>
 #include <fstream>
 #include <sstream>
@@ -9,9 +12,7 @@
 #include <imgui.h>
 #endif
 
-using namespace RyoEngine;
-
-namespace App {
+namespace RyoEngine {
 
     namespace {
         // ルートシグネチャをシリアライズして作る共通処理
@@ -22,7 +23,7 @@ namespace App {
             if (FAILED(hr)) {
                 if (errorBlob) {
                     const std::string message = reinterpret_cast<char*>(errorBlob->GetBufferPointer());
-                    Logger::LogError("[ParticleFxCommon] {}\n", message);
+                    Logger::LogError("[ParticleCommon] {}\n", message);
                 }
                 assert(false);
                 return nullptr;
@@ -41,26 +42,26 @@ namespace App {
         }
     }
 
-    ParticleFxCommon* ParticleFxCommon::GetInstance() {
-        static ParticleFxCommon instance;
+    ParticleCommon* ParticleCommon::GetInstance() {
+        static ParticleCommon instance;
         return &instance;
     }
 
-    void ParticleFxCommon::Initialize() {
-        ParticleFxCommon* instance = GetInstance();
+    void ParticleCommon::Initialize() {
+        ParticleCommon* instance = GetInstance();
 
-        Logger::Log("ParticleFxCommon : Initializing...\n");
+        Logger::Log("ParticleCommon : Initializing...\n");
         instance->CreateComputeRootSignature();
         instance->CreateRenderRootSignature();
         if (!ReloadShaders()) {
-            Logger::LogError("[ParticleFxCommon] シェーダーのコンパイルに失敗しました。直して保存すると自動で読み込み直します\n");
+            Logger::LogError("[ParticleCommon] シェーダーのコンパイルに失敗しました。直して保存すると自動で読み込み直します\n");
         }
         instance->RememberWriteTimes();
-        Logger::LogSuccess("ParticleFxCommon : Initialized\n");
+        Logger::LogSuccess("ParticleCommon : Initialized\n");
     }
 
-    void ParticleFxCommon::Finalize() {
-        ParticleFxCommon* instance = GetInstance();
+    void ParticleCommon::Finalize() {
+        ParticleCommon* instance = GetInstance();
 
         for (auto& pso : instance->renderPipelineStates_) {
             pso.Reset();
@@ -70,15 +71,29 @@ namespace App {
         instance->resetPipelineState_.Reset();
         instance->computeRootSignature_.Reset();
         instance->writeTimes_.clear();
+        instance->dispatchCommands_.clear();
+        instance->drawCommands_.clear();
     }
 
-    bool ParticleFxCommon::IsReady() {
-        ParticleFxCommon* instance = GetInstance();
+    void ParticleCommon::Dispatch() {
+        for (const auto& command : GetInstance()->dispatchCommands_) {
+            command();
+        }
+    }
+
+    void ParticleCommon::Draw() {
+        for (const auto& command : GetInstance()->drawCommands_) {
+            command();
+        }
+    }
+
+    bool ParticleCommon::IsReady() {
+        ParticleCommon* instance = GetInstance();
         return instance->resetPipelineState_ && instance->simulatePipelineState_
             && instance->renderPipelineStates_[0] && instance->renderPipelineStates_[1];
     }
 
-    void ParticleFxCommon::CreateComputeRootSignature() {
+    void ParticleCommon::CreateComputeRootSignature() {
         D3D12_ROOT_PARAMETER rootParameters[6] = {};
         // 0: パーティクル本体 (u0)
         rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
@@ -113,7 +128,7 @@ namespace App {
         computeRootSignature_ = CreateRootSignature(desc);
     }
 
-    void ParticleFxCommon::CreateRenderRootSignature() {
+    void ParticleCommon::CreateRenderRootSignature() {
         D3D12_DESCRIPTOR_RANGE textureRange[1] = {};
         textureRange[0].BaseShaderRegister = 0;
         textureRange[0].NumDescriptors = 1;
@@ -155,7 +170,7 @@ namespace App {
         renderRootSignature_ = CreateRootSignature(desc);
     }
 
-    bool ParticleFxCommon::CompileFile(const std::string& fileName, const wchar_t* profile,
+    bool ParticleCommon::CompileFile(const std::string& fileName, const wchar_t* profile,
         Microsoft::WRL::ComPtr<IDxcBlob>& outBlob, std::string& outError) {
         const std::string fullPath = shaderFolder_ + fileName;
         std::ifstream file(fullPath, std::ios::binary);
@@ -177,8 +192,8 @@ namespace App {
         return true;
     }
 
-    bool ParticleFxCommon::ReloadShaders() {
-        ParticleFxCommon* instance = GetInstance();
+    bool ParticleCommon::ReloadShaders() {
+        ParticleCommon* instance = GetInstance();
         ID3D12Device* device = DirectXCommon::GetDevice();
 
         // --- 全部コンパイルできてから入れ替える (途中で失敗したら前のPSOのまま) ---
@@ -193,7 +208,7 @@ namespace App {
             && instance->CompileFile(instance->pixelShaderFile_, L"ps_6_0", pixelBlob, error);
         if (!succeeded) {
             instance->lastError_ = error;
-            Logger::LogError("[ParticleFxCommon] {}\n", error);
+            Logger::LogError("[ParticleCommon] {}\n", error);
             return false;
         }
 
@@ -207,14 +222,14 @@ namespace App {
             HRESULT hr = device->CreateComputePipelineState(&desc, IID_PPV_ARGS(&newReset));
             if (FAILED(hr)) {
                 instance->lastError_ = "リセット用のPSOを作れませんでした";
-                Logger::LogError("[ParticleFxCommon] {}\n", instance->lastError_);
+                Logger::LogError("[ParticleCommon] {}\n", instance->lastError_);
                 return false;
             }
             desc.CS = ToBytecode(simulateBlob);
             hr = device->CreateComputePipelineState(&desc, IID_PPV_ARGS(&newSimulate));
             if (FAILED(hr)) {
                 instance->lastError_ = "シミュレーション用のPSOを作れませんでした";
-                Logger::LogError("[ParticleFxCommon] {}\n", instance->lastError_);
+                Logger::LogError("[ParticleCommon] {}\n", instance->lastError_);
                 return false;
             }
         }
@@ -262,7 +277,7 @@ namespace App {
                 HRESULT hr = device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&newRender[i]));
                 if (FAILED(hr)) {
                     instance->lastError_ = "描画用のPSOを作れませんでした";
-                    Logger::LogError("[ParticleFxCommon] {}\n", instance->lastError_);
+                    Logger::LogError("[ParticleCommon] {}\n", instance->lastError_);
                     return false;
                 }
             }
@@ -276,11 +291,11 @@ namespace App {
         instance->lastError_.clear();
         ++instance->reloadCount_;
 
-        Logger::LogSuccess("[ParticleFxCommon] シェーダーを読み込みました\n");
+        Logger::LogSuccess("[ParticleCommon] シェーダーを読み込みました\n");
         return true;
     }
 
-    void ParticleFxCommon::RememberWriteTimes() {
+    void ParticleCommon::RememberWriteTimes() {
         writeTimes_.clear();
         std::error_code ec;
         for (const auto& entry : std::filesystem::directory_iterator(shaderFolder_, ec)) {
@@ -291,7 +306,7 @@ namespace App {
         }
     }
 
-    bool ParticleFxCommon::HasShaderFileChanged() {
+    bool ParticleCommon::HasShaderFileChanged() {
         std::error_code ec;
         size_t fileCount = 0;
         for (const auto& entry : std::filesystem::directory_iterator(shaderFolder_, ec)) {
@@ -307,9 +322,9 @@ namespace App {
         return fileCount != writeTimes_.size();
     }
 
-    void ParticleFxCommon::CheckHotReload(float deltaTime) {
+    void ParticleCommon::CheckHotReload(float deltaTime) {
 #ifdef NRELEASE
-        ParticleFxCommon* instance = GetInstance();
+        ParticleCommon* instance = GetInstance();
         if (!instance->autoReload_) {
             return;
         }
@@ -330,9 +345,9 @@ namespace App {
 #endif
     }
 
-    void ParticleFxCommon::DrawImGui() {
+    void ParticleCommon::DrawImGui() {
 #ifdef NRELEASE
-        ParticleFxCommon* instance = GetInstance();
+        ParticleCommon* instance = GetInstance();
 
         ImGui::Text("シェーダー : %s", instance->shaderFolder_.c_str());
         if (ImGui::Button("シェーダーを再読み込み")) {

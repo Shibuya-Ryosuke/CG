@@ -9,10 +9,10 @@ namespace Test {
 		const std::string jsonFolder = "Resources/EngineResources/Test/Json/";
 		ParamEditor::SetFolderPath(jsonFolder);
 		LightManager::SetFolderPath(jsonFolder);
-		GPUParticleManager::SetFolderPath(jsonFolder);
+		ParticleManager::SetFolderPath(jsonFolder);
 		ParamEditor::Load();
 		LightManager::Load();
-		GPUParticleManager::Load();
+		ParticleManager::LoadOrCreateDefaults();
 
 		// シーンを登録して、起動時のシーンにする (次の SceneManager::Update で作られる)
 		SceneManager::RegisterScene<TestScene>();

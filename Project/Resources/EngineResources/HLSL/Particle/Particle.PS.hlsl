@@ -1,8 +1,8 @@
-// ParticleFx のピクセルシェーダー。
+// Particle のピクセルシェーダー。
 // 画像を使わず、板の中の位置(local: -1〜1)から形をプログラムで描く (gLook で切り替え)。
 // ライティングは行わない。
 #define PARTICLE_FX_RENDER
-#include "ParticleFx.hlsli"
+#include "Particle.hlsli"
 
 Texture2D<float4> gTexture : register(t0);
 SamplerState gSampler : register(s0);

@@ -3,12 +3,12 @@
 #include <wrl.h>
 #include <cstdint>
 #include <vector>
-#include "ParticleFxTypes.h"
+#include "ParticleTypes.h"
 
-namespace App {
+namespace RyoEngine {
 
     /// <summary>
-    /// ParticleFx の「1つのエフェクトぶんのGPUバッファ」を持つクラス。
+    /// Particle の「1つのエフェクトぶんのGPUバッファ」を持つクラス。
     /// 発生の命令を積み (AddBatch)、パラメータを渡してシミュレーションを予約し (Update)、描画を予約する (Draw)。
     ///
     /// CPUが送るのは「どこに何粒」という命令だけで、1粒ずつの初期値(位置・速度・色…)は
@@ -18,22 +18,28 @@ namespace App {
     /// ・発生の命令 / パラメータ                          : Upload heap (CPUが毎フレーム書く)
     /// ・生きている数                                     : Readback heap (1フレーム遅れで読む)
     /// </summary>
-    class ParticleFxEmitter {
+    class ParticleEmitter {
     public:
         /// <summary>1フレームに積める発生の命令の数 (= 1フレームに何回 Play できるか)</summary>
         static constexpr uint32_t kMaxBatchesPerFrame = 32;
 
-        ParticleFxEmitter() = default;
-        ~ParticleFxEmitter() = default;
-        ParticleFxEmitter(const ParticleFxEmitter&) = delete;
-        ParticleFxEmitter& operator=(const ParticleFxEmitter&) = delete;
-        ParticleFxEmitter(ParticleFxEmitter&&) = delete;
-        ParticleFxEmitter& operator=(ParticleFxEmitter&&) = delete;
+        ParticleEmitter() = default;
+        ~ParticleEmitter() = default;
+        ParticleEmitter(const ParticleEmitter&) = delete;
+        ParticleEmitter& operator=(const ParticleEmitter&) = delete;
+        ParticleEmitter(ParticleEmitter&&) = delete;
+        ParticleEmitter& operator=(ParticleEmitter&&) = delete;
 
         /// <param name="maxCount">同時に存在できる最大数</param>
         /// <param name="useSplit">分裂を使うか。false なら分裂の子のリストを確保しない (メモリが約1/3になる)</param>
         void Initialize(uint32_t maxCount, bool useSplit);
         void Finalize();
+
+        /// <summary>
+        /// 最大数・分裂の有無を変える。出ている粒は新しいバッファへコピーして引き継ぐ
+        /// (新しい最大数より後ろの粒と、分裂待ちの子だけは消える)。初期化前なら Initialize と同じ
+        /// </summary>
+        void Resize(uint32_t maxCount, bool useSplit);
 
         bool IsInitialized() const { return particleResource_ != nullptr; }
         uint32_t GetMaxCount() const { return maxCount_; }
@@ -44,7 +50,7 @@ namespace App {
         uint32_t GetAliveCount() const { return aliveCount_; }
 
         /// <summary>発生の命令を積む。このフレームの命令が上限(kMaxBatchesPerFrame)なら false</summary>
-        bool AddBatch(const ParticleFxSpawnBatch& batch);
+        bool AddBatch(const ParticleSpawnBatch& batch);
 
         /// <summary>次のシミュレーションで、今いる粒を全部消す</summary>
         void RequestClear() { clearRequested_ = true; }
@@ -52,14 +58,14 @@ namespace App {
         /// <summary>
         /// シミュレーションを予約する。
         /// simParams の spawnCount / maxCount / childReadSlot / clear / batchCount はこの中で上書きする。
-        /// 実際のDispatchは EndFrame 内 (GPUParticleCommon::Dispatch) で行われる
+        /// 実際のDispatchは EndFrame 内 (ParticleCommon::Dispatch) で行われる
         /// </summary>
-        void Update(const ParticleFxSimParams& simParams, const ParticleFxSpawnParams& spawnParams);
+        void Update(const ParticleSimParams& simParams, const ParticleSpawnParams& spawnParams);
 
         /// <summary>
-        /// 描画を予約する。実際の描画は EndFrame 内 (GPUParticleCommon::Draw) で行われる
+        /// 描画を予約する。実際の描画は EndFrame 内 (ParticleCommon::Draw) で行われる
         /// </summary>
-        void Draw(const ParticleFxRenderParams& params, uint32_t textureHandle, ParticleFxBlend blend);
+        void Draw(const ParticleRenderParams& params, uint32_t textureHandle, ParticleBlend blend);
 
     private:
         void InternalDispatch();
@@ -67,6 +73,10 @@ namespace App {
         void TransitionParticleBuffer(D3D12_RESOURCE_STATES newState);
         // 前のフレームのDispatchで数えた「生きている数」を読む
         void ReadAliveCount();
+        // GPUバッファ (本体・カウンター・分裂の子・読み戻し) を作る
+        void CreateParticleBuffers();
+        // Resize で古いバッファから新しいバッファへ、出ている粒をコピーする (Dispatch の先頭で行う)
+        void CopyFromRetiredBuffer();
 
         uint32_t maxCount_ = 0;
         bool useSplit_ = false;
@@ -78,25 +88,32 @@ namespace App {
         Microsoft::WRL::ComPtr<ID3D12Resource> readbackResource_; // 生きている数をCPUで読むためのコピー先
 
         Microsoft::WRL::ComPtr<ID3D12Resource> batchResource_;
-        ParticleFxSpawnBatch* batchData_ = nullptr;
-        std::vector<ParticleFxSpawnBatch> pendingBatches_;
+        ParticleSpawnBatch* batchData_ = nullptr;
+        std::vector<ParticleSpawnBatch> pendingBatches_;
 
         Microsoft::WRL::ComPtr<ID3D12Resource> simParamsResource_;
-        ParticleFxSimParams* simParamsData_ = nullptr;
+        ParticleSimParams* simParamsData_ = nullptr;
 
         Microsoft::WRL::ComPtr<ID3D12Resource> spawnParamsResource_;
-        ParticleFxSpawnParams* spawnParamsData_ = nullptr;
+        ParticleSpawnParams* spawnParamsData_ = nullptr;
 
         Microsoft::WRL::ComPtr<ID3D12Resource> renderParamsResource_;
-        ParticleFxRenderParams* renderParamsData_ = nullptr;
+        ParticleRenderParams* renderParamsData_ = nullptr;
 
         uint32_t textureHandle_ = 0;
-        ParticleFxBlend blend_ = ParticleFxBlend::Additive;
+        ParticleBlend blend_ = ParticleBlend::Additive;
 
         uint32_t childReadSlot_ = 0; // 前フレームの分裂の子を読む側 (毎フレーム入れ替える)
         bool clearRequested_ = false;
 
         uint32_t aliveCount_ = 0;
         bool hasReadback_ = false;   // Dispatchを1回以上予約して、読める値があるか
+
+        // --- Resize で粒を引き継ぐための、古いバッファ ---
+        // コピーが済んで、GPUが使い終わった次のフレームの Update で解放する
+        Microsoft::WRL::ComPtr<ID3D12Resource> retiredParticleResource_;
+        D3D12_RESOURCE_STATES retiredParticleState_ = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        uint32_t retiredMaxCount_ = 0;
+        bool copyPending_ = false;   // 次の Dispatch で古いバッファからコピーするか
     };
 }

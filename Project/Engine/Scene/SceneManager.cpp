@@ -164,6 +164,8 @@ namespace RyoEngine {
         ParamEditor::ClearEntries();
         // パーティクル・ライトが参照する座標・フラグの登録
         BindingRegistry::Clear();
+        // パーティクルはシーンをまたいで残さない (出ている粒も、連鎖の予約も消す)
+        ParticleManager::ClearAll();
         // カスタムポストエフェクトもシーンごとに登録し直す
         PostEffectManager::Clear();
 

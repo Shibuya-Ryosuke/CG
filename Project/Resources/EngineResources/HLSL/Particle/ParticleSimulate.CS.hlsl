@@ -1,17 +1,17 @@
-// ParticleFx のシミュレーション本体。
+// Particle のシミュレーション本体。
 // 生きている粒は「動き方(gMotion)」に従って1フレーム進める。
 // 死んでいる粒は、発生の命令 → 前フレームの分裂の子 の順に、空きスロットとして引き取る。
 // 発生の命令から引き取った粒は、ここで初期値(位置・速度・色…)を乱数で作る (CPUは1粒ずつ作らない)。
 #define PARTICLE_FX_SIMULATION
-#include "ParticleFx.hlsli"
+#include "Particle.hlsli"
 
-RWStructuredBuffer<FxParticle> gParticles : register(u0); // パーティクル本体
+RWStructuredBuffer<ParticleData> gParticles : register(u0); // パーティクル本体
 RWStructuredBuffer<uint> gCounters : register(u1);         // [0]配った数 [1][2]分裂の子の数 [3]生きている数
-RWStructuredBuffer<FxParticle> gChildren : register(u2);   // 分裂の子のリスト (gMaxCount * 2 件。前半/後半を交互に使う)
+RWStructuredBuffer<ParticleData> gChildren : register(u2);   // 分裂の子のリスト (gMaxCount * 2 件。前半/後半を交互に使う)
 StructuredBuffer<SpawnBatch> gBatches : register(t0);      // 今フレームの発生の命令
 
 // 発生の命令 batch の localIndex 番目の粒を作る (C++側でやっていた初期値の計算と同じ)
-FxParticle CreateParticle(SpawnBatch batch, uint localIndex)
+ParticleData CreateParticle(SpawnBatch batch, uint localIndex)
 {
     uint state = PcgHash(batch.seed ^ PcgHash(localIndex + 0x9E3779B9u));
 
@@ -89,7 +89,7 @@ FxParticle CreateParticle(SpawnBatch batch, uint localIndex)
     }
 
     // --- 1粒ぶんのデータ ---
-    FxParticle p;
+    ParticleData p;
     p.position = batch.origin + offset;
     p.scale = RandomRange(state, gScaleMin, gScaleMax);
     p.velocity = velocity;
@@ -119,7 +119,7 @@ FxParticle CreateParticle(SpawnBatch batch, uint localIndex)
 }
 
 // 物理で動かす (重力・空気抵抗・揺らぎ・床で跳ねる)
-void SimulatePhysics(inout FxParticle p, float dt)
+void SimulatePhysics(inout ParticleData p, float dt)
 {
     p.velocity.y -= gGravity * dt;
     p.velocity *= exp(-gDrag * dt);
@@ -139,7 +139,7 @@ void SimulatePhysics(inout FxParticle p, float dt)
 }
 
 // 寿命が尽きた瞬間に、小さな粒を gSplitCount 個、次のフレーム用のリストへ書き出す
-void SpawnChildren(FxParticle p)
+void SpawnChildren(ParticleData p)
 {
     uint writeSlot = 1u - gChildReadSlot;
     uint base;
@@ -158,7 +158,7 @@ void SpawnChildren(FxParticle p)
         float3 h = Hash31(p.seed * 91.7f + fi * 13.1f);
         float3 dir = normalize(h * 2.0f - 1.0f + float3(0.0001f, 0.0002f, 0.0003f));
 
-        FxParticle c;
+        ParticleData c;
         c.position = p.position;
         c.scale = p.scale * gSplitScale;
         c.velocity = dir * gSplitSpeed * (0.6f + 0.4f * h.x) + p.velocity * 0.2f;
@@ -180,7 +180,7 @@ void SpawnChildren(FxParticle p)
     }
 }
 
-void Simulate(inout FxParticle p)
+void Simulate(inout ParticleData p)
 {
     float dt = gDeltaTime;
     bool isChild = (p.flags & kFlagChild) != 0u;
@@ -276,7 +276,7 @@ void main(uint3 dispatchThreadId : SV_DispatchThreadID)
     // NOTE: 最後に WaveActiveCountBits で生きている数を数えるので、途中で return しない
     if (index < gMaxCount)
     {
-        FxParticle particle = gParticles[index];
+        ParticleData particle = gParticles[index];
 
         if (gClear != 0u)
         {

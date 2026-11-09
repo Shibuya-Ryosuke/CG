@@ -295,6 +295,8 @@ namespace RyoEngine {
             const bool isRendering = isActive && !debugCamera.GetIsAvailable();
             if (ImGui::TreeNode("camera", "%s [%u]%s", DisplayName(slot).c_str(), index, isRendering ? " (使用中)" : "")) {
                 if (ImGui::Button("SetActive")) {
+                    // デバッグカメラが優先されてしまうので、無効化したあとにアクティブ化
+                    debugCamera.SetAvailable(false);
                     SetActive(index);
                 }
 

@@ -1,6 +1,7 @@
-#include "ParticleFxManager.h"
-#include "ParticleFxCommon.h"
-#include "ParticleFxTemplates.h"
+#include "ParticleManager.h"
+#include "ParticleCommon.h"
+#include "ParticleTemplates.h"
+#include <RyoEngine.h>
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -18,9 +19,7 @@
 #pragma warning(disable: 4866)
 #include <json.hpp>
 
-using namespace RyoEngine;
-
-namespace App {
+namespace RyoEngine {
 
     namespace {
         using json = nlohmann::json;
@@ -81,8 +80,8 @@ namespace App {
             return defaultValue;
         }
 
-        json ConfigToJson(const ParticleFxConfig& c) {
-            using N = ParticleFxNames;
+        json ConfigToJson(const ParticleConfig& c) {
+            using N = ParticleNames;
             json j;
             // 発生
             j["emitMode"] = EnumToId(c.emitMode, N::kEmitModeIds);
@@ -177,14 +176,23 @@ namespace App {
             j["softness"] = c.softness;
             j["stretch"] = c.stretch;
             j["speedBrightness"] = c.speedBrightness;
+            // 連鎖
+            j["followUps"] = json::array();
+            for (const ParticleFollowUp& followUp : c.followUps) {
+                json f;
+                f["effect"] = followUp.effectName;
+                f["delay"] = followUp.delay;
+                f["samePosition"] = followUp.samePosition;
+                j["followUps"].push_back(f);
+            }
             return j;
         }
 
         // 型が合わない値があると json::exception が投げられる (呼び出し側で catch する)
-        ParticleFxConfig ConfigFromJson(const json& j) {
-            using N = ParticleFxNames;
-            const ParticleFxConfig d{};
-            ParticleFxConfig c{};
+        ParticleConfig ConfigFromJson(const json& j) {
+            using N = ParticleNames;
+            const ParticleConfig d{};
+            ParticleConfig c{};
             // 発生
             c.emitMode = ReadEnum(j, "emitMode", d.emitMode, N::kEmitModeIds);
             c.maxParticles = j.value("maxParticles", d.maxParticles);
@@ -278,6 +286,21 @@ namespace App {
             c.softness = j.value("softness", d.softness);
             c.stretch = j.value("stretch", d.stretch);
             c.speedBrightness = j.value("speedBrightness", d.speedBrightness);
+            // 連鎖
+            auto followUps = j.find("followUps");
+            if (followUps != j.end() && followUps->is_array()) {
+                const ParticleFollowUp defaultFollowUp{};
+                for (const json& f : *followUps) {
+                    if (!f.is_object()) {
+                        continue;
+                    }
+                    ParticleFollowUp followUp{};
+                    followUp.effectName = f.value("effect", defaultFollowUp.effectName);
+                    followUp.delay = f.value("delay", defaultFollowUp.delay);
+                    followUp.samePosition = f.value("samePosition", defaultFollowUp.samePosition);
+                    c.followUps.push_back(followUp);
+                }
+            }
             return c;
         }
 
@@ -317,37 +340,40 @@ namespace App {
     // 初期化・終了
     // =====================================================================
 
-    ParticleFxManager* ParticleFxManager::GetInstance() {
-        static ParticleFxManager instance;
+    ParticleManager* ParticleManager::GetInstance() {
+        static ParticleManager instance;
         return &instance;
     }
 
-    void ParticleFxManager::Initialize() {
-        Logger::Log("ParticleFxManager : Initializing...\n");
-        ParticleFxCommon::Initialize();
-
-        // 保存したファイルが無ければ、テンプレから見本を作る
-        if (!Load()) {
-            CreateDefaultEffects();
-        }
-        Logger::LogSuccess("ParticleFxManager : Initialized\n");
+    void ParticleManager::Initialize() {
+        Logger::Log("ParticleManager : Initializing...\n");
+        // NOTE: エフェクトの読み込みは、アプリが SetFolderPath してから LoadOrCreateDefaults() で行う
+        Logger::LogSuccess("ParticleManager : Initialized\n");
     }
 
-    void ParticleFxManager::Finalize() {
-        ParticleFxManager* instance = GetInstance();
+    bool ParticleManager::LoadOrCreateDefaults() {
+        // 保存したファイルが無ければ、テンプレから見本を作る
+        if (Load()) {
+            return true;
+        }
+        CreateDefaultEffects();
+        return false;
+    }
+
+    void ParticleManager::Finalize() {
+        ParticleManager* instance = GetInstance();
 
         for (auto& [name, effect] : instance->effects_) {
             effect->emitter.Finalize();
         }
         instance->effects_.clear();
-        ParticleFxCommon::Finalize();
     }
 
     // =====================================================================
     // 作成・削除
     // =====================================================================
 
-    uint32_t ParticleFxManager::SumMaxParticlesExcept(const Effect* exclude) const {
+    uint32_t ParticleManager::SumMaxParticlesExcept(const Effect* exclude) const {
         uint32_t total = 0;
         for (const auto& [name, effect] : effects_) {
             if (effect && effect.get() != exclude) {
@@ -357,8 +383,8 @@ namespace App {
         return total;
     }
 
-    void ParticleFxManager::ApplyConfig(Effect& effect, bool forceRecreate, uint32_t othersMaxTotal) {
-        ParticleFxConfig& c = effect.config;
+    void ParticleManager::ApplyConfig(Effect& effect, bool forceRecreate, uint32_t othersMaxTotal) {
+        ParticleConfig& c = effect.config;
         if (c.maxParticles < 1) {
             c.maxParticles = 1;
         }
@@ -368,15 +394,16 @@ namespace App {
         if (c.maxParticles > remaining) {
             const uint32_t requested = c.maxParticles;
             c.maxParticles = (std::max)(remaining, 1u);
-            Logger::LogWarning("[ParticleFxManager] 全体の予算({})を超えるので、最大数を {} → {} に減らしました\n",
+            Logger::LogWarning("[ParticleManager] 全体の予算({})を超えるので、最大数を {} → {} に減らしました\n",
                 particleBudget_, requested, c.maxParticles);
         }
 
-        // 最大数・分裂の有無が変わったときだけGPUバッファを作り直す (出ている粒は消える)
-        const bool useSplit = (c.death == ParticleFxDeath::Split);
-        if (forceRecreate || !effect.emitter.IsInitialized()
-            || effect.emitter.GetMaxCount() != c.maxParticles || effect.emitter.UsesSplit() != useSplit) {
+        // 最大数・分裂の有無が変わったときだけGPUバッファを作り直す (出ている粒は引き継ぐ)
+        const bool useSplit = (c.death == ParticleDeath::Split);
+        if (forceRecreate || !effect.emitter.IsInitialized()) {
             effect.emitter.Initialize(c.maxParticles, useSplit);
+        } else if (effect.emitter.GetMaxCount() != c.maxParticles || effect.emitter.UsesSplit() != useSplit) {
+            effect.emitter.Resize(c.maxParticles, useSplit);
         }
 
         if (!effect.textureLoaded || effect.loadedTexturePath != c.texturePath) {
@@ -386,15 +413,15 @@ namespace App {
         }
     }
 
-    bool ParticleFxManager::Create(const std::string& name, const ParticleFxConfig& config) {
-        ParticleFxManager* instance = GetInstance();
+    bool ParticleManager::Create(const std::string& name, const ParticleConfig& config) {
+        ParticleManager* instance = GetInstance();
 
         if (name.empty()) {
-            Logger::LogWarning("[ParticleFxManager] Create: 名前が空です\n");
+            Logger::LogWarning("[ParticleManager] Create: 名前が空です\n");
             return false;
         }
         if (instance->effects_.contains(name)) {
-            Logger::LogWarning("[ParticleFxManager] Create: 同じ名前のエフェクトがあります: {}\n", name);
+            Logger::LogWarning("[ParticleManager] Create: 同じ名前のエフェクトがあります: {}\n", name);
             return false;
         }
 
@@ -405,8 +432,8 @@ namespace App {
         return true;
     }
 
-    void ParticleFxManager::Destroy(const std::string& name) {
-        ParticleFxManager* instance = GetInstance();
+    void ParticleManager::Destroy(const std::string& name) {
+        ParticleManager* instance = GetInstance();
 
         auto it = instance->effects_.find(name);
         if (it == instance->effects_.end()) {
@@ -416,11 +443,11 @@ namespace App {
         instance->effects_.erase(it);
     }
 
-    bool ParticleFxManager::Contains(const std::string& name) {
+    bool ParticleManager::Contains(const std::string& name) {
         return GetInstance()->effects_.contains(name);
     }
 
-    std::vector<std::string> ParticleFxManager::GetNames() {
+    std::vector<std::string> ParticleManager::GetNames() {
         std::vector<std::string> names;
         for (const auto& [name, effect] : GetInstance()->effects_) {
             names.push_back(name);
@@ -428,15 +455,27 @@ namespace App {
         return names;
     }
 
-    ParticleFxConfig* ParticleFxManager::GetConfig(const std::string& name) {
-        ParticleFxManager* instance = GetInstance();
+    ParticleConfig* ParticleManager::GetConfig(const std::string& name) {
+        ParticleManager* instance = GetInstance();
         auto it = instance->effects_.find(name);
         return (it != instance->effects_.end()) ? &it->second->config : nullptr;
     }
 
-    void ParticleFxManager::CreateDefaultEffects() {
-        for (const ParticleFxTemplates::Entry& entry : ParticleFxTemplates::GetAll()) {
-            if (entry.make == &ParticleFxTemplates::Blank || Contains(entry.defaultName)) {
+    void ParticleManager::SetMaxParticles(const std::string& name, uint32_t maxParticles) {
+        ParticleManager* instance = GetInstance();
+        auto it = instance->effects_.find(name);
+        if (it == instance->effects_.end()) {
+            Logger::LogWarning("[ParticleManager] SetMaxParticles: エフェクトがありません: {}\n", name);
+            return;
+        }
+        Effect& effect = *it->second;
+        effect.config.maxParticles = maxParticles;
+        instance->ApplyConfig(effect, false, instance->SumMaxParticlesExcept(&effect));
+    }
+
+    void ParticleManager::CreateDefaultEffects() {
+        for (const ParticleTemplates::Entry& entry : ParticleTemplates::GetAll()) {
+            if (entry.make == &ParticleTemplates::Blank || Contains(entry.defaultName)) {
                 continue;
             }
             Create(entry.defaultName, entry.make());
@@ -447,36 +486,36 @@ namespace App {
     // 再生
     // =====================================================================
 
-    void ParticleFxManager::Play(const std::string& name) {
-        ParticleFxManager* instance = GetInstance();
+    void ParticleManager::Play(const std::string& name) {
+        ParticleManager* instance = GetInstance();
         auto it = instance->effects_.find(name);
         if (it == instance->effects_.end()) {
-            Logger::LogWarning("[ParticleFxManager] Play: エフェクトがありません: {}\n", name);
+            Logger::LogWarning("[ParticleManager] Play: エフェクトがありません: {}\n", name);
             return;
         }
         instance->PlayImpl(*it->second, nullptr);
     }
 
-    void ParticleFxManager::Play(const std::string& name, const Vector3& position) {
-        ParticleFxManager* instance = GetInstance();
+    void ParticleManager::Play(const std::string& name, const Vector3& position) {
+        ParticleManager* instance = GetInstance();
         auto it = instance->effects_.find(name);
         if (it == instance->effects_.end()) {
-            Logger::LogWarning("[ParticleFxManager] Play: エフェクトがありません: {}\n", name);
+            Logger::LogWarning("[ParticleManager] Play: エフェクトがありません: {}\n", name);
             return;
         }
         instance->PlayImpl(*it->second, &position);
     }
 
-    void ParticleFxManager::Stop(const std::string& name) {
-        ParticleFxManager* instance = GetInstance();
+    void ParticleManager::Stop(const std::string& name) {
+        ParticleManager* instance = GetInstance();
         auto it = instance->effects_.find(name);
         if (it != instance->effects_.end()) {
             it->second->playing = false;
         }
     }
 
-    void ParticleFxManager::Clear(const std::string& name) {
-        ParticleFxManager* instance = GetInstance();
+    void ParticleManager::Clear(const std::string& name) {
+        ParticleManager* instance = GetInstance();
         auto it = instance->effects_.find(name);
         if (it != instance->effects_.end()) {
             it->second->playing = false;
@@ -484,38 +523,42 @@ namespace App {
         }
     }
 
-    void ParticleFxManager::StopAll() {
-        for (auto& [name, effect] : GetInstance()->effects_) {
+    void ParticleManager::StopAll() {
+        ParticleManager* instance = GetInstance();
+        for (auto& [name, effect] : instance->effects_) {
             effect->playing = false;
         }
+        instance->pendingPlays_.clear();
     }
 
-    void ParticleFxManager::ClearAll() {
-        for (auto& [name, effect] : GetInstance()->effects_) {
+    void ParticleManager::ClearAll() {
+        ParticleManager* instance = GetInstance();
+        for (auto& [name, effect] : instance->effects_) {
             effect->playing = false;
             effect->emitter.RequestClear();
         }
+        instance->pendingPlays_.clear();
     }
 
-    bool ParticleFxManager::IsPlaying(const std::string& name) {
-        ParticleFxManager* instance = GetInstance();
+    bool ParticleManager::IsPlaying(const std::string& name) {
+        ParticleManager* instance = GetInstance();
         auto it = instance->effects_.find(name);
         return (it != instance->effects_.end()) && it->second->playing;
     }
 
-    uint32_t ParticleFxManager::GetAliveCount(const std::string& name) {
-        ParticleFxManager* instance = GetInstance();
+    uint32_t ParticleManager::GetAliveCount(const std::string& name) {
+        ParticleManager* instance = GetInstance();
         auto it = instance->effects_.find(name);
         return (it != instance->effects_.end()) ? it->second->emitter.GetAliveCount() : 0;
     }
 
-    uint32_t ParticleFxManager::GetMaxCount(const std::string& name) {
-        ParticleFxManager* instance = GetInstance();
+    uint32_t ParticleManager::GetMaxCount(const std::string& name) {
+        ParticleManager* instance = GetInstance();
         auto it = instance->effects_.find(name);
         return (it != instance->effects_.end()) ? it->second->emitter.GetMaxCount() : 0;
     }
 
-    uint32_t ParticleFxManager::GetTotalAliveCount() {
+    uint32_t ParticleManager::GetTotalAliveCount() {
         uint32_t total = 0;
         for (const auto& [name, effect] : GetInstance()->effects_) {
             total += effect->emitter.GetAliveCount();
@@ -523,7 +566,7 @@ namespace App {
         return total;
     }
 
-    uint32_t ParticleFxManager::GetTotalMaxCount() {
+    uint32_t ParticleManager::GetTotalMaxCount() {
         uint32_t total = 0;
         for (const auto& [name, effect] : GetInstance()->effects_) {
             total += effect->emitter.GetMaxCount();
@@ -531,8 +574,8 @@ namespace App {
         return total;
     }
 
-    void ParticleFxManager::PlayImpl(Effect& effect, const Vector3* position) {
-        const ParticleFxConfig& c = effect.config;
+    void ParticleManager::PlayImpl(Effect& effect, const Vector3* position) {
+        const ParticleConfig& c = effect.config;
 
         effect.playing = true;
         effect.elapsed = 0.0f;
@@ -544,9 +587,30 @@ namespace App {
             effect.playPosition = *position;
         }
 
+        // 連鎖：「何秒後に何を再生するか」を予約しておく (時間は UpdatePendingPlays で進める)
+        if (!c.followUps.empty()) {
+            const Vector3 origin = ResolveOrigin(effect);
+            for (const ParticleFollowUp& followUp : c.followUps) {
+                if (followUp.effectName.empty()) {
+                    continue;
+                }
+                if (pendingPlays_.size() >= maxPendingPlays_) {
+                    Logger::LogWarning("[ParticleManager] 連鎖の予約が多すぎるので無視しました (循環していませんか？): {}\n", followUp.effectName);
+                    break;
+                }
+                PendingPlay pending{};
+                pending.effectName = followUp.effectName;
+                pending.remaining = (std::max)(followUp.delay, 0.0f);
+                pending.hasPosition = followUp.samePosition;
+                pending.position = origin;
+                pending.unscaledTime = c.useUnscaledTime;
+                pendingPlays_.push_back(pending);
+            }
+        }
+
         // まとめて出すものは、呼んだその場で1回目を出す
         // (同じフレームに場所を変えて何回 Play しても、それぞれの場所に出る)
-        if (c.emitMode == ParticleFxEmitMode::Burst) {
+        if (c.emitMode == ParticleEmitMode::Burst) {
             EmitParticles(effect, c.burstCount);
             effect.burstsDone = 1;
             effect.burstTimer = c.burstInterval;
@@ -560,8 +624,8 @@ namespace App {
     // 位置・軸の解決
     // =====================================================================
 
-    Vector3 ParticleFxManager::ResolveOrigin(const Effect& effect) const {
-        const ParticleFxConfig& c = effect.config;
+    Vector3 ParticleManager::ResolveOrigin(const Effect& effect) const {
+        const ParticleConfig& c = effect.config;
         // Play で場所を指定されていればそれが優先。次に追従キー、最後に基準座標
         if (effect.hasPlayPosition) {
             return effect.playPosition + c.positionOffset;
@@ -572,25 +636,25 @@ namespace App {
         return c.basePosition + c.positionOffset;
     }
 
-    Vector3 ParticleFxManager::ResolveTarget(const Effect& effect, const Vector3& origin) const {
-        const ParticleFxConfig& c = effect.config;
+    Vector3 ParticleManager::ResolveTarget(const Effect& effect, const Vector3& origin) const {
+        const ParticleConfig& c = effect.config;
         if (const Vector3* tracked = BindingRegistry::FindPosition(c.targetKey)) {
             return *tracked + c.targetOffset;
         }
         return origin + c.targetOffset;
     }
 
-    bool ParticleFxManager::HasLiveTarget(const Effect& effect) const {
+    bool ParticleManager::HasLiveTarget(const Effect& effect) const {
         // 目標が動くもの (キーで追従している) なら、毎フレームの目標を全粒で使う。
         // そうでなければ、粒ごとに発生時の目標を覚えておく (別々の場所で Play しても混ざらない)
-        const ParticleFxConfig& c = effect.config;
+        const ParticleConfig& c = effect.config;
         if (BindingRegistry::FindPosition(c.targetKey) != nullptr) {
             return true;
         }
         return !effect.hasPlayPosition && BindingRegistry::FindPosition(c.positionKey) != nullptr;
     }
 
-    Vector3 ParticleFxManager::ResolveShapeAxis(const ParticleFxConfig& config) const {
+    Vector3 ParticleManager::ResolveShapeAxis(const ParticleConfig& config) const {
         Vector3 axis = config.axisFacesCamera ? CameraManager::GetActive().GetForward() : config.shapeAxis;
         axis = Normalize(axis);
         if (Length(axis) < 0.5f) {
@@ -599,7 +663,7 @@ namespace App {
         return axis;
     }
 
-    Vector3 ParticleFxManager::ResolveMotionAxis(const ParticleFxConfig& config) const {
+    Vector3 ParticleManager::ResolveMotionAxis(const ParticleConfig& config) const {
         Vector3 axis = config.axisFacesCamera ? CameraManager::GetActive().GetForward() : config.motionAxis;
         axis = Normalize(axis);
         if (Length(axis) < 0.5f) {
@@ -608,7 +672,7 @@ namespace App {
         return axis;
     }
 
-    float ParticleFxManager::GetDeltaTime(const ParticleFxConfig& config) const {
+    float ParticleManager::GetDeltaTime(const ParticleConfig& config) const {
         const float dt = config.useUnscaledTime ? TimeManager::GetDeltaTime() : TimeManager::GetScaleTime();
         return std::clamp(dt, 0.0f, maxDeltaTime_);
     }
@@ -617,11 +681,11 @@ namespace App {
     // 発生
     // =====================================================================
 
-    void ParticleFxManager::EmitParticles(Effect& effect, uint32_t count) {
+    void ParticleManager::EmitParticles(Effect& effect, uint32_t count) {
         if (count == 0 || !effect.emitter.IsInitialized()) {
             return;
         }
-        const ParticleFxConfig& c = effect.config;
+        const ParticleConfig& c = effect.config;
 
         // 1粒ずつの初期値はGPUが作るので、ここでは「どこに何粒」の命令を1つ作るだけ
         const Vector3 origin = ResolveOrigin(effect);
@@ -640,7 +704,7 @@ namespace App {
             radiusScale = 1.0f + (c.shrinkEndRatio - 1.0f) * s;
         }
 
-        ParticleFxSpawnBatch batch{};
+        ParticleSpawnBatch batch{};
         batch.origin = origin;
         batch.count = count;
         batch.target = target;
@@ -653,8 +717,8 @@ namespace App {
         batch.padding = 0.0f;
 
         if (!effect.emitter.AddBatch(batch)) {
-            const uint32_t limit = ParticleFxEmitter::kMaxBatchesPerFrame;
-            Logger::LogWarning("[ParticleFxManager] 1フレームに発生させられる回数({}回)を超えたので無視しました\n", limit);
+            const uint32_t limit = ParticleEmitter::kMaxBatchesPerFrame;
+            Logger::LogWarning("[ParticleManager] 1フレームに発生させられる回数({}回)を超えたので無視しました\n", limit);
         }
     }
 
@@ -662,21 +726,53 @@ namespace App {
     // 更新・描画
     // =====================================================================
 
-    void ParticleFxManager::Update() {
-        ParticleFxManager* instance = GetInstance();
+    void ParticleManager::Update() {
+        ParticleManager* instance = GetInstance();
 
         // ホットリロード (スローの影響を受けない時間で見張る)
         const float unscaledDeltaTime = TimeManager::GetDeltaTime();
-        ParticleFxCommon::CheckHotReload(unscaledDeltaTime);
+        ParticleCommon::CheckHotReload(unscaledDeltaTime);
         instance->CheckJsonHotReload(unscaledDeltaTime);
+
+        // 連鎖で予約された再生 (各エフェクトの発生より先に行う)
+        instance->UpdatePendingPlays();
 
         for (auto& [name, effect] : instance->effects_) {
             instance->UpdateEffect(*effect);
         }
     }
 
-    void ParticleFxManager::UpdateEffect(Effect& effect) {
-        const ParticleFxConfig& c = effect.config;
+    void ParticleManager::UpdatePendingPlays() {
+        if (pendingPlays_.empty()) {
+            return;
+        }
+        const float scaledDeltaTime = std::clamp(TimeManager::GetScaleTime(), 0.0f, maxDeltaTime_);
+        const float unscaledDeltaTime = std::clamp(TimeManager::GetDeltaTime(), 0.0f, maxDeltaTime_);
+
+        // 時間が来たものを取り出してから再生する (再生した先でさらに予約が増えても大丈夫なように)
+        std::vector<PendingPlay> ready;
+        for (auto it = pendingPlays_.begin(); it != pendingPlays_.end();) {
+            it->remaining -= it->unscaledTime ? unscaledDeltaTime : scaledDeltaTime;
+            if (it->remaining <= 0.0f) {
+                ready.push_back(*it);
+                it = pendingPlays_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        for (const PendingPlay& pending : ready) {
+            auto found = effects_.find(pending.effectName);
+            if (found == effects_.end()) {
+                Logger::LogWarning("[ParticleManager] 連鎖: エフェクトがありません: {}\n", pending.effectName);
+                continue;
+            }
+            PlayImpl(*found->second, pending.hasPosition ? &pending.position : nullptr);
+        }
+    }
+
+    void ParticleManager::UpdateEffect(Effect& effect) {
+        const ParticleConfig& c = effect.config;
         const float dt = GetDeltaTime(c);
         effect.time += dt;
 
@@ -690,7 +786,7 @@ namespace App {
             const bool current = *flag;
             if (current && !effect.previousFlag) {
                 PlayImpl(effect, nullptr);
-            } else if (!current && effect.previousFlag && c.stopWhenFlagOff && c.emitMode == ParticleFxEmitMode::Continuous) {
+            } else if (!current && effect.previousFlag && c.stopWhenFlagOff && c.emitMode == ParticleEmitMode::Continuous) {
                 effect.playing = false;
             }
             effect.previousFlag = current;
@@ -699,7 +795,7 @@ namespace App {
         // --- 発生 ---
         if (effect.playing) {
             effect.elapsed += dt;
-            if (c.emitMode == ParticleFxEmitMode::Burst) {
+            if (c.emitMode == ParticleEmitMode::Burst) {
                 if (effect.burstsDone < c.burstRepeat) {
                     effect.burstTimer -= dt;
                     if (effect.burstTimer <= 0.0f) {
@@ -725,7 +821,7 @@ namespace App {
         // --- シミュレーションのパラメータ ---
         const Vector3 origin = ResolveOrigin(effect);
 
-        ParticleFxSimParams params{};
+        ParticleSimParams params{};
         params.deltaTime = dt;
         params.motion = static_cast<uint32_t>(c.motion);
         params.gravity = c.gravity;
@@ -758,7 +854,7 @@ namespace App {
         params.splitScale = c.splitScale;
 
         // --- 1粒の初期値をGPUで作るためのパラメータ ---
-        ParticleFxSpawnParams spawn{};
+        ParticleSpawnParams spawn{};
         spawn.shape = static_cast<uint32_t>(c.spawnShape);
         spawn.radius = c.radius;
         spawn.innerRatio = std::clamp(c.innerRatio, 0.0f, 1.0f);
@@ -788,8 +884,8 @@ namespace App {
         effect.emitter.Update(params, spawn);
     }
 
-    void ParticleFxManager::Draw() {
-        ParticleFxManager* instance = GetInstance();
+    void ParticleManager::Draw() {
+        ParticleManager* instance = GetInstance();
 
         // CameraManager::UpdateAll() で確定済みの描画カメラを使う
         const Camera& camera = CameraManager::GetActive();
@@ -798,9 +894,9 @@ namespace App {
         const Vector3 cameraUp = Normalize(Vector3{ cameraWorld.m[1][0], cameraWorld.m[1][1], cameraWorld.m[1][2] });
 
         for (auto& [name, effect] : instance->effects_) {
-            const ParticleFxConfig& c = effect->config;
+            const ParticleConfig& c = effect->config;
 
-            ParticleFxRenderParams params{};
+            ParticleRenderParams params{};
             params.viewProjection = camera.GetViewProjectionMatrix();
             params.cameraRight = cameraRight;
             params.time = effect->time;
@@ -829,26 +925,37 @@ namespace App {
     // 保存・読込
     // =====================================================================
 
-    void ParticleFxManager::SetFolderPath(const std::string& path) {
-        ParticleFxManager* instance = GetInstance();
+    void ParticleManager::SetFolderPath(const std::string& path) {
+        ParticleManager* instance = GetInstance();
         instance->folderPath_ = path;
         if (!instance->folderPath_.empty() && instance->folderPath_.back() != '/') {
             instance->folderPath_ += '/';
         }
     }
 
-    void ParticleFxManager::Save() {
-        ParticleFxManager* instance = GetInstance();
-        instance->SaveToFile(instance->GetFullPath());
+    void ParticleManager::Save() {
+        ParticleManager* instance = GetInstance();
+
+        const std::string fullPath = instance->GetFullPath();
+#ifdef NRELEASE
+        // 既にファイルがあれば、エディタで上書きしてよいか確認してから保存する
+        if (std::filesystem::exists(fullPath)) {
+            instance->showOverwriteModal_ = true;
+        } else {
+            instance->SaveToFile(fullPath);
+        }
+#else
+        instance->SaveToFile(fullPath);
+#endif
     }
 
-    void ParticleFxManager::SaveToFile(const std::string& fullPath) {
+    void ParticleManager::SaveToFile(const std::string& fullPath) {
         std::error_code ec;
         std::filesystem::create_directories(folderPath_, ec);
 
         std::ofstream file(fullPath);
         if (!file.is_open()) {
-            Logger::LogError("[ParticleFxManager] Save: ファイルを開けませんでした: {}\n", fullPath);
+            Logger::LogError("[ParticleManager] Save: ファイルを開けませんでした: {}\n", fullPath);
             return;
         }
 
@@ -863,16 +970,16 @@ namespace App {
 
         // 自分で保存した分は、ホットリロードで読み直さない
         RememberJsonWriteTime();
-        Logger::LogSuccess("[ParticleFxManager] Save: 保存しました: {}\n", fullPath);
+        Logger::LogSuccess("[ParticleManager] Save: 保存しました: {}\n", fullPath);
     }
 
-    bool ParticleFxManager::Load() {
-        ParticleFxManager* instance = GetInstance();
+    bool ParticleManager::Load() {
+        ParticleManager* instance = GetInstance();
         const std::string fullPath = instance->GetFullPath();
 
         std::ifstream file(fullPath);
         if (!file.is_open()) {
-            Logger::LogWarning("[ParticleFxManager] Load: ファイルがありません: {}\n", fullPath);
+            Logger::LogWarning("[ParticleManager] Load: ファイルがありません: {}\n", fullPath);
             instance->jsonExists_ = false;
             return false;
         }
@@ -881,12 +988,12 @@ namespace App {
 
         json root = json::parse(file, nullptr, false); // false: 失敗時に例外ではなく discarded を返す
         if (root.is_discarded() || !root.is_object() || !root.contains("effects") || !root["effects"].is_object()) {
-            Logger::LogError("[ParticleFxManager] Load: JSONの形式が正しくありません: {}\n", fullPath);
+            Logger::LogError("[ParticleManager] Load: JSONの形式が正しくありません: {}\n", fullPath);
             return false;
         }
 
         // 今の状態を壊す前に、先に全部読んでおく
-        std::vector<std::pair<std::string, ParticleFxConfig>> loaded;
+        std::vector<std::pair<std::string, ParticleConfig>> loaded;
         try {
             const json& effectsJson = root["effects"];
             for (auto it = effectsJson.begin(); it != effectsJson.end(); ++it) {
@@ -895,7 +1002,7 @@ namespace App {
         }
         catch (const json::exception& e) {
             const std::string message = e.what();
-            Logger::LogError("[ParticleFxManager] Load: 読み込みに失敗しました: {}\n", message);
+            Logger::LogError("[ParticleManager] Load: 読み込みに失敗しました: {}\n", message);
             return false;
         }
 
@@ -922,11 +1029,11 @@ namespace App {
         }
         instance->effects_ = std::move(newEffects);
 
-        Logger::LogSuccess("[ParticleFxManager] Load: 読み込みました: {}\n", fullPath);
+        Logger::LogSuccess("[ParticleManager] Load: 読み込みました: {}\n", fullPath);
         return true;
     }
 
-    void ParticleFxManager::RememberJsonWriteTime() {
+    void ParticleManager::RememberJsonWriteTime() {
         std::error_code ec;
         const auto writeTime = std::filesystem::last_write_time(GetFullPath(), ec);
         if (ec) {
@@ -937,7 +1044,7 @@ namespace App {
         jsonExists_ = true;
     }
 
-    void ParticleFxManager::CheckJsonHotReload(float deltaTime) {
+    void ParticleManager::CheckJsonHotReload(float deltaTime) {
 #ifdef NRELEASE
         if (!autoReloadJson_) {
             return;
@@ -954,7 +1061,7 @@ namespace App {
             return;
         }
         if (!jsonExists_ || writeTime != jsonWriteTime_) {
-            Logger::Log("[ParticleFxManager] JSONが更新されたので読み込み直します\n");
+            Logger::Log("[ParticleManager] JSONが更新されたので読み込み直します\n");
             Load();
         }
 #else
@@ -966,17 +1073,17 @@ namespace App {
     // エディタ
     // =====================================================================
 
-    void ParticleFxManager::DrawImGui() {
+    void ParticleManager::DrawImGui() {
 #ifdef NRELEASE
-        ParticleFxManager* instance = GetInstance();
-        const auto& templates = ParticleFxTemplates::GetAll();
+        ParticleManager* instance = GetInstance();
+        const auto& templates = ParticleTemplates::GetAll();
         std::vector<const char*> templateLabels;
         for (const auto& entry : templates) {
             templateLabels.push_back(entry.label.c_str());
         }
         const int templateCount = static_cast<int>(templateLabels.size());
 
-        ImGui::Begin("ParticleFx Editor");
+        ImGui::Begin("ParticleManager");
 
         // --- 保存・読込 ---
         const std::string fullPath = instance->GetFullPath();
@@ -1003,7 +1110,7 @@ namespace App {
         }
 
         ImGui::Separator();
-        ParticleFxCommon::DrawImGui();
+        ParticleCommon::DrawImGui();
         ImGui::Separator();
 
         // --- 新規作成 ---
@@ -1029,7 +1136,7 @@ namespace App {
             "確保 (最大数の合計) : %u / %u", reservedTotal, instance->particleBudget_);
         ImGui::Text("合計 (全エフェクト)");
         instance->DrawUsageGauge(GetTotalAliveCount(), GetTotalMaxCount(), -FLT_MIN);
-        ImGui::BeginChild("ParticleFxList", ImVec2(0.0f, instance->listHeight_), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY);
+        ImGui::BeginChild("ParticleList", ImVec2(0.0f, instance->listHeight_), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY);
         for (auto& [name, effect] : instance->effects_) {
             const bool selected = (name == instance->selectedName_);
             if (ImGui::Selectable(name.c_str(), selected, ImGuiSelectableFlags_None, ImVec2(instance->listNameWidth_, 0.0f))) {
@@ -1050,12 +1157,40 @@ namespace App {
             ImGui::TextDisabled("一覧からエフェクトを選んでください");
         }
 
+        // --- 上書き確認ポップアップ ---
+        if (instance->showOverwriteModal_) {
+            ImGui::OpenPopup("ParticleManager 上書き確認");
+            Logger::LogWarning("[ParticleManager] Overwrite check.");
+            instance->showOverwriteModal_ = false;
+        }
+
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("ParticleManager 上書き確認", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("該当フォルダには既に同名のファイルが存在します。上書きしますか？");
+            ImGui::Text("保存先 : %s", fullPath.c_str());
+            ImGui::Separator();
+
+            if (ImGui::Button("上書きする", ImVec2(120, 0))) {
+                instance->SaveToFile(fullPath);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button("キャンセル", ImVec2(120, 0))) {
+                Logger::Log("[ParticleManager] Save cancelled.");
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
         ImGui::End();
 #endif
     }
 
 #ifdef NRELEASE
-    void ParticleFxManager::DrawUsageGauge(uint32_t alive, uint32_t capacity, float width) const {
+    void ParticleManager::DrawUsageGauge(uint32_t alive, uint32_t capacity, float width) const {
         const float ratio = (capacity > 0)
             ? std::clamp(static_cast<float>(alive) / static_cast<float>(capacity), 0.0f, 1.0f)
             : 0.0f;
@@ -1084,9 +1219,9 @@ namespace App {
         ImGui::PopStyleColor();
     }
 
-    void ParticleFxManager::DrawEffectEditor(const std::string& name, Effect& effect) {
-        using N = ParticleFxNames;
-        ParticleFxConfig& c = effect.config;
+    void ParticleManager::DrawEffectEditor(const std::string& name, Effect& effect) {
+        using N = ParticleNames;
+        ParticleConfig& c = effect.config;
         bool needApply = false;
         bool requestDestroy = false;
         bool requestDuplicate = false;
@@ -1120,7 +1255,7 @@ namespace App {
 
         // --- テンプレを適用 (位置・連携の設定は残す) ---
         {
-            const auto& templates = ParticleFxTemplates::GetAll();
+            const auto& templates = ParticleTemplates::GetAll();
             std::vector<const char*> labels;
             for (const auto& entry : templates) {
                 labels.push_back(entry.label.c_str());
@@ -1130,7 +1265,7 @@ namespace App {
             ImGui::Combo("##applyTemplate", &applyTemplateIndex_, labels.data(), count);
             ImGui::SameLine();
             if (ImGui::Button("テンプレを適用")) {
-                ParticleFxConfig applied = templates[static_cast<size_t>(applyTemplateIndex_)].make();
+                ParticleConfig applied = templates[static_cast<size_t>(applyTemplateIndex_)].make();
                 applied.positionKey = c.positionKey;
                 applied.basePosition = c.basePosition;
                 applied.targetKey = c.targetKey;
@@ -1144,17 +1279,22 @@ namespace App {
         // --- 発生 ---
         if (ImGui::CollapsingHeader("発生", ImGuiTreeNodeFlags_DefaultOpen)) {
             ComboEnum("発生のさせ方", c.emitMode, N::kEmitModeLabels);
-            int maxParticles = static_cast<int>(c.maxParticles);
-            ImGui::InputInt("最大数 (確定で作り直し)", &maxParticles, 0, 0);
+            // 最大数：ドラッグ中は数字だけ動かし、離したときにバッファを作り直す (出ている粒は引き継ぐ)
             const uint32_t othersTotal = SumMaxParticlesExcept(&effect);
             const uint32_t usable = (othersTotal < particleBudget_) ? (particleBudget_ - othersTotal) : 0;
-            ImGui::SameLine();
-            ImGui::TextDisabled("(予算内で最大 %u)", usable);
+            const int usableMax = static_cast<int>((std::min)(usable, static_cast<uint32_t>(INT32_MAX)));
+            int maxParticles = (effect.editingMaxParticles >= 0) ? effect.editingMaxParticles : static_cast<int>(c.maxParticles);
+            if (ImGui::DragInt("最大数", &maxParticles, maxParticlesDragSpeed_, 1, (std::max)(usableMax, 1))) {
+                effect.editingMaxParticles = maxParticles;
+            }
             if (ImGui::IsItemDeactivatedAfterEdit()) {
                 c.maxParticles = static_cast<uint32_t>((std::max)(maxParticles, 1));
+                effect.editingMaxParticles = -1;
                 needApply = true;
             }
-            if (c.emitMode == ParticleFxEmitMode::Burst) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("(予算内で最大 %u)", usable);
+            if (c.emitMode == ParticleEmitMode::Burst) {
                 DragU32("1回の数", c.burstCount, 1.0f, 0, 100000);
                 DragU32("回数", c.burstRepeat, 0.1f, 1, 100);
                 ImGui::DragFloat("間隔(秒)", &c.burstInterval, 0.01f, 0.0f, 10.0f);
@@ -1184,15 +1324,15 @@ namespace App {
         if (ImGui::CollapsingHeader("発生する場所の形")) {
             ComboEnum("形", c.spawnShape, N::kSpawnShapeLabels);
             switch (c.spawnShape) {
-            case ParticleFxSpawnShape::Sphere:
-            case ParticleFxSpawnShape::Ring:
-            case ParticleFxSpawnShape::Cylinder:
+            case ParticleSpawnShape::Sphere:
+            case ParticleSpawnShape::Ring:
+            case ParticleSpawnShape::Cylinder:
                 ImGui::DragFloat("半径", &c.radius, 0.01f, 0.0f, 100.0f);
                 ImGui::SliderFloat("内側の割合 (1:外周だけ 0:中まで)", &c.innerRatio, 0.0f, 1.0f);
-                if (c.spawnShape == ParticleFxSpawnShape::Cylinder) {
+                if (c.spawnShape == ParticleSpawnShape::Cylinder) {
                     ImGui::DragFloat("高さ", &c.height, 0.01f, 0.0f, 100.0f);
                 }
-                if (c.spawnShape != ParticleFxSpawnShape::Sphere) {
+                if (c.spawnShape != ParticleSpawnShape::Sphere) {
                     ImGui::Checkbox("軸をカメラに向ける (画面に正対)", &c.axisFacesCamera);
                     if (!c.axisFacesCamera) {
                         ImGui::DragFloat3("軸", &c.shapeAxis.x, 0.01f, -1.0f, 1.0f);
@@ -1203,10 +1343,10 @@ namespace App {
                     ImGui::SliderFloat("縮み終わりの半径の割合", &c.shrinkEndRatio, 0.0f, 2.0f);
                 }
                 break;
-            case ParticleFxSpawnShape::Line:
+            case ParticleSpawnShape::Line:
                 ImGui::DragFloat3("終点 (発生位置から)", &c.lineEnd.x, 0.05f);
                 break;
-            case ParticleFxSpawnShape::Box:
+            case ParticleSpawnShape::Box:
                 ImGui::DragFloat3("大きさ", &c.boxSize.x, 0.05f, 0.0f, 1000.0f);
                 break;
             default:
@@ -1217,15 +1357,15 @@ namespace App {
 
         // --- 初速 ---
         if (ImGui::CollapsingHeader("初速")) {
-            if (c.motion == ParticleFxMotion::Explode) {
+            if (c.motion == ParticleMotion::Explode) {
                 DragRange("速さ(最小/最大)", c.speedMin, c.speedMax, 0.05f, 0.0f, 1000.0f);
-            } else if (c.motion == ParticleFxMotion::Physics || c.motion == ParticleFxMotion::Homing) {
+            } else if (c.motion == ParticleMotion::Physics || c.motion == ParticleMotion::Homing) {
                 ComboEnum("初速の決め方", c.velocityMode, N::kVelocityModeLabels);
                 switch (c.velocityMode) {
-                case ParticleFxVelocityMode::Fixed:
+                case ParticleVelocityMode::Fixed:
                     ImGui::DragFloat3("速度", &c.velocity.x, 0.05f);
                     break;
-                case ParticleFxVelocityMode::Random:
+                case ParticleVelocityMode::Random:
                     ImGui::DragFloat3("速度(最小)", &c.velocityMin.x, 0.05f);
                     ImGui::DragFloat3("速度(最大)", &c.velocityMax.x, 0.05f);
                     break;
@@ -1250,7 +1390,7 @@ namespace App {
         // --- 動き方 ---
         if (ImGui::CollapsingHeader("動き方", ImGuiTreeNodeFlags_DefaultOpen)) {
             ComboEnum("種類##motion", c.motion, N::kMotionLabels);
-            const bool usesMotionAxis = (c.motion == ParticleFxMotion::Converge || c.motion == ParticleFxMotion::Vortex);
+            const bool usesMotionAxis = (c.motion == ParticleMotion::Converge || c.motion == ParticleMotion::Vortex);
             if (usesMotionAxis) {
                 ImGui::Checkbox("軸をカメラに向ける##motion", &c.axisFacesCamera);
                 if (!c.axisFacesCamera) {
@@ -1258,22 +1398,22 @@ namespace App {
                 }
             }
             switch (c.motion) {
-            case ParticleFxMotion::Converge:
+            case ParticleMotion::Converge:
                 ImGui::DragFloat("到着までに回る角度(度)", &c.arcAngle, 1.0f, -1440.0f, 1440.0f);
                 ImGui::Checkbox("半分は逆回り", &c.arcBothDirections);
                 ImGui::DragFloat("加速の強さ (1:等速)", &c.easePower, 0.01f, 0.1f, 10.0f);
                 break;
-            case ParticleFxMotion::Vortex:
+            case ParticleMotion::Vortex:
                 ImGui::DragFloat("角速度(度/秒)", &c.vortexAngularSpeed, 1.0f, -3600.0f, 3600.0f);
                 ImGui::DragFloat("半径の変化(負で吸い込み)", &c.vortexRadialSpeed, 0.01f, -50.0f, 50.0f);
                 ImGui::DragFloat("軸方向の速さ", &c.vortexRiseSpeed, 0.01f, -50.0f, 50.0f);
                 break;
-            case ParticleFxMotion::Homing:
+            case ParticleMotion::Homing:
                 ImGui::DragFloat("追尾の速さ", &c.homingSpeed, 0.05f, 0.0f, 200.0f);
                 ImGui::DragFloat("曲がりやすさ", &c.homingTurn, 0.01f, 0.0f, 50.0f);
                 ImGui::DragFloat("到着とみなす距離", &c.arriveRadius, 0.01f, 0.0f, 10.0f);
                 break;
-            case ParticleFxMotion::Bezier:
+            case ParticleMotion::Bezier:
                 ImGui::DragFloat("加速の強さ (1:等速)", &c.easePower, 0.01f, 0.1f, 10.0f);
                 ImGui::DragFloat3("制御点のずれ(最小)", &c.controlOffsetMin.x, 0.05f);
                 ImGui::DragFloat3("制御点のずれ(最大)", &c.controlOffsetMax.x, 0.05f);
@@ -1282,7 +1422,7 @@ namespace App {
                 break;
             }
 
-            const bool usesPhysics = (c.motion == ParticleFxMotion::Physics || c.motion == ParticleFxMotion::Explode);
+            const bool usesPhysics = (c.motion == ParticleMotion::Physics || c.motion == ParticleMotion::Explode);
             if (usesPhysics) {
                 ImGui::DragFloat("重力", &c.gravity, 0.05f, -200.0f, 200.0f);
                 ImGui::DragFloat("空気抵抗", &c.drag, 0.01f, 0.0f, 50.0f);
@@ -1293,7 +1433,7 @@ namespace App {
                     ImGui::SliderFloat("跳ねたときの横の減速", &c.friction, 0.0f, 1.0f);
                 }
             }
-            if (usesPhysics || c.motion == ParticleFxMotion::Homing) {
+            if (usesPhysics || c.motion == ParticleMotion::Homing) {
                 ImGui::DragFloat("揺らぎの強さ", &c.noiseStrength, 0.05f, 0.0f, 200.0f);
                 ImGui::DragFloat("揺らぎの細かさ", &c.noiseFrequency, 0.01f, 0.0f, 20.0f);
             }
@@ -1308,28 +1448,28 @@ namespace App {
             if (ComboEnum("種類##death", c.death, N::kDeathLabels)) {
                 needApply = true; // 分裂を使うかどうかで、確保するバッファが変わる
             }
-            if (c.death != ParticleFxDeath::Split) {
+            if (c.death != ParticleDeath::Split) {
                 ImGui::SliderFloat("寿命の最後の何割で消すか", &c.deathRatio, 0.0f, 1.0f);
             }
             switch (c.death) {
-            case ParticleFxDeath::Blink:
+            case ParticleDeath::Blink:
                 DragRange("点滅の回数(回/秒) 最小/最大", c.blinkFrequencyMin, c.blinkFrequencyMax, 0.1f, 0.0f, 120.0f);
                 ImGui::SliderFloat("一緒に薄くする量", &c.blinkFade, 0.0f, 1.0f);
                 break;
-            case ParticleFxDeath::Stretch:
+            case ParticleDeath::Stretch:
                 ImGui::DragFloat("伸び量", &c.deathStretch, 0.01f, 0.0f, 50.0f);
                 break;
-            case ParticleFxDeath::ColorShift:
+            case ParticleDeath::ColorShift:
                 ImGui::ColorEdit4("途中の色", &c.deathColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
                 break;
-            case ParticleFxDeath::Split:
+            case ParticleDeath::Split:
                 DragU32("分裂する数", c.splitCount, 0.1f, 0, 64);
                 ImGui::DragFloat("分裂の速さ", &c.splitSpeed, 0.05f, 0.0f, 200.0f);
                 ImGui::DragFloat("分裂した粒の寿命(秒)", &c.splitLife, 0.01f, 0.01f, 30.0f);
                 ImGui::DragFloat("分裂した粒の大きさの倍率", &c.splitScale, 0.01f, 0.0f, 10.0f);
                 ImGui::TextDisabled("最大数は「親の数 x (1 + 分裂する数)」より多めに");
                 break;
-            case ParticleFxDeath::Absorb:
+            case ParticleDeath::Absorb:
                 ImGui::DragFloat("吸い込む強さ", &c.absorbStrength, 0.1f, 0.0f, 500.0f);
                 ImGui::TextDisabled("吸い込み先は「目標」です");
                 break;
@@ -1341,7 +1481,7 @@ namespace App {
         // --- 見た目 ---
         if (ImGui::CollapsingHeader("見た目", ImGuiTreeNodeFlags_DefaultOpen)) {
             ComboEnum("1粒の形", c.look, N::kLookLabels);
-            if (c.look == ParticleFxLook::Texture) {
+            if (c.look == ParticleLook::Texture) {
                 if (textureBufferOwner_ != name) {
                     strcpy_s(texturePathBuffer_, sizeof(texturePathBuffer_), c.texturePath.c_str());
                     textureBufferOwner_ = name;
@@ -1364,6 +1504,47 @@ namespace App {
             ImGui::DragFloat("速いほど明るく", &c.speedBrightness, 0.001f, 0.0f, 10.0f);
         }
 
+        // --- 連鎖 ---
+        if (ImGui::CollapsingHeader("連鎖 (続けて再生)", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::TextDisabled("再生してから指定の秒数後に、別のエフェクトを再生します");
+            int removeIndex = -1;
+            for (size_t i = 0; i < c.followUps.size(); ++i) {
+                ParticleFollowUp& followUp = c.followUps[i];
+                ImGui::PushID(static_cast<int>(i));
+
+                // 再生するエフェクト (一覧から選ぶ)
+                ImGui::SetNextItemWidth(listNameWidth_);
+                const char* preview = followUp.effectName.empty() ? "(なし)" : followUp.effectName.c_str();
+                if (ImGui::BeginCombo("##followUpEffect", preview)) {
+                    for (const auto& [otherName, other] : effects_) {
+                        if (ImGui::Selectable(otherName.c_str(), otherName == followUp.effectName)) {
+                            followUp.effectName = otherName;
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(followUpDelayWidth_);
+                ImGui::DragFloat("秒後##followUpDelay", &followUp.delay, 0.01f, 0.0f, 60.0f);
+                ImGui::SameLine();
+                ImGui::Checkbox("同じ場所##followUpPosition", &followUp.samePosition);
+                ImGui::SameLine();
+                if (ImGui::SmallButton("削除##followUpRemove")) {
+                    removeIndex = static_cast<int>(i);
+                }
+                if (!followUp.effectName.empty() && !effects_.contains(followUp.effectName)) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "「%s」というエフェクトがありません", followUp.effectName.c_str());
+                }
+                ImGui::PopID();
+            }
+            if (removeIndex >= 0) {
+                c.followUps.erase(c.followUps.begin() + removeIndex);
+            }
+            if (ImGui::Button("連鎖を追加")) {
+                c.followUps.push_back(ParticleFollowUp{});
+            }
+        }
+
         ImGui::PopID();
 
         if (needApply) {
@@ -1376,7 +1557,7 @@ namespace App {
             for (int number = 2; effects_.contains(newName); ++number) {
                 newName = name + "_copy" + std::to_string(number);
             }
-            const ParticleFxConfig copied = c;
+            const ParticleConfig copied = c;
             if (Create(newName, copied)) {
                 selectedName_ = newName;
             }

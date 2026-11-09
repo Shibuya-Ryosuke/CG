@@ -1,6 +1,4 @@
 #include "Showcase.h"
-#include "../Effect/ParticleFx/ParticleFxManager.h"
-#include "../Effect/ParticleFx/ParticleFxTemplates.h"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -13,6 +11,7 @@ namespace App {
 	// 初期化・終了
 	// =====================================================================
 	void Showcase::Initialize() {
+		CameraManager::GetDebugCamera().SetAvailable(false);
 		// --- モデル (エンジンのテスト用素材を借りる) ---
 		ground_ = Model::Create("Resources/EngineResources/Test/ground.obj");
 		sky_ = Model::Create("Resources/EngineResources/Test/skydome.obj");
@@ -23,19 +22,19 @@ namespace App {
 		camera_ = CameraManager::CreateCamera("Showcase");
 
 		// --- エフェクトから追従される座標 ---
-		BindingRegistry::RegisterPosition(ParticleFxTemplates::ShowcaseCenterKey(), &center_);
-		BindingRegistry::RegisterPosition(ParticleFxTemplates::ShowcaseTargetKey(), &target_);
+		BindingRegistry::RegisterPosition(ParticleTemplates::CenterKey(), &center_);
+		BindingRegistry::RegisterPosition(ParticleTemplates::TargetKey(), &target_);
 
 		// --- 再生する演出の順番 (0番はチャージ→爆発) ---
-		demoNames_ = { "Charge", "Burst", "Fireworks", "Vortex", "Homing", "Curve", "Electric", "Sparks", "Absorb", "RingWave" };
+		demoNames_ = { "Charge", "Burst", "Fireworks", "Vortex", "Homing", "Curve", "Electric", "Sparks", "Absorb", "RingWave","Original" };
 
 		RegisterParams();
 	}
 
 	void Showcase::Finalize() {
-		ParticleFxManager::StopAll();
-		BindingRegistry::Unregister(ParticleFxTemplates::ShowcaseCenterKey());
-		BindingRegistry::Unregister(ParticleFxTemplates::ShowcaseTargetKey());
+		ParticleManager::StopAll();
+		BindingRegistry::Unregister(ParticleTemplates::CenterKey());
+		BindingRegistry::Unregister(ParticleTemplates::TargetKey());
 		SetTimeScale(1.0f);
 	}
 
@@ -96,12 +95,12 @@ namespace App {
 		sky_->TransferMatrix();
 
 		PrintHelp();
-		// NOTE: ParticleFxManager の Update / Draw は Application が毎フレーム呼んでいる
+		// NOTE: ParticleManager の Update / Draw はエンジンが毎フレーム呼んでいる
 	}
 
 	void Showcase::UpdateInput() {
 		// [1]〜[9], [0] で各演出
-		const BYTE demoKeys[] = { DIK_1, DIK_2, DIK_3, DIK_4, DIK_5, DIK_6, DIK_7, DIK_8, DIK_9, DIK_0 };
+		const BYTE demoKeys[] = { DIK_1, DIK_2, DIK_3, DIK_4, DIK_5, DIK_6, DIK_7, DIK_8, DIK_9, DIK_0, DIK_MINUS };
 		const uint32_t keyCount = static_cast<uint32_t>(sizeof(demoKeys) / sizeof(demoKeys[0]));
 		for (uint32_t i = 0; i < keyCount; ++i) {
 			if (Input::TriggerKey(demoKeys[i])) {
@@ -118,7 +117,7 @@ namespace App {
 			slowMotion_ = !slowMotion_;
 		}
 		if (Input::TriggerKey(DIK_C)) {
-			ParticleFxManager::ClearAll();
+			ParticleManager::ClearAll();
 			sequenceActive_ = false;
 		}
 		if (Input::TriggerKey(DIK_G)) {
@@ -174,20 +173,20 @@ namespace App {
 		}
 		// 前の演出の「出し続け」だけ止める (出ている粒は寿命まで残す)
 		if (!currentDemo_.empty()) {
-			ParticleFxManager::Stop(currentDemo_);
+			ParticleManager::Stop(currentDemo_);
 		}
 
 		if (index == 0) {
 			StartSequence();
 		} else {
-			ParticleFxManager::Play(demoNames_[index]);
+			ParticleManager::Play(demoNames_[index]);
 		}
 		currentDemo_ = demoNames_[index];
 	}
 
 	void Showcase::StartSequence() {
 		// チャージ (外周から弧を描いて収束) → 爆発
-		ParticleFxManager::Play("Charge");
+		ParticleManager::Play("Charge");
 		sequenceActive_ = true;
 		sequenceTimer_ = sequenceChargeTime_;
 	}
@@ -203,10 +202,8 @@ namespace App {
 		}
 		sequenceActive_ = false;
 
-		// 爆発：放射の火花 + 花火 + 衝撃波の輪、ヒットストップ
-		ParticleFxManager::Play("Burst");
-		ParticleFxManager::Play("Fireworks");
-		ParticleFxManager::Play("RingWave");
+		// 爆発 (放射の火花 + 花火 + 衝撃波の輪) は、Charge の「連鎖」でパーティクル側が自動で再生する。
+		// ここでは、それに合わせたヒットストップだけ行う (チャージの時間は連鎖の秒数と合わせておくこと)
 		hitStopTimer_ = hitStopDuration_;
 	}
 
@@ -229,9 +226,9 @@ namespace App {
 
 	void Showcase::PrintHelp() {
 		const std::string current = currentDemo_.empty() ? std::string("-") : currentDemo_;
-		PrintText("[1] Charge->Explode  [2-0] Effects  [A] Auto:{}  [T] Slow:{}  [C] Clear  [G] Ground", Vector2{ 20.0f, 20.0f },
+		PrintText("[ 1~9, 0 , - ] Effects  [A] Auto:{}  [T] Slow:{}  [C] Clear  [G] Ground", Vector2{ 20.0f, 80.0f },
 			autoDemo_ ? "ON" : "OFF", slowMotion_ ? "ON" : "OFF");
-		PrintText("Now: {}", Vector2{ 20.0f, 50.0f }, current);
+		PrintText("Now: {}", Vector2{ 20.0f, 110.0f }, current);
 	}
 
 	// =====================================================================

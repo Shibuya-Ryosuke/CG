@@ -1,10 +1,10 @@
-// ParticleFx (アプリ側のGPUパーティクル) の共通定義。
-// C++側 (Application/Effect/ParticleFx/ParticleFxTypes.h) と、構造体の並び・enumの値を1:1で合わせること。
+// パーティクル (GPUパーティクル) の共通定義。
+// C++側 (Engine/Graphics/Particle/ParticleTypes.h) と、構造体の並び・enumの値を1:1で合わせること。
 
 // ---------------------------------------------------------------------
-// 1粒ぶんのデータ (ParticleFxGPUData と同じ並び。全体で112byte)
+// 1粒ぶんのデータ (ParticleGPUData と同じ並び。全体で112byte)
 // ---------------------------------------------------------------------
-struct FxParticle
+struct ParticleData
 {
     float3 position;
     float  scale;          // 発生時の大きさ (見た目の倍率は描画側で掛ける)
@@ -26,7 +26,7 @@ struct FxParticle
 static const uint kFlagChild = 1u; // 分裂で生まれた子 (もう分裂しない・物理で動く)
 
 // ---------------------------------------------------------------------
-// 発生の命令 (ParticleFxSpawnBatch と同じ並び。80byte)
+// 発生の命令 (ParticleSpawnBatch と同じ並び。80byte)
 // CPUは「どこに何粒」だけを送り、1粒ずつの初期値はシミュレーションのシェーダーが作る
 // ---------------------------------------------------------------------
 struct SpawnBatch
@@ -43,7 +43,7 @@ struct SpawnBatch
     float  padding;
 };
 
-// 発生する場所の形 (C++側 ParticleFxSpawnShape と同じ値)
+// 発生する場所の形 (C++側 ParticleSpawnShape と同じ値)
 static const uint kShapePoint    = 0u;
 static const uint kShapeSphere   = 1u;
 static const uint kShapeRing     = 2u;
@@ -51,7 +51,7 @@ static const uint kShapeCylinder = 3u;
 static const uint kShapeLine     = 4u;
 static const uint kShapeBox      = 5u;
 
-// 初速の決め方 (C++側 ParticleFxVelocityMode と同じ値)
+// 初速の決め方 (C++側 ParticleVelocityMode と同じ値)
 static const uint kVelocityFixed   = 0u;
 static const uint kVelocityRandom  = 1u;
 static const uint kVelocityRadial  = 2u;
@@ -59,7 +59,7 @@ static const uint kVelocityTangent = 3u;
 
 static const float kTwoPi = 6.28318530718f;
 
-// 動き方 (C++側 ParticleFxMotion と同じ値)
+// 動き方 (C++側 ParticleMotion と同じ値)
 static const uint kMotionPhysics  = 0u;
 static const uint kMotionExplode  = 1u;
 static const uint kMotionConverge = 2u;
@@ -67,7 +67,7 @@ static const uint kMotionVortex   = 3u;
 static const uint kMotionHoming   = 4u;
 static const uint kMotionBezier   = 5u;
 
-// 消え方 (C++側 ParticleFxDeath と同じ値)
+// 消え方 (C++側 ParticleDeath と同じ値)
 static const uint kDeathFade       = 0u;
 static const uint kDeathBlink      = 1u;
 static const uint kDeathShrink     = 2u;
@@ -76,7 +76,7 @@ static const uint kDeathColorShift = 4u;
 static const uint kDeathSplit      = 5u;
 static const uint kDeathAbsorb     = 6u;
 
-// 1粒の形 (C++側 ParticleFxLook と同じ値)
+// 1粒の形 (C++側 ParticleLook と同じ値)
 static const uint kLookTexture    = 0u;
 static const uint kLookSoftCircle = 1u;
 static const uint kLookSpark      = 2u;
@@ -165,7 +165,7 @@ float3 FlowField(float3 p, float t)
 }
 
 // ---------------------------------------------------------------------
-// シミュレーション用パラメータ (ParticleFxSimParams と同じ並び)
+// シミュレーション用パラメータ (ParticleSimParams と同じ並び)
 // ---------------------------------------------------------------------
 #ifdef PARTICLE_FX_SIMULATION
 cbuffer SimParams : register(b0)
@@ -217,7 +217,7 @@ cbuffer SimParams : register(b0)
     float  gSimPadding1;
 };
 
-// 発生のさせ方 (ParticleFxSpawnParams と同じ並び)。1粒の初期値を作るのに使う
+// 発生のさせ方 (ParticleSpawnParams と同じ並び)。1粒の初期値を作るのに使う
 cbuffer SpawnParams : register(b1)
 {
     uint   gShape;
@@ -262,7 +262,7 @@ cbuffer SpawnParams : register(b1)
 #endif
 
 // ---------------------------------------------------------------------
-// 描画用パラメータ (ParticleFxRenderParams と同じ並び)
+// 描画用パラメータ (ParticleRenderParams と同じ並び)
 // ---------------------------------------------------------------------
 #ifdef PARTICLE_FX_RENDER
 cbuffer RenderParams : register(b0)

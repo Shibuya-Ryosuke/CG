@@ -1,10 +1,10 @@
-// ParticleFx の頂点シェーダー。
+// Particle の頂点シェーダー。
 // 頂点バッファは使わず、SV_VertexID(0〜5)から板ポリ(2枚の三角形)を作る。
 // 寿命に合わせた色・大きさの変化、消え方(点滅・縮む・伸びる・色変化…)、速度方向への伸び、ジッターをここで行う。
 #define PARTICLE_FX_RENDER
-#include "ParticleFx.hlsli"
+#include "Particle.hlsli"
 
-StructuredBuffer<FxParticle> gParticles : register(t0);
+StructuredBuffer<ParticleData> gParticles : register(t0);
 
 static const float2 kCorners[6] =
 {
@@ -20,7 +20,7 @@ VertexShaderOutput main(uint vertexId : SV_VertexID, uint instanceId : SV_Instan
     output.local = corner;
     output.texcoord = float2(corner.x * 0.5f + 0.5f, 0.5f - corner.y * 0.5f);
 
-    FxParticle p = gParticles[instanceId];
+    ParticleData p = gParticles[instanceId];
 
     // 死んでいる粒は画面外の1点に潰す (面積0なのでピクセルシェーダーは走らない)
     if (p.remainingLife <= 0.0f)

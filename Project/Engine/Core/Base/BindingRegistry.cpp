@@ -10,7 +10,6 @@ namespace RyoEngine {
     namespace {
 #ifdef NRELEASE
         // 登録済みキーの一覧から1つ選ぶコンボ。選択が変わったらtrueを返す
-        // (元は GPUParticleManager にあったもの。ライトでも使うのでここへ移した)
         template <typename Map>
         bool DrawKeyCombo(const char* label, std::string& selectedKey, const Map& registry) {
             std::string preview = selectedKey.empty() ? "(なし)" : selectedKey;

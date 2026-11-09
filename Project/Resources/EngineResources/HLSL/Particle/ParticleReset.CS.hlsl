@@ -3,7 +3,7 @@
 // [1],[2] 分裂の子のリスト(2枚)の件数 → 今フレーム書き込む側だけ0に戻す (読む側は前フレームの結果)
 // [3] 生きている粒の数              → 0に戻す (本体パスで数え直す。エディタの表示用)
 #define PARTICLE_FX_SIMULATION
-#include "ParticleFx.hlsli"
+#include "Particle.hlsli"
 
 RWStructuredBuffer<uint> gCounters : register(u1);
 

@@ -43,9 +43,6 @@
     <Filter Include="Engine\Graphics\2D">
       <UniqueIdentifier>{33b3a122-80fa-4163-a1b5-7aba6057144d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\Graphics\GPUParticle">
-      <UniqueIdentifier>{99458083-a506-4ad6-89fa-214da9df1e14}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\Graphics\3D\Mesh">
       <UniqueIdentifier>{dd8bb62c-d0d0-4370-a5f0-87c3b9745716}</UniqueIdentifier>
     </Filter>
@@ -82,9 +79,6 @@
     <Filter Include="HLSL\PostProcess">
       <UniqueIdentifier>{80ad0662-de58-47ea-91c2-01d8bbdaac8d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="HLSL\GPUParticle">
-      <UniqueIdentifier>{a7beeaab-0e3f-4d54-bf60-96ff32d1b795}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\Framework">
       <UniqueIdentifier>{1ad35560-4e0e-4956-9dfd-a4e6599197a2}</UniqueIdentifier>
     </Filter>
@@ -106,14 +100,11 @@
     <Filter Include="Application\Scene">
       <UniqueIdentifier>{06f49617-459b-4193-a563-8ecb57f3d19d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application\Effect">
-      <UniqueIdentifier>{b6df7271-a6c6-45a6-9ae4-e307cf36ea67}</UniqueIdentifier>
+    <Filter Include="Engine\Graphics\Particle">
+      <UniqueIdentifier>{946c5ad2-d450-4f52-b4e6-a4ea88af25af}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application\Effect\ParticleFx">
-      <UniqueIdentifier>{f291fe88-18b4-4060-a4a5-4ac8e69a8fc2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="HLSL\ParticleFx">
-      <UniqueIdentifier>{a06b7df2-70f1-4502-b3d0-38b97a9629f4}</UniqueIdentifier>
+    <Filter Include="HLSL\Particle">
+      <UniqueIdentifier>{38b16311-84a7-4ea4-b99c-3089a8d7ff53}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -153,12 +144,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Graphics\2D\TextureManager.cpp">
       <Filter>Engine\Graphics\2D</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\GPUParticle\GPUParticleCommon.cpp">
-      <Filter>Engine\Graphics\GPUParticle</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\GPUParticle\GPUParticleEmitter.cpp">
-      <Filter>Engine\Graphics\GPUParticle</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Core\Math\Collision.cpp">
       <Filter>Engine\Core\Math</Filter>
@@ -213,9 +198,6 @@
     </ClCompile>
     <ClCompile Include="Engine\RyoEngine.cpp">
       <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Graphics\GPUParticle\GPUParticleManager.cpp">
-      <Filter>Engine\Graphics\GPUParticle</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Editor\Gizmo.cpp">
       <Filter>Engine\Editor</Filter>
@@ -277,20 +259,20 @@
     <ClCompile Include="Engine\Core\Base\BindingRegistry.cpp">
       <Filter>Engine\Core\Base</Filter>
     </ClCompile>
-    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxCommon.cpp">
-      <Filter>Application\Effect\ParticleFx</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxEmitter.cpp">
-      <Filter>Application\Effect\ParticleFx</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxManager.cpp">
-      <Filter>Application\Effect\ParticleFx</Filter>
-    </ClCompile>
-    <ClCompile Include="Application\Effect\ParticleFx\ParticleFxTemplates.cpp">
-      <Filter>Application\Effect\ParticleFx</Filter>
-    </ClCompile>
     <ClCompile Include="Application\Scene\Showcase.cpp">
       <Filter>Application\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Particle\ParticleCommon.cpp">
+      <Filter>Engine\Graphics\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Particle\ParticleEmitter.cpp">
+      <Filter>Engine\Graphics\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Particle\ParticleManager.cpp">
+      <Filter>Engine\Graphics\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Particle\ParticleTemplates.cpp">
+      <Filter>Engine\Graphics\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Application\Application.cpp">
       <Filter>Application</Filter>
@@ -347,12 +329,6 @@
     </ClInclude>
     <ClInclude Include="Engine\Core\Base\IGame.h">
       <Filter>Engine\Core\Base</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\GPUParticle\GPUParticleCommon.h">
-      <Filter>Engine\Graphics\GPUParticle</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\GPUParticle\GPUParticleEmitter.h">
-      <Filter>Engine\Graphics\GPUParticle</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\3D\InstancedModelCommon.h">
       <Filter>Engine\Graphics\3D</Filter>
@@ -422,9 +398,6 @@
     </ClInclude>
     <ClInclude Include="Engine\RyoEngine.h">
       <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Graphics\GPUParticle\GPUParticleManager.h">
-      <Filter>Engine\Graphics\GPUParticle</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Editor\Gizmo.h">
       <Filter>Engine\Editor</Filter>
@@ -498,23 +471,23 @@
     <ClInclude Include="Application\Scene\InstancingDemo.h">
       <Filter>Application\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxCommon.h">
-      <Filter>Application\Effect\ParticleFx</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxEmitter.h">
-      <Filter>Application\Effect\ParticleFx</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxManager.h">
-      <Filter>Application\Effect\ParticleFx</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxTemplates.h">
-      <Filter>Application\Effect\ParticleFx</Filter>
-    </ClInclude>
-    <ClInclude Include="Application\Effect\ParticleFx\ParticleFxTypes.h">
-      <Filter>Application\Effect\ParticleFx</Filter>
-    </ClInclude>
     <ClInclude Include="Application\Scene\Showcase.h">
       <Filter>Application\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Particle\ParticleCommon.h">
+      <Filter>Engine\Graphics\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Particle\ParticleEmitter.h">
+      <Filter>Engine\Graphics\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Particle\ParticleManager.h">
+      <Filter>Engine\Graphics\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Particle\ParticleTemplates.h">
+      <Filter>Engine\Graphics\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Particle\ParticleTypes.h">
+      <Filter>Engine\Graphics\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Application\Application.h">
       <Filter>Application</Filter>
@@ -524,8 +497,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFx.hlsli">
-      <Filter>HLSL\ParticleFx</Filter>
+    <None Include="Resources\EngineResources\HLSL\Particle\Particle.hlsli">
+      <Filter>HLSL\Particle</Filter>
     </None>
     <None Include="Resources\EngineResources\HLSL\Sprite\Sprite.hlsli">
       <Filter>HLSL\Sprite</Filter>
@@ -565,6 +538,18 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Resources\EngineResources\HLSL\Particle\Particle.PS.hlsl">
+      <Filter>HLSL\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\EngineResources\HLSL\Particle\Particle.VS.hlsl">
+      <Filter>HLSL\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\EngineResources\HLSL\Particle\ParticleReset.CS.hlsl">
+      <Filter>HLSL\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\EngineResources\HLSL\Particle\ParticleSimulate.CS.hlsl">
+      <Filter>HLSL\Particle</Filter>
+    </FxCompile>
     <FxCompile Include="Resources\EngineResources\HLSL\Sprite\Sprite.PS.hlsl">
       <Filter>HLSL\Sprite</Filter>
     </FxCompile>
@@ -609,33 +594,6 @@
     </FxCompile>
     <FxCompile Include="Resources\EngineResources\HLSL\Model\Instanced.VS.hlsl">
       <Filter>HLSL\Model</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticleReset.CS.hlsl">
-      <Filter>HLSL\GPUParticle</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFx.PS.hlsl">
-      <Filter>HLSL\ParticleFx</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFx.VS.hlsl">
-      <Filter>HLSL\ParticleFx</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFxReset.CS.hlsl">
-      <Filter>HLSL\ParticleFx</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\ApplicationResources\HLSL\ParticleFx\ParticleFxSimulate.CS.hlsl">
-      <Filter>HLSL\ParticleFx</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticleSimulate.CS.hlsl">
-      <Filter>HLSL\GPUParticle</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticle.PS.hlsl">
-      <Filter>HLSL\GPUParticle</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticle.VS.hlsl">
-      <Filter>HLSL\GPUParticle</Filter>
-    </FxCompile>
-    <FxCompile Include="Resources\EngineResources\HLSL\GPUParticle\GPUParticleBillboard.VS.hlsl">
-      <Filter>HLSL\GPUParticle</Filter>
     </FxCompile>
     <FxCompile Include="Resources\EngineResources\HLSL\PostProcess\BloomDownsample.PS.hlsl">
       <Filter>HLSL\PostProcess</Filter>
