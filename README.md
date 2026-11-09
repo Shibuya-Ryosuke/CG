@@ -15,7 +15,7 @@
 * [GameObject と当たり判定](#gameobject-と当たり判定)
 * [BindingRegistry (座標・フラグの登録)](#bindingregistry-座標フラグの登録)
 * [LightManager](#lightmanager)
-* [GPUParticleManager](#gpuparticlemanager)
+* [ParticleManager (パーティクル)](#particlemanager-パーティクル)
 * [CameraManager](#cameramanager)
 * [ShadowMap](#shadowmap)
 * [PrimitiveRenderer](#primitiverenderer)
@@ -35,12 +35,32 @@
 
 ```text
 Application/
-├─ Application.h / .cpp   … アプリ本体 (RyoEngine::Framework を継承)。保存先の設定・読み込みと SetupScenes() の呼び出し
+├─ Application.h / .cpp      … アプリ本体 (RyoEngine::Framework を継承)。保存先の設定・読み込みと SetupScenes() の呼び出し
 └─ Scene/
-   ├─ SceneSetup.h        … シーンの登録と、起動時のシーンの指定
-   ├─ Title.h / .cpp      … シーン (RyoEngine::BaseScene を継承)
+   ├─ SceneSetup.h           … シーンの登録と、起動時のシーンの指定
+   ├─ Title.h / .cpp         … シーン (RyoEngine::BaseScene を継承)
    └─ Game.h / .cpp
 ```
+
+`Application::Initialize` で行っていること:
+
+```cpp
+const std::string jsonFolder = "Resources/ApplicationResources/Json/";
+ParamEditor::SetFolderPath(jsonFolder);
+LightManager::SetFolderPath(jsonFolder);
+ParticleManager::SetFolderPath(jsonFolder);
+ParamEditor::Load();
+LightManager::Load();
+ParticleManager::Load();
+SetupScenes();                           // シーンの登録 (SceneSetup.h)
+
+// ブルームとトーンマッピングは初期でオン
+PostProcess::SetBloomEnabled(true);
+PostProcess::SetACESEnabled(true);
+```
+
+* ブルームなどの初期値は、アプリごとに `Application::Initialize` で決める (エンジン側の初期値はブルーム オフ・トーンマッピング オン)
+* `ParticleManager::LoadOrCreateDefaults()` にすると、`particles.json` が無いときに見本のエフェクト一式を作る
 
 * アプリのコードはすべて `namespace App` (または `namespace （ゲーム名）`) で囲む
 * 起動するアプリは `main.cpp` の `std::make_unique<App::Application>()` で選ぶ
@@ -81,8 +101,9 @@ if (Input::TriggerKey(DIK_SPACE)) { SceneManager::ChangeScene<Game>(); }
 | `Update()` / `Draw()` | 毎フレーム |
 | `Finalize()` | 別のシーンに切り替わる前 (任意) |
 
-* シーンを増やしたら、クラスを作って `SceneSetup.h` に `RegisterScene` を1行足すだけ
-* シーンが切り替わると、GameObject・カメラ・自作ポストエフェクト・ParamEditor の登録・BindingRegistry の登録は自動で全部消える (シーンで後片付けを書かなくてよい)
+* シーンを増やしたら、クラスを作って `SceneSetup.h` に `RegisterScene` を1行足すだけ (シーン工場のクラスは要らない)
+* 中では「型ごとに、そのシーンを作る専用の関数」がビルド時に作られ、名前と一緒に登録される。BaseScene を継承していない型を渡すとコンパイルエラー
+* シーンが切り替わると、GameObject・カメラ・自作ポストエフェクト・出ているパーティクル・ParamEditor の登録・BindingRegistry の登録は自動で全部消える (シーンで後片付けを書かなくてよい)
 * DEBUG中は ImGui の「SceneManager」ウィンドウで、登録したシーンを選んで切り替えられる
 
 ---
@@ -99,6 +120,8 @@ GameObject の Update → 当たり判定 (Enter/Stay/Exit) → Destroy され�
 シーンの Update
   ↓
 GameObject の Draw → シーンの Draw
+  ↓
+パーティクルの発生・動き (ParticleManager。最新の座標で行う)
   ↓
 ライトの反映 → 影 → 3D (背景 → 不透明 → 半透明 → 加算など) → パーティクル → デバッグ図形
   ↓
@@ -306,8 +329,8 @@ model->SetShaderParams(0, { 0.1f, 0.0f, 0.0f, 0.0f }); // input.params[0]
 
 | 関数 | 役割 |
 | --- | --- |
-| `SetACESEnabled` / `SetExposure` | トーンマッピング (ACES) のオンオフ・露出 |
-| `SetBloomEnabled` / `SetBloomThreshold` / `SetBloomIntensity` | ブルーム (しきい値より明るい所が滲む) |
+| `SetACESEnabled` / `SetExposure` | トーンマッピング (ACES) のオンオフ・露出 (エンジンの初期値はオン) |
+| `SetBloomEnabled` / `SetBloomThreshold` / `SetBloomIntensity` | ブルーム (しきい値より明るい所が滲む。エンジンの初期値はオフ、アプリのひな形ではオン) |
 | `SetDistortionEnabled` / `SetDistortionStrength` | 歪み |
 | `SetGlitchEnabled` / `SetGlitchIntensity` | グリッチ |
 | `SetChromaticAberrationEnabled` / `SetChromaticAberrationStrength` | 色収差 |
@@ -469,23 +492,45 @@ ImGui でライトごとに設定できること:
 
 ---
 
-# GPUParticleManager
+# ParticleManager (パーティクル)
 
-パーティクルは ImGui の「GPUParticleManager」ウィンドウでエミッターを作って調整し、**Save** します。
+エフェクトは ImGui の「ParticleManager」ウィンドウで作って調整し、**Save** します (`particles.json`)。
+ゲームからは**名前で再生するだけ**です。Update / Draw はエンジンが自動で呼ぶので、シーンから呼ぶ必要はありません。
 
-ImGui でエミッターごとに設定できること:
-* モデル (**デフォルト(四角)** / カスタムの obj)・テクスチャ・最大数・大きさ・寿命・重力・色・ブレンド・ビルボード
-* 速度 (固定 / 乱数)
-* **追従する座標** (BindingRegistry のキー) と、そこからの乱数のずれ
-* **条件フラグ** (BindingRegistry のキー)・true / false どちらで出すか・出し続けるか、立ち上がりで1回だけか・間隔
+```cpp
+ParticleManager::Play("Burst", hitPosition); // その場所で再生
+ParticleManager::Play("Charge");             // 設定の位置 (追従キー or 基準座標) で再生
+ParticleManager::Stop("Charge");             // 発生だけ止める (出ている粒は寿命まで残る)
+```
 
 | 関数 | 役割 |
 | --- | --- |
-| `SetFolderPath` / `Save()` / `Load()` | 保存先 / 保存 / 読み込み |
-| `Update(経過時間)` / `Draw()` | シーンの Update / Draw で毎フレーム呼ぶ |
-| `TriggerEmit(エミッター名)` | フラグに関係なく1回出す |
-| `CreateEmitter(名前, 設定)` / `DestroyEmitter(名前)` | コードからエミッターを作る / 消す |
-| `SetTrackedPositionKey(エミッター名, キー)` / `SetConditionFlagKey(エミッター名, キー)` | 追従・条件をコードから指定する |
+| `Play(名前)` / `Play(名前, 位置)` | 再生する |
+| `Stop(名前)` / `Clear(名前)` | 発生を止める / 出ている粒も消す |
+| `StopAll()` / `ClearAll()` | 全部止める / 全部消す (シーンが切り替わると自動で全部消える) |
+| `IsPlaying(名前)` | 再生中か |
+| `GetAliveCount(名前)` / `GetTotalAliveCount()` | 今出ている数 |
+| `SetFolderPath` / `Save()` / `Load()` / `LoadOrCreateDefaults()` | 保存先 / 保存 / 読み込み / 読み込み (無ければ見本を作る) |
+| `Create(名前, 設定)` / `Destroy(名前)` / `GetConfig(名前)` | コードからエフェクトを作る / 消す / 設定を取る |
+| `SetParticleBudget(数)` | 全エフェクトの最大数の合計の上限 (初期値 100万) |
+
+ImGui でエフェクトごとに設定できること:
+
+| 項目 | 内容 |
+| --- | --- |
+| 発生 | まとめて (回数・間隔) / 連続 (毎秒の数・時間)、最大数、スローの影響を受けるか |
+| 場所の形 | 点・球・輪・円柱・線・箱 (半径が時間で縮む設定も可) |
+| 初速 | 固定・乱数・外向き・軸まわり |
+| 動き方 | 自由 (重力・空気抵抗・揺らぎ・バウンド・ジッター)・放射・収束 (弧)・渦・追尾・カーブ (ベジェ) |
+| 消え方 | フェード・点滅・縮む・伸びて細く・色変化・分裂・吸い込み |
+| 見た目 | 画像・丸・火花・輪・星、通常 / 加算、色 (乱数の範囲と終わりの色)、明るさ (1より大きいとブルームで光る) |
+| 連携 | 発生位置・目標を追従する座標、再生のきっかけになるフラグ (BindingRegistry のキー) |
+| 連鎖 | 再生してから〇秒後に別のエフェクトを再生する (チャージ → 爆発 など) |
+
+* **テンプレ:** 新規作成・テンプレ適用で、見本の組み合わせ (チャージ・火花・花火・衝撃波・渦・追尾・カーブ・電気・バウンド・吸い込み) から始められる
+* **きっかけのフラグ:** フラグが立った瞬間に Play。連続のときは、下りたら Stop することもできる
+* **ホットリロード:** `particles.json` を書き換えると、実行中でも自動で読み込み直す
+* 見本のエフェクトは、BindingRegistry の `ParticleTemplates::CenterKey()` (発生位置) / `TargetKey()` (目標) に座標を登録すると、そこから出る
 
 ---
 
@@ -616,7 +661,7 @@ ParamEditor::EndGroup(); // BeginGroup と同じ数だけ呼ぶ
 | --- | --- |
 | クリック選択とギズモ | ゲーム画面でモデルをクリックするとギズモが出て動かせる (W/E/R で移動/回転/拡大) |
 | Model Layout | ギズモで動かした配置を保存し、次回から自動で反映する (区別したいモデルは `SetName`) |
-| 各 ImGui ウィンドウ | Parameter Editor / SceneManager / LightManager / GPUParticleManager / Shader / Shadow / CameraManager / Performance / Log Console |
+| 各 ImGui ウィンドウ | Parameter Editor / SceneManager / LightManager / ParticleManager / Shader / Shadow / CameraManager / Performance / Log Console |
 | AnimEditor | 登録したモデル・カメラ・フラグのアニメーションを作る (`SetTargetModel` `SetTargetCamera` `RegisterFlag`) |
 
 ---
@@ -663,4 +708,4 @@ GameSound も同じ形で、`LoadBGM` / `LoadSE` で読み、`Audio::PlayBGM(番
 | 【自作後処理】〇〇 | PostEffectManager (ビネット・画面の波) |
 | 【カメラ】 / 【時間】 | 追従のずれ・視野角 / タイムスケール |
 | 【デバッグ表示】 | PrintText・PrimitiveRenderer |
-| 【パーティクル】 | "test emit" フラグ (GPUParticleManager でエミッターに選ぶ) |
+| 【パーティクル】 | "test emit" フラグ (ParticleManager でエフェクトのきっかけのフラグに選ぶ) |
