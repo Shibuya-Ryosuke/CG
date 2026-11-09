@@ -16,6 +16,10 @@ namespace App {
 
 		// シーンの登録と、起動時のシーンの指定 (Scene/SceneSetup.cpp)
 		SetupScenes();
+
+		// bloomとトーンマッピングは初期でオン
+		PostProcess::SetBloomEnabled(true);
+		PostProcess::SetACESEnabled(true);
 	}
 
 	void Application::Finalize() {
