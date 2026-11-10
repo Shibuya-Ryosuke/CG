@@ -408,4 +408,4 @@ namespace RyoEngine {
     float GetScaleTime() { return TimeManager::GetScaleTime(); }
     float GetTimeScale() { return TimeManager::GetScale(); }
     void SetTimeScale(float scale) { return TimeManager::SetScale(scale); }
-}
+}
