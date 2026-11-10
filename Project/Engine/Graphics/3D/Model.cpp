@@ -99,6 +99,12 @@ namespace RyoEngine {
     // 毎フレーム
     // ------------------------------------------------------------------
     void Model::TransferMatrix(bool frustumCulling) {
+        // 視錐台判定はカメラ確定後のDraw()で行うので、ここでは指定だけ覚えておく
+        frustumCulling_ = frustumCulling;
+        TransferMatrix();
+    }
+
+    void Model::TransferMatrix() {
         // 保存された Transform があれば、最初の1回だけ適用する (コードで入れた初期値より保存値が勝つ)
         if (!layoutApplied_ && layoutRegistered_) {
             layoutApplied_ = true;
@@ -107,9 +113,6 @@ namespace RyoEngine {
                 worldTransform_.SetLocal(saved);
             }
         }
-
-        // 視錐台判定はカメラ確定後のDraw()で行うので、ここでは指定だけ覚えておく
-        frustumCulling_ = frustumCulling;
 
         UpdateWorld();
     }

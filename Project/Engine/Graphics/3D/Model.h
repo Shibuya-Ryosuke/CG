@@ -63,7 +63,16 @@ namespace RyoEngine {
         /// カメラには依存しないので、Updateの中のどこで呼んでもよい。
         /// </summary>
         /// <param name="frustumCulling">false にすると視錐台判定をせず常に描画する (既定 true)</param>
-        void TransferMatrix(bool frustumCulling = true);
+        void TransferMatrix(bool frustumCulling);
+        /// <summary>
+        /// 引数なし版。視錐台判定をするかは SetFrustumCulling で決めた値を使う (既定 true)
+        /// (GameObject::AddModel で付けたモデルは、エンジンがこちらを呼ぶ)
+        /// </summary>
+        void TransferMatrix();
+
+        /// <summary>視錐台判定をするか (既定 true)。引数なしの TransferMatrix() で使われる</summary>
+        void SetFrustumCulling(bool frustumCulling) { frustumCulling_ = frustumCulling; }
+        bool GetFrustumCulling() const { return frustumCulling_; }
 
         /// <summary>
         /// 描画の提出。CameraManager::UpdateAll()で確定した描画カメラで視錐台判定を行い、
@@ -253,7 +262,7 @@ namespace RyoEngine {
         std::vector<MeshState> meshes_;
 
         bool isVisible_ = true;
-        bool frustumCulling_ = true; // TransferMatrixで指定された値。判定自体はDraw()で行う
+        bool frustumCulling_ = true; // TransferMatrixで指定された値 (または SetFrustumCulling)。判定自体はDraw()で行う
 
         // クリック選択用 (TransferMatrixで更新。視錐台判定のバウンディング球も兼ねる)
         bool pickable_ = true;

@@ -5,16 +5,15 @@ using namespace RyoEngine;
 
 namespace Test {
 	TestEnemy::TestEnemy(const Vector3& position) {
-		GetTransform().GetLocal().translate = position;
+		SetTranslate(position);
 	}
 
 	void TestEnemy::Initialize() {
 		SetTag("Enemy");
-		GetTransform().GetLocal().scale = { scale_, scale_, scale_ };
+		SetScale({ scale_, scale_, scale_ });
 		hp_ = maxHp_;
 
-		model_ = Model::Create("Resources/EngineResources/Test/bunny.obj");
-		model_->SetParent(&GetTransform());
+		model_ = AddModel("Resources/EngineResources/Test/bunny.obj");
 		model_->SetColor(color_);
 
 		// 当たり判定: 球。自分は Enemy、Player と PlayerBullet に当たる
@@ -22,7 +21,9 @@ namespace Test {
 	}
 
 	void TestEnemy::Update() {
-		GetTransform().GetLocal().rotate.y += rotateSpeed_ * GetDeltaTime();
+		Vector3 rotate = GetRotate();
+		rotate.y += rotateSpeed_ * GetDeltaTime();
+		SetRotate(rotate);
 
 		// 被弾直後だけ白く光る
 		if (flashTimer_ > 0.0f) {
@@ -31,12 +32,6 @@ namespace Test {
 		} else {
 			model_->SetEmissive({ 0.0f, 0.0f, 0.0f }, 0.0f);
 		}
-
-		model_->TransferMatrix();
-	}
-
-	void TestEnemy::Draw() {
-		model_->Draw();
 	}
 
 	void TestEnemy::OnCollisionEnter(GameObject* other) {

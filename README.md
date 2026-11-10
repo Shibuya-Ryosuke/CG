@@ -388,24 +388,21 @@ enum Layer : uint32_t { kPlayer = 1 << 0, kEnemy = 1 << 1, kPlayerBullet = 1 << 
 class Bullet : public RyoEngine::GameObject {
 public:
     Bullet(const Vector3& position, const Vector3& velocity) : velocity_(velocity) {
-        GetTransform().GetLocal().translate = position;
+        SetTranslate(position);
     }
     void Initialize() override {
         SetTag("PlayerBullet");
-        model_ = Model::Create("Bullet");
-        model_->SetParent(&GetTransform());                 // モデルを GameObject にくっつける
+        model_ = AddModel("Bullet");                        // モデルを作って GameObject にくっつける (描画もおまかせ)
         AddSphereCollider(0.5f, kPlayerBullet, kEnemy);     // 半径, 自分のレイヤー, 当たりたい相手
     }
     void Update() override {
-        GetTransform().GetLocal().translate += velocity_ * GetDeltaTime();
-        model_->TransferMatrix();
+        SetTranslate(GetTranslate() + velocity_ * GetDeltaTime()); // 動かすだけ (TransferMatrix・Draw は書かない)
     }
-    void Draw() override { model_->Draw(); }
     void OnCollisionEnter(GameObject* other) override {
         if (other->GetTag() == "Enemy") { Destroy(); }      // フレームの最後に消える
     }
 private:
-    std::unique_ptr<Model> model_;
+    Model* model_ = nullptr;                                // 色などを変えるためのポインタ (持ち主は GameObject)
     Vector3 velocity_;
 };
 
@@ -419,8 +416,11 @@ GameObjectManager::Create<Bullet>(position, velocity);
 | --- | --- |
 | `Initialize` / `Update` / `Draw` / `Finalize` | 作られたとき / 毎フレーム / 毎フレーム / 消えるとき |
 | `OnCollisionEnter` / `OnCollisionStay` / `OnCollisionExit` | 当たった瞬間 / 当たっている間 / 離れた瞬間 (相手が消えたときも) |
-| `GetTransform()` | 座標 (WorldTransform。`GetLocal().translate` などを変える) |
-| `GetWorldPosition()` | ワールド座標 |
+| `GetTranslate` / `SetTranslate` / `GetRotate` / `SetRotate` / `GetScale` / `SetScale` | 位置・回転(度)・拡大 (親から見た値。動かした直後でも最新) |
+| `GetTransform()` | 座標 (WorldTransform。親子付けなどに使う) |
+| `GetWorldPosition()` | ワールド座標 (最後に行列を計算したときの値。親がいて最新がほしいときは `GetTransform().UpdateMatrix()` の後に読む) |
+| `AddModel(名前)` | モデルを作ってくっつける。行列の確定と描画はエンジンが自動で行う (戻り値は `Model*`) |
+| `SetVisible(bool)` | AddModel で付けたモデルを描くか (点滅など) |
 | `SetName` / `GetName` | 名前 (`FindByName` 用) |
 | `SetTag` / `GetTag` | タグ (当たった相手の種類を見分ける) |
 | `Destroy()` / `IsDead()` | 消す (フレームの最後に消える) |
@@ -432,6 +432,8 @@ GameObjectManager::Create<Bullet>(position, velocity);
 * **layer** は「自分は何者か」、**mask** は「誰と当たりたいか」。**お互いの mask に相手の layer が入っているときだけ**判定します
 * 当たり判定は GameObject の位置・回転・拡大に自動でついていきます (AABB は回転しない)
 * 押し戻しはしません (知らせるだけ)。必要なら `OnCollisionStay` で位置を戻す
+* `AddModel` で付けたモデルは、全員の Update が終わった後に行列が確定するので、そのフレームで動かした位置で描かれる
+* `AddModel` のモデルに自分でも `Draw()` を呼ぶと2回描かれるので、呼ばないこと (自分で `Model::Create` して自分で呼ぶ書き方も使える)
 
 ## GameObjectManager
 

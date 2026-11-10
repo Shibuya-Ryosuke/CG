@@ -117,12 +117,20 @@ namespace RyoEngine {
                 }
             }
 
+            // 1.5 Update の中で作られたもの (弾など) を仲間に入れる。
+            //     生まれたフレームから、生まれた位置で当たり判定を受けられるようにするため (Update はまだしていない)
+            instance->isIterating_ = false;
+            instance->FlushPending();
+            instance->isIterating_ = true;
+
             // 2. 座標の行列を確定する (当たり判定に使う)
+            //    AddModel で付けたモデルの行列も、ここで確定する (全員が動き終わった後なので、そのフレームの位置になる)
             std::vector<GameObject*> alive;
             alive.reserve(instance->objects_.size());
             for (auto& object : instance->objects_) {
                 if (!object->IsDead()) {
                     object->transform_.UpdateMatrix();
+                    object->TransferModels();
                     alive.push_back(object.get());
                 }
             }
@@ -133,7 +141,7 @@ namespace RyoEngine {
             instance->isIterating_ = false;
         }
 
-        // 4. 途中で作られたものを仲間に入れる → 5. Destroy されたものを消す
+        // 4. 当たり判定の通知の中で作られたものを仲間に入れる (次のフレームから判定される) → 5. Destroy されたものを消す
         instance->FlushPending();
         instance->RemoveDead();
     }
@@ -146,6 +154,7 @@ namespace RyoEngine {
             GameObject* object = instance->objects_[i].get();
             if (!object->IsDead()) {
                 object->Draw();
+                object->DrawModels(); // AddModel で付けたモデル
             }
         }
         instance->isIterating_ = false;

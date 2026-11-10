@@ -20,22 +20,18 @@ namespace Test {
 
 		void Initialize() override;
 		void Update() override;
-		void Draw() override;
 		void Finalize() override; // BindingRegistry の登録を解除する
 
 		// 敵に触れた / 離れた (触れている数を数える)
 		void OnCollisionEnter(RyoEngine::GameObject* other) override;
 		void OnCollisionExit(RyoEngine::GameObject* other) override;
 
-		// 座標 (カメラ追従・パーティクル追従で使う)
-		const RyoEngine::Vector3& GetTranslate() const { return GetTransform().GetLocal().translate; }
-
 	private:
 		void Move();  // 移動
 		void Shoot(); // 弾を撃つ
 
-		// 見た目 (GameObject の座標にくっつける)
-		std::unique_ptr<RyoEngine::Model> bunny_{};
+		// 見た目 (AddModel で作る。持ち主は GameObject、TransferMatrix・Draw はエンジンが呼ぶ)
+		RyoEngine::Model* bunny_ = nullptr;
 
 		// --- 【3D】プレイヤー (ParamEditor) ---
 		RyoEngine::Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };

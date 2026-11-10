@@ -17,12 +17,11 @@ namespace Test {
 
 		void Initialize() override;
 		void Update() override;
-		void Draw() override;
 
 		void OnCollisionEnter(RyoEngine::GameObject* other) override; // 弾が当たったらHPを減らす
 
 	private:
-		std::unique_ptr<RyoEngine::Model> model_{};
+		RyoEngine::Model* model_ = nullptr; // AddModel で作る (描画はエンジンが行う)
 
 		int32_t maxHp_ = 3;
 		int32_t hp_ = 3;

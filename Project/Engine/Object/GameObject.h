@@ -1,11 +1,13 @@
 #pragma once
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 #include "Collider.h"
 #include "../Core/Math/WorldTransform.h"
 
 namespace RyoEngine {
+    class Model;
 
     /// <summary>
     /// ゲーム内の「物」の基底クラス (プレイヤー・敵・弾・アイテムなど)。
@@ -14,6 +16,7 @@ namespace RyoEngine {
     ///   作るときは GameObjectManager::Create&lt;Player&gt;(...)。Update / Draw はエンジンが自動で呼ぶ
     /// ・座標(WorldTransform)を持つ。モデルや当たり判定はこの座標についていく。
     ///   モデルは継承先が持ち、model_->SetParent(&GetTransform()) でくっつける
+    ///   (AddModel で作ったモデルは GameObject が持ち、TransferMatrix・Draw もエンジンが自動で呼ぶ)
     /// ・当たり判定は Initialize などで AddSphereCollider 等を呼んで追加する。
     ///   当たると OnCollisionEnter / Stay / Exit が呼ばれる (判定は CollisionManager が行う)
     /// ・消すときは Destroy()。そのフレームの最後にまとめて消える (すぐには消えない)
@@ -24,7 +27,7 @@ namespace RyoEngine {
     class GameObject {
     public:
         GameObject() = default;
-        virtual ~GameObject() = default;
+        virtual ~GameObject();
         // GameObjectManager がポインタで管理するので、コピー/ムーブは不可
         GameObject(const GameObject&) = delete;
         GameObject& operator=(const GameObject&) = delete;
@@ -53,8 +56,23 @@ namespace RyoEngine {
         /// </summary>
         WorldTransform& GetTransform() { return transform_; }
         const WorldTransform& GetTransform() const { return transform_; }
+
+        // SRT の近道 (= GetTransform().GetLocal().translate など。親から見た値。親がいなければワールドでの値と同じ)
+        // 動かした直後でも最新の値が取れる (行列の計算を待たない)
+        const Vector3& GetTranslate() const { return transform_.GetLocal().translate; }
+        void SetTranslate(const Vector3& translate) { transform_.GetLocal().translate = translate; }
+        /// <summary>回転 (度数法)</summary>
+        const Vector3& GetRotate() const { return transform_.GetLocal().rotate; }
+        void SetRotate(const Vector3& rotateDeg) { transform_.GetLocal().rotate = rotateDeg; }
+        const Vector3& GetScale() const { return transform_.GetLocal().scale; }
+        void SetScale(const Vector3& scale) { transform_.GetLocal().scale = scale; }
         /// <summary>ワールド座標 (直前に行列を計算したときの値)</summary>
         Vector3 GetWorldPosition() const { return transform_.GetWorldPosition(); }
+
+        // ---------------- モデル ----------------
+        /// <summary>AddModel で付けたモデルを描くか (点滅・やられた演出など。初期値 true)</summary>
+        void SetVisible(bool visible) { isVisible_ = visible; }
+        bool IsVisible() const { return isVisible_; }
 
         // ---------------- 名前・タグ ----------------
         /// <summary>名前 (GameObjectManager::FindByName で探すとき用)</summary>
@@ -90,17 +108,32 @@ namespace RyoEngine {
         /// <summary>当たり判定を全部消す</summary>
         void ClearColliders() { colliders_.clear(); }
 
+        /// <summary>
+        /// モデルを作って、この GameObject にくっつける (名前でもパスでもよい。Model::Create と同じ)。
+        /// モデルの持ち主は GameObject。TransferMatrix・Draw はエンジンが自動で呼ぶので、継承先は呼ばないこと
+        /// (自分でも Draw を呼ぶと2回描かれる)。戻り値は色などを変えるためのポインタ (GameObject が消えるまで使える)
+        /// </summary>
+        Model* AddModel(const std::string& nameOrPath, uint32_t textureIndex = 0);
+        /// <summary>LoadObj で読み込んだ番号からモデルを作って、くっつける</summary>
+        Model* AddModel(uint32_t modelIndex, uint32_t textureIndex = 0);
+
     private:
         friend class GameObjectManager;
         friend class CollisionManager;
 
         uint32_t AddCollider(const Collider& collider);
+        // AddModel で付けたモデルの行列を確定する / 描く (GameObjectManager が呼ぶ)
+        void TransferModels();
+        void DrawModels();
 
         WorldTransform transform_;
         std::string name_;
         std::string tag_;
         bool isDead_ = false;
         std::vector<Collider> colliders_;
+        // AddModel で付けたモデル (持ち主はこの GameObject)
+        std::vector<std::unique_ptr<Model>> models_;
+        bool isVisible_ = true;
         uint32_t id_ = 0; // GameObjectManager が付ける通し番号 (当たり判定の組み合わせを覚えるため)
     };
 }

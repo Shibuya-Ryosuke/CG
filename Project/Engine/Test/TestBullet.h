@@ -17,13 +17,12 @@ namespace Test {
 
 		void Initialize() override;
 		void Update() override;
-		void Draw() override;
 
 		void OnCollisionEnter(RyoEngine::GameObject* other) override; // 敵に当たったら消える
 
 	private:
-		// 見た目 (同じobjの弾は、自動で1回の描画にまとめられる)
-		std::unique_ptr<RyoEngine::Model> model_{};
+		// 見た目 (同じobjの弾は、自動で1回の描画にまとめられる。AddModel で作るので描画はエンジンが行う)
+		RyoEngine::Model* model_ = nullptr;
 		RyoEngine::Vector3 velocity_{};
 		float timer_ = 3.0f;  // 消えるまでの残り時間(秒)
 		float scale_ = 0.3f;  // 大きさ (当たり判定にも自動でかかる)

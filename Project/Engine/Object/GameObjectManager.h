@@ -19,6 +19,7 @@ namespace RyoEngine {
     /// ・Destroy された GameObject は、Update の最後にまとめて消える
     /// ・シーンが切り替わると全部消える (SceneManager が Clear を呼ぶ)
     /// ・SetPaused(true) の間は、Update と当たり判定を止める (Draw は続ける)
+    /// ・GameObject が AddModel で付けたモデルは、行列の確定 (Update の後) と描画 (Draw の後) も自動で行う
     ///
     /// 使い方:
     ///   player_ = GameObjectManager::Create&lt;Player&gt;();
@@ -32,6 +33,7 @@ namespace RyoEngine {
         /// <summary>
         /// GameObject を作る。引数は T のコンストラクタへ渡される。作った直後に Initialize が呼ばれる。
         /// Update の途中で作ったものは、次のフレームから Update される
+        /// (当たり判定は、そのフレームから生まれた位置で受ける。当たり判定の通知の中で作ったものは次のフレームから)
         /// </summary>
         template <class T, class... Args>
         static T* Create(Args&&... args) {

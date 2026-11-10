@@ -11,18 +11,17 @@ namespace Test {
 		SetTag("Player");  // 当たった相手が見分ける用
 
 		// 座標は GameObject が持つ (回転は度)
-		GetTransform().GetLocal().rotate = { 0.0f, 160.0f, 0.0f };
-		GetTransform().GetLocal().translate.y = 5.0f;
+		SetRotate({ 0.0f, 160.0f, 0.0f });
+		SetTranslate({ 0.0f, 5.0f, 0.0f });
 
-		// モデルを GameObject にくっつける (SetName は付けない。Model Layout の保存値が二重にかかるため)
-		bunny_ = Model::Create("Resources/EngineResources/Test/bunny.obj");
-		bunny_->SetParent(&GetTransform());
+		// モデルを作って GameObject にくっつける (SetName は付けない。Model Layout の保存値が二重にかかるため)
+		bunny_ = AddModel("Resources/EngineResources/Test/bunny.obj");
 
 		// 当たり判定: 回転する箱。自分は Player、Enemy と当たる
 		AddOBBCollider({ 0.81f, 0.81f, 0.62f }, kLayerPlayer, kLayerEnemy, { -0.15f, 0.83f, 0.07f });
 
 		// ライト・パーティクルから選べるように登録 (どれを使うかは各 ImGui で選ぶ)
-		BindingRegistry::RegisterPosition("player pos", &GetTransform().GetLocal().translate);
+		BindingRegistry::RegisterPosition("player pos", &GetTranslate());
 		BindingRegistry::RegisterFlag("player light", &isIllumination_);
 
 		ParamEditor::BeginGroup("【3D】プレイヤー");
@@ -53,8 +52,7 @@ namespace Test {
 		} else {
 			bunny_->SetEmissive(emissiveColor_, emissiveIntensity_);
 		}
-
-		bunny_->TransferMatrix(); // 行列の確定 (カリングは Draw で行われる)
+		// 行列の確定と描画はエンジンが行う (AddModel したモデル)
 	}
 
 	void TestPlayer::Move() {
@@ -67,9 +65,10 @@ namespace Test {
 		input.x = std::clamp(input.x, -1.0f, 1.0f);
 		input.y = std::clamp(input.y, -1.0f, 1.0f);
 
-		Vector3& translate = GetTransform().GetLocal().translate;
+		Vector3 translate = GetTranslate();
 		translate.x += input.x * velocity_.x * GetDeltaTime();
 		translate.z += input.y * velocity_.z * GetDeltaTime();
+		SetTranslate(translate);
 	}
 
 	void TestPlayer::Shoot() {
@@ -84,10 +83,6 @@ namespace Test {
 		const Vector3& translate = GetTranslate();
 		const Vector3 muzzle = { translate.x, translate.y + 0.5f, translate.z };
 		GameObjectManager::Create<TestBullet>(muzzle, Vector3{ 0.0f, 0.0f, bulletSpeed_ }, bulletLifeTime_);
-	}
-
-	void TestPlayer::Draw() {
-		bunny_->Draw();
 	}
 
 	void TestPlayer::Finalize() {

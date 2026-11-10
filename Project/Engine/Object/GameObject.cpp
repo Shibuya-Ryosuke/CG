@@ -1,6 +1,39 @@
 #include "GameObject.h"
+#include "../Graphics/3D/Model.h"
 
 namespace RyoEngine {
+
+    // Model の中身が見える cpp で消す (h では Model を前方宣言しているため)
+    GameObject::~GameObject() = default;
+
+    Model* GameObject::AddModel(const std::string& nameOrPath, uint32_t textureIndex) {
+        models_.push_back(Model::Create(nameOrPath, textureIndex));
+        Model* model = models_.back().get();
+        model->SetParent(&transform_);
+        return model;
+    }
+
+    Model* GameObject::AddModel(uint32_t modelIndex, uint32_t textureIndex) {
+        models_.push_back(Model::Create(modelIndex, textureIndex));
+        Model* model = models_.back().get();
+        model->SetParent(&transform_);
+        return model;
+    }
+
+    void GameObject::TransferModels() {
+        for (auto& model : models_) {
+            model->TransferMatrix();
+        }
+    }
+
+    void GameObject::DrawModels() {
+        if (!isVisible_) {
+            return;
+        }
+        for (auto& model : models_) {
+            model->Draw();
+        }
+    }
 
     uint32_t GameObject::AddCollider(const Collider& collider) {
         colliders_.push_back(collider);
