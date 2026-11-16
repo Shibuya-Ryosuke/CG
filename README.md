@@ -244,7 +244,8 @@ model->Draw();           // Draw で
 | `Draw()` | 描画 (画面外なら自動で省かれる) |
 | `GetWorldPos()` / `GetWorldMatrix()` | ワールドでの位置・行列 |
 | `SetTex` / `SetColor` / `SetEmissive(色, 強さ)` | テクスチャ・色・発光 |
-| `SetEnableLighting` / `SetLambert(シェーディング)` | ライティングのオンオフ・方式 (`NONE` `LAMBERT` `HALF_LAMBERT`) |
+| `SetEnableLighting` / `SetLambert(シェーディング)` | ライティングのオンオフ・方式 (`NONE` `LAMBERT` `HALF_LAMBERT` `PHONG` `BLINN_PHONG`) |
+| `SetSpecular(色, 強さ, 鋭さ)` | ハイライト (鏡面反射)。`PHONG` / `BLINN_PHONG` のときだけ使われる。鋭さは 8 (ぼんやり) 〜 128 (つるつる) が目安 |
 | `SetUVTranslate` / `SetUVRotate` / `SetUVScale` / `SetUVSRT` | UV |
 | `SetBlendMode(モード)` | ブレンドモード ([下を参照](#ブレンドモードと描画順)) |
 | `SetBackground(true)` | 背景にする (天球など。深度を書かず一番最初に描く) |
@@ -257,6 +258,13 @@ model->Draw();           // Draw で
 `〇〇ByName(値, "マテリアル名")` で、mtl のマテリアル名から指定することもできます。
 
 `ModelManager::SetNearFade(透かし始める距離, 完全に透明になる距離)` で、カメラに近すぎるモデルを透かせます。
+
+拡大率を軸ごとに変えても (例: `SetScale({ 2, 1, 1 })`)、法線はエンジンが正しく直すので、陰影は崩れません。
+
+```cpp
+model->SetLambert(ShadingMode::BLINN_PHONG);
+model->SetSpecular({ 1.0f, 1.0f, 1.0f }, 1.0f, 32.0f); // 白いハイライト、強さ1、鋭さ32
+```
 
 ---
 
@@ -316,8 +324,8 @@ model->SetShaderParams(0, { 0.1f, 0.0f, 0.0f, 0.0f }); // input.params[0]
 | `ShaderManager::ReloadAll()` | 全部コンパイルし直す (ImGui の「Shader」ウィンドウのボタンでも可) |
 | `Model::SetShaderParam(0〜7, 値)` | シェーダーへ渡す自由な値 (`input.params[0].xyzw`, `[1].xyzw`) |
 
-* 使える値: `input.uv` `input.normal` `input.worldPosition` `input.time` `input.params[2]` `input.instance` (色など)
-* 書き換えられる値: `output.color` `output.alpha` `output.emissive` `output.normal`
+* 使える値: `input.uv` `input.normal` `input.worldPosition` `input.time` `input.params[2]` `input.instance` (色など)、`gCameraPosition` (カメラの位置)
+* 書き換えられる値: `output.color` `output.alpha` `output.emissive` `output.normal` `output.specular` `output.shininess`
 * ライティング・影・近くを透かす処理は、エンジン側で必ず行われます
 * 詳しくは `Resources/EngineResources/HLSL/Model/ModelSurface.hlsli` の先頭
 

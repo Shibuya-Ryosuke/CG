@@ -32,6 +32,7 @@ namespace Test {
 
 		// --- Update で使う (ParamEditor の値を反映する) ---
 		void ApplyGround();       // 【3D】地面
+		void ApplyShadingModel(); // 【3D】シェーディング確認
 		void ApplyRender();       // 【3D】描画全体
 		void ApplyPostProcess();  // 【後処理】【自作後処理】
 		void UpdateSprites();     // 【2D】画像・イージング
@@ -44,6 +45,7 @@ namespace Test {
 		// ===== アセット =====
 		std::unique_ptr<RyoEngine::Model> ground_{};
 		std::unique_ptr<RyoEngine::Model> sky_{};
+		std::unique_ptr<RyoEngine::Model> shadingModel_{}; // 【3D】シェーディング確認 (Phong / 非均一スケール)
 		RyoEngine::Sprite flower_{};       // 【2D】画像
 		RyoEngine::Sprite easingSprite_{}; // 【2D】イージング
 		uint32_t groundScrollShader_ = RyoEngine::ShaderManager::kDefaultShader;  // 地面用カスタムシェーダー
@@ -83,7 +85,7 @@ namespace Test {
 
 		// ===== 【3D】地面 =====
 		int32_t groundBlendMode_ = 0;                            // 0:None 1:Normal 2:Add 3:Sub 4:Mul 5:Screen
-		int32_t groundShading_ = 2;                              // 0:なし 1:ランバート 2:ハーフランバート
+		int32_t groundShading_ = 2;                              // 0:なし 1:ランバート 2:ハーフランバート 3:Phong 4:BlinnPhong
 		bool groundLighting_ = true;
 		bool groundCastShadow_ = true;
 		RyoEngine::Vector2 groundUVScale_ = { 1.0f, 1.0f };
@@ -92,6 +94,16 @@ namespace Test {
 		bool useGroundScrollShader_ = false;                     // UVスクロールのカスタムシェーダーを使うか
 		RyoEngine::Vector2 groundScrollSpeed_ = { 0.05f, 0.0f }; // 流れる速さ(UV/秒)
 		float groundColorWave_ = 1.0f;                           // 色を波打たせる強さ
+
+		// ===== 【3D】シェーディング確認 =====
+		// 拡大率を軸ごとに変える(非均一スケール)と、法線の補正が効いているかが分かる
+		RyoEngine::Transform shadingModelTransform_{
+			.scale = { 2.0f, 1.0f, 1.0f }, .rotate = { 0.0f, 0.0f, 0.0f }, .translate = { -6.0f, 5.0f, 8.0f } };
+		int32_t shadingModelShading_ = 4;                        // 0:なし 1:ランバート 2:ハーフランバート 3:Phong 4:BlinnPhong
+		RyoEngine::Vector4 shadingModelColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+		RyoEngine::Vector3 specularColor_ = { 1.0f, 1.0f, 1.0f }; // ハイライトの色
+		float specularIntensity_ = 1.0f;                         // ハイライトの強さ
+		float shininess_ = 32.0f;                                // ハイライトの鋭さ
 
 		// ===== 【3D】描画全体 =====
 		float nearFadeStart_ = 3.0f; // カメラにこれより近いモデルを透かし始める

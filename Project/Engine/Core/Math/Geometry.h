@@ -7,7 +7,9 @@ namespace RyoEngine {
     enum class ShadingMode : int32_t {
         NONE,
         LAMBERT,
-        HALF_LAMBERT
+        HALF_LAMBERT,
+        PHONG,        // 拡散 = ランバート + 鏡面反射 (反射ベクトルと視線の角度)
+        BLINN_PHONG   // 拡散 = ランバート + 鏡面反射 (ハーフベクトルと法線の角度)
     };
     struct Material {
         Vector4 color;

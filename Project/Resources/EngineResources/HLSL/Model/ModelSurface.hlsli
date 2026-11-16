@@ -35,6 +35,15 @@ Texture2D<float4> gShaderTexture0 : register(t4);
 Texture2D<float4> gShaderTexture1 : register(t5);
 SamplerState gSampler : register(s0);
 
+// --- カメラ (C++側 root param 0。ModelManager.h の ModelCameraData と合わせる) ---
+// VS / PS / アプリのシェーダーのどこからでも使える
+cbuffer CameraBuffer : register(b0)
+{
+    float4x4 gViewProjection;
+    float3 gCameraPosition; // 描画カメラのワールド座標 (鏡面反射の視線の向きに使う)
+    float gCameraPadding;
+};
+
 // --- 描画パスごとの値 (C++側 root param 8 のルート定数。ModelManager::SetDrawParams と合わせる) ---
 cbuffer DrawConstants : register(b4)
 {
@@ -78,6 +87,8 @@ struct SurfaceOutput
     float alpha;            // アルファ (初期値: モデルの色のa × メインテクスチャのa)。Normal/Add/Subtract で使われる
     float3 emissive;        // 発光 (初期値: SetEmissive の色 × 強さ)。ライティングを通さず最後に足される
     float3 normal;          // ライティングに使う法線 (初期値: input.normal)
+    float3 specular;        // 鏡面反射の色×強さ (初期値: SetSpecular の値)。Phong / BlinnPhong のときだけ使われる
+    float shininess;        // 鏡面反射の鋭さ (初期値: SetSpecular の値)
     bool enableLighting;    // ライティングするか (初期値: SetEnableLighting / SetLambert の設定)
 };
 

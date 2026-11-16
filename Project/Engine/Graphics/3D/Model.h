@@ -128,6 +128,9 @@ namespace RyoEngine {
         float GetEmissiveIntensity(size_t meshIndex = 0) const { return meshes_[meshIndex].emissiveIntensity; }
         bool GetEnableLighting(size_t meshIndex = 0) const { return meshes_[meshIndex].enableLighting; }
         ShadingMode GetLambert(size_t meshIndex = 0) const { return meshes_[meshIndex].shadingMode; }
+        const Vector3& GetSpecularColor(size_t meshIndex = 0) const { return meshes_[meshIndex].specularColor; }
+        float GetSpecularIntensity(size_t meshIndex = 0) const { return meshes_[meshIndex].specularIntensity; }
+        float GetShininess(size_t meshIndex = 0) const { return meshes_[meshIndex].shininess; }
         BlendMode GetBlendMode(size_t meshIndex = 0) const { return meshes_[meshIndex].blendMode; }
         bool GetCastShadow() const { return castShadow_; }
         bool IsBackground() const { return isBackground_; }
@@ -183,6 +186,12 @@ namespace RyoEngine {
         void SetEnableLighting(bool enable, int32_t meshIndex = -1);
         void SetLambert(ShadingMode mode, int32_t meshIndex = -1);
         /// <summary>
+        /// 鏡面反射 (ハイライト)。SetLambert で PHONG / BLINN_PHONG にしたときだけ使われる。
+        /// color: ハイライトの色 (テクスチャ・モデルの色はかからない) / intensity: 強さ (0で無し)
+        /// shininess: 鋭さ。大きいほどハイライトが小さく鋭くなる (目安: 8 ぼんやり 〜 128 つるつる)
+        /// </summary>
+        void SetSpecular(const Vector3& color, float intensity, float shininess, int32_t meshIndex = -1);
+        /// <summary>
         /// ブレンドモード (初期値 None = 不透明)。半透明にしたいときは Normal、光るエフェクトは Add など。
         /// None と Normal 以外は深度を書かない。Add/Subtract/Screen は影を落とさない
         /// </summary>
@@ -220,6 +229,7 @@ namespace RyoEngine {
         void SetTexByName(const std::string& filePath, const std::string& materialName);
         void SetColorByName(const Vector4& color, const std::string& materialName);
         void SetLambertByName(ShadingMode mode, const std::string& materialName);
+        void SetSpecularByName(const Vector3& color, float intensity, float shininess, const std::string& materialName);
         void SetBlendModeByName(BlendMode blendMode, const std::string& materialName);
         void SetShaderByName(uint32_t shader, const std::string& materialName);
         void SetUVScaleByName(const Vector2& scale, const std::string& materialName);
@@ -237,6 +247,9 @@ namespace RyoEngine {
             float emissiveIntensity = 0.0f;
             bool enableLighting = true;
             ShadingMode shadingMode = ShadingMode::HALF_LAMBERT;
+            Vector3 specularColor = { 1.0f, 1.0f, 1.0f }; // 鏡面反射 (PHONG / BLINN_PHONG のときだけ使う)
+            float specularIntensity = 1.0f;
+            float shininess = 32.0f;
             BlendMode blendMode = BlendMode::None;
             uint32_t shader = 0; // カスタムシェーダー (0 = エンジン標準)
             Vector2 uvScale = { 1.0f, 1.0f };

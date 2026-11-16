@@ -4,6 +4,7 @@
 //   1. カメラに近いときの処理 (不透明はディザ)          … 必ず通る
 //   2. Surface() で色を決める                           … アプリの処理
 //   3. ライティング・影                                  … output.enableLighting が true のとき
+//      (Phong / BlinnPhong は鏡面反射も足す)
 //   4. 発光を足す
 //   5. カメラに近いときの処理 (半透明・加算などは薄くする) … 必ず通る
 // エディタ(IntelliSense)がこのファイル単体を見ても型や関数が分かるように include しておく。
@@ -71,10 +72,16 @@ struct PixelShaderOutput
     float4 color : SV_TARGET0;
 };
 
+static const int SHADING_LAMBERT      = 1;
+static const int SHADING_HALF_LAMBERT = 2;
+static const int SHADING_PHONG        = 3;
+static const int SHADING_BLINN_PHONG  = 4;
+
 // 法線とライトへの向き(dirToLight：ピクセルからライトの方向)から、Lambert/HalfLambertの係数を計算する
+// (Phong / BlinnPhong の拡散反射は Lambert と同じ)
 float ComputeCosTerm(float3 normal, float3 dirToLight, int shadingMode)
 {
-    if (shadingMode == 1)
+    if (shadingMode == SHADING_LAMBERT || shadingMode == SHADING_PHONG || shadingMode == SHADING_BLINN_PHONG)
     {
         // Lambert
         return saturate(dot(normal, dirToLight));
@@ -86,6 +93,31 @@ float ComputeCosTerm(float3 normal, float3 dirToLight, int shadingMode)
         return pow(NdotL * 0.5f + 0.5f, 2.0f);
     }
     return 1.0f;
+}
+
+// 鏡面反射(ハイライト)の係数を計算する。Phong / BlinnPhong 以外は0
+//   dirToLight : ピクセルからライトへの向き
+//   dirToCamera: ピクセルからカメラへの向き
+float ComputeSpecularTerm(float3 normal, float3 dirToLight, float3 dirToCamera, float shininess, int shadingMode)
+{
+    // ライトが面の裏側にあるときはハイライトを出さない (裏まで光が回り込まないように)
+    if (dot(normal, dirToLight) <= 0.0f)
+    {
+        return 0.0f;
+    }
+    if (shadingMode == SHADING_PHONG)
+    {
+        // Phong: ライトの光が面で跳ね返る向き(反射ベクトル)と、カメラへの向きがどれだけ近いか
+        float3 reflectDir = reflect(-dirToLight, normal);
+        return pow(saturate(dot(reflectDir, dirToCamera)), shininess);
+    }
+    if (shadingMode == SHADING_BLINN_PHONG)
+    {
+        // Blinn-Phong: ライトとカメラのちょうど中間の向き(ハーフベクトル)と、法線がどれだけ近いか
+        float3 halfVector = normalize(dirToLight + dirToCamera);
+        return pow(saturate(dot(normal, halfVector)), shininess);
+    }
+    return 0.0f;
 }
 
 // ワールド座標から、シャドウマップを使って「影の量」を計算する (1:影なし 〜 0:完全に影)
@@ -144,6 +176,8 @@ PixelShaderOutput main(VertexShaderOutput input)
     surface.alpha = instance.color.a * textureColor.a;
     surface.emissive = instance.emissive.rgb * instance.emissive.a;
     surface.normal = surfaceInput.normal;
+    surface.specular = instance.specular.rgb;
+    surface.shininess = max(instance.specular.a, 1.0f);
     surface.enableLighting = (instance.enableLighting != 0 && instance.shadingMode != 0);
 
     Surface(surfaceInput, surface);
@@ -152,6 +186,9 @@ PixelShaderOutput main(VertexShaderOutput input)
     {
         float3 normal = normalize(surface.normal);
         float3 lightSum = float3(0.0f, 0.0f, 0.0f);
+        // 鏡面反射の合計 (モデルの色・テクスチャはかけずに足す)
+        float3 specularSum = float3(0.0f, 0.0f, 0.0f);
+        float3 dirToCamera = normalize(gCameraPosition - input.worldPosition);
 
         for (uint i = 0; i < gLightCount; ++i)
         {
@@ -163,6 +200,8 @@ PixelShaderOutput main(VertexShaderOutput input)
                 float cosTerm = ComputeCosTerm(normal, dirToLight, instance.shadingMode);
                 float shadow = CalculateShadowFactor(input.worldPosition);
                 lightSum += light.color.rgb * cosTerm * light.intensity * shadow;
+                float specularTerm = ComputeSpecularTerm(normal, dirToLight, dirToCamera, surface.shininess, instance.shadingMode);
+                specularSum += light.color.rgb * specularTerm * light.intensity * shadow;
             }
             else
             {
@@ -182,12 +221,14 @@ PixelShaderOutput main(VertexShaderOutput input)
 
                 float cosTerm = ComputeCosTerm(normal, dirToLight, instance.shadingMode);
                 lightSum += light.color.rgb * cosTerm * light.intensity * attenuation;
+                float specularTerm = ComputeSpecularTerm(normal, dirToLight, dirToCamera, surface.shininess, instance.shadingMode);
+                specularSum += light.color.rgb * specularTerm * light.intensity * attenuation;
             }
         }
 
         lightSum += gAmbientColor.rgb * gAmbientIntensity;
 
-        output.color.rgb = surface.color * lightSum;
+        output.color.rgb = surface.color * lightSum + surface.specular * specularSum;
     }
     else
     {

@@ -266,7 +266,8 @@ namespace RyoEngine {
         shadowGroups_.clear();
 
         // カメラのVPはここでGPUバッファへ書く (GPUが使う直前に書くため)
-        *cameraVPData_ = viewProjection_;
+        cameraVPData_->viewProjection = viewProjection_;
+        cameraVPData_->position = cameraPosition_;
 
         if (entries_.empty()) {
             return;
@@ -478,9 +479,11 @@ namespace RyoEngine {
     void ModelManager::CreateBuffers() {
         auto device = DirectXCommon::GetDevice();
 
-        cameraVPResource_ = DirectXCommon::CreateBufferResource(device, sizeof(Matrix4x4));
+        cameraVPResource_ = DirectXCommon::CreateBufferResource(device, sizeof(ModelCameraData));
         cameraVPResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraVPData_));
-        *cameraVPData_ = MakeIdentity4x4();
+        cameraVPData_->viewProjection = MakeIdentity4x4();
+        cameraVPData_->position = { 0.0f, 0.0f, 0.0f };
+        cameraVPData_->padding = 0.0f;
 
         EnsureInstanceCapacity(kInitialInstanceCapacity);
     }
@@ -516,9 +519,9 @@ namespace RyoEngine {
         shaderTexture1Range[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
         D3D12_ROOT_PARAMETER rootParameters[11] = {};
-        // 0: カメラのView-Projection (CBV b0, Vertex)
+        // 0: カメラのView-Projection と位置 (CBV b0, VertexとPixelの両方。Pixelは鏡面反射で位置を使う)
         rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[0].Descriptor.ShaderRegister = 0;
         // 1: インスタンス配列 (Root SRV t3, VertexとPixelの両方から読む)
         rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;

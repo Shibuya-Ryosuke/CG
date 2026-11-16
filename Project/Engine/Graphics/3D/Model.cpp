@@ -197,6 +197,13 @@ namespace RyoEngine {
             data.params[0] = shaderParams_[0];
             data.params[1] = shaderParams_[1];
 
+            // 鏡面反射: 色×強さ と 鋭さ をまとめて送る
+            data.specular = {
+                state.specularColor.x * state.specularIntensity,
+                state.specularColor.y * state.specularIntensity,
+                state.specularColor.z * state.specularIntensity,
+                state.shininess };
+
             ModelDrawOptions options;
             options.blendMode = state.blendMode;
             options.shader = state.shader;
@@ -272,6 +279,16 @@ namespace RyoEngine {
 
     void Model::SetLambert(ShadingMode mode, int32_t meshIndex) {
         ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.shadingMode = mode; });
+    }
+
+    void Model::SetSpecular(const Vector3& color, float intensity, float shininess, int32_t meshIndex) {
+        // shininess が0以下だと pow がおかしくなるので、最低1にしておく
+        const float safeShininess = shininess < 1.0f ? 1.0f : shininess;
+        ForEachMesh(meshIndex, [&](MeshState& mesh) {
+            mesh.specularColor = color;
+            mesh.specularIntensity = intensity;
+            mesh.shininess = safeShininess;
+            });
     }
 
     void Model::SetBlendMode(BlendMode blendMode, int32_t meshIndex) {
@@ -360,6 +377,10 @@ namespace RyoEngine {
     void Model::SetLambertByName(ShadingMode mode, const std::string& materialName) {
         const int32_t index = GetMeshIndexByName(materialName);
         if (index >= 0) SetLambert(mode, index);
+    }
+    void Model::SetSpecularByName(const Vector3& color, float intensity, float shininess, const std::string& materialName) {
+        const int32_t index = GetMeshIndexByName(materialName);
+        if (index >= 0) SetSpecular(color, intensity, shininess, index);
     }
     void Model::SetBlendModeByName(BlendMode blendMode, const std::string& materialName) {
         const int32_t index = GetMeshIndexByName(materialName);

@@ -28,6 +28,7 @@ namespace Test {
 		ground_ = Model::Create("Resources/EngineResources/Test/ground.obj");
 		sky_ = Model::Create("Resources/EngineResources/Test/skydome.obj");
 		sky_->SetBackground(true); // 背景 (地面が天球からはみ出しても隠れない)
+		shadingModel_ = Model::Create("Resources/EngineResources/Test/bunny.obj");
 
 		// --- 画像 ---
 		flower_.Initialize("Resources/EngineResources/Test/flower.png");
@@ -76,7 +77,7 @@ namespace Test {
 
 		ParamEditor::BeginGroup("【3D】地面");
 		ParamEditor::RegisterValue(std::string("ブレンドモード") + blendHelp, &groundBlendMode_, 0.05f, 0, 5);
-		ParamEditor::RegisterValue("シェーディング(0:なし 1:ランバート 2:ハーフランバート)", &groundShading_, 0.05f, 0, 2);
+		ParamEditor::RegisterValue("シェーディング(0:なし 1:ランバート 2:ハーフランバート 3:Phong 4:BlinnPhong)", &groundShading_, 0.05f, 0, 4);
 		ParamEditor::RegisterFlag("ライティング", &groundLighting_);
 		ParamEditor::RegisterFlag("影を落とす", &groundCastShadow_);
 		ParamEditor::RegisterValue("UVの拡大", &groundUVScale_, 0.01f, -100.0f, 100.0f);
@@ -85,6 +86,15 @@ namespace Test {
 		ParamEditor::RegisterFlag("UVスクロールのシェーダーを使う（カスタムシェーダー）", &useGroundScrollShader_);
 		ParamEditor::RegisterValue("シェーダー:流れる速さ", &groundScrollSpeed_, 0.01f, -2.0f, 2.0f);
 		ParamEditor::RegisterValue("シェーダー:色の波打ち", &groundColorWave_, 0.01f, 0.0f, 1.0f);
+		ParamEditor::EndGroup();
+
+		ParamEditor::BeginGroup("【3D】シェーディング確認");
+		ParamEditor::RegisterValue("SRT(拡大を軸ごとに変えると非均一スケール)", &shadingModelTransform_);
+		ParamEditor::RegisterValue("シェーディング(0:なし 1:ランバート 2:ハーフランバート 3:Phong 4:BlinnPhong)", &shadingModelShading_, 0.05f, 0, 4);
+		ParamEditor::RegisterColor("色", &shadingModelColor_);
+		ParamEditor::RegisterColor("ハイライトの色", &specularColor_);
+		ParamEditor::RegisterValue("ハイライトの強さ", &specularIntensity_, 0.01f, 0.0f, 10.0f);
+		ParamEditor::RegisterValue("ハイライトの鋭さ", &shininess_, 0.1f, 1.0f, 256.0f);
 		ParamEditor::EndGroup();
 
 		ParamEditor::BeginGroup("【3D】描画全体");
@@ -179,6 +189,7 @@ namespace Test {
 		SetTimeScale(timeScale_);
 
 		ApplyGround();
+		ApplyShadingModel();
 		ApplyRender();
 		ApplyPostProcess();
 		UpdateSprites();
@@ -188,6 +199,7 @@ namespace Test {
 		// 地面と空の行列を確定 (カリングは Draw で行われる)
 		ground_->TransferMatrix();
 		sky_->TransferMatrix();
+		shadingModel_->TransferMatrix();
 	}
 
 	void TestScene::ApplyGround() {
@@ -204,11 +216,20 @@ namespace Test {
 		// シェーダーへ渡す値 (UVScroll.hlsl の params[0])
 		ground_->SetShaderParams(0, { groundScrollSpeed_.x, groundScrollSpeed_.y, groundColorWave_, 0.0f });
 
-		groundShading_ = std::clamp(groundShading_, 0, 2);
+		groundShading_ = std::clamp(groundShading_, 0, 4);
 		ground_->SetLambert(static_cast<ShadingMode>(groundShading_));
 		ground_->SetEnableLighting(groundLighting_);
 		ground_->SetCastShadow(groundCastShadow_);
 		ground_->SetUVSRT(groundUVScale_, groundUVRotate_, groundUVTranslate_);
+	}
+
+	void TestScene::ApplyShadingModel() {
+		shadingModel_->SetTransform(shadingModelTransform_);
+		shadingModelShading_ = std::clamp(shadingModelShading_, 0, 4);
+		shadingModel_->SetLambert(static_cast<ShadingMode>(shadingModelShading_));
+		shadingModel_->SetColor(shadingModelColor_);
+		// ハイライト (Phong / BlinnPhong のときだけ使われる)
+		shadingModel_->SetSpecular(specularColor_, specularIntensity_, shininess_);
 	}
 
 	void TestScene::ApplyRender() {
@@ -311,6 +332,7 @@ namespace Test {
 	void TestScene::Draw() {
 		ground_->Draw();
 		sky_->Draw();
+		shadingModel_->Draw();
 
 		flower_.Draw();
 		easingSprite_.Draw();

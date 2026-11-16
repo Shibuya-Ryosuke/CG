@@ -14,7 +14,7 @@ namespace RyoEngine {
 
     /// <summary>
     /// GPUへ渡す「1体 x 1メッシュ」分のデータ。
-    /// HLSL側 ModelInstance (ModelInstance.hlsli) と1:1でレイアウトを合わせること。全体で160byte。
+    /// HLSL側 ModelInstance (ModelInstance.hlsli) と1:1でレイアウトを合わせること。全体で176byte。
     /// </summary>
     struct ModelInstanceData {
         Matrix4x4 world;          // 64
@@ -25,8 +25,20 @@ namespace RyoEngine {
         int32_t   enableLighting; //  4
         int32_t   shadingMode;    //  4
         Vector4   params[2];      // 32  カスタムシェーダー用の自由な値 (Model::SetShaderParam)
+        Vector4   specular;       // 16  rgb=鏡面反射の色×強さ, a=鋭さ(shininess)。Phong / BlinnPhong のときだけ使う
     };
-    static_assert(sizeof(ModelInstanceData) == 160, "ModelInstanceData は160byteであること (ModelInstance.hlsli と合わせる)");
+    static_assert(sizeof(ModelInstanceData) == 176, "ModelInstanceData は176byteであること (ModelInstance.hlsli と合わせる)");
+
+    /// <summary>
+    /// カメラの定数バッファ (b0)。HLSL側 CameraBuffer (ModelSurface.hlsli) と合わせること。
+    /// 位置は鏡面反射(Phong / BlinnPhong)の視線の向きを求めるのに使う
+    /// </summary>
+    struct ModelCameraData {
+        Matrix4x4 viewProjection; // 64
+        Vector3   position;       // 12  描画カメラのワールド座標
+        float     padding;        //  4
+    };
+    static_assert(sizeof(ModelCameraData) == 80, "ModelCameraData は80byteであること (ModelSurface.hlsli と合わせる)");
 
     /// <summary>
     /// 描画のしかた (Model::Draw() から ModelManager::Submit() へ渡す)
@@ -240,8 +252,8 @@ namespace RyoEngine {
         };
         std::vector<RetiredBuffer> retired_;
 
-        // カメラのView-Projection (VS用CBV)
+        // カメラのView-Projection と位置 (VS/PS共通のCBV)
         Microsoft::WRL::ComPtr<ID3D12Resource> cameraVPResource_;
-        Matrix4x4* cameraVPData_ = nullptr;
+        ModelCameraData* cameraVPData_ = nullptr;
     };
 }
