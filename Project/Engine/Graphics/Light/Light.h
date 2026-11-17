@@ -14,7 +14,7 @@ namespace RyoEngine {
 	};
 
 	// 汎用ライト構造体（GPU(HLSL)側のstructと1:1でレイアウトを一致させること）
-	// 全部で64byte。StructuredBufferの要素として使うので16byteアライン(cbuffer)ほど厳密である必要はないが、
+	// 全部で96byte。StructuredBufferの要素として使うので16byteアライン(cbuffer)ほど厳密である必要はないが、
 	// 見通しを良くするため16byte区切りで揃えている。
 	struct Light {
 		Vector4   color;       // rgb=色, a=未使用                         (16byte)
@@ -26,8 +26,12 @@ namespace RyoEngine {
 		float     spotFalloff; // Spotの縁の滑らかさ
 		LightType type;        // ライト種別
 		float     padding;     // 16byteアライン調整用                     (16byte)
+		Vector3   areaRight;   // Areaで使用：面の横方向（LightManager::Update が向きと回転から毎フレーム計算して入れる。保存しない）
+		float     areaWidth;   // Areaで使用：面の幅（端から端までの長さ）   (16byte)
+		Vector3   areaUp;      // Areaで使用：面の縦方向（areaRight と同じく自動で計算される。保存しない）
+		float     areaHeight;  // Areaで使用：面の高さ（端から端までの長さ） (16byte)
 	};
-	static_assert(sizeof(Light) == 64, "Light構造体のサイズがHLSL側と食い違うと壊れるので確認すること");
+	static_assert(sizeof(Light) == 96, "Light構造体のサイズがHLSL側と食い違うと壊れるので確認すること");
 
 	// GPUへ渡すライト数（毎フレーム変わるため、Light配列本体とは別の定数バッファで持つ）
 	struct LightCountData {
@@ -87,7 +91,9 @@ namespace RyoEngine {
 			{"range", l.range},
 			{"spotAngle", l.spotAngle},
 			{"spotFalloff", l.spotFalloff},
-			{"type", l.type}
+			{"type", l.type},
+			{"areaWidth", l.areaWidth},
+			{"areaHeight", l.areaHeight}
 		};
 	}
 	inline void from_json(const nlohmann::json& j, Light& l) {
@@ -100,6 +106,12 @@ namespace RyoEngine {
 		j.at("spotFalloff").get_to(l.spotFalloff);
 		j.at("type").get_to(l.type);
 		l.padding = 0.0f;
+		// エリアライトの面の大きさ (古いJSONに無くても読めるようにする)
+		l.areaWidth = j.value("areaWidth", 2.0f);
+		l.areaHeight = j.value("areaHeight", 2.0f);
+		// 面の横・縦方向は LightManager::Update が計算するので、ここでは空にしておく
+		l.areaRight = { 0.0f, 0.0f, 0.0f };
+		l.areaUp = { 0.0f, 0.0f, 0.0f };
 	}
 
 	inline void to_json(nlohmann::json& j, const AmbientLight& a) {

@@ -21,7 +21,7 @@ void Surface(SurfaceInput input, inout SurfaceOutput output);
 #include "DefaultSurface.hlsli"
 #endif
 
-// C++側 Light構造体(Light.h)と1:1でレイアウトを合わせること。全体で64byte。
+// C++側 Light構造体(Light.h)と1:1でレイアウトを合わせること。全体で96byte。
 struct Light
 {
     float4 color;       // rgb=色, a=未使用
@@ -33,6 +33,10 @@ struct Light
     float spotFalloff;  // Spotの縁の滑らかさ
     uint type;          // ライト種別 (0:Directional 1:Point 2:Spot 3:Area)
     float padding;      // 16byteアライン調整用
+    float3 areaRight;   // Areaで使用：面の横方向 (正規化済み。C++側が毎フレーム計算して入れる)
+    float areaWidth;    // Areaで使用：面の幅 (端から端までの長さ)
+    float3 areaUp;      // Areaで使用：面の縦方向 (正規化済み)
+    float areaHeight;   // Areaで使用：面の高さ (端から端までの長さ)
 };
 
 static const uint LIGHT_TYPE_DIRECTIONAL = 0;
@@ -120,6 +124,17 @@ float ComputeSpecularTerm(float3 normal, float3 dirToLight, float3 dirToCamera, 
     return 0.0f;
 }
 
+// エリアライト(長方形の面光源)の面の上で、指定した座標に一番近い場所を返す
+//   面の中心からのずれを、横方向・縦方向の成分に分けて、それぞれ面の端までに収める
+float3 ClosestPointOnAreaLight(Light light, float3 targetPosition)
+{
+    float3 fromCenter = targetPosition - light.position;
+    float2 halfSize = float2(light.areaWidth, light.areaHeight) * 0.5f;
+    float alongRight = clamp(dot(fromCenter, light.areaRight), -halfSize.x, halfSize.x);
+    float alongUp = clamp(dot(fromCenter, light.areaUp), -halfSize.y, halfSize.y);
+    return light.position + light.areaRight * alongRight + light.areaUp * alongUp;
+}
+
 // ワールド座標から、シャドウマップを使って「影の量」を計算する (1:影なし 〜 0:完全に影)
 // NOTE: 現状はDirectionalLight(Light 0)専用。Point/Spotの影は別方式が必要なため未対応。
 float CalculateShadowFactor(float3 worldPosition)
@@ -202,6 +217,44 @@ PixelShaderOutput main(VertexShaderOutput input)
                 lightSum += light.color.rgb * cosTerm * light.intensity * shadow;
                 float specularTerm = ComputeSpecularTerm(normal, dirToLight, dirToCamera, surface.shininess, instance.shadingMode);
                 specularSum += light.color.rgb * specularTerm * light.intensity * shadow;
+            }
+            else if (light.type == LIGHT_TYPE_AREA)
+            {
+                // エリアライト(長方形の面光源)。代表点法: 面の中から「この1点から照らされている」とみなす点を選び、
+                // あとはポイントライトと同じように計算する。
+                // light.direction は面が光を出す向き。片面だけ光る (裏側は照らさない)
+
+                // --- 拡散反射: 面の上で、このピクセルに一番近い点から照らされている扱いにする ---
+                float3 diffusePoint = ClosestPointOnAreaLight(light, input.worldPosition);
+                float3 toLightVec = diffusePoint - input.worldPosition;
+                float distance = length(toLightVec);
+                float3 dirToLight = toLightVec / max(distance, 0.0001f);
+
+                float attenuation = saturate(1.0f - (distance / max(light.range, 0.0001f)));
+                attenuation *= attenuation;
+                // 面の正面にあるほど明るく、真横で0、裏側は照らさない
+                attenuation *= saturate(dot(light.direction, -dirToLight));
+
+                float cosTerm = ComputeCosTerm(normal, dirToLight, instance.shadingMode);
+                lightSum += light.color.rgb * cosTerm * light.intensity * attenuation;
+
+                // --- 鏡面反射: 視線が面で跳ね返った先が、ライトの面のどこに当たるかを求めて、そこを光源の位置にする ---
+                // (面に当たらないときは、当たるはずだった場所に一番近い面の上の点を使う。ハイライトが面の形に伸びて見える)
+                float3 specularPoint = diffusePoint;
+                float3 reflectDir = reflect(-dirToCamera, normal);
+                // 跳ね返った視線が、ライトの面の表側へ向かって進んでいるときだけ交点を求める
+                float towardLight = dot(reflectDir, light.direction);
+                if (towardLight < -0.0001f)
+                {
+                    float hitDistance = dot(light.position - input.worldPosition, light.direction) / towardLight;
+                    if (hitDistance > 0.0f)
+                    {
+                        specularPoint = ClosestPointOnAreaLight(light, input.worldPosition + reflectDir * hitDistance);
+                    }
+                }
+                float3 dirToSpecularPoint = normalize(specularPoint - input.worldPosition);
+                float specularTerm = ComputeSpecularTerm(normal, dirToSpecularPoint, dirToCamera, surface.shininess, instance.shadingMode);
+                specularSum += light.color.rgb * specularTerm * light.intensity * attenuation;
             }
             else
             {

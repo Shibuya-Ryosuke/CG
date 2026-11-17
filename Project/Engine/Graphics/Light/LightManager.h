@@ -13,7 +13,7 @@ namespace RyoEngine {
     constexpr uint32_t kMaxLightCount = 64;
 
     // ライト1個分の管理情報。
-    // Light本体はGPUと1:1(64byte)なので触らず、名前・点灯フラグはこちらで持つ。
+    // Light本体はGPUと1:1(96byte)なので触らず、名前・点灯フラグはこちらで持つ。
     struct LightEntry {
         std::string name;      // コードから引くための名前（重複不可）
         Light       light;     // GPUに渡す本体（設定値）
@@ -28,6 +28,11 @@ namespace RyoEngine {
         std::string flagKey;
         // true:フラグがtrueのとき点灯 / false:フラグがfalseのとき点灯 (enabled がオフなら、フラグに関係なく消灯)
         bool        lightWhenTrue = true;
+
+        // --- エリアライト用 ---
+        // 面を、向き(light.direction)を軸にして回す角度 (度)。
+        // GPUへ渡す面の横・縦方向 (areaRight / areaUp) は、Update がこの値と向きから計算する
+        float       areaRollDeg = 0.0f;
     };
 
     class LightManager {
@@ -60,6 +65,10 @@ namespace RyoEngine {
         static void SetLightColor(const std::string& name, const Vector4& color);
         static void SetLightIntensity(const std::string& name, float intensity);
         static void SetLightRange(const std::string& name, float range);
+        // エリアライトの面の大きさ (幅・高さ。端から端までの長さ)
+        static void SetLightAreaSize(const std::string& name, float width, float height);
+        // エリアライトの面を、向きを軸にして回す角度 (度)
+        static void SetLightAreaRoll(const std::string& name, float rollDeg);
 
         // 追従する座標・点灯フラグのキー (BindingRegistry に登録したもの) をコードから指定する。
         // ImGuiで選ぶのが基本だが、コードから固定したい場合に使う (空文字で解除)
@@ -196,6 +205,13 @@ namespace RyoEngine {
         // 重複しない名前を作る（空ならLight、重複なら _1, _2 ... を付ける）
         std::string MakeUniqueName(const std::string& base, int ignoreIndex = -1) const;
 
+        // エリアライトの面の向き(正規化したもの)・横方向・縦方向を、向きと回転(度)から求める
+        static void ComputeAreaAxes(const Vector3& direction, float rollDeg, Vector3& outNormal, Vector3& outRight, Vector3& outUp);
+        // GPUへ渡す座標を求める (登録された座標に追従していればその座標 + ずれ、していなければ設定値の座標)
+        static Vector3 ResolvePosition(const LightEntry& entry);
+        // エリアライトの面の枠と向きを線で描く (デバッグ用)
+        void DrawAreaLightFrames() const;
+
         std::vector<LightEntry> lights_;
 
         // 「見つからない」警告を出した名前（毎フレーム呼ばれてもログが溢れないように）
@@ -218,5 +234,8 @@ namespace RyoEngine {
 
         // フォルダパス変更時の一時バッファ
         char folderPathBuffer_[256] = {};
+
+        // エリアライトの面の枠を線で表示するか (デバッグ用。ImGuiで切り替える)
+        bool showAreaFrame_ = true;
     };
 }

@@ -14,7 +14,7 @@ struct Material
     float3 padding2;
 };
 
-// C++側 Light構造体(Light.h)と1:1でレイアウトを合わせること。全体で64byte。
+// C++側 Light構造体(Light.h)と1:1でレイアウトを合わせること。全体で96byte。
 // (Model_PS.hlslと全く同じ定義。共有ヘッダに切り出しても良い)
 struct Light
 {
@@ -27,6 +27,10 @@ struct Light
     float spotFalloff;
     uint type;
     float padding;
+    float3 areaRight;
+    float areaWidth;
+    float3 areaUp;
+    float areaHeight;
 };
 
 static const uint LIGHT_TYPE_DIRECTIONAL = 0;

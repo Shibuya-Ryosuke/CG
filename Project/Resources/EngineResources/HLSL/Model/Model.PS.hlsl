@@ -14,7 +14,7 @@ struct Material
     float3 padding2;
 };
 
-// C++側 Light構造体(Light.h)と1:1でレイアウトを合わせること。全体で64byte。
+// C++側 Light構造体(Light.h)と1:1でレイアウトを合わせること。全体で96byte。
 struct Light
 {
     float4 color;       // rgb=色, a=未使用
@@ -26,6 +26,10 @@ struct Light
     float spotFalloff;  // Spotの縁の滑らかさ
     uint type;          // ライト種別 (0:Directional 1:Point 2:Spot 3:Area)
     float padding;      // 16byteアライン調整用
+    float3 areaRight;   // Areaで使用：面の横方向 (正規化済み。C++側が毎フレーム計算して入れる)
+    float areaWidth;    // Areaで使用：面の幅 (端から端までの長さ)
+    float3 areaUp;      // Areaで使用：面の縦方向 (正規化済み)
+    float areaHeight;   // Areaで使用：面の高さ (端から端までの長さ)
 };
 
 static const uint LIGHT_TYPE_DIRECTIONAL = 0;

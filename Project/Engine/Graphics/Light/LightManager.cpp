@@ -2,6 +2,9 @@
 #include "../../Core/Base/DirectXCommon.h"
 #include "../../Core/Base/Logger.h"
 #include "../../Core/Base/BindingRegistry.h"
+#include "../PrimitiveRenderer/PrimitiveRenderer.h"
+#include <cmath>
+#include <numbers>
 #include <string>
 #include <filesystem>
 #include <fstream>
@@ -97,8 +100,11 @@ namespace RyoEngine {
             Light gpuLight = entry.light;
 
             // 登録された座標に追従する (未登録なら設定値の座標のまま)
-            if (const Vector3* tracked = BindingRegistry::FindPosition(entry.positionKey)) {
-                gpuLight.position = *tracked + entry.positionOffset;
+            gpuLight.position = ResolvePosition(entry);
+
+            // エリアライト: 面の向き・横方向・縦方向を計算して渡す (シェーダーはこの3つで面の形を知る)
+            if (gpuLight.type == LightType::Area) {
+                ComputeAreaAxes(entry.light.direction, entry.areaRollDeg, gpuLight.direction, gpuLight.areaRight, gpuLight.areaUp);
             }
 
             // 点灯判定
@@ -115,6 +121,75 @@ namespace RyoEngine {
             instance->lightMappedData_[i] = gpuLight;
         }
         instance->lightCountData_->lightCount = count;
+    }
+
+    // ============================================================
+    // エリアライト
+    // ============================================================
+    Vector3 LightManager::ResolvePosition(const LightEntry& entry) {
+        if (const Vector3* tracked = BindingRegistry::FindPosition(entry.positionKey)) {
+            return *tracked + entry.positionOffset;
+        }
+        return entry.light.position;
+    }
+
+    void LightManager::ComputeAreaAxes(const Vector3& direction, float rollDeg, Vector3& outNormal, Vector3& outRight, Vector3& outUp) {
+        // 面の向き (長さ0のときは真下にする)
+        outNormal = Normalize(direction);
+        if (Dot(outNormal, outNormal) <= 0.0f) {
+            outNormal = { 0.0f, -1.0f, 0.0f };
+        }
+
+        // 面の横・縦方向を作るための「仮の上方向」。面の向きがほぼ真上・真下のときは、Z方向を使う
+        // (向きと仮の上方向が平行だと、外積が0になって横方向が決まらないため)
+        Vector3 helperUp = { 0.0f, 1.0f, 0.0f };
+        if (std::abs(outNormal.y) > 0.99f) {
+            helperUp = { 0.0f, 0.0f, 1.0f };
+        }
+        const Vector3 baseRight = Normalize(Cross(helperUp, outNormal));
+        const Vector3 baseUp = Cross(outNormal, baseRight);
+
+        // 向きを軸にして回す
+        const float rollRad = rollDeg * (std::numbers::pi_v<float> / 180.0f);
+        const float cosRoll = std::cos(rollRad);
+        const float sinRoll = std::sin(rollRad);
+        outRight = baseRight * cosRoll + baseUp * sinRoll;
+        outUp = baseUp * cosRoll - baseRight * sinRoll;
+    }
+
+    void LightManager::DrawAreaLightFrames() const {
+        for (const LightEntry& entry : lights_) {
+            if (entry.light.type != LightType::Area) {
+                continue;
+            }
+
+            Vector3 normal{};
+            Vector3 right{};
+            Vector3 up{};
+            ComputeAreaAxes(entry.light.direction, entry.areaRollDeg, normal, right, up);
+
+            const Vector3 center = ResolvePosition(entry);
+            const Vector3 halfRight = right * (entry.light.areaWidth * 0.5f);
+            const Vector3 halfUp = up * (entry.light.areaHeight * 0.5f);
+            // 線の色はライトの色 (見えるようにアルファは1にする)
+            const Vector4 color = { entry.light.color.x, entry.light.color.y, entry.light.color.z, 1.0f };
+
+            // 面の枠 (4辺)
+            const Vector3 corners[4] = {
+                center - halfRight - halfUp,
+                center + halfRight - halfUp,
+                center + halfRight + halfUp,
+                center - halfRight + halfUp,
+            };
+            for (int c = 0; c < 4; ++c) {
+                PrimitiveRenderer::DrawLine3D(corners[c], corners[(c + 1) % 4], color);
+            }
+            // 対角線 (面だと分かりやすいように)
+            PrimitiveRenderer::DrawLine3D(corners[0], corners[2], color);
+            PrimitiveRenderer::DrawLine3D(corners[1], corners[3], color);
+            // 光を出す向き (面の中心から1の長さ)
+            PrimitiveRenderer::DrawLine3D(center, center + normal, color);
+        }
     }
 
     // ============================================================
@@ -193,6 +268,17 @@ namespace RyoEngine {
         if (auto* e = FindEntry(name)) e->light.range = range;
     }
 
+    void LightManager::SetLightAreaSize(const std::string& name, float width, float height) {
+        if (auto* e = FindEntry(name)) {
+            e->light.areaWidth = width;
+            e->light.areaHeight = height;
+        }
+    }
+
+    void LightManager::SetLightAreaRoll(const std::string& name, float rollDeg) {
+        if (auto* e = FindEntry(name)) e->areaRollDeg = rollDeg;
+    }
+
     void LightManager::SetLightPositionKey(const std::string& name, const std::string& key, const Vector3& offset) {
         if (auto* e = FindEntry(name)) {
             e->positionKey = key;
@@ -253,6 +339,8 @@ namespace RyoEngine {
             jLight["useFlag"] = entry.useFlag;
             jLight["flagKey"] = entry.flagKey;
             jLight["lightWhenTrue"] = entry.lightWhenTrue;
+            // エリアライトの面の回転 (幅・高さは Light本体のJSONに入っている)
+            jLight["areaRollDeg"] = entry.areaRollDeg;
             lightsArray.push_back(jLight);
         }
         root["lights"] = lightsArray;
@@ -316,6 +404,7 @@ namespace RyoEngine {
                 entry.useFlag = jLight.value("useFlag", false);
                 entry.flagKey = jLight.value("flagKey", std::string());
                 entry.lightWhenTrue = jLight.value("lightWhenTrue", true);
+                entry.areaRollDeg = jLight.value("areaRollDeg", 0.0f);
 
                 // 名前が空なら連番で補い、重複していれば自動で別名にする
                 std::string requested = entry.name;
@@ -349,6 +438,8 @@ namespace RyoEngine {
         newLight.range = 10.0f;
         newLight.spotAngle = 0.5f;
         newLight.spotFalloff = 0.1f;
+        newLight.areaWidth = 2.0f;
+        newLight.areaHeight = 2.0f;
 
         return AddLight(newLight, name);
     }
@@ -452,8 +543,11 @@ namespace RyoEngine {
             AddLight(LightType::Directional);
         }
 
+        // エリアライトの面の枠を線で表示するか
+        ImGui::Checkbox("エリアライトの枠を表示", &instance->showAreaFrame_);
+
         int removeIndex = -1;
-        const char* typeNames[] = { "平行光源（サン）", "ポイント", "スポット", "エリア（未実装）" };
+        const char* typeNames[] = { "平行光源（サン）", "ポイント", "スポット", "エリア（長方形）" };
 
         for (size_t i = 0; i < instance->lights_.size(); ++i) {
             ImGui::PushID(static_cast<int>(i));
@@ -503,7 +597,7 @@ namespace RyoEngine {
                 ImGui::ColorEdit3("色", &light.color.x);
                 ImGui::SliderFloat("強さ", &light.intensity, 0.0f, 10.0f);
 
-                if (light.type == LightType::Directional || light.type == LightType::Spot) {
+                if (light.type == LightType::Directional || light.type == LightType::Spot || light.type == LightType::Area) {
                     if (ImGui::SliderFloat3("向き", &light.direction.x, -1.0f, 1.0f)) {
                         light.direction = Normalize(light.direction);
                     }
@@ -523,6 +617,12 @@ namespace RyoEngine {
                     ImGui::SliderFloat("角度", &light.spotAngle, 0.0f, 1.0f);
                     ImGui::SliderFloat("減衰", &light.spotFalloff, 0.0f, 1.0f);
                 }
+                if (light.type == LightType::Area) {
+                    // 面の大きさ (端から端までの長さ) と、向きを軸にした回転
+                    ImGui::DragFloat("幅", &light.areaWidth, 0.05f, 0.0f, 100.0f);
+                    ImGui::DragFloat("高さ", &light.areaHeight, 0.05f, 0.0f, 100.0f);
+                    ImGui::DragFloat("回転(度)", &entry.areaRollDeg, 1.0f, -180.0f, 180.0f);
+                }
 
                 if (ImGui::Button("削除")) {
                     removeIndex = static_cast<int>(i);
@@ -533,6 +633,11 @@ namespace RyoEngine {
 
         if (removeIndex >= 0) {
             RemoveLight(removeIndex);
+        }
+
+        // エリアライトの面の枠と向きを線で描く
+        if (instance->showAreaFrame_) {
+            instance->DrawAreaLightFrames();
         }
 
         // 上書き確認ポップアップ
