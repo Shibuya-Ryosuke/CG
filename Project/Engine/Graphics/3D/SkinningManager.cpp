@@ -114,7 +114,7 @@ namespace RyoEngine {
         std::erase_if(self->requests_, [instance](const RequestEntry& r) { return r.instance == instance; });
 
         // このフレームの描画でまだ使うかもしれないので、すぐには解放しない
-        self->retired_.push_back({ std::move(self->instances_[instance - 1]), kRetireFrames });
+        self->retired_.emplace_back(std::move(self->instances_[instance - 1]), kRetireFrames);
         self->freeInstances_.push_back(instance);
     }
 
