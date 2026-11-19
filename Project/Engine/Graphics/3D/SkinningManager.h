@@ -3,6 +3,7 @@
 #include <wrl.h>
 #include <cstdint>
 #include <memory>
+#include <utility>
 #include <vector>
 #include "../../Core/Math/Math.h"
 
@@ -83,6 +84,14 @@ namespace RyoEngine {
         };
         // 使い終わったバッファ (GPUが使い終わるまで数フレーム残す)
         struct RetiredInstance {
+            // unique_ptr を持つのでコピーは不可、ムーブだけ可 (明示しないと /Wall で C4625 / C4626 が出る)
+            RetiredInstance(std::unique_ptr<Instance> retiredInstance, int frames)
+                : instance(std::move(retiredInstance)), framesLeft(frames) {}
+            RetiredInstance(const RetiredInstance&) = delete;
+            RetiredInstance& operator=(const RetiredInstance&) = delete;
+            RetiredInstance(RetiredInstance&&) = default;
+            RetiredInstance& operator=(RetiredInstance&&) = default;
+
             std::unique_ptr<Instance> instance;
             int framesLeft = 0;
         };

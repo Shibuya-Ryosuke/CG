@@ -363,6 +363,13 @@ namespace RyoEngine {
 
         // ボーンにくっつけるための座標 (GetJointTransform で作る)
         struct JointAttachment {
+            // unique_ptr を持つのでコピーは不可、ムーブだけ可 (明示しないと /Wall で C4625 / C4626 が出る)
+            JointAttachment() = default;
+            JointAttachment(const JointAttachment&) = delete;
+            JointAttachment& operator=(const JointAttachment&) = delete;
+            JointAttachment(JointAttachment&&) = default;
+            JointAttachment& operator=(JointAttachment&&) = default;
+
             int32_t jointIndex = -1;
             std::unique_ptr<WorldTransform> transform;
         };

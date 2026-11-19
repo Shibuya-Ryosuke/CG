@@ -94,6 +94,13 @@ namespace RyoEngine {
 
     /// <summary>モデルに登録されたアニメーション (名前で再生する単位)</summary>
     struct SkeletalAnimation {
+        // unique_ptr を持つのでコピーは不可、ムーブだけ可 (明示しないと /Wall で C4625 / C4626 が出る)
+        SkeletalAnimation() = default;
+        SkeletalAnimation(const SkeletalAnimation&) = delete;
+        SkeletalAnimation& operator=(const SkeletalAnimation&) = delete;
+        SkeletalAnimation(SkeletalAnimation&&) = default;
+        SkeletalAnimation& operator=(SkeletalAnimation&&) = default;
+
         std::string name;
         float duration = 0.0f;
         std::unique_ptr<AnimationData> data; // channels が中を指すので、アドレスが変わらないよう unique_ptr で持つ
