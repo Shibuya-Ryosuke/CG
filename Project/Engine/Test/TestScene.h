@@ -154,5 +154,8 @@ namespace Test {
 		int32_t appliedSpriteBlendMode_ = -1;
 		bool appliedUseTextureRect_ = false;
 		RyoEngine::Vector4 appliedTextureRect_ = {};
+
+		// メンバ
+		std::unique_ptr<RyoEngine::Model> twistBox_;
 	};
 }

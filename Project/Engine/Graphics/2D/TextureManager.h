@@ -36,6 +36,21 @@ namespace RyoEngine {
 		/// <returns>テクスチャのSRVが格納されたSrvManagerのスロット番号</returns>
 		static uint32_t Load(const std::string& filePath, bool isSRGB = true);
 
+		/// <summary>
+		/// メモリ上の画像ファイルの中身 (png / jpg など) からテクスチャを読み込む。glb に埋め込まれた画像用。
+		/// 読めなかったときは white1x1 を返す
+		/// </summary>
+		/// <param name="cacheKey">同じ画像を2回読まないためのキー (Load のファイルパスと同じ役目)</param>
+		/// <param name="data">画像ファイルの中身</param>
+		/// <param name="sizeInBytes">data のバイト数</param>
+		/// <param name="isSRGB">Load と同じ</param>
+		static uint32_t LoadFromMemory(const std::string& cacheKey, const void* data, size_t sizeInBytes, bool isSRGB = true);
+
+		/// <summary>
+		/// メモリ上の BGRA (1画素4バイト) の画素からテクスチャを作る。圧縮されていない埋め込み画像用
+		/// </summary>
+		static uint32_t LoadFromPixelsBGRA(const std::string& cacheKey, const void* pixels, uint32_t width, uint32_t height, bool isSRGB = true);
+
 		static void ClearIntermediateResources();
 
 		// ゲッター
@@ -72,6 +87,12 @@ namespace RyoEngine {
 
 		// Textureデータ読み込み(isSRGB=falseならsRGB変換をせず、ミップもリニアのまま平均する)
 		DirectX::ScratchImage LoadTexture(const std::string& filePath, bool isSRGB);
+
+		// 読み込んだ画像にミップマップを付ける (name はエラー表示用)
+		DirectX::ScratchImage GenerateMipChain(DirectX::ScratchImage&& image, bool isSRGB, const std::string& name);
+
+		// ミップマップ付きの画像をGPUへ送り、SRVを作ってキャッシュに登録する (メモリからの読み込み用)
+		uint32_t RegisterImage(const DirectX::ScratchImage& mipImages, const std::string& cacheKey, bool isSRGB);
 
 		// TextureResource作成(isSRGBに応じて、フォーマットをsRGB版/リニア版にそろえる)
 		Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata& metadata, bool isSRGB);

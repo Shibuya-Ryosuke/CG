@@ -9,6 +9,7 @@
 * [共通関数](#共通関数)
 * [Sprite (2D)](#sprite-2d)
 * [Model (3D)](#model-3d)
+* [アニメーション (スキニング)](#アニメーション-スキニング)
 * [ブレンドモードと描画順](#ブレンドモードと描画順)
 * [カスタムシェーダー (ShaderManager)](#カスタムシェーダー-shadermanager)
 * [ポストエフェクト (PostProcess / PostEffectManager)](#ポストエフェクト-postprocess--posteffectmanager)
@@ -19,6 +20,7 @@
 * [CameraManager](#cameramanager)
 * [ShadowMap](#shadowmap)
 * [PrimitiveRenderer](#primitiverenderer)
+* [数学 (クォータニオン・座標系・色)](#数学-クォータニオン座標系色)
 * [ParamEditor](#parameditor)
 * [Input](#input)
 * [Easing](#easing)
@@ -123,6 +125,8 @@ GameObject の Draw → シーンの Draw
   ↓
 パーティクルの発生・動き (ParticleManager。最新の座標で行う)
   ↓
+スキニング (アニメーションするモデルの頂点を変形する)
+  ↓
 ライトの反映 → 影 → 3D (背景 → 不透明 → 半透明 → 加算など) → パーティクル → デバッグ図形
   ↓
 トーンマッピング・ブルームなど (PostProcess) → 自作ポストエフェクト (PostEffectManager) → 2D
@@ -154,6 +158,9 @@ GameObject の Draw → シーンの Draw
 | シェーダー | `.hlsl` |
 
 見つからない・名前があいまい (候補が複数) なときは、ログに警告が1回出ます。
+
+* `.gltf` / `.glb` は、ボーンやアニメーションが入っていれば自動で骨格付きのモデルになります ([アニメーション](#アニメーション-スキニング))
+* `.glb` の中に埋め込まれた画像も、そのままテクスチャとして読み込まれます
 
 ## 読み込む関数
 
@@ -211,7 +218,7 @@ AssetRegistry::Preload("");       // 全部
 | `Initialize(名前, 位置, アンカー)` | 画像を読み込んで準備する (番号でも可) |
 | `SetTranslate` / `SetRotate` / `SetScale` / `SetSRT` / `SetTransform2D` | 位置・回転・拡大 |
 | `SetUVTranslate` / `SetUVRotate` / `SetUVScale` / `SetUVSRT` / `SetUVTransform` | UV (テクスチャのずらし・繰り返し) |
-| `SetColor(RGBA)` | 色 |
+| `SetColor(RGBA)` / `SetColor(0xRRGGBB)` / `SetColor("#RRGGBBAA")` | 色 (カラーコードでも指定できる。[色](#色-colorh)) |
 | `SetAnchor(アンカー)` | 基準点 (`Center` `Top` `Bottom` `Left` `Right` `LeftTop` `LeftBottom` `RightTop` `RightBottom`) |
 | `SetTex(名前 or 番号)` | 画像を差し替える |
 | `SetTexSize(サイズ)` | 表示する大きさ(ピクセル) |
@@ -243,7 +250,7 @@ model->Draw();           // Draw で
 | `TransferMatrix(カリング = true)` | 行列を確定する (毎フレーム。カメラは不要) |
 | `Draw()` | 描画 (画面外なら自動で省かれる) |
 | `GetWorldPos()` / `GetWorldMatrix()` | ワールドでの位置・行列 |
-| `SetTex` / `SetColor` / `SetEmissive(色, 強さ)` | テクスチャ・色・発光 |
+| `SetTex` / `SetColor` / `SetEmissive(色, 強さ)` | テクスチャ・色・発光 (色は `0xFF8800` や `"#FF8800"` のカラーコードでも指定できる) |
 | `SetEnableLighting` / `SetLambert(シェーディング)` | ライティングのオンオフ・方式 (`NONE` `LAMBERT` `HALF_LAMBERT` `PHONG` `BLINN_PHONG`) |
 | `SetSpecular(色, 強さ, 鋭さ)` | ハイライト (鏡面反射)。`PHONG` / `BLINN_PHONG` のときだけ使われる。鋭さは 8 (ぼんやり) 〜 128 (つるつる) が目安 |
 | `SetUVTranslate` / `SetUVRotate` / `SetUVScale` / `SetUVSRT` | UV |
@@ -253,6 +260,7 @@ model->Draw();           // Draw で
 | `SetShader(番号)` / `SetShaderParam(番号, 値)` / `SetShaderParams(スロット, Vector4)` | カスタムシェーダーとその値 |
 | `SetName(名前)` | ギズモで動かした配置を保存するときの名前 (任意) |
 | `SetPickable(false)` | クリックで選べないようにする |
+| `PlayAnimation(名前)` など | ボーン付きのアニメーション ([下を参照](#アニメーション-スキニング)) |
 
 色・テクスチャ・UV・ブレンドなどは、最後の引数で**メッシュ番号**を指定できます (省略で全メッシュ)。
 `〇〇ByName(値, "マテリアル名")` で、mtl のマテリアル名から指定することもできます。
@@ -265,6 +273,62 @@ model->Draw();           // Draw で
 model->SetLambert(ShadingMode::BLINN_PHONG);
 model->SetSpecular({ 1.0f, 1.0f, 1.0f }, 1.0f, 32.0f); // 白いハイライト、強さ1、鋭さ32
 ```
+
+---
+
+# アニメーション (スキニング)
+
+ボーンとアニメーションが入った `.gltf` / `.glb` は、`Model::Create` するだけで骨格付きのモデルになります。
+**ファイルに入っているアニメーションは自動で登録され**、名前と長さがログに出ます。そのまま名前で再生できます。
+再生はエンジンが毎フレーム自動で進めます (タイムスケールに合わせるので、スローにもついてくる)。
+
+```cpp
+player_ = Model::Create("Player");             // Player.glb に Idle / Walk / Run が入っていれば、ここで全部登録される
+player_->PlayAnimation("Walk");                // ループ再生
+player_->PlayAnimation("Attack", false, 0.2f); // ループなし。0.2秒かけて前のアニメーションから混ぜて切り替える
+if (player_->IsAnimationFinished()) { player_->PlayAnimation("Idle", true, 0.2f); }
+
+// 剣を手のボーンに持たせる (アニメーションに合わせて動く)
+sword_->SetParent(player_->GetJointTransform("RightHand"));
+```
+
+| 関数 | 役割 |
+| --- | --- |
+| `PlayAnimation(名前, ループ = true, ブレンド秒 = 0, 最初から = false)` | 再生する。別のアニメーションを再生中なら切り替える。**同じアニメーションを再生中なら最初からにはせず続ける** (毎フレーム呼んでもよい) |
+| `StopAnimation()` | その場の姿勢で止める。次の `PlayAnimation` は最初から |
+| `ResetPose()` | 止めて、元の姿勢 (アニメーションの無い状態) に戻す |
+| `PauseAnimation()` / `ResumeAnimation()` | 一時停止 / 止めた所から再開 |
+| `IsAnimationPlaying()` / `IsAnimationFinished()` | 再生中か / ループなしのアニメーションが最後まで行ったか |
+| `SetAnimationSpeed(倍率)` / `GetAnimationSpeed()` | 再生速度 (負の値で逆再生) |
+| `GetAnimationTime()` / `SetAnimationTime(秒)` / `GetAnimationDuration()` | 再生位置 / 長さ |
+| `GetCurrentAnimationName()` / `HasAnimation(名前)` / `GetAnimationNames()` | 今のアニメーション / あるか / 一覧 |
+| `LoadAnimation(ファイル名, 名前 = "")` | 別ファイルのアニメーションを足す (下を参照) |
+| `GetJointTransform(ボーン名)` | ボーンの座標 (WorldTransform)。`SetParent` に渡してくっつける |
+| `HasSkeleton()` | 骨格付きのモデルか |
+
+## 別ファイルのアニメーション
+
+アニメーションをモデルとは別のファイルに分けた場合 (Mixamo のように1つずつダウンロードするものなど) は、`LoadAnimation` で足します。
+
+```cpp
+player_->LoadAnimation("Walk");                 // Walk.gltf → "Walk" という名前で登録
+player_->LoadAnimation("Player/Run", "Dash");   // 名前を付け直す
+```
+
+* 足したアニメーションは、**同じモデルを使う全員**で使える (同じファイルを何回 `LoadAnimation` しても、読み込みは1回だけ)
+* 名前: ファイルにアニメーションが1つだけならファイル名 (第2引数で付け直せる)。複数入っていればそれぞれの名前
+* ボーンは**名前**で対応させる。モデルに無いボーンの動きは無視され、ログに警告が1回出る
+* 骨の長さが違うモデル用のアニメーションのときは、腰 (一番上の動くボーン) 以外は回転だけを使い、腰の移動量は体格に合わせて縮める (ログに出る)
+* ほかのモデル用のアニメーションを使い回すには、**ボーンの名前・親子のつながり・元の姿勢の向き**をそろえておく (同じ骨格のテンプレートから作るのが確実)
+
+## 注意
+
+* 1つの頂点が影響を受けるボーンは最大4本 (多い分は大きい4本だけ使う)
+* アニメーションするモデルは、同じモデルでも1体ずつ描く (インスタンシングでまとめない)
+* 影・カスタムシェーダー (`Surface` / `Vertex`) は、アニメーションした形のまま使える
+* キーの間は、位置・拡大は線形補間、回転は球面線形補間 (Slerp)。glTF のステップ・キュービックスプラインも線形として扱う
+* シェイプキー (モーフ)・glTF のカメラアニメーションには未対応
+* 骨格は ParamEditor の「Model」→「骨格を表示」で線で見られる (DEBUGのみ)
 
 ---
 
@@ -435,6 +499,7 @@ GameObjectManager::Create<Bullet>(position, velocity);
 | `AddSphereCollider(半径, layer, mask, ずれ)` | 球の当たり判定を追加 |
 | `AddAABBCollider(半分の大きさ, layer, mask, ずれ)` | 回転しない箱 |
 | `AddOBBCollider(半分の大きさ, layer, mask, ずれ)` | 回転する箱 |
+| `AddCapsuleCollider(半径, 高さ, layer, mask, ずれ)` | カプセル (両端が丸い円柱。高さは丸い部分も含めた全長で、GameObject の Y 軸の向きに伸びる。人型の体などに) |
 | `GetCollider(番号)` / `ClearColliders()` | 当たり判定を後から変える (`enabled` でオンオフなど) / 全部消す |
 
 * **layer** は「自分は何者か」、**mask** は「誰と当たりたいか」。**お互いの mask に相手の layer が入っているときだけ**判定します
@@ -488,17 +553,20 @@ void Player::Finalize() {
 ライトは ImGui の「LightManager」ウィンドウで追加・調整して **Save** し、アプリの `Initialize` で `Load` します。最大64個。
 
 ImGui でライトごとに設定できること:
-* 種類 (平行光源 / ポイント / スポット)・色・強さ・向き・座標・範囲・スポットの角度と減衰
+* 種類 (平行光源 / ポイント / スポット / エリア)・色・強さ・向き・座標・範囲・スポットの角度と減衰
+* **エリアライト** (長方形の面から光る。蛍光灯・窓・光る看板など): 幅・高さ・回転(度)。「向き」が光を出す方向で、裏側は照らさない。影は落とさない
+* 「エリアライトの枠を表示」で、面の枠と光の向きが線で見える
 * **追従する座標** (BindingRegistry のキー) と、そこからのずれ
 * **フラグで点灯を切り替える** (BindingRegistry のキー、true / false どちらで点くか)
 
 | 関数 | 役割 |
 | --- | --- |
 | `SetFolderPath(フォルダ)` / `Save()` / `Load()` | 保存先 / 保存 / 読み込み |
-| `SetLightPosition(名前, 座標)` など | 名前でライトの値を変える (`Enabled` `Direction` `Color` `Intensity` `Range`) |
+| `SetLightPosition(名前, 座標)` など | 名前でライトの値を変える (`Enabled` `Direction` `Color` `Intensity` `Range`)。色はカラーコードでも可 |
+| `SetLightAreaSize(名前, 幅, 高さ)` / `SetLightAreaRoll(名前, 度)` | エリアライトの面の大きさ / 向きを軸にした回転 |
 | `SetLightPositionKey(名前, キー, ずれ)` / `SetLightFlagKey(名前, キー, trueで点灯か)` | 追従・点灯フラグをコードから指定する (普通は ImGui で選ぶ) |
 | `HasLight(名前)` / `FindLight(名前)` | あるか / 番号 |
-| `SetAmbientColor` / `SetAmbientIntensity` | 環境光 |
+| `SetAmbientColor` / `SetAmbientIntensity` | 環境光 (色はカラーコードでも可) |
 
 ---
 
@@ -597,9 +665,80 @@ Camera の関数: `SetTranslate` `SetRotate(ラジアン)` `SetFovY` `SetNearZ` 
 | `DrawSphere(中心, 半径, 分割数, 色, モード)` | 球 |
 | `DrawBox(中心, 回転, 大きさ, 色, モード)` | 箱 |
 | `DrawAABB(aabb, 色, モード)` / `DrawOBB(obb, 色, モード)` | AABB / OBB |
+| `DrawCapsule(カプセル, 分割数, 色, モード)` / `DrawCapsule(始点, 終点, 半径, 分割数, 色, モード)` | カプセル |
 | `DrawLine2D` / `DrawRect2D` / `DrawCircle2D` | 2D (画面座標) |
 
 モード: `PrimitiveDrawMode::Wireframe` (線だけ) / `Fill` (塗りつぶし。色のaで半透明)
+
+---
+
+# 数学 (クォータニオン・座標系・色)
+
+`Engine/Core/Math/` にある関数です。**角度はすべて度数法**で受け取ります。
+
+## クォータニオン (Quaternion.h)
+
+回転を表す4つの数です。行列にすると、今までの `MakeRotateMatrix` と同じ向き・同じ使い方 (X → Y → Z の順) になります。
+
+```cpp
+Quaternion q = MakeRotateAxisAngleQuaternion({ 0, 1, 0 }, 90.0f); // Y軸まわりに90度
+Vector3 v = RotateVector({ 0, 0, 1 }, q);                          // ベクトルを回す
+Quaternion half = Slerp(IdentityQuaternion(), q, 0.5f);            // 間の回転
+```
+
+| 関数 | 役割 |
+| --- | --- |
+| `IdentityQuaternion()` / `q1 * q2` | 回転なし / 合成 (`q2` で回してから `q1` で回す) |
+| `Conjugate` / `Inverse` / `Normalize` / `Norm` / `Dot` | 共役 / 逆 / 正規化 / 長さ / 内積 |
+| `MakeRotateAxisAngleQuaternion(軸, 度)` | 軸と角度から作る |
+| `MakeQuaternionFromEuler(度)` / `QuaternionToEuler(q)` | オイラー角との変換 |
+| `MakeRotateFromToQuaternion(向きA, 向きB)` / `MakeLookRotation(前, 上)` | 向きAを向きBへ回す / その方向を向く |
+| `RotateVector(v, q)` | ベクトルを回す |
+| `MakeRotateMatrix(q)` / `MakeQuaternionFromRotateMatrix(行列)` / `MakeAffineMatrix(拡大, q, 位置)` | 行列との変換 |
+| `QuaternionToAxisAngle` / `AngleBetween(q1, q2)` | 軸と角度を取り出す / 2つの回転の間の角度 |
+| `Slerp` / `Nlerp` / `RotateTowards(今, 目標, 最大の度)` | 補間 / 一定の速さで振り向く |
+| `GetForward` / `GetUp` / `GetRight` | 回した後の前 (+Z) / 上 (+Y) / 右 (+X) |
+| `DegToRad` / `RadToDeg` | 度 ⇔ ラジアン |
+
+> **注意:** `Model` / `GameObject` の回転 (`SetRotate`) は、今はオイラー角 (度) のままです。
+
+## 当たり判定 (Collision.h)
+
+`IsCollision(形A, 形B)` で判定します。球・平面・直線/半直線/線分・三角形・AABB・OBB に加えて、**カプセル** (`Capsule` = 芯の線分 + 半径) が使えます。
+
+| カプセルと | |
+| --- | --- |
+| 球・カプセル・平面・AABB・OBB | `IsCollision(capsule, 相手)` |
+| 2本の線分の一番近い点 | `ClosestPointsBetweenSegments(a, b, aの点, bの点)` |
+
+## 座標系 (CoordinateSystem.h)
+
+上方向は +Y です。
+
+| 関数 | 役割 |
+| --- | --- |
+| `PolarToCartesian` / `CartesianToPolar` | 極座標 (2D。距離と角度) |
+| `CylindricalToCartesian` / `CartesianToCylindrical` | 円柱座標 (水平の距離・角度・高さ) |
+| `SphericalToCartesian` / `CartesianToSpherical` | 球面座標 (距離・真上からの角度・水平の角度) |
+| `CartesianToBarycentric` / `BarycentricToCartesian` / `IsInsideTriangle` | 重心座標 (三角形の3頂点の重み) |
+| `ComputeFrenetFrame(速度, 加速度)` / `ComputeFrenetFrameFromPoints(前, 今, 次)` / `MakeFrenetMatrix` | フレネ標構 (曲線に沿って進む向き。レールの上のカメラなど) |
+| `Pendulum` + `UpdatePendulum` / `GetPendulumPosition` | 振り子 |
+| `ConicalPendulum` + `UpdateConicalPendulum` / `GetConicalPendulumPosition` | 円錐振り子 (水平に円を描いて回る) |
+
+## 色 (Color.h)
+
+ペイントソフトや Web のカラーコードで色を作れます。**エンジンの描画に合わせて自動で変換する** (sRGB → リニア) ので、カラーコードどおりの色で表示されます。
+
+| 関数 | 役割 |
+| --- | --- |
+| `ColorFromHex(0xRRGGBB, アルファ = 1)` | 数値から (例: `ColorFromHex(0xFF8800)`) |
+| `ColorFromHex("#RRGGBB")` / `"#RRGGBBAA"` / `"#RGB"` | 文字列から (`#` は無くてもよい。読めないときはマゼンタ) |
+| `ColorFromHexRGB(...)` | 発光・ライト用の `Vector3` |
+| `ColorToHex(色)` | 色を `"#RRGGBBAA"` にする |
+| `SRGBToLinear` / `LinearToSRGB` | 1つの値の変換 |
+
+`Model` / `Sprite` / `LightManager` の `SetColor` 系には、カラーコードを直接渡せます (`model->SetColor(0xFF8800)`、`sprite->SetColor("#FF880080")`)。
+数値で渡したときのアルファは1です。アルファも決めたいときは8桁の文字列で渡します。
 
 ---
 
@@ -672,7 +811,11 @@ ParamEditor::EndGroup(); // BeginGroup と同じ数だけ呼ぶ
 | クリック選択とギズモ | ゲーム画面でモデルをクリックするとギズモが出て動かせる (W/E/R で移動/回転/拡大) |
 | Model Layout | ギズモで動かした配置を保存し、次回から自動で反映する (区別したいモデルは `SetName`) |
 | 各 ImGui ウィンドウ | Parameter Editor / SceneManager / LightManager / ParticleManager / Shader / Shadow / CameraManager / Performance / Log Console |
-| AnimEditor | 登録したモデル・カメラ・フラグのアニメーションを作る (`SetTargetModel` `SetTargetCamera` `RegisterFlag`) |
+| 骨格の表示 | ParamEditor の「Model」→「骨格を表示」で、アニメーションするモデルのボーンを線で表示 |
+| エリアライトの枠 | LightManager の「エリアライトの枠を表示」で、エリアライトの面を線で表示 |
+| 当たり判定の表示 | ParamEditor の「GameObject」→「当たり判定を表示」 |
+
+> AnimEditor (SRT のキーフレーム編集) は、今は使用を止めています (コードは `Engine/Editor/` に残しています)。
 
 ---
 

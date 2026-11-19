@@ -9,6 +9,7 @@
 #include "../../Core/Base/TimeManager.h"
 #include "../../Core/Loader/ModelLoader.h"
 #include "../../Editor/ModelPicker.h"
+#include "../../Editor/ParamEditor.h"
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -36,6 +37,7 @@ namespace RyoEngine {
         instance->CreateRootSignature();
         instance->CreatePipelineStates();
         instance->CreateBuffers();
+        RegisterDebugParams();
         Logger::LogSuccess("ModelManager : Initialized\n");
     }
 
@@ -91,11 +93,87 @@ namespace RyoEngine {
         asset->filePath = filePath;
         asset->meshes.reserve(modelData.meshes.size());
 
+        // 骨格を持つモデル: 元の姿勢での各ボーンの行列を先に求めておく (元の姿勢の頂点を作るのに使う)
+        if (modelData.hasSkeleton) {
+            asset->hasSkeleton = true;
+            asset->skeleton = std::move(modelData.skeleton);
+            asset->bindPoseMatrices = ComputeBindPoseMatrices(asset->skeleton);
+        }
+
         for (const auto& src : modelData.meshes) {
             MeshAsset mesh;
 
+            // 骨格を持つモデルの頂点は、ボーンから見た座標のこともあるので、元の姿勢でスキニングした頂点を通常の頂点にする
+            // (スキニングの結果がまだ無いときや、カリングの球の計算に使う)
+            std::vector<VertexData> bindPoseVertices;
+            const std::vector<VertexData>* uploadVertices = &src.vertices;
+            if (asset->hasSkeleton && !src.bones.empty() && src.influences.size() == src.vertices.size()) {
+                mesh.isSkinned = true;
+                mesh.skinBones = src.bones;
+
+                // ボーンごとの行列 (元の姿勢) と、法線用の逆転置行列
+                std::vector<Matrix4x4> palette(src.bones.size());
+                std::vector<Matrix4x4> paletteNormal(src.bones.size());
+                for (size_t b = 0; b < src.bones.size(); ++b) {
+                    const SkinBone& bone = src.bones[b];
+                    const Matrix4x4& jointMatrix = asset->bindPoseMatrices[static_cast<size_t>(bone.jointIndex)];
+                    palette[b] = bone.inverseBindMatrix * jointMatrix;
+                    paletteNormal[b] = Transpose(Inverse(palette[b]));
+                }
+
+                // スキニングの入力 (頂点 + ボーンの割合) と、元の姿勢でスキニングした頂点
+                std::vector<SkinVertexData> skinVertices(src.vertices.size());
+                bindPoseVertices.resize(src.vertices.size());
+                for (size_t v = 0; v < src.vertices.size(); ++v) {
+                    const VertexData& vertex = src.vertices[v];
+                    const VertexInfluence& influence = src.influences[v];
+                    SkinVertexData& skin = skinVertices[v];
+                    skin.position = vertex.position;
+                    skin.texcoord = vertex.texcoord;
+                    skin.normal = vertex.normal;
+                    skin.weight = { influence.weights[0], influence.weights[1], influence.weights[2], influence.weights[3] };
+                    for (int k = 0; k < 4; ++k) {
+                        skin.index[k] = influence.indices[k];
+                    }
+
+                    VertexData skinned = vertex;
+                    const float totalWeight = skin.weight.x + skin.weight.y + skin.weight.z + skin.weight.w;
+                    if (totalWeight > 0.0f) {
+                        Vector3 position = { 0.0f, 0.0f, 0.0f };
+                        Vector3 normal = { 0.0f, 0.0f, 0.0f };
+                        const Vector3 p = { vertex.position.x, vertex.position.y, vertex.position.z };
+                        for (int k = 0; k < 4; ++k) {
+                            const float w = influence.weights[k];
+                            if (w <= 0.0f) continue;
+                            const Matrix4x4& m = palette[influence.indices[k]];
+                            const Matrix4x4& n = paletteNormal[influence.indices[k]];
+                            // 行ベクトル規約: 点は平行移動も入れる、法線は 3x3 だけ使う
+                            position += Vector3{
+                                p.x * m.m[0][0] + p.y * m.m[1][0] + p.z * m.m[2][0] + m.m[3][0],
+                                p.x * m.m[0][1] + p.y * m.m[1][1] + p.z * m.m[2][1] + m.m[3][1],
+                                p.x * m.m[0][2] + p.y * m.m[1][2] + p.z * m.m[2][2] + m.m[3][2] } * w;
+                            normal += Vector3{
+                                vertex.normal.x * n.m[0][0] + vertex.normal.y * n.m[1][0] + vertex.normal.z * n.m[2][0],
+                                vertex.normal.x * n.m[0][1] + vertex.normal.y * n.m[1][1] + vertex.normal.z * n.m[2][1],
+                                vertex.normal.x * n.m[0][2] + vertex.normal.y * n.m[1][2] + vertex.normal.z * n.m[2][2] } * w;
+                        }
+                        skinned.position = { position.x, position.y, position.z, 1.0f };
+                        skinned.normal = Normalize(normal);
+                    }
+                    bindPoseVertices[v] = skinned;
+                }
+                uploadVertices = &bindPoseVertices;
+
+                const size_t skinBytes = sizeof(SkinVertexData) * skinVertices.size();
+                mesh.skinVertexResource = DirectXCommon::CreateBufferResource(device, skinBytes);
+                SkinVertexData* skinMapped = nullptr;
+                mesh.skinVertexResource->Map(0, nullptr, reinterpret_cast<void**>(&skinMapped));
+                std::memcpy(skinMapped, skinVertices.data(), skinBytes);
+                mesh.skinVertexResource->Unmap(0, nullptr);
+            }
+
             // 頂点バッファ (インデックスバッファは使わない、三角形展開済みの頂点列)
-            const size_t bytes = sizeof(VertexData) * src.vertices.size();
+            const size_t bytes = sizeof(VertexData) * uploadVertices->size();
             mesh.vertexResource = DirectXCommon::CreateBufferResource(device, bytes);
             mesh.vertexBufferView.BufferLocation = mesh.vertexResource->GetGPUVirtualAddress();
             mesh.vertexBufferView.SizeInBytes = static_cast<UINT>(bytes);
@@ -103,12 +181,12 @@ namespace RyoEngine {
 
             VertexData* mapped = nullptr;
             mesh.vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
-            std::memcpy(mapped, src.vertices.data(), bytes);
+            std::memcpy(mapped, uploadVertices->data(), bytes);
             mesh.vertexResource->Unmap(0, nullptr);
-            mesh.vertexCount = static_cast<uint32_t>(src.vertices.size());
+            mesh.vertexCount = static_cast<uint32_t>(uploadVertices->size());
 
             // フラスタムカリング用: 原点から一番遠い頂点までの距離
-            for (const auto& vertex : src.vertices) {
+            for (const auto& vertex : *uploadVertices) {
                 const Vector3 position = { vertex.position.x, vertex.position.y, vertex.position.z };
                 const float distance = Length(position);
                 if (distance > asset->boundingRadius) {
@@ -120,18 +198,34 @@ namespace RyoEngine {
 
             // マテリアル名とデフォルトテクスチャ
             std::string texturePath;
+            const ModelLoader::MaterialData* material = nullptr;
             if (src.materialIndex < modelData.materials.size()) {
+                material = &modelData.materials[src.materialIndex];
                 mesh.materialName = modelData.materials[src.materialIndex].name;
                 texturePath = modelData.materials[src.materialIndex].textureFilePath;
             }
             // UVが無いメッシュはテクスチャを引けない(texcoordは(0,0)固定)ので、必ず white にする
-            if (mesh.hasUV && !texturePath.empty()) {
+            // ファイルに埋め込まれた画像 (glb など) があれば、それを使う
+            if (mesh.hasUV && material && !material->embeddedTextureData.empty()) {
+                if (material->embeddedTextureHeight == 0) {
+                    mesh.defaultTextureHandle = TextureManager::LoadFromMemory(material->embeddedTextureKey,
+                        material->embeddedTextureData.data(), material->embeddedTextureData.size());
+                } else {
+                    mesh.defaultTextureHandle = TextureManager::LoadFromPixelsBGRA(material->embeddedTextureKey,
+                        material->embeddedTextureData.data(), material->embeddedTextureWidth, material->embeddedTextureHeight);
+                }
+            } else if (mesh.hasUV && !texturePath.empty()) {
                 mesh.defaultTextureHandle = TextureManager::Load(texturePath);
             } else {
                 mesh.defaultTextureHandle = TextureManager::GetWhiteTex();
             }
 
             asset->meshes.push_back(std::move(mesh));
+        }
+
+        // 骨格を持つモデル: ファイルに入っているアニメーションを登録する
+        if (asset->hasSkeleton) {
+            SetupSkeletalAsset(*asset, std::move(modelData.animations));
         }
 
         instance->assets_.push_back(std::move(asset));
@@ -154,6 +248,9 @@ namespace RyoEngine {
     // ------------------------------------------------------------------
     void ModelManager::NewFrame() {
         ModelManager* instance = GetInstance();
+
+        // フレームの通し番号 (アニメーションを1フレームに1回だけ進めるため)
+        ++instance->frameIndex_;
 
         ModelPicker::NewFrame();
         instance->frameData_.clear();
@@ -223,6 +320,10 @@ namespace RyoEngine {
         entry.shader = options.shader;
         entry.blendMode = options.blendMode;
         entry.isBackground = options.isBackground;
+        if (options.vertexBuffer) {
+            entry.hasVertexBuffer = true;
+            entry.vertexBuffer = *options.vertexBuffer;
+        }
         // 加算・減算・スクリーンは光るエフェクト向けなので、影を落とさない。背景も影を落とさない
         entry.castShadow = options.castShadow && !options.isBackground &&
             (options.blendMode == BlendMode::None || options.blendMode == BlendMode::Normal || options.blendMode == BlendMode::Multiply);
@@ -338,7 +439,9 @@ namespace RyoEngine {
             instanceMapped_[writeIndex] = frameData_[entry->dataIndex];
 
             // キー・シェーダー・ブレンドモードのどれかが変わったら新しいグループ
-            if (!previous || previous->key != entry->key || previous->shader != entry->shader || previous->blendMode != entry->blendMode) {
+            // スキニング済みの頂点バッファを持つものは、体ごとに頂点が違うので、ほかとまとめない
+            if (!previous || previous->key != entry->key || previous->shader != entry->shader || previous->blendMode != entry->blendMode ||
+                previous->hasVertexBuffer || entry->hasVertexBuffer) {
                 Group group;
                 group.modelIndex = static_cast<uint32_t>(entry->key >> 48);
                 group.meshIndex = static_cast<uint32_t>((entry->key >> 32) & 0xFFFFu);
@@ -347,6 +450,8 @@ namespace RyoEngine {
                 group.blendMode = entry->blendMode;
                 group.firstInstance = static_cast<uint32_t>(writeIndex);
                 group.instanceCount = 0;
+                group.hasVertexBuffer = entry->hasVertexBuffer;
+                group.vertexBuffer = entry->vertexBuffer;
                 outGroups.push_back(group);
             }
             outGroups.back().instanceCount++;
@@ -415,7 +520,8 @@ namespace RyoEngine {
 
             // 影のパスでも結ぶ (アプリの Vertex() がテクスチャを読むことがあるため)
             commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetGPUHandle(group.textureHandle));
-            commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
+            // スキニング済みの頂点バッファがあれば、そちらを使う (頂点の数は同じ)
+            commandList->IASetVertexBuffers(0, 1, group.hasVertexBuffer ? &group.vertexBuffer : &mesh.vertexBufferView);
 
             // グループの先頭インスタンスへずらしたアドレスを渡す。
             // (StartInstanceLocationはSV_InstanceIDに反映されないため、アドレス側でずらす)
@@ -783,5 +889,164 @@ namespace RyoEngine {
             break;
         }
         return blendDesc;
+    }
+
+    // ------------------------------------------------------------------
+    // アニメーション
+    // ------------------------------------------------------------------
+    void ModelManager::RegisterDebugParams() {
+        ModelManager* instance = GetInstance();
+        ParamEditor::BeginGroup("Model");
+        ParamEditor::RegisterFlag("骨格を表示", &instance->showSkeleton_);
+        ParamEditor::EndGroup();
+    }
+
+    void ModelManager::SetupSkeletalAsset(ModelAsset& asset, std::vector<AnimationData>&& animations) {
+        for (size_t i = 0; i < animations.size(); ++i) {
+            // 名前が無いアニメーションは "Animation" (重複すると _1, _2 ... が付く)
+            const std::string name = animations[i].name.empty() ? std::string("Animation") : animations[i].name;
+            AddAnimation(asset, std::move(animations[i]), name, nullptr, asset.filePath);
+        }
+    }
+
+    uint32_t ModelManager::LoadAnimation(uint32_t modelIndex, const std::string& filePath, const std::string& name) {
+        ModelManager* instance = GetInstance();
+        if (modelIndex == kInvalidModelIndex || modelIndex > instance->assets_.size()) {
+            Logger::LogWarning("[ModelManager] アニメーションを足す先のモデルがありません: {}\n", filePath);
+            return 0;
+        }
+        ModelAsset& asset = *instance->assets_[modelIndex - 1];
+        if (!asset.hasSkeleton) {
+            Logger::LogWarning("[ModelManager] 骨格の無いモデルには、アニメーションを足せません: {} ← {}\n", asset.filePath, filePath);
+            return 0;
+        }
+
+        // 同じファイルは1回だけ読む (同じモデルを使う全員の初期化で呼ばれても、登録が増えないように)
+        if (!asset.loadedAnimationFiles.insert(filePath).second) {
+            return 0;
+        }
+
+        SkeletonData sourceSkeleton;
+        std::vector<AnimationData> animations = ModelLoader::LoadAnimationFile(filePath, sourceSkeleton);
+        if (animations.empty()) {
+            Logger::LogWarning("[ModelManager] ファイルにアニメーションが入っていません: {}\n", filePath);
+            return 0;
+        }
+
+        // ファイル名 (フォルダと拡張子を除いたもの)
+        std::string stem = filePath;
+        if (const size_t slash = stem.find_last_of("/\\"); slash != std::string::npos) {
+            stem = stem.substr(slash + 1);
+        }
+        if (const size_t dot = stem.find_last_of('.'); dot != std::string::npos) {
+            stem = stem.substr(0, dot);
+        }
+
+        for (size_t i = 0; i < animations.size(); ++i) {
+            std::string animationName;
+            if (animations.size() == 1) {
+                // 1つだけなら、指定した名前 (無ければファイル名)
+                animationName = name.empty() ? stem : name;
+            } else {
+                // 複数なら、それぞれの名前 (指定した名前があれば "指定した名前/アニメーションの名前")
+                const std::string ownName = animations[i].name.empty() ? stem + "_" + std::to_string(i) : animations[i].name;
+                animationName = name.empty() ? ownName : name + "/" + ownName;
+            }
+            AddAnimation(asset, std::move(animations[i]), animationName, &sourceSkeleton, filePath);
+        }
+        return static_cast<uint32_t>(animations.size());
+    }
+
+    void ModelManager::AddAnimation(ModelAsset& asset, AnimationData&& animation, const std::string& name,
+        const SkeletonData* sourceSkeleton, const std::string& filePath) {
+        SkeletalAnimation result;
+        result.data = std::make_unique<AnimationData>(std::move(animation));
+        result.duration = result.data->duration;
+
+        // 名前が重複したら _1, _2 ... を付ける
+        result.name = name;
+        for (int suffix = 1; asset.animationIndex.count(result.name) != 0; ++suffix) {
+            result.name = name + "_" + std::to_string(suffix);
+        }
+
+        const SkeletonData& skeleton = asset.skeleton;
+
+        // 別ファイルのアニメーションが、骨の長さの違うモデル用かどうか
+        // (対応するボーンの元の位置が全部ほぼ同じなら、同じ骨格とみなして全部の動きを使う)
+        bool retarget = false;
+        if (sourceSkeleton && !sourceSkeleton->joints.empty()) {
+            for (const auto& [nodeName, nodeAnimation] : result.data->nodeAnimations) {
+                const int32_t joint = skeleton.FindJoint(nodeName);
+                const int32_t sourceJoint = sourceSkeleton->FindJoint(nodeName);
+                if (joint < 0 || sourceJoint < 0) continue;
+                const Vector3& own = skeleton.joints[joint].translate;
+                const Vector3 diff = own - sourceSkeleton->joints[sourceJoint].translate;
+                const float tolerance = 1e-3f * (1.0f + Length(own));
+                if (Length(diff) > tolerance) {
+                    retarget = true;
+                    break;
+                }
+            }
+        }
+
+        // ボーンの深さ (一番上の動くボーン = 腰 を見つけるため)
+        auto depthOf = [&skeleton](int32_t joint) {
+            int depth = 0;
+            for (int32_t j = skeleton.joints[joint].parent; j >= 0; j = skeleton.joints[j].parent) {
+                ++depth;
+            }
+            return depth;
+        };
+
+        std::vector<std::string> missing;
+        int rootDepth = 0;
+        size_t rootChannel = 0;
+        for (const auto& [nodeName, nodeAnimation] : result.data->nodeAnimations) {
+            const int32_t joint = skeleton.FindJoint(nodeName);
+            if (joint < 0) {
+                missing.push_back(nodeName);
+                continue;
+            }
+            AnimationChannelBinding binding;
+            binding.jointIndex = joint;
+            binding.animation = &nodeAnimation;
+            const int depth = depthOf(joint);
+            if (result.channels.empty() || depth < rootDepth) {
+                rootDepth = depth;
+                rootChannel = result.channels.size();
+            }
+            result.channels.push_back(binding);
+        }
+
+        if (retarget && !result.channels.empty()) {
+            // 骨の長さの違うモデル用: 腰以外は回転だけ使い、骨の長さはこのモデルのままにする。
+            // 腰の移動量は、元のモデルと腰の高さ(親からの距離)の比で縮める
+            for (size_t c = 0; c < result.channels.size(); ++c) {
+                AnimationChannelBinding& binding = result.channels[c];
+                binding.useScale = false;
+                binding.useTranslate = (c == rootChannel);
+            }
+            AnimationChannelBinding& root = result.channels[rootChannel];
+            const std::string& rootName = skeleton.joints[root.jointIndex].name;
+            const int32_t sourceRoot = sourceSkeleton->FindJoint(rootName);
+            if (sourceRoot >= 0) {
+                const float sourceLength = Length(sourceSkeleton->joints[sourceRoot].translate);
+                const float ownLength = Length(skeleton.joints[root.jointIndex].translate);
+                if (sourceLength > 1e-6f) {
+                    root.translateScale = ownLength / sourceLength;
+                }
+            }
+            Logger::Log("[ModelManager] \"{}\" は骨の長さが違うモデル用なので、回転だけを使います (腰: {}、移動量 x{:.2f})\n",
+                result.name, rootName, root.translateScale);
+        }
+
+        if (!missing.empty()) {
+            Logger::LogWarning("[ModelManager] アニメーション \"{}\" の {} 本の動きが、モデルのボーンに見つかりませんでした (例: {}): {}\n",
+                result.name, missing.size(), missing.front(), filePath);
+        }
+        Logger::Log("[ModelManager] アニメーション \"{}\" ({:.2f}秒) を登録しました: {}\n", result.name, result.duration, asset.filePath);
+
+        asset.animationIndex[result.name] = static_cast<uint32_t>(asset.animations.size());
+        asset.animations.push_back(std::move(result));
     }
 }

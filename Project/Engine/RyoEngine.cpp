@@ -1,6 +1,7 @@
 #include "RyoEngine.h"
 #include <imgui.h>
 #include "Graphics/3D/ModelManager.h"
+#include "Graphics/3D/SkinningManager.h"
 #include "Editor/Gizmo.h"
 #include "Editor/ModelPicker.h"
 #include "Camera/CameraManager.h"
@@ -71,6 +72,8 @@ namespace RyoEngine {
         PostEffectManager::Initialize();
 
         ModelManager::Initialize();
+        // スキニング (アニメーションするモデル)
+        SkinningManager::Initialize();
 
         ParticleCommon::Initialize();
         ParticleManager::Initialize();
@@ -125,6 +128,7 @@ namespace RyoEngine {
         SpriteCommon::Finalize();
         ParticleManager::Finalize();
         ParticleCommon::Finalize();
+        SkinningManager::Finalize();
         ModelManager::Finalize();
         PostEffectManager::Finalize();
         ShaderManager::Finalize();
@@ -170,6 +174,7 @@ namespace RyoEngine {
         ModelCommon::CommandsClear();
         SpriteCommon::CommandsClear();
         ModelManager::NewFrame();
+        SkinningManager::NewFrame();
         PostEffectManager::NewFrame();
         WorldTransform::NewFrame();
         ParticleCommon::CommandsClear();
@@ -299,6 +304,8 @@ namespace RyoEngine {
 
         // GPUパーティクルのシミュレーション(Dispatch)：RTV/DSVに依存しないので一番早く実行する
         ParticleCommon::Dispatch();
+        // スキニング(Dispatch)：影・3D描画で、スキニング後の頂点を使うので、その前に実行する
+        SkinningManager::Dispatch();
 
         // シャドウパス：ライト視点で深度だけ先に描画する
         ShadowMap::BeginShadowPass();

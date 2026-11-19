@@ -18,6 +18,8 @@
     <ClCompile Include="Application\Application.cpp" />
     <ClCompile Include="Application\Scene\Game.cpp" />
     <ClCompile Include="Application\Scene\Title.cpp" />
+    <ClCompile Include="Engine\Graphics\3D\Animator.cpp" />
+    <ClCompile Include="Engine\Graphics\3D\SkinningManager.cpp" />
     <ClCompile Include="Engine\Graphics\Particle\ParticleCommon.cpp" />
     <ClCompile Include="Engine\Graphics\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="Engine\Graphics\Particle\ParticleManager.cpp" />
@@ -78,9 +80,12 @@
     <ClInclude Include="Application\Application.h" />
     <ClInclude Include="Application\Scene\Game.h" />
     <ClInclude Include="Application\Scene\Title.h" />
+    <ClInclude Include="Engine\Core\Animation\AnimationData.h" />
     <ClInclude Include="Engine\Core\Math\Color.h" />
     <ClInclude Include="Engine\Core\Math\CoordinateSystem.h" />
     <ClInclude Include="Engine\Core\Math\Quaternion.h" />
+    <ClInclude Include="Engine\Graphics\3D\Animator.h" />
+    <ClInclude Include="Engine\Graphics\3D\SkinningManager.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleCommon.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleEmitter.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleManager.h" />
@@ -218,6 +223,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Resources\EngineResources\HLSL\Model\Skinning.CS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Resources\EngineResources\HLSL\Particle\Particle.PS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

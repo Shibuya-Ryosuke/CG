@@ -3,6 +3,7 @@
 #include "../../Core/Base/DirectXCommon.h"
 #include "../../Core/Base/SrvManager.h"
 #include "../../Externals/DirectXTex/d3dx12.h"
+#include <cstring>
 
 
 namespace RyoEngine {
@@ -72,6 +73,65 @@ namespace RyoEngine {
         return handle;
     }
 
+    uint32_t TextureManager::LoadFromMemory(const std::string& cacheKey, const void* data, size_t sizeInBytes, bool isSRGB) {
+        TextureManager* instance = GetInstance();
+
+        // Load と同じく、sRGB版とリニア版は別物として扱う
+        const std::string key = isSRGB ? cacheKey : cacheKey + "?linear";
+        if (auto it = instance->filePathMap_.find(key); it != instance->filePathMap_.end()) {
+            return it->second;
+        }
+
+        DirectX::ScratchImage image{};
+        const DirectX::WIC_FLAGS wicFlags = isSRGB ? DirectX::WIC_FLAGS_FORCE_SRGB : DirectX::WIC_FLAGS_IGNORE_SRGB;
+        HRESULT hr = DirectX::LoadFromWICMemory(data, sizeInBytes, wicFlags, nullptr, image);
+        if (FAILED(hr)) {
+            Logger::LogError("[TextureManager] メモリ上の画像を読めなかったので、white1x1 を使います: {}\n", cacheKey);
+            return instance->whiteTex_;
+        }
+        DirectX::ScratchImage mipImages = instance->GenerateMipChain(std::move(image), isSRGB, cacheKey);
+        return instance->RegisterImage(mipImages, key, isSRGB);
+    }
+
+    uint32_t TextureManager::LoadFromPixelsBGRA(const std::string& cacheKey, const void* pixels, uint32_t width, uint32_t height, bool isSRGB) {
+        TextureManager* instance = GetInstance();
+
+        const std::string key = isSRGB ? cacheKey : cacheKey + "?linear";
+        if (auto it = instance->filePathMap_.find(key); it != instance->filePathMap_.end()) {
+            return it->second;
+        }
+
+        DirectX::ScratchImage image{};
+        HRESULT hr = image.Initialize2D(DXGI_FORMAT_B8G8R8A8_UNORM, width, height, 1, 1);
+        if (FAILED(hr) || width == 0 || height == 0) {
+            Logger::LogError("[TextureManager] 画素から画像を作れなかったので、white1x1 を使います: {}\n", cacheKey);
+            return instance->whiteTex_;
+        }
+        // 1行ずつコピーする (ScratchImage の1行のバイト数は、詰めた幅と違うことがあるため)
+        const DirectX::Image* dst = image.GetImage(0, 0, 0);
+        const uint8_t* src = static_cast<const uint8_t*>(pixels);
+        const size_t srcRowPitch = static_cast<size_t>(width) * 4;
+        for (uint32_t y = 0; y < height; ++y) {
+            std::memcpy(dst->pixels + dst->rowPitch * y, src + srcRowPitch * y, srcRowPitch);
+        }
+        DirectX::ScratchImage mipImages = instance->GenerateMipChain(std::move(image), isSRGB, cacheKey);
+        return instance->RegisterImage(mipImages, key, isSRGB);
+    }
+
+    uint32_t TextureManager::RegisterImage(const DirectX::ScratchImage& mipImages, const std::string& cacheKey, bool isSRGB) {
+        // Load と同じ手順でGPUへ送る
+        auto resource = CreateTextureResource(mipImages.GetMetadata(), isSRGB);
+        auto intermediate = UploadTextureData(resource, mipImages, DirectXCommon::GetCommandList());
+        intermediateResources_.push_back(intermediate);
+
+        uint32_t handle = SrvManager::Allocate();
+        SrvManager::CreateSRVForTexture2D(handle, resource.Get(), resource->GetDesc().Format);
+
+        textures_[handle] = resource;
+        filePathMap_[cacheKey] = handle;
+        return handle;
+    }
+
     void TextureManager::ClearIntermediateResources() {
         TextureManager* instance = GetInstance();
 
@@ -123,6 +183,11 @@ namespace RyoEngine {
         HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), wicFlags, nullptr, image);
         assert(SUCCEEDED(hr));
 
+        return GenerateMipChain(std::move(image), isSRGB, filePath);
+    }
+
+    DirectX::ScratchImage TextureManager::GenerateMipChain(DirectX::ScratchImage&& image, bool isSRGB, const std::string& name) {
+        HRESULT hr = S_OK;
         // ミップマップを1x1まで生成する(遠く・斜めから見たときのザラつきやモアレを防ぐ)
         // 圧縮フォーマットや1x1の画像は生成できない/不要なので、元画像のまま使う
         DirectX::ScratchImage mipImages{};
@@ -136,7 +201,7 @@ namespace RyoEngine {
             if (SUCCEEDED(hr)) {
                 generated = true;
             } else {
-                Logger::LogError("[TextureManager] ミップマップの生成に失敗したため、元画像のまま使います: " + filePath + "\n");
+                Logger::LogError("[TextureManager] ミップマップの生成に失敗したため、元画像のまま使います: " + name + "\n");
             }
         }
         if (!generated) {

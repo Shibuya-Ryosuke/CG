@@ -41,6 +41,11 @@ namespace Test {
 		// --- カスタムポストエフェクト (Add した順にかかる) ---
 		vignetteEffect_ = PostEffectManager::Add(ShaderManager::LoadPostEffect("Resources/EngineResources/Test/Shaders/Vignette.hlsl"));
 		screenWaveEffect_ = PostEffectManager::Add(ShaderManager::LoadPostEffect("Resources/EngineResources/Test/Shaders/ScreenWave.hlsl"));
+
+		// アニメーションモデル
+		twistBox_ = Model::Create("Resources/EngineResources/Test/twistBox.glb");
+		twistBox_->PlayAnimation("Twist");
+
 	}
 
 	void TestScene::CreateCameras() {
@@ -196,6 +201,13 @@ namespace Test {
 		UpdateCamera();
 		PrintDebugText();
 
+
+		// アニメーション
+		if (RyoEngine::Input::TriggerKey(DIK_1)) { twistBox_->PlayAnimation("Twist", true, 0.3f); }
+		if (RyoEngine::Input::TriggerKey(DIK_2)) { twistBox_->PlayAnimation("Bend", true, 0.3f); }
+		twistBox_->TransferMatrix();
+
+
 		// 地面と空の行列を確定 (カリングは Draw で行われる)
 		ground_->TransferMatrix();
 		sky_->TransferMatrix();
@@ -333,6 +345,9 @@ namespace Test {
 		ground_->Draw();
 		sky_->Draw();
 		shadingModel_->Draw();
+
+		// アニメーション
+		twistBox_->Draw();
 
 		flower_.Draw();
 		easingSprite_.Draw();

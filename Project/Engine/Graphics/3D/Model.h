@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 #include "../../Core/Math/Math.h"
 #include "../../Core/Math/Transform.h"
@@ -12,6 +13,7 @@
 #include "../../Core/Math/Geometry.h"
 #include "../../Camera/Camera.h"
 #include "ModelManager.h"
+#include "Animator.h"
 #include "../../Editor/ModelLayout.h"
 
 namespace RyoEngine {
@@ -81,6 +83,57 @@ namespace RyoEngine {
         /// 実際のGPU描画は RyoEngine::EndFrame 内で、まとめて行われる。
         /// </summary>
         void Draw();
+
+        // ---------------- アニメーション (骨格を持つモデル: gltf / glb のボーン・アニメーション) ----------------
+        // 再生はエンジンが毎フレーム自動で進める (TimeManager の時間の速さに合わせる)。骨格の無いモデルでは何もしない
+        /// <summary>骨格を持つモデルか (アニメーションできるか)</summary>
+        bool HasSkeleton() const { return animator_ != nullptr; }
+        /// <summary>
+        /// アニメーションを名前で再生する。
+        /// 別のアニメーションを再生中なら、こちらに切り替える。同じアニメーションを再生中なら最初からにはせず続ける
+        /// </summary>
+        /// <param name="name">アニメーションの名前 (GetAnimationNames で一覧を取れる)</param>
+        /// <param name="loop">true: ループする / false: 最後まで行ったら止まる (IsAnimationFinished が true になる)</param>
+        /// <param name="blendSeconds">前のアニメーションから、この秒数かけて混ぜて切り替える (0 ですぐ切り替える)</param>
+        /// <param name="restart">true: 同じアニメーションを再生中でも最初から再生し直す</param>
+        void PlayAnimation(const std::string& name, bool loop = true, float blendSeconds = 0.0f, bool restart = false);
+        /// <summary>その場の姿勢で止める。次の PlayAnimation は最初から</summary>
+        void StopAnimation();
+        /// <summary>アニメーションを止めて、元の姿勢 (アニメーションの無い状態) に戻す</summary>
+        void ResetPose();
+        /// <summary>一時停止 (ResumeAnimation で止めた所から再開する)</summary>
+        void PauseAnimation();
+        void ResumeAnimation();
+        /// <summary>再生中か (一時停止中・止めた後・ループしないアニメーションが終わった後は false)</summary>
+        bool IsAnimationPlaying() const { return animator_ && animator_->IsPlaying(); }
+        /// <summary>ループしないアニメーションが最後まで行ったか (ループ中は常に false)</summary>
+        bool IsAnimationFinished() const { return animator_ && animator_->IsFinished(); }
+        /// <summary>再生速度 (1 = 普通、2 = 2倍速、負の値で逆再生)</summary>
+        void SetAnimationSpeed(float speed) { if (animator_) animator_->SetSpeed(speed); }
+        float GetAnimationSpeed() const { return animator_ ? animator_->GetSpeed() : 1.0f; }
+        /// <summary>今の再生位置 (秒)</summary>
+        float GetAnimationTime() const { return animator_ ? animator_->GetTime() : 0.0f; }
+        /// <summary>再生位置を変える (秒)</summary>
+        void SetAnimationTime(float time) { if (animator_) animator_->SetTime(time); }
+        /// <summary>今のアニメーションの長さ (秒)</summary>
+        float GetAnimationDuration() const { return animator_ ? animator_->GetDuration() : 0.0f; }
+        /// <summary>今のアニメーションの名前 (無ければ空)</summary>
+        const std::string& GetCurrentAnimationName() const;
+        /// <summary>その名前のアニメーションがあるか</summary>
+        bool HasAnimation(const std::string& name) const;
+        /// <summary>使えるアニメーションの名前の一覧</summary>
+        std::vector<std::string> GetAnimationNames() const;
+        /// <summary>
+        /// 別ファイルのアニメーションを足す (同じモデルを使う全員で使えるようになる)。ボーンは名前で対応させる。
+        /// 名前でもパスでもよい。name を省略するとファイル名で登録される (例: "walk.gltf" → "walk")
+        /// </summary>
+        /// <returns>足したアニメーションの数</returns>
+        uint32_t LoadAnimation(const std::string& filePath, const std::string& name = "");
+        /// <summary>
+        /// ボーンの座標 (剣を手に持たせるときなど)。sword->SetParent(player->GetJointTransform("RightHand")) のように使う。
+        /// アニメーションに合わせて毎フレーム動く。ボーンが無ければ nullptr (警告を出す)
+        /// </summary>
+        WorldTransform* GetJointTransform(const std::string& jointName);
 
         // ---------------- エディタ (DEBUGのみ有効) ----------------
         /// <summary>画面クリックで選べるか (既定 true)。選ぶと自動でギズモが出る</summary>
@@ -297,6 +350,27 @@ namespace RyoEngine {
 
         // 今の設定で使うPSOを先に作っておく (描く瞬間に作るとカクつくことがあるため)
         void PreparePipelines();
+
+        // --- アニメーション ---
+        // アニメーションを進める (1フレームに1回だけ。TransferMatrix と Draw から呼ぶ)
+        void UpdateAnimation();
+        // ボーンの座標 (GetJointTransform で作ったもの) を、今の姿勢に合わせる
+        void UpdateJointTransforms();
+        // 骨格を線で描く (デバッグ用)
+        void DrawSkeleton() const;
+        // アニメーションの状態を作り直す (モデルが変わったとき)
+        void ResetAnimation();
+
+        // ボーンにくっつけるための座標 (GetJointTransform で作る)
+        struct JointAttachment {
+            int32_t jointIndex = -1;
+            std::unique_ptr<WorldTransform> transform;
+        };
+        std::unique_ptr<Animator> animator_;      // 骨格を持つモデルのときだけ
+        uint32_t skinInstance_ = 0;               // SkinningManager のバッファ (0 = なし)
+        bool skinDirty_ = true;                   // 姿勢が変わって、スキニングをやり直す必要があるか
+        uint64_t animatedFrame_ = 0;              // 最後にアニメーションを進めたフレーム
+        std::unordered_map<std::string, JointAttachment> jointAttachments_;
         Vector3 pickCenter_{ 0.0f, 0.0f, 0.0f };
         float pickRadius_ = 0.0f;
         std::function<void(const Transform&)> onTransformEdited_;

@@ -106,6 +106,9 @@
     <Filter Include="HLSL\Particle">
       <UniqueIdentifier>{38b16311-84a7-4ea4-b99c-3089a8d7ff53}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Core\Animation">
+      <UniqueIdentifier>{4d13dd81-c207-48c5-abb2-03a3bbea415c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -279,6 +282,12 @@
     </ClCompile>
     <ClCompile Include="Application\Scene\Title.cpp">
       <Filter>Application\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\3D\Animator.cpp">
+      <Filter>Engine\Graphics\3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\3D\SkinningManager.cpp">
+      <Filter>Engine\Graphics\3D</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -504,6 +513,15 @@
     <ClInclude Include="Engine\Core\Math\Quaternion.h">
       <Filter>Engine\Core\Math</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Core\Animation\AnimationData.h">
+      <Filter>Engine\Core\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\3D\Animator.h">
+      <Filter>Engine\Graphics\3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\3D\SkinningManager.h">
+      <Filter>Engine\Graphics\3D</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\EngineResources\HLSL\Particle\Particle.hlsli">
@@ -609,6 +627,9 @@
     </FxCompile>
     <FxCompile Include="Resources\EngineResources\HLSL\PostProcess\BloomUpsample.PS.hlsl">
       <Filter>HLSL\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Resources\EngineResources\HLSL\Model\Skinning.CS.hlsl">
+      <Filter>HLSL\Model</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

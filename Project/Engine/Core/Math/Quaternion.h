@@ -17,6 +17,11 @@ namespace RyoEngine {
         float y;
         float z;
         float w;
+
+        // 4つの値を必ず渡して作る。{ x, y, z } のような3つの値の波かっこが Vector3 と Quaternion の
+        // どちらにもなれてしまい、Normalize({...}) などの呼び出しがあいまいになるのを防ぐため
+        Quaternion() = default;
+        constexpr Quaternion(float qx, float qy, float qz, float qw) : x(qx), y(qy), z(qz), w(qw) {}
     };
 
     // ================================================================

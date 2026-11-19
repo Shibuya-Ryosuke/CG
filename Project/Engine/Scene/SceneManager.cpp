@@ -179,6 +179,7 @@ namespace RyoEngine {
 
         // ParamEditor の登録が全部消えたので、エンジンの項目(当たり判定の表示など)を登録し直す
         GameObjectManager::RegisterDebugParams();
+        ModelManager::RegisterDebugParams();
     }
 
     void SceneManager::DrawImGui() {

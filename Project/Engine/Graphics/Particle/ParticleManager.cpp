@@ -24,10 +24,6 @@ namespace RyoEngine {
     namespace {
         using json = nlohmann::json;
 
-        float DegToRad(float degree) {
-            return degree * std::numbers::pi_v<float> / 180.0f;
-        }
-
         // --- JSON ---
         json ToJson(const Vector3& v) { return json::array({ v.x, v.y, v.z }); }
         json ToJson(const Vector4& v) { return json::array({ v.x, v.y, v.z, v.w }); }
