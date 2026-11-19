@@ -303,4 +303,159 @@ namespace RyoEngine {
 		// 15本すべての軸で影が重なっていた場合のみ、衝突している
 		return true;
 	}
+
+	// ================================================================
+	// カプセル
+	// ================================================================
+	void ClosestPointsBetweenSegments(const Segment& a, const Segment& b, Vector3& outPointA, Vector3& outPointB) {
+		// a(s) = a.origin + a.diff * s, b(t) = b.origin + b.diff * t (s, t は 0〜1) の距離が一番短くなる s, t を求める
+		const Vector3 r = a.origin - b.origin;
+		const float lengthSqA = Dot(a.diff, a.diff);
+		const float lengthSqB = Dot(b.diff, b.diff);
+		const float f = Dot(b.diff, r);
+		const float kEpsilon = 1e-8f;
+
+		float s = 0.0f;
+		float t = 0.0f;
+		if (lengthSqA <= kEpsilon && lengthSqB <= kEpsilon) {
+			// どちらも点
+			outPointA = a.origin;
+			outPointB = b.origin;
+			return;
+		}
+		if (lengthSqA <= kEpsilon) {
+			// a が点
+			t = Clamp(f / lengthSqB, 0.0f, 1.0f);
+		} else {
+			const float c = Dot(a.diff, r);
+			if (lengthSqB <= kEpsilon) {
+				// b が点
+				s = Clamp(-c / lengthSqA, 0.0f, 1.0f);
+			} else {
+				const float d = Dot(a.diff, b.diff);
+				const float denom = lengthSqA * lengthSqB - d * d;
+				// 平行でなければ、直線どうしの最近点を線分の範囲に収める (平行なら s = 0 から始める)
+				if (denom > kEpsilon) {
+					s = Clamp((d * f - c * lengthSqB) / denom, 0.0f, 1.0f);
+				}
+				// s に対する b 上の最近点
+				t = (d * s + f) / lengthSqB;
+				// t がはみ出したら、t を端に固定して s を求め直す
+				if (t < 0.0f) {
+					t = 0.0f;
+					s = Clamp(-c / lengthSqA, 0.0f, 1.0f);
+				} else if (t > 1.0f) {
+					t = 1.0f;
+					s = Clamp((d - c) / lengthSqA, 0.0f, 1.0f);
+				}
+			}
+		}
+		outPointA = a.origin + a.diff * s;
+		outPointB = b.origin + b.diff * t;
+	}
+
+	bool IsCollision(const Capsule& capsule, const Sphere& sphere) {
+		const Vector3 closest = ClosestPoint(sphere.center, capsule.segment);
+		const Vector3 diff = sphere.center - closest;
+		const float radiusSum = capsule.radius + sphere.radius;
+		return Dot(diff, diff) <= radiusSum * radiusSum;
+	}
+
+	bool IsCollision(const Capsule& capsuleA, const Capsule& capsuleB) {
+		Vector3 pointA{};
+		Vector3 pointB{};
+		ClosestPointsBetweenSegments(capsuleA.segment, capsuleB.segment, pointA, pointB);
+		const Vector3 diff = pointB - pointA;
+		const float radiusSum = capsuleA.radius + capsuleB.radius;
+		return Dot(diff, diff) <= radiusSum * radiusSum;
+	}
+
+	bool IsCollision(const Capsule& capsule, const Plane& plane) {
+		// 両端の、平面からの符号付き距離
+		const Vector3 start = capsule.segment.origin;
+		const Vector3 end = capsule.segment.origin + capsule.segment.diff;
+		const float distanceStart = Dot(plane.normal, start) - plane.distance;
+		const float distanceEnd = Dot(plane.normal, end) - plane.distance;
+		// 両端が平面の反対側にあれば、芯が平面を貫いている
+		if (distanceStart * distanceEnd <= 0.0f) {
+			return true;
+		}
+		// 同じ側なら、近い方の端が半径以内か
+		return (std::min)(std::abs(distanceStart), std::abs(distanceEnd)) <= capsule.radius;
+	}
+
+	namespace {
+		// 点と OBB の距離の2乗 (中なら0)
+		float DistanceSquaredPointOBB(const Vector3& point, const OBB& obb) {
+			const Vector3 d = point - obb.center;
+			float distanceSquared = 0.0f;
+			const float halfSizes[3] = { obb.size.x, obb.size.y, obb.size.z };
+			for (int axis = 0; axis < 3; ++axis) {
+				const float local = Dot(d, obb.orientations[axis]);
+				float excess = 0.0f;
+				if (local > halfSizes[axis]) {
+					excess = local - halfSizes[axis];
+				} else if (local < -halfSizes[axis]) {
+					excess = local + halfSizes[axis];
+				}
+				distanceSquared += excess * excess;
+			}
+			return distanceSquared;
+		}
+
+		// AABB を回転していない OBB にする
+		OBB AABBToOBB(const AABB& aabb) {
+			OBB obb{};
+			obb.center = (aabb.min + aabb.max) * 0.5f;
+			obb.orientations[0] = { 1.0f, 0.0f, 0.0f };
+			obb.orientations[1] = { 0.0f, 1.0f, 0.0f };
+			obb.orientations[2] = { 0.0f, 0.0f, 1.0f };
+			obb.size = (aabb.max - aabb.min) * 0.5f;
+			return obb;
+		}
+	}
+
+	bool IsCollision(const Capsule& capsule, const OBB& obb) {
+		// 芯の線分が箱を通っていれば当たっている
+		if (IsCollision(obb, capsule.segment)) {
+			return true;
+		}
+		// 通っていなければ、芯の線分と箱の一番近い距離を求めて、半径と比べる。
+		// 「線分上の点と箱の距離」は線分に沿って谷が1つだけの形になるので、黄金分割探索で一番低いところを探す
+		auto distanceSquaredAt = [&](float t) {
+			return DistanceSquaredPointOBB(capsule.segment.origin + capsule.segment.diff * t, obb);
+		};
+		const float kGoldenRatio = 0.6180339887f;
+		const int kIterations = 24; // 区間が 0.618^24 ≒ 1/100000 まで縮む
+		float low = 0.0f;
+		float high = 1.0f;
+		float t1 = high - (high - low) * kGoldenRatio;
+		float t2 = low + (high - low) * kGoldenRatio;
+		float d1 = distanceSquaredAt(t1);
+		float d2 = distanceSquaredAt(t2);
+		for (int i = 0; i < kIterations; ++i) {
+			if (d1 < d2) {
+				high = t2;
+				t2 = t1;
+				d2 = d1;
+				t1 = high - (high - low) * kGoldenRatio;
+				d1 = distanceSquaredAt(t1);
+			} else {
+				low = t1;
+				t1 = t2;
+				d1 = d2;
+				t2 = low + (high - low) * kGoldenRatio;
+				d2 = distanceSquaredAt(t2);
+			}
+		}
+		// 端の点も候補に入れる (一番近いのが端のとき、探索の誤差で取りこぼさないように)
+		float minDistanceSquared = (std::min)(d1, d2);
+		minDistanceSquared = (std::min)(minDistanceSquared, distanceSquaredAt(0.0f));
+		minDistanceSquared = (std::min)(minDistanceSquared, distanceSquaredAt(1.0f));
+		return minDistanceSquared <= capsule.radius * capsule.radius;
+	}
+
+	bool IsCollision(const Capsule& capsule, const AABB& aabb) {
+		return IsCollision(capsule, AABBToOBB(aabb));
+	}
 }

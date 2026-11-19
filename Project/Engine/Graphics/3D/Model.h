@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "../../Core/Math/Math.h"
 #include "../../Core/Math/Transform.h"
@@ -181,8 +182,16 @@ namespace RyoEngine {
         void SetTex(uint32_t handle, int32_t meshIndex = -1);
         void SetTex(const std::string& filePath, int32_t meshIndex = -1);
         void SetColor(const Vector4& color, int32_t meshIndex = -1);
+        /// <summary>色をカラーコードで指定する (例: SetColor(0xFF8800))。アルファは1になる。sRGB → リニアに自動で変換する</summary>
+        void SetColor(uint32_t rgbHex, int32_t meshIndex = -1);
+        /// <summary>色をカラーコードの文字列で指定する (例: SetColor("#FF8800") / "#FF880080" でアルファ付き)</summary>
+        void SetColor(std::string_view hex, int32_t meshIndex = -1);
         /// <summary>発光。ライティングを通さず最終色へ加算される</summary>
         void SetEmissive(const Vector3& color, float intensity, int32_t meshIndex = -1);
+        /// <summary>発光の色をカラーコードで指定する (例: SetEmissive(0xFF8800, 2.0f))</summary>
+        void SetEmissive(uint32_t rgbHex, float intensity, int32_t meshIndex = -1);
+        /// <summary>発光の色をカラーコードの文字列で指定する (例: SetEmissive("#FF8800", 2.0f)。アルファは無視)</summary>
+        void SetEmissive(std::string_view hex, float intensity, int32_t meshIndex = -1);
         void SetEnableLighting(bool enable, int32_t meshIndex = -1);
         void SetLambert(ShadingMode mode, int32_t meshIndex = -1);
         /// <summary>
@@ -228,6 +237,8 @@ namespace RyoEngine {
         void SetTexByName(uint32_t handle, const std::string& materialName);
         void SetTexByName(const std::string& filePath, const std::string& materialName);
         void SetColorByName(const Vector4& color, const std::string& materialName);
+        void SetColorByName(uint32_t rgbHex, const std::string& materialName);
+        void SetColorByName(std::string_view hex, const std::string& materialName);
         void SetLambertByName(ShadingMode mode, const std::string& materialName);
         void SetSpecularByName(const Vector3& color, float intensity, float shininess, const std::string& materialName);
         void SetBlendModeByName(BlendMode blendMode, const std::string& materialName);

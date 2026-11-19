@@ -69,4 +69,15 @@ namespace RyoEngine {
         collider.offset = offset;
         return AddCollider(collider);
     }
+
+    uint32_t GameObject::AddCapsuleCollider(float radius, float height, uint32_t layer, uint32_t mask, const Vector3& offset) {
+        Collider collider;
+        collider.shape = ColliderShape::Capsule;
+        collider.radius = radius;
+        collider.height = height;
+        collider.layer = layer;
+        collider.mask = mask;
+        collider.offset = offset;
+        return AddCollider(collider);
+    }
 }

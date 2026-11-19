@@ -9,11 +9,12 @@ namespace RyoEngine {
         Sphere, // 球。一番軽い。回っても形が変わらない (弾・アイテム・丸っぽい物)
         AABB,   // 回転しない箱。軽い (床・壁など動かない物)
         OBB,    // 回転する箱。GameObject の向きに合わせて回る (細長い物・剣・人型の体など)
+        Capsule,// 両端が丸い円柱。GameObject の向きに合わせて回る (人型の体・腕・棒など。段差や角に引っかかりにくい)
     };
 
     /// <summary>
     /// 当たり判定1つ分のデータ。GameObject が持ち、CollisionManager が毎フレーム判定する。
-    /// GameObject::AddSphereCollider / AddAABBCollider / AddOBBCollider で追加する。
+    /// GameObject::AddSphereCollider / AddAABBCollider / AddOBBCollider / AddCapsuleCollider で追加する。
     ///
     /// 大きさ・ずれは GameObject の座標(WorldTransform)から見た値。
     /// GameObject を動かす・回す・拡縮すると、当たり判定もついてくる (AABB は回転だけ無視する)。
@@ -22,8 +23,11 @@ namespace RyoEngine {
         ColliderShape shape = ColliderShape::Sphere;
         // GameObject の座標からのずれ (GameObject の回転・スケールに合わせて回る)
         Vector3 offset = { 0.0f, 0.0f, 0.0f };
-        // 球の半径 (Sphere のとき使う)
+        // 球の半径 (Sphere / Capsule のとき使う)
         float radius = 0.5f;
+        // カプセルの高さ (Capsule のとき使う)。両端の丸い部分も含めた全長で、GameObject の Y 軸の向きに伸びる。
+        // radius * 2 より短いときは、球と同じ形になる
+        float height = 2.0f;
         // 箱の各軸の半分の長さ (AABB / OBB のとき使う。全長ではない点に注意)
         Vector3 halfSize = { 0.5f, 0.5f, 0.5f };
 
@@ -39,6 +43,7 @@ namespace RyoEngine {
         Sphere worldSphere{};
         AABB worldAABB{};
         OBB worldOBB{};
+        Capsule worldCapsule{};
         // このフレームで何かに当たったか (デバッグ表示の色分け用)
         bool isHitting = false;
     };

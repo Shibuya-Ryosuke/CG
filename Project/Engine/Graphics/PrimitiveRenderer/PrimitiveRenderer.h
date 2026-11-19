@@ -102,6 +102,18 @@ namespace RyoEngine {
         /// </summary>
         static void DrawLine3D(const Vector3& start, const Vector3& end, const Vector4& color);
 
+        /// <summary>
+        /// カプセルを描画する (芯の線分の両端に半球、その間を円柱でつなぐ)
+        /// </summary>
+        /// <param name="capsule">カプセル</param>
+        /// <param name="subdivision">分割数(大きいほど滑らか。半球は縦にこの半分で分割する)</param>
+        /// <param name="color">色(w=アルファ。半透明可)</param>
+        /// <param name="mode">ワイヤーフレーム/塗りつぶし</param>
+        static void DrawCapsule(const Capsule& capsule, uint32_t subdivision, const Vector4& color, PrimitiveDrawMode mode);
+        /// <summary>カプセルを両端の点と半径で描画する</summary>
+        static void DrawCapsule(const Vector3& start, const Vector3& end, float radius, uint32_t subdivision,
+            const Vector4& color, PrimitiveDrawMode mode);
+
 
 
 

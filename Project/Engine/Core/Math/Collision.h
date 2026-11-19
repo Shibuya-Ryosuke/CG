@@ -47,4 +47,18 @@ namespace RyoEngine {
 	// OBB同士(分離軸判定/SATによる)
 	bool IsCollision(const OBB& obbA, const OBB& obbB);
 
+	// --- カプセル ---
+	// 2本の線分の、お互いに一番近い点を求める (outPointA は a 上、outPointB は b 上)
+	void ClosestPointsBetweenSegments(const Segment& a, const Segment& b, Vector3& outPointA, Vector3& outPointB);
+	// カプセルと球
+	bool IsCollision(const Capsule& capsule, const Sphere& sphere);
+	// カプセル同士
+	bool IsCollision(const Capsule& capsuleA, const Capsule& capsuleB);
+	// カプセルと平面
+	bool IsCollision(const Capsule& capsule, const Plane& plane);
+	// カプセルとAABB
+	bool IsCollision(const Capsule& capsule, const AABB& aabb);
+	// カプセルとOBB
+	bool IsCollision(const Capsule& capsule, const OBB& obb);
+
 }

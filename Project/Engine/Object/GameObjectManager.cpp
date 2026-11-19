@@ -184,6 +184,9 @@ namespace RyoEngine {
                 case ColliderShape::OBB:
                     PrimitiveRenderer::DrawOBB(collider.worldOBB, color, PrimitiveDrawMode::Wireframe);
                     break;
+                case ColliderShape::Capsule:
+                    PrimitiveRenderer::DrawCapsule(collider.worldCapsule, 12, color, PrimitiveDrawMode::Wireframe);
+                    break;
                 }
             }
         }

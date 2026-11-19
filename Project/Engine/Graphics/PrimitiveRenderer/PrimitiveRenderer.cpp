@@ -3,6 +3,7 @@
 #include "../Shader/ShaderCompiler.h"
 #include "../3D/ModelCommon.h"
 #include <cmath>
+#include <algorithm>
 #include <cstring>
 #include <cassert>
 
@@ -409,6 +410,83 @@ namespace RyoEngine {
     void PrimitiveRenderer::DrawLine3D(const Vector3& start, const Vector3& end, const Vector4& color) {
         lineVertices3D_.push_back({ { start.x, start.y, start.z, 1.0f }, color });
         lineVertices3D_.push_back({ { end.x, end.y, end.z, 1.0f }, color });
+    }
+
+    void PrimitiveRenderer::DrawCapsule(const Capsule& capsule, uint32_t subdivision, const Vector4& color, PrimitiveDrawMode mode) {
+        const Vector3 start = capsule.segment.origin;
+        const Vector3 end = capsule.segment.origin + capsule.segment.diff;
+        DrawCapsule(start, end, capsule.radius, subdivision, color, mode);
+    }
+
+    void PrimitiveRenderer::DrawCapsule(const Vector3& start, const Vector3& end, float radius, uint32_t subdivision,
+        const Vector4& color, PrimitiveDrawMode mode) {
+        if (subdivision < 4) subdivision = 4;
+
+        // カプセルの軸 (start → end)。長さ0なら球と同じ
+        Vector3 axis = end - start;
+        const float axisLength = Length(axis);
+        if (axisLength <= 1e-6f) {
+            AppendSphere(start, radius, subdivision, color, mode);
+            return;
+        }
+        axis = axis / axisLength;
+        // 軸に垂直な2本の向き (円を描くのに使う)
+        const Vector3 helper = (std::fabs(axis.y) < 0.99f) ? Vector3{ 0.0f, 1.0f, 0.0f } : Vector3{ 1.0f, 0.0f, 0.0f };
+        const Vector3 sideU = Normalize(Cross(helper, axis));
+        const Vector3 sideV = Cross(axis, sideU);
+
+        // 輪(緯線)を下の半球 → 上の半球の順に並べる。
+        // 下の半球の最後の輪(start側の赤道)と、上の半球の最初の輪(end側の赤道)の間が円柱になる
+        const uint32_t hemisphereSteps = (std::max)(subdivision / 2, 2u);
+        const float kHalfPi = 3.1415926535f / 2.0f;
+        const float kLonEvery = (3.1415926535f * 2.0f) / static_cast<float>(subdivision);
+        std::vector<std::vector<Vector4>> rings;
+        rings.reserve((hemisphereSteps + 1) * 2);
+        auto MakeRing = [&](const Vector3& center, float lat) {
+            std::vector<Vector4> ring(subdivision);
+            for (uint32_t lonIndex = 0; lonIndex < subdivision; ++lonIndex) {
+                const float lon = static_cast<float>(lonIndex) * kLonEvery;
+                const Vector3 dir = (sideU * std::cosf(lon) + sideV * std::sinf(lon)) * std::cosf(lat) + axis * std::sinf(lat);
+                const Vector3 p = center + dir * radius;
+                ring[lonIndex] = { p.x, p.y, p.z, 1.0f };
+            }
+            return ring;
+        };
+        for (uint32_t i = 0; i <= hemisphereSteps; ++i) {
+            const float lat = -kHalfPi + kHalfPi * static_cast<float>(i) / static_cast<float>(hemisphereSteps);
+            rings.push_back(MakeRing(start, lat));
+        }
+        for (uint32_t i = 0; i <= hemisphereSteps; ++i) {
+            const float lat = kHalfPi * static_cast<float>(i) / static_cast<float>(hemisphereSteps);
+            rings.push_back(MakeRing(end, lat));
+        }
+
+        for (size_t ringIndex = 0; ringIndex + 1 < rings.size(); ++ringIndex) {
+            const std::vector<Vector4>& ring = rings[ringIndex];
+            const std::vector<Vector4>& nextRing = rings[ringIndex + 1];
+            for (uint32_t lonIndex = 0; lonIndex < subdivision; ++lonIndex) {
+                const uint32_t nextLon = (lonIndex + 1) % subdivision;
+                const Vector4& a = ring[lonIndex];
+                const Vector4& b = nextRing[lonIndex];
+                const Vector4& c = ring[nextLon];
+                const Vector4& d = nextRing[nextLon];
+
+                if (mode == PrimitiveDrawMode::Wireframe) {
+                    lineVertices3D_.push_back({ a, color });
+                    lineVertices3D_.push_back({ b, color });
+                    lineVertices3D_.push_back({ a, color });
+                    lineVertices3D_.push_back({ c, color });
+                } else {
+                    triVertices3D_.push_back({ a, color });
+                    triVertices3D_.push_back({ b, color });
+                    triVertices3D_.push_back({ c, color });
+
+                    triVertices3D_.push_back({ c, color });
+                    triVertices3D_.push_back({ b, color });
+                    triVertices3D_.push_back({ d, color });
+                }
+            }
+        }
     }
 
     // ============================================================

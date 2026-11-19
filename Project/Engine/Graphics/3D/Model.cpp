@@ -1,6 +1,7 @@
 #include "Model.h"
 #include "../2D/TextureManager.h"
 #include "../../Core/Math/Collision.h"
+#include "../../Core/Math/Color.h"
 #include "../../Editor/ModelPicker.h"
 #include "../../Camera/CameraManager.h"
 #include "../../Core/Asset/AssetRegistry.h"
@@ -266,6 +267,22 @@ namespace RyoEngine {
         ForEachMesh(meshIndex, [&](MeshState& mesh) { mesh.color = color; });
     }
 
+    void Model::SetColor(uint32_t rgbHex, int32_t meshIndex) {
+        SetColor(ColorFromHex(rgbHex), meshIndex);
+    }
+
+    void Model::SetColor(std::string_view hex, int32_t meshIndex) {
+        SetColor(ColorFromHex(hex), meshIndex);
+    }
+
+    void Model::SetEmissive(uint32_t rgbHex, float intensity, int32_t meshIndex) {
+        SetEmissive(ColorFromHexRGB(rgbHex), intensity, meshIndex);
+    }
+
+    void Model::SetEmissive(std::string_view hex, float intensity, int32_t meshIndex) {
+        SetEmissive(ColorFromHexRGB(hex), intensity, meshIndex);
+    }
+
     void Model::SetEmissive(const Vector3& color, float intensity, int32_t meshIndex) {
         ForEachMesh(meshIndex, [&](MeshState& mesh) {
             mesh.emissiveColor = color;
@@ -373,6 +390,12 @@ namespace RyoEngine {
     void Model::SetColorByName(const Vector4& color, const std::string& materialName) {
         const int32_t index = GetMeshIndexByName(materialName);
         if (index >= 0) SetColor(color, index);
+    }
+    void Model::SetColorByName(uint32_t rgbHex, const std::string& materialName) {
+        SetColorByName(ColorFromHex(rgbHex), materialName);
+    }
+    void Model::SetColorByName(std::string_view hex, const std::string& materialName) {
+        SetColorByName(ColorFromHex(hex), materialName);
     }
     void Model::SetLambertByName(ShadingMode mode, const std::string& materialName) {
         const int32_t index = GetMeshIndexByName(materialName);

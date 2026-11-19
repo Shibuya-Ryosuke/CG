@@ -56,6 +56,18 @@ namespace RyoEngine {
             collider.worldOBB.size = { collider.halfSize.x * scale.x, collider.halfSize.y * scale.y, collider.halfSize.z * scale.z };
             break;
         }
+        case ColliderShape::Capsule: {
+            // 芯の両端 (ずれの位置から Y 軸の向きへ ±(全長/2 - 半径)) を、GameObject の回転・スケールに合わせて動かす。
+            // 半径は X と Z のうち大きい方のスケールで広げる (つぶれたカプセルにはしない)
+            const float halfLength = (std::max)(collider.height * 0.5f - collider.radius, 0.0f);
+            const Vector3 axis = { m.m[1][0], m.m[1][1], m.m[1][2] }; // ワールド行列の Y の行 (スケール込み)
+            const Vector3 start = { center.x - axis.x * halfLength, center.y - axis.y * halfLength, center.z - axis.z * halfLength };
+            const Vector3 end = { center.x + axis.x * halfLength, center.y + axis.y * halfLength, center.z + axis.z * halfLength };
+            collider.worldCapsule.segment.origin = start;
+            collider.worldCapsule.segment.diff = { end.x - start.x, end.y - start.y, end.z - start.z };
+            collider.worldCapsule.radius = collider.radius * (std::max)(scale.x, scale.z);
+            break;
+        }
         }
     }
 
@@ -86,17 +98,26 @@ namespace RyoEngine {
             case S::Sphere: return IsCollision(a.worldSphere, b.worldSphere);
             case S::AABB:   return IsCollision(b.worldAABB, a.worldSphere);
             case S::OBB:    return IsCollision(b.worldOBB, a.worldSphere);
+            case S::Capsule: return IsCollision(b.worldCapsule, a.worldSphere);
             }
         }
         if (a.shape == S::AABB) {
             switch (b.shape) {
             case S::AABB: return IsCollision(a.worldAABB, b.worldAABB);
             case S::OBB:  return IsCollision(ToOBB(a.worldAABB), b.worldOBB);
+            case S::Capsule: return IsCollision(b.worldCapsule, a.worldAABB);
             default: break;
             }
         }
-        // OBB と OBB
-        return IsCollision(a.worldOBB, b.worldOBB);
+        if (a.shape == S::OBB) {
+            switch (b.shape) {
+            case S::OBB: return IsCollision(a.worldOBB, b.worldOBB);
+            case S::Capsule: return IsCollision(b.worldCapsule, a.worldOBB);
+            default: break;
+            }
+        }
+        // カプセルとカプセル
+        return IsCollision(a.worldCapsule, b.worldCapsule);
     }
 
     uint64_t CollisionManager::MakePairKey(const GameObject* a, const GameObject* b) {

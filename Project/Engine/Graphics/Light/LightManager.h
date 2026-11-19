@@ -5,8 +5,10 @@
 #include <cstdint>
 #include <string>
 #include <unordered_set>
+#include <string_view>
 #include "Light.h"
 #include "../../Core/Math/Math.h"
+#include "../../Core/Math/Color.h"
 
 namespace RyoEngine {
 
@@ -63,6 +65,9 @@ namespace RyoEngine {
         static void SetLightEnabled(const std::string& name, bool enabled);
         static void SetLightDirection(const std::string& name, const Vector3& direction);
         static void SetLightColor(const std::string& name, const Vector4& color);
+        // 色をカラーコードで指定する (例: SetLightColor("MainLight", 0xFFCC88) / SetLightColor("MainLight", "#FFCC88"))
+        static void SetLightColor(const std::string& name, uint32_t rgbHex) { SetLightColor(name, ColorFromHex(rgbHex)); }
+        static void SetLightColor(const std::string& name, std::string_view hex) { SetLightColor(name, ColorFromHex(hex)); }
         static void SetLightIntensity(const std::string& name, float intensity);
         static void SetLightRange(const std::string& name, float range);
         // エリアライトの面の大きさ (幅・高さ。端から端までの長さ)
@@ -138,6 +143,8 @@ namespace RyoEngine {
             GetInstance()->ambientData_->intensity = ambient.intensity;
         }
         static void SetAmbientColor(const Vector4& color) { GetInstance()->ambientData_->color = color; }
+        static void SetAmbientColor(uint32_t rgbHex) { SetAmbientColor(ColorFromHex(rgbHex)); }
+        static void SetAmbientColor(std::string_view hex) { SetAmbientColor(ColorFromHex(hex)); }
         static void SetAmbientIntensity(float intensity) { GetInstance()->ambientData_->intensity = intensity; }
 
         static const AmbientLight& GetAmbientLight() { return *GetInstance()->ambientData_; }

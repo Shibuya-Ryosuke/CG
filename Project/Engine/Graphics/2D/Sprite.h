@@ -2,6 +2,7 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <string>
+#include <string_view>
 #include <cstdint>
 #include "../../Core/Math/Math.h"
 
@@ -114,6 +115,10 @@ namespace RyoEngine {
         void SetFlipY(bool flipY);
         void SetFlipPivot(Anchor flipPivot);
         void SetColor(const Vector4& color) { materialData_->color = color; };
+        /// <summary>色をカラーコードで指定する (例: SetColor(0xFF8800))。アルファは1になる。sRGB → リニアに自動で変換する</summary>
+        void SetColor(uint32_t rgbHex);
+        /// <summary>色をカラーコードの文字列で指定する (例: SetColor("#FF8800") / "#FF880080" でアルファ付き)</summary>
+        void SetColor(std::string_view hex);
 
     private:
         void CreateVertexResource();

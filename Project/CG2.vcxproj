@@ -78,6 +78,9 @@
     <ClInclude Include="Application\Application.h" />
     <ClInclude Include="Application\Scene\Game.h" />
     <ClInclude Include="Application\Scene\Title.h" />
+    <ClInclude Include="Engine\Core\Math\Color.h" />
+    <ClInclude Include="Engine\Core\Math\CoordinateSystem.h" />
+    <ClInclude Include="Engine\Core\Math\Quaternion.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleCommon.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleEmitter.h" />
     <ClInclude Include="Engine\Graphics\Particle\ParticleManager.h" />

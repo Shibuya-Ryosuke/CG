@@ -105,6 +105,10 @@ namespace RyoEngine {
         uint32_t AddAABBCollider(const Vector3& halfSize, uint32_t layer, uint32_t mask, const Vector3& offset = { 0.0f, 0.0f, 0.0f });
         /// <summary>回転する箱の当たり判定を追加する (halfSize: 各軸の半分の長さ)</summary>
         uint32_t AddOBBCollider(const Vector3& halfSize, uint32_t layer, uint32_t mask, const Vector3& offset = { 0.0f, 0.0f, 0.0f });
+        /// <summary>
+        /// カプセルの当たり判定を追加する (radius: 半径 / height: 両端の丸い部分も含めた全長。Y 軸の向きに伸びる)
+        /// </summary>
+        uint32_t AddCapsuleCollider(float radius, float height, uint32_t layer, uint32_t mask, const Vector3& offset = { 0.0f, 0.0f, 0.0f });
         /// <summary>当たり判定を全部消す</summary>
         void ClearColliders() { colliders_.clear(); }
 

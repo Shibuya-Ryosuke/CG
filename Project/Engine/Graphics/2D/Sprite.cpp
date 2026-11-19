@@ -4,6 +4,7 @@
 #include "SpriteCommon.h"
 #include "../../Graphics/2D/TextureManager.h"
 #include "../../Core/Asset/AssetRegistry.h"
+#include "../../Core/Math/Color.h"
 
 namespace RyoEngine {
     namespace {
@@ -296,5 +297,13 @@ namespace RyoEngine {
         commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetGPUHandle(textureHandle_));
 
         commandList->DrawIndexedInstanced(indexCount_, 1, 0, 0, 0);
+    }
+
+    void Sprite::SetColor(uint32_t rgbHex) {
+        SetColor(ColorFromHex(rgbHex));
+    }
+
+    void Sprite::SetColor(std::string_view hex) {
+        SetColor(ColorFromHex(hex));
     }
 }

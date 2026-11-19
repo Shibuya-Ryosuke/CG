@@ -70,6 +70,11 @@ namespace RyoEngine {
         Vector3 orientations[3];  // 座標軸(正規化された各軸方向)
         Vector3 size;             // 各軸方向の半径(中心から面までの距離。全長ではない点に注意)
     };
+    // カプセル (線分を radius だけ太らせた形。両端が半球になった円柱)
+    struct Capsule {
+        Segment segment; // 芯の線分 (両端の半球の中心どうしを結ぶ)
+        float radius;    // 半径
+    };
 
     struct VertexData {
         Vector4 position;
