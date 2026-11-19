@@ -1,0 +1,21 @@
+{
+  "Default": {
+    "Resources/EngineResources/Test/twistBox.glb#0": {
+      "rotate": [
+        57.036842346191406,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "translate": [
+        0.0,
+        1.2576854228973389,
+        -11.204828262329102
+      ]
+    }
+  }
+}
